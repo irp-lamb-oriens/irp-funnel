@@ -1,0 +1,26 @@
+.reveal-on-scroll {
+  position: relative;
+  display: inline-block;
+
+  & :global(*.wrapper-letter) {
+    transition: 1s, 
+    transform 2s cubic-bezier(0.01, 0.12, 0.02, 1), 
+    opacity 2.5s cubic-bezier(0.01, 0.12, 0.02, 1);
+    opacity: 0;
+    display: inline-block;
+    transform: translateY(20px);
+  }
+
+  &:not(.revealed) {
+    & :global(*.wrapper-letter) {
+      transition-delay: 0s !important;
+    }
+  }
+
+  &.revealed {
+    & :global(*.wrapper-letter) {
+      transform: translateY(0px);
+      opacity: 1;
+    }
+  }
+}

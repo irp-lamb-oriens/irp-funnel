@@ -1,0 +1,95 @@
+.text-type {
+  line-height: 1.5;
+  --unit-1: 16px;
+  --unit-2: 18px;
+  --unit-3: 20px;
+  --unit-4: 22px;
+  --unit-5: 30px;
+  --unit-6: 19px;
+
+  &--paragraph {
+    font-family: var(--font-paragraph);
+    font-size: var(--unit-3);
+    color: var(--color-background);
+  }
+
+  &--sub-italic {
+    font-family: var(--font-paragraph);
+    font-size: var(--unit-1);
+    font-style: italic;
+    color: var(--color-background);
+  }
+
+  &--sub-highlight-italic {
+    font-family: var(--font-paragraph);
+    font-size: var(--unit-1);
+    font-style: italic;
+    color: var(--color-foreground);
+  }
+
+  &--highlight {
+    font-family: var(--font-paragraph);
+    font-size: var(--unit-3);
+    color: var(--color-foreground);
+  }
+
+  &--title {
+    font-family: var(--font-title);
+    font-size: var(--unit-5);
+    color: var(--color-foreground);
+
+    @media (max-width: 1024px) {
+      font-size: var(--unit-6);
+    }
+  }
+
+  &--title-highlight {
+    font-family: var(--font-title);
+    font-size: var(--unit-5);
+    color: var(--color-background);
+
+    @media (max-width: 1024px) {
+      font-size: var(--unit-6);
+    }
+  }
+
+  &--title-sub-italic {
+    font-family: var(--font-title);
+    font-size: var(--unit-5);
+    font-style: italic;
+    color: var(--color-foreground);
+  }
+
+  &--title-sub-highlight-italic {
+    font-family: var(--font-title);
+    font-size: var(--unit-5);
+    font-style: italic;
+    color: var(--color-background);
+  }
+
+  &--subtitle {
+    font-family: var(--font-title);
+    font-size: var(--unit-4);
+    color: var(--color-background);
+  }
+
+  &--subtitle-highlight {
+    font-family: var(--font-title);
+    font-size: var(--unit-4);
+    color: var(--color-foreground);
+  }
+
+  &--subtitle-sub-italic {
+    font-family: var(--font-title);
+    font-size: var(--unit-2);
+    font-style: italic;
+    color: var(--color-background);
+  }
+
+  &--subtitle-sub-highlight-italic {
+    font-family: var(--font-title);
+    font-size: var(--unit-2);
+    font-style: italic;
+    color: var(--color-foreground);
+  }
+}

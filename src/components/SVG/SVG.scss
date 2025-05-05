@@ -1,0 +1,42 @@
+.svg-request-source {
+  display: none;
+}
+
+.svg-loader {
+  display: inline-block;
+
+  &--error {
+    color: red;
+  }
+
+  &--loading {
+    font-family: var(--font-paragraph);
+    font-size: 16px;
+    color: var(--color-foreground);
+
+    &--dots::after {
+      content: '.';
+      display: inline-block;
+      animation: dots 1.5s infinite steps(1, end);
+    }
+  }
+}
+
+:global(svg), :global(path) {
+  fill: var(--color-foreground);
+}
+
+@keyframes dots {
+  0% {
+    content: '.';
+  }
+  33% {
+    content: '..';
+  }
+  66% {
+    content: '...';
+  }
+  100% {
+    content: '.';
+  }
+}

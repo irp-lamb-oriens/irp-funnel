@@ -1,0 +1,58 @@
+.x {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  margin: auto;
+  background: transparent;
+  border: 0;
+  width: calc(var(--ham-size) * 1.35);
+  height: calc(var(--ham-size) * 1.1);
+  outline: none;
+
+  &:after,
+  &:before {
+    content: '';
+    width: var(--ham-size);
+    height: calc(var(--ham-size) * 0.05);
+    background: var(--color-background);
+    display: block;
+    position: absolute;
+    transition: 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
+    border-radius: 50px;
+  }
+
+  &:after {
+    top: calc(var(--ham-size) * 0.4);
+  }
+
+  &:before {
+    top: calc(var(--ham-size) * 0.6);
+  }
+
+  &.true {
+    cursor: pointer;
+
+    &:before {
+      transform: rotate(-45deg);
+    }
+
+    &:after {
+      transform: rotate(45deg);
+    }
+
+    &:after,
+    &:before {
+      top: calc(var(--ham-size) * 0.5);
+    }
+  }
+
+  &:active {
+    cursor: pointer;
+
+    &:after,
+    &:before {
+      transform: rotate(0deg);
+    }
+  }
+}
