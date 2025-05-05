@@ -19,7 +19,7 @@ const store = writable<Store>({
   countryTo: null,
   reasonsForMoving: [""], // Added reasons (array of strings)
   appLanguage: "en", // Added for global language setting
-  apiURL: () => window.location.origin.startsWith('http://localhost') ? "http://localhost:8000" : "https://irp-funnel.onrender.com",
+  apiURL: () => window.location.origin.startsWith('http://localhost') ? "http://localhost:8000" : "https://irp-funnel-server.onrender.com",
 });
 
 export const emptyStoreSnapshot = JSON.parse(JSON.stringify(get(store)));
