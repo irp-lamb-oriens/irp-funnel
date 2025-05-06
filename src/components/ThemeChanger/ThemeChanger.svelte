@@ -4,10 +4,10 @@
 
   // Check localStorage for theme preference
   onMount(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) {
-      isDarkTheme.set(storedTheme === "dark");
-    }
+    // const storedTheme = localStorage.getItem("theme");
+    // if (storedTheme) {
+    //   isDarkTheme.set(storedTheme === "dark");
+    // }
     updateTheme();
 
     foregroundColor.subscribe(() => {
