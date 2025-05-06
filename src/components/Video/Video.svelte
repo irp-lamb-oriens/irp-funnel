@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import Hls from "hls.js";
   import { videoInteractionStore } from "./VideoInteractionStore.ts";
+  import type { VideoEvent } from "./VideoInteractionStore.ts";
 
   let videoElement: HTMLVideoElement;
   export let src: string;
@@ -52,7 +53,19 @@
     videoInteractionStore.set({ type: "ended" });
   }
 
+  let unsubscribe: () => void;
+
+  function handleExternalVideoEvent(event: VideoEvent | null) {
+    if (!event) return;
+    if (event.type === "stop" && videoElement) {
+      videoElement.pause();
+      videoElement.currentTime = 0;
+      isVideoPaused = true;
+    }
+  }
+
   onMount(() => {
+    unsubscribe = videoInteractionStore.subscribe(handleExternalVideoEvent);
     if (videoElement) {
       // Set volume to max
 
@@ -116,6 +129,7 @@
   });
 
   onDestroy(() => {
+    if (unsubscribe) unsubscribe();
     if (hls) {
       hls.destroy();
       hls = null;

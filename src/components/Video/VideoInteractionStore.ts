@@ -5,6 +5,7 @@ export type VideoEvent =
   | { type: "ended" }
   | { type: "play" }
   | { type: "pause" }
+  | { type: "stop" }
   | { type: "interaction" };
 
 export const videoInteractionStore = writable<VideoEvent | null>(null);

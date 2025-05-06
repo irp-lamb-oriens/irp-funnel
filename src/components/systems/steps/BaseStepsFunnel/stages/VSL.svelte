@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
-	import store, { incrementStepsIndex } from '../../../../store.ts';
+	import store, { incrementStepsIndex, saveToStore } from '../../../../store.ts';
 	import Page from '../../../wrappers/Page/Page.svelte';
 	import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 	import Video from '../../../../Video/Video.svelte';
+    import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
+    import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
 
 	export let canReveal = false;
 
@@ -36,10 +38,35 @@
 		on:timeupdate={handleTimeUpdate}
 		on:ended={handleEnded}
 	/>
+	<div class="center">
+		<MarkdownText {canReveal}>
+			You can **only** schedule your **consultation** call from **three** to **five** days in advance.
+		</MarkdownText>
+		<SubmitButton
+			color="error"
+			label="Schedule Call"
+			callback={() => {
+				videoInteractionStore.set({ type: "stop" });
+				saveToStore({
+					stepsIndex: $store.stepsIndex + 1
+				});
+			}}
+			disabled={false}
+		/>
+	</div> 
 </Page>
 
 
 <style>
+	.center {
+		display: grid;
+		place-items: center;
+		text-align: center;
+		max-width: 500px;
+		margin: auto;
+		grid-gap: 25px;
+	}
+
 	video {
 		/* opacity: 0; */ /* Removed initial hidden state */
 		/* transition: opacity 0.5s ease-in-out; */ /* Removed transition */
