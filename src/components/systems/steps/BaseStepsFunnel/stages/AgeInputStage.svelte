@@ -202,20 +202,4 @@
     background: rgba(255,255,255,0.22);
     color: #333;
 }
-
-@media (max-width: 600px) {
-    .glassmorphic-picker-container {
-        flex-direction: column;
-        gap: 18px;
-        max-width: 100%;
-    }
-    .picker-wheel {
-        min-width: 0;
-        width: 100%;
-    }
-    .wheel-list {
-        min-width: 0;
-        width: 100%;
-    }
-}
 </style>
