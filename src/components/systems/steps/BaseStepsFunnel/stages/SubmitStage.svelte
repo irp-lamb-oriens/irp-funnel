@@ -20,6 +20,7 @@
             name: currentStore.name,
             email: currentStore.email,
             age: currentStore.age,
+            birthday: currentStore.birthday,
             sex: currentStore.sex,
             budget: currentStore.budget,
             countryFrom: currentStore.countryFrom,
