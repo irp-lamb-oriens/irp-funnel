@@ -24,6 +24,16 @@
 			incrementStepsIndex();
 		}
 	}
+
+	store.subscribe((s) => {
+		if (!s.stepsIndex) {
+			videoInteractionStore.set({ type: "play" });
+			
+			return;
+		}
+		
+		videoInteractionStore.set({ type: "stop" });
+	});
 </script>
 
 <Page>

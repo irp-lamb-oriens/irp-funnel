@@ -89,6 +89,7 @@
 
                 **Your information** has been **submitted successfully.**
             </MarkdownText>
+            <a class="anchor" href="https://www.internationalrelocationpartner.com/">internationalrelocationpartner.com</a>
             <!-- Optionally add next steps or links here -->
         {:else if submitError}
             <MarkdownText {canReveal}>
@@ -126,7 +127,15 @@
     </div>
 </Page>
 
-<style>
+<style lang="scss">
+    .anchor {
+        color: var(--color-background);
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
     .stage-content {
         display: flex;
         flex-direction: column;
