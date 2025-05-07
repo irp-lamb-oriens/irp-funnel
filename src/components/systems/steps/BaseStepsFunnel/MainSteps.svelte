@@ -19,7 +19,34 @@
   // Condition functions based on store state
   const isNameValid = () => !!get(store).name?.trim();
   const isEmailValid = () => !!get(store).email?.trim();
-  const isAgeValid = () => get(store).age !== null && get(store).age > 0;
+  // Validate birthday: must be a string in YYYY-MM-DD, not in the future, not before 1920-01-01, and age > 0
+  const isBirthdayValid = () => {
+    const birthday = get(store).birthday;
+    if (typeof birthday !== "string") return false;
+    // Regex for YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) return false;
+    const [year, month, day] = birthday.split("-").map(Number);
+    if (
+      isNaN(year) ||
+      isNaN(month) ||
+      isNaN(day) ||
+      year < 1920 ||
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    )
+      return false;
+    const date = new Date(birthday);
+    const now = new Date();
+    if (date > now) return false;
+    // Age calculation
+    let age = now.getFullYear() - year;
+    const m = now.getMonth() + 1 - month;
+    if (m < 0 || (m === 0 && now.getDate() < day)) age--;
+    if (age <= 0) return false;
+    return true;
+  };
   const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
   const isBudgetValid = () => get(store).budget !== null && get(store).budget >= 0;
   const isCountryFromValid = () => !!get(store).countryFrom;
@@ -33,7 +60,7 @@
     [() => true, NameInputStage], // Name input follows VSL
     [isNameValid, EmailInputStage], // Email input requires a valid name
     [isEmailValid, AgeInputStage], // Age input requires a valid email
-    [isAgeValid, SexInputStage], // Sex input requires a valid age
+    [isBirthdayValid, SexInputStage], // Sex input requires a valid birthday
     [isSexValid, BudgetInputStage], // Budget requires a valid sex
     [isBudgetValid, CountryFromInputStage], // Country From requires a valid budget
     [isCountryFromValid, CountryToInputStage], // Country To requires a valid Country From
