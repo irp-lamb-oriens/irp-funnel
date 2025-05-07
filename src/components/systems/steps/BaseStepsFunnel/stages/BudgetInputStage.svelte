@@ -2,36 +2,22 @@
     import { get } from 'svelte/store';
     import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
     import Page from '../../../wrappers/Page/Page.svelte';
-    import NumberInput from '../../../inputs/Number/Number.svelte'; // Use Number input
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 
-    // Budget might be null initially, handle conversion to string for input
-    let currentBudgetStr = get(store).budget !== null ? String(get(store).budget) : '';
-    let isValid = currentBudgetStr !== '' && !isNaN(Number(currentBudgetStr)) && Number(currentBudgetStr) >= 0; // Basic validation: non-empty, is a number, non-negative
-
     export let canReveal = false;
 
-    function handleChange(newValue: string) {
-        currentBudgetStr = newValue;
-        const budgetNumber = Number(currentBudgetStr);
-        isValid = currentBudgetStr !== '' && !isNaN(budgetNumber) && budgetNumber >= 0;
-        // Save the number or null if invalid/empty
-        saveToStore({ budget: isValid ? budgetNumber : null });
-    }
+let hasBudget = get(store).hasBudget || '';
+$: isValid = hasBudget === 'Yes' || hasBudget === 'No';
+
+// Update store and budget value whenever hasBudget changes
+$: {
+    saveToStore({ hasBudget, budget: 10000 - +(hasBudget === 'No') });
+}
 
     function handleNext() {
         if (isValid) {
             incrementStepsIndex();
-        }
-    }
-
-    // This function will be passed to the onEnter prop of NumberInput
-    function handleEnter(inputIsValid: boolean) {
-        // The Number input component might have its own validation logic passed via onEnter
-        // For now, we rely on our local `isValid` check which is updated in handleChange
-        if (isValid) {
-            handleNext();
         }
     }
 </script>
@@ -39,16 +25,31 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## What's your approximate budget for the move (in USD)?
+            ## Shipment costs per international move an average of $10,000 (USD), or more.
+
+            ### Do you have the budget to afford this?
         </MarkdownText>
 
-        <NumberInput
-            label="Budget (USD)"
-            placeholder="e.g., 5000"
-            value={currentBudgetStr}
-            onChange={handleChange}
-            onEnter={handleEnter}
-        />
+        <div class="radio-options">
+            <label class="radio-label">
+                <input
+                    type="radio"
+                    name="budget-selection"
+                    value="Yes"
+                    bind:group={hasBudget}
+                />
+                Yes
+            </label>
+            <label class="radio-label">
+                <input
+                    type="radio"
+                    name="budget-selection"
+                    value="No"
+                    bind:group={hasBudget}
+                />
+                No
+            </label>
+        </div>
 
         <SubmitButton
             label="Next"
@@ -62,11 +63,27 @@
     .stage-content {
         display: flex;
         flex-direction: column;
-        
-        gap: 20px; /* Adjust spacing as needed */
+        gap: 20px;
         padding: 40px 20px;
-        max-width: 600px; /* Limit width for better readability */
+        max-width: 600px;
         margin: auto;
     }
-    /* Add any additional styling needed */
+    .radio-options {
+        display: flex;
+        gap: 25px;
+        justify-content: center;
+        width: 100%;
+    }
+    .radio-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.1em;
+        cursor: pointer;
+    }
+    .radio-label input[type="radio"] {
+        accent-color: #0077b5;
+        width: 18px;
+        height: 18px;
+    }
 </style>

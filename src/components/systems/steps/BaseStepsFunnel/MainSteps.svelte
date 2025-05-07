@@ -48,7 +48,7 @@
     return true;
   };
   const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
-  const isBudgetValid = () => get(store).budget !== null && get(store).budget >= 0;
+  const isBudgetValid = () => typeof get(store).budget === 'number';
   const isCountryFromValid = () => !!get(store).countryFrom;
   const isCountryToValid = () => !!get(store).countryTo;
   const isReasonsValid = () => Array.isArray(get(store).reasonsForMoving) && get(store).reasonsForMoving.length > 0 && get(store).reasonsForMoving.some((r: string) => r.trim() !== '');
