@@ -7,6 +7,8 @@
     import IconButton from '../../../buttons/IconButton/IconButton.svelte'; // Assuming an IconButton exists for '+'
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 
+    export let canReveal = false;
+
     let reasons = [...get(store).reasonsForMoving, '']; // Start with one empty reason input
     // Validate if at least one non-empty reason exists
     $: isValid = reasons.some((reason: string) => reason.trim() !== ''); // Added type string
@@ -52,7 +54,7 @@
 
 <Page>
     <div class="stage-content">
-        <MarkdownText>
+        <MarkdownText {canReveal}>
             ## Why did you decide to move to Costa Rica?
             (Please list at least one reason)
         </MarkdownText>

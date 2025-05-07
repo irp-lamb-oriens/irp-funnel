@@ -5,6 +5,8 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 
+    export let canReveal = false;
+
     let currentSex = get(store).sex || '';
     $: isValid = currentSex === 'Male' || currentSex === 'Female';
 
@@ -20,7 +22,7 @@
 
 <Page>
     <div class="stage-content">
-        <MarkdownText>
+        <MarkdownText {canReveal}>
             ## What is your sex?
         </MarkdownText>
 
