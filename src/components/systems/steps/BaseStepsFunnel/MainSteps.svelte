@@ -14,6 +14,7 @@
   import SubmitStage from "./stages/SubmitStage.svelte";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
+    import ZohoScheduling from "./stages/ZohoScheduling.svelte";
 
   // Condition functions based on store state
   const isNameValid = () => !!get(store).name?.trim();
@@ -28,6 +29,7 @@
   // Define the sequence of components and their conditions
   const components = [
     [() => true, VSL], // VSL always shows first
+    [() => true,  ZohoScheduling], // Name input follows VSL
     [() => true, NameInputStage], // Name input follows VSL
     [isNameValid, EmailInputStage], // Email input requires a valid name
     [isEmailValid, AgeInputStage], // Age input requires a valid email

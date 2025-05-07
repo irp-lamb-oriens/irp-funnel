@@ -39,12 +39,9 @@
 		on:ended={handleEnded}
 	/>
 	<div class="center">
-		<MarkdownText {canReveal}>
-			You can **only** schedule your **consultation** call from **three** to **five** days in advance.
-		</MarkdownText>
 		<SubmitButton
 			color="error"
-			label="Schedule Call"
+			label="SCHEDULE CONSULTATION"
 			callback={() => {
 				videoInteractionStore.set({ type: "stop" });
 				saveToStore({
@@ -53,6 +50,9 @@
 			}}
 			disabled={false}
 		/>
+		<MarkdownText {canReveal}>
+			You can **only** schedule your **consultation** call from **three** to **five** days in advance.
+		</MarkdownText>
 	</div> 
 </Page>
 

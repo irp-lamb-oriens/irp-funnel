@@ -27,7 +27,7 @@
   .submit-button {
     backdrop-filter: blur(6px);
     border: none;
-    padding: 0.75rem min(15vw, 150px);
+    padding: 0.75rem min(10vw, 100px);
     transition: 0.15s;
     cursor: pointer;
     pointer-events: auto;
@@ -35,7 +35,6 @@
     color: var(--color-background-inversion);
     display: flex;
     font-size: 18px;
-    border-radius: 30px;
     background: var(--color-x-gradient-inversion);
     box-shadow: 0 0 10px -7px var(--color-background);
 
@@ -44,7 +43,8 @@
       box-shadow: 0px 0px 10px -7.5px var(--color-background);
       color: var(--color-background);
       background: var(--color-x-gradient);
-      padding: 0.75rem min(17.5vw, 175px);
+      padding: 0.75rem min(12.5vw, 125px);
+      box-shadow: inset 0 0 0 1px var(--color-background);
     }
 
     &.success:not(&:disabled):hover {
@@ -52,8 +52,9 @@
       color: #fff;
     }
     &.error:not(&:disabled):hover {
-      background: linear-gradient(90deg, #19f0f0 0%, #58ffb0 100%);
+      background: linear-gradient(90deg, #02b6bc 0%, #2ea3f2 100%);
       color: #222;
+      box-shadow: inset 0 0 0 1px var(--color-foreground);
     }
     &.warning:not(&:disabled):hover {
       background: linear-gradient(90deg, #1e6ff7 0%, #00ffd2 100%);
@@ -77,7 +78,7 @@
       color: #fff;
     }
     &.error {
-      background: linear-gradient(90deg, #ff5858 0%, #db4437 100%);
+      background: linear-gradient(90deg, #c62326 0%, #db4437 100%);
       color: #fff;
     }
     &.warning {
