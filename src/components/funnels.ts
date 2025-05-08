@@ -32,7 +32,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only ER.** We lock in **real coverage before wheels-up.
+      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
       `
     },
 
@@ -91,7 +91,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only ER.** We lock in **real coverage before wheels-up.
+      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
       `
     },
 
