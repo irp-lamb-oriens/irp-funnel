@@ -6,14 +6,6 @@ export type Funnel = {
 
 const funnels: Record<string, Record<string, Funnel>> = {
   "costa-rica": {
-    "a": {
-      country: "Costa Rica",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
-      copy: `
-      ## **Drowning in **Costa Rica’s immigration paperwork?** One missed stamp can **freeze your shipment** and derail your plans—**we prevent the freeze.
-      `
-    },
 
     /* —–– pain-point hooks start here —–– */
 
@@ -58,7 +50,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg** before the first box ships.
+      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg before the first box ships.
       `
     },
 
@@ -73,14 +65,6 @@ const funnels: Record<string, Record<string, Funnel>> = {
   },
 
   "general": {
-    "a": {
-      country: "Costa Rica",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
-      copy: `
-      ## **Drowning in **Costa Rica’s immigration paperwork?** One missed stamp can **freeze your shipment** and derail your plans—**we prevent the freeze.
-      `
-    },
 
     /* —–– pain-point hooks start here —–– */
 
@@ -125,7 +109,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg** before the first box ships.
+      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg before the first box ships.
       `
     },
 
