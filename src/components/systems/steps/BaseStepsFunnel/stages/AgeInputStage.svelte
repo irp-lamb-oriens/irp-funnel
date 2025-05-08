@@ -61,13 +61,22 @@
         const d = getStore(selectedDay);
         // Ensure selectedDay is valid for the month/year
         const maxDay = getDaysInMonth(y, m);
+        let birthdayStr;
         if (d > maxDay) {
             selectedDay.set(1);
-            saveToStore({ birthday: `${y}-${String(m + 1).padStart(2, '0')}-01` });
+            birthdayStr = `${y}-${String(m + 1).padStart(2, '0')}-01`;
         } else {
-            const birthdayStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            saveToStore({ birthday: birthdayStr });
+            birthdayStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         }
+        // Calculate age from birthday
+        const today = new Date();
+        const birthDate = new Date(birthdayStr);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const mDiff = today.getMonth() - birthDate.getMonth();
+        if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        saveToStore({ birthday: birthdayStr, age });
     }
 
     // React to changes

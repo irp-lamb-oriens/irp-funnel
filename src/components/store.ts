@@ -1,24 +1,37 @@
 import { get, writable } from "svelte/store";
 import type { Populator, Store } from "./types.ts";
 import type { Socket } from "socket.io-client";
+import { derived } from "svelte/store";
 
 export const latestMessage = writable<string>("");
 
 export const socket = writable<Socket | null>(null);
 export const isScrollingDown = writable<boolean>(false); // Add state for scroll direction
 
+ // Funnels store: object keyed by funnel id
+import funnelsData, { type Funnel } from "./funnels.ts";
+
+export const funnels = writable<Record<string, Funnel>>(funnelsData);
+
+// Store for the currently selected funnel id
+export const currentFunnelId = writable<string | null>(null);
+
+// Derived store for the currently selected funnel object
+export const currentFunnel = derived(
+  [funnels, currentFunnelId],
+  ([$funnels, $currentFunnelId]) =>
+    $currentFunnelId && $funnels[$currentFunnelId] ? $funnels[$currentFunnelId] : null
+);
+
 const store = writable<Store>({
-  keysToSave: ["name", "email", "budget", "countryFrom", "countryTo", "stepsIndex", "age", "sex", "reasonsForMoving"], // Added new keys
-  stepsIndex: 0, // Renamed from stepsIndex
+  keysToSave: ["name", "email", "age", "sex", "budget", "reasonsForMoving"],
   name: "",
   email: "",
-  budget: null, // Use null or 0 for initial budget? null might be better to indicate not set.
-  age: null, // Added age
-  sex: "", // Added sex (string, e.g., 'Male', 'Female')
-  countryFrom: null, // Use null for initial country codes
-  countryTo: null,
-  reasonsForMoving: [""], // Added reasons (array of strings)
-  appLanguage: "en", // Added for global language setting
+  age: null,
+  sex: "",
+  budget: null,
+  reasonsForMoving: [],
+  appLanguage: "en",
   apiURL: () => window.location.origin.startsWith('http://localhost') ? "http://localhost:8000" : "https://irp-funnel-server.onrender.com",
 });
 

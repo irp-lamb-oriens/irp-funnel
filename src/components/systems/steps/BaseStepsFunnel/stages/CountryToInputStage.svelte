@@ -30,7 +30,7 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## Where in Costa Rica did you decide to move? 
+            ## **Where** in **{$store.countryTo}** did you decide **to move**? 
         </MarkdownText>
 
         <CountryInput

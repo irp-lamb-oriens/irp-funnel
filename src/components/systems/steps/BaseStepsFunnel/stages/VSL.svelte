@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
-	import store, { incrementStepsIndex, saveToStore } from '../../../../store.ts';
+	import store, { incrementStepsIndex, saveToStore, currentFunnel } from '../../../../store.ts';
 	import Page from '../../../wrappers/Page/Page.svelte';
 	import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 	import Video from '../../../../Video/Video.svelte';
@@ -9,10 +9,7 @@
 
 	export let canReveal = false;
 
-	// The Cloudflare Stream manifest URL
-	const videoManifestUrl = 'https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d2a2c9a2512a8ce37f248b49c4275762/manifest/video.m3u8';
-
-	let videoDurationMinutes: number | null = null;
+	// The video source and copy are now dynamic from the funnel store
 	let trackingData: { queryParams?: Record<string, string>; lastKnownTime?: number } = {};
 
 	function handleTimeUpdate(event: CustomEvent<{ currentTime: number }>) {
@@ -37,33 +34,39 @@
 </script>
 
 <Page>
-	<div class="gap">
-		<MarkdownText {canReveal}>
-			## **I’ll show you how you can successfully** relocate to Costa Rica** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
-		</MarkdownText>
-	</div>
-	<Video
-		src={videoManifestUrl}
-		autoplay={true}
-		on:timeupdate={handleTimeUpdate}
-		on:ended={handleEnded}
-	/>
-	<div class="center">
-		<SubmitButton
-			color="error"
-			label="SCHEDULE CONSULTATION"
-			callback={() => {
-				videoInteractionStore.set({ type: "stop" });
-				saveToStore({
-					stepsIndex: $store.stepsIndex + 1
-				});
-			}}
-			disabled={false}
+	{#if $currentFunnel}
+		<div class="gap">
+			<MarkdownText {canReveal}>
+				{@html $currentFunnel.copy}
+			</MarkdownText>
+		</div>
+		<Video
+			src={$currentFunnel.videoSrc}
+			autoplay={true}
+			on:timeupdate={handleTimeUpdate}
+			on:ended={handleEnded}
 		/>
-		<MarkdownText {canReveal}>
-			You can **only** schedule your **consultation** call from **three** to **five** days in advance.
-		</MarkdownText>
-	</div> 
+		<div class="center">
+			<SubmitButton
+				color="error"
+				label="SCHEDULE CONSULTATION"
+				callback={() => {
+					videoInteractionStore.set({ type: "stop" });
+					saveToStore({
+						stepsIndex: $store.stepsIndex + 1
+					});
+				}}
+				disabled={false}
+			/>
+			<MarkdownText {canReveal}>
+				You can **only** schedule your **consultation** call from **three** to **five** days in advance.
+			</MarkdownText>
+		</div>
+	{:else}
+		<div class="center">
+			<p>Funnel not found. Please check your link or try again.</p>
+		</div>
+	{/if}
 </Page>
 
 

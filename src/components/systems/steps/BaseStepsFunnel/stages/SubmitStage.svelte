@@ -9,48 +9,43 @@
     let isLoading = false;
     let submitError: string | null = null;
     let submitSuccess = false;
-    let userData: any = {}; // To hold data for display/submission
+    import { derived } from 'svelte/store';
+    let userData: any;
+    let stepsIndex: number = 0;
 
     export let canReveal = false;
 
-    onMount(() => {
-        // Load data from store when component mounts
-        const currentStore = get(store);
-        userData = {
-            name: currentStore.name,
-            email: currentStore.email,
-            age: currentStore.age,
-            birthday: currentStore.birthday,
-            sex: currentStore.sex,
-            budget: currentStore.budget,
-            countryFrom: currentStore.countryFrom,
-            countryTo: currentStore.countryTo,
-            reasonsForMoving: currentStore.reasonsForMoving,
-        };
+    $: stepsIndex = get(store).stepsIndex ?? 0;
+
+    // userData is no longer needed; submission will use the full store state
+
+    $: if (stepsIndex === 5) {
+        // Debug log for error check
+        console.log("SubmitStage (stepsIndex 5): userData =", userData, "age:", userData.age, "sex:", userData.sex, "budget:", userData.budget, "reasonsForMoving:", userData.reasonsForMoving);
         // Basic check if essential data is present
         if (
-            !userData.email ||
-            !userData.name ||
-            !userData.age ||
+            userData.age == null ||
             !userData.sex ||
-            !userData.budget ||
-            !userData.countryFrom ||
-            !userData.countryTo ||
+            userData.budget == null ||
             !userData.reasonsForMoving ||
             !Array.isArray(userData.reasonsForMoving) ||
             userData.reasonsForMoving.length === 0
         ) {
             submitError = "Some information is missing. Please go back and complete all steps.";
-            // Optionally, could force step back here
+        } else {
+            submitError = null;
         }
-    });
+    }
 
     async function handleSubmit() {
         isLoading = true;
         submitError = null;
         submitSuccess = false;
 
-        const apiUrl = get(store).apiURL(); // Get dynamic API URL
+        const storeData = get(store);
+        console.log("SubmitStage: full store payload before fetch:", JSON.stringify(storeData, null, 2));
+
+        const apiUrl = storeData.apiURL ? storeData.apiURL() : window.location.origin;
 
         try {
             const response = await fetch(`${apiUrl}/api/create-user`, {
@@ -58,7 +53,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userData),
+                body: JSON.stringify(storeData),
             });
 
             if (!response.ok) {

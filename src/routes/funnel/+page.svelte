@@ -3,12 +3,12 @@
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";
-    import store, { isScrollingDown, saveToStore } from "../../components/store.ts"; // Import the store variable
+    import store, { isScrollingDown, saveToStore, currentFunnelId } from "../../components/store.ts"; // Import the store variable
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
     // import MainSteps from "../../components/systems/steps/StepsTowardsSubscribe/MainSteps.svelte";
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
-    import type { PageData } from './$types.js'; // Import PageData type
-    import MainSteps from "../../components/systems/steps/BaseStepsFunnel/MainSteps.svelte";
+    import type { PageData } from './$types.ts'; // Import PageData type
+    import MainSteps from "../../components/systems/steps/BaseStepsFunnel/Funnel.svelte";
 
     export let data: PageData; // Receive data from load function
 
@@ -39,6 +39,16 @@
 
         if (browser) {
             // Only run in browser
+            // Set funnel id from query param
+            const params = new URLSearchParams(window.location.search);
+            const funnelId = params.get("id");
+            if (funnelId) {
+                currentFunnelId.set(funnelId);
+            } else {
+                // Optionally, set a default or handle missing id
+                currentFunnelId.set(null);
+            }
+
             lastScrollY = window.scrollY; // Initialize lastScrollY
             window.addEventListener("scroll", handleScroll, { passive: true });
         }

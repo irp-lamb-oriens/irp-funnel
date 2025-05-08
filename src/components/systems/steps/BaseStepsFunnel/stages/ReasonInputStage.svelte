@@ -55,8 +55,7 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## Why did you decide to move to Costa Rica?
-            (Please list at least one reason)
+            ### **Why** did you decide** to move?**
         </MarkdownText>
 
         <div class="reasons-list">

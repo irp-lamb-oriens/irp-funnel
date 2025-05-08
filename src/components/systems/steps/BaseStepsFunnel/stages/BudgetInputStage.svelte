@@ -1,18 +1,30 @@
 <script lang="ts">
-    import { get } from 'svelte/store';
-    import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
-    import Page from '../../../wrappers/Page/Page.svelte';
-    import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
-    import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+import { get } from 'svelte/store';
+import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
+import { onMount } from 'svelte';
+import Page from '../../../wrappers/Page/Page.svelte';
+import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
+import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 
-    export let canReveal = false;
+onMount(() => {
+    const currentStore = get(store);
+    console.log("BudgetInputStage onMount: store.budget =", currentStore.budget, "store =", currentStore);
+});
 
-let hasBudget = get(store).hasBudget || '';
+export let canReveal = false;
+
+let hasBudget = get(store).hasBudget || 'Yes';
 $: isValid = hasBudget === 'Yes' || hasBudget === 'No';
 
 // Update store and budget value whenever hasBudget changes
 $: {
-    saveToStore({ hasBudget, budget: 10000 - +(hasBudget === 'No') });
+    if (hasBudget === 'Yes') {
+        saveToStore({ hasBudget, budget: 10000 });
+    } else if (hasBudget === 'No') {
+        saveToStore({ hasBudget, budget: 9999 });
+    } else {
+        saveToStore({ hasBudget, budget: null });
+    }
 }
 
     function handleNext() {
@@ -25,9 +37,9 @@ $: {
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## Shipment costs per international move an average of $10,000 (USD), or more.
+            ## **Shipment** costs per **international move** an **average** of $10,000 (USD), or more.
 
-            ### Do you have the budget to afford this?
+            ### **Do you** have the **budget** to afford this?
         </MarkdownText>
 
         <div class="radio-options">

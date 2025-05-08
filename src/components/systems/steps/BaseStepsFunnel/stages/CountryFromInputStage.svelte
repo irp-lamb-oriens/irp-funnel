@@ -30,7 +30,7 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## Where are you from?
+            ## Where** are **you **from?**
         </MarkdownText>
 
         <CountryInput

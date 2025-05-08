@@ -1,13 +1,8 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import store, { incrementStepsIndex, saveToStore } from '../../../../store.ts';
 	import Page from '../../../wrappers/Page/Page.svelte';
 	import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
-    import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
 
 	export let canReveal = false;
-
-	let trackingData: { queryParams?: Record<string, string>; lastKnownTime?: number } = {};
 </script>
 
 <Page>
@@ -20,17 +15,6 @@
 		<div class="spacing">
 			<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder='0' allowfullscreen='' > </iframe>
 		</div>
-		<div class="right">
-			<SubmitButton
-				label="Next"
-				callback={() => {
-					saveToStore({
-						stepsIndex: $store.stepsIndex + 1
-					});
-				}}
-				disabled={false}
-			/>
-		</div>
 	</div>
 </Page>
 
@@ -41,91 +25,11 @@
 		background: #f7f8fc;
 	}
 
-	.right {
-		display: grid;
-		text-align: end;
-		max-width: 500px;
-		margin-left: auto;
-	}
-
 	.gap {
 		display: grid;
 		grid-gap: 25px;
 	}
 
-	.center {
-		display: grid;
-		place-items: center;
-		text-align: center;
-		max-width: 500px;
-		margin: auto;
-		grid-gap: 25px;
-	}
-
-	video {
-		/* opacity: 0; */ /* Removed initial hidden state */
-		/* transition: opacity 0.5s ease-in-out; */ /* Removed transition */
-		/* Ensure video covers the entire screen */
-		position: relative;
-		display: block;
-		width: 100%;
-		max-width: 1024px;
-		min-height: 512px;
-		margin: auto;
-		height: auto;
-		/* z-index: -1; */ /* Removed z-index */
-		background-size: cover;
-		/* transition: 1s opacity; */ /* Handled by opacity transition above */
-		object-fit: cover; /* Cover the area, potentially cropping */
-	}
-
-	/* video.loaded { */ /* Removed loaded class style */
-		/* opacity: 1; */
-	/* } */
-
-	/* Optional: Style for the error state */
-	p {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		color: white; /* Adjust color for visibility over video */
-		z-index: 1; /* Ensure text is above video */
-		background-color: rgba(0, 0, 0, 0.5); /* Optional background for readability */
-		padding: 1em;
-		border-radius: 8px;
-	}
-
-	.login-overlay {
-		z-index: 2; /* Ensure buttons are above video and error message */
-		display: flex;
-		gap: 10px; /* Space between buttons */
-		padding: 10px 15px;
-		border-radius: 8px;
-	}
-
-	.login-button {
-		padding: 8px 15px;
-		border: none;
-		border-radius: 5px;
-		cursor: pointer;
-		font-weight: bold;
-		color: white;
-	}
-
-	.login-button.google {
-		background-color: #db4437;
-	}
-	.login-button.facebook {
-		background-color: #4267b2;
-	}
-	.login-button.linkedin {
-		background-color: #0077b5;
-	}
-
-	.login-button:hover {
-		opacity: 0.9;
-	}
 	.gap {
 		max-width: 1024px;
 		margin: auto;

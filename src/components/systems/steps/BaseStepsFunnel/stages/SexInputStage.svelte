@@ -23,7 +23,7 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
-            ## What is your sex?
+            ## **What is your **sex?
         </MarkdownText>
 
         <div class="radio-options">
