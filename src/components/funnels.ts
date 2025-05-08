@@ -8,59 +8,66 @@ const funnels: Record<string, Record<string, Funnel>> = {
   "costa-rica": {
     "a": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## I’ll show you how you can successfully relocate to Costa Rica** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      ## **Drowning in **Costa Rica’s immigration paperwork?** One missed stamp can **freeze your shipment** and derail your plans—**we prevent the freeze.
       `
     },
 
-    /* —–– authentic hooks start here —–– */
+    /* —–– pain-point hooks start here —–– */
 
     "b": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## Fourteen years ago** I googled **“how to move to Costa Rica”** and realised the **real answers** weren’t online. If you’re at that **search‑bar moment,** let’s compare notes.**
+      ## **That **“too-good” beachfront listing** could be a **paper-title mirage.** Retirees have lost **entire nest eggs** to scams—**we vet every inch.
       `
     },
 
     "c": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## Relocation** isn’t the **last stamp** in your passport; it’s the **2 a.m. doubt** about **what actually fits** in the suitcase. We start with that doubt—**before you land.
+      ## **Everyday errands turn into **charades when your Spanish falters.** Skip the stress of **mis-signed forms** and **wrong prescriptions**—**we translate life.
       `
     },
 
     "d": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## Any service** that **reduces a move to Costa Rica to one form** worries me. We **begin by listening,** not by **ticking boxes.
+      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only ER.** We lock in **real coverage before wheels-up.
       `
     },
 
     "e": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## Picking a beach town** is easy; **deciding what—and who—you leave behind is harder.** We **map that part first.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
       `
     },
 
     "f": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## Picture your Costa Rica move** **laid out on a clear timeline** **before we even ask for your email.
+      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg** before the first box ships.
       `
     },
 
     "g": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## **We can’t **erase every piece of paperwork,** but we can **make sure you never navigate it blind.
+      ## **After the honeymoon glow, **isolation hits hard.** Don’t wait until **loneliness turns to regret—** join a vetted community **from day one.
       `
     }
   },
@@ -68,59 +75,66 @@ const funnels: Record<string, Record<string, Funnel>> = {
   "general": {
     "a": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## I’ll show you how you can successfully relocate to Costa Rica** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      ## **Drowning in **Costa Rica’s immigration paperwork?** One missed stamp can **freeze your shipment** and derail your plans—**we prevent the freeze.
       `
     },
 
-    /* —–– authentic hooks start here —–– */
+    /* —–– pain-point hooks start here —–– */
 
     "b": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## Fourteen years ago** I googled **“how to move to Costa Rica”** and realised the **real answers** weren’t online. If you’re at that **search‑bar moment,** let’s compare notes.**
+      ## **That **“too-good” beachfront listing** could be a **paper-title mirage.** Retirees have lost **entire nest eggs** to scams—**we vet every inch.
       `
     },
 
     "c": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## Relocation** isn’t the **last stamp** in your passport; it’s the **2 a.m. doubt** about **what actually fits** in the suitcase. We start with that doubt—**before you land.
+      ## **Everyday errands turn into **charades when your Spanish falters.** Skip the stress of **mis-signed forms** and **wrong prescriptions**—**we translate life.
       `
     },
 
     "d": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## Any service** that **reduces a move to Costa Rica to one form** worries me. We **begin by listening,** not by **ticking boxes.
+      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only ER.** We lock in **real coverage before wheels-up.
       `
     },
 
     "e": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## Picking a beach town** is easy; **deciding what—and who—you leave behind is harder.** We **map that part first.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
       `
     },
 
     "f": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## Picture your Costa Rica move** **laid out on a clear timeline** **before we even ask for your email.
+      ## **Currency swings and **double taxation** can **bleed your 401(k).** Our CPAs **shield your nest egg** before the first box ships.
       `
     },
 
     "g": {
       country: "Costa Rica",
-      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      videoSrc:
+        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## **We can’t **erase every piece of paperwork,** but we can **make sure you never navigate it blind.
+      ## **After the honeymoon glow, **isolation hits hard.** Don’t wait until **loneliness turns to regret—** join a vetted community **from day one.
       `
     }
   }
