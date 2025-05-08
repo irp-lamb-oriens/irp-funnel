@@ -3,7 +3,7 @@
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";
-    import store, { isScrollingDown, saveToStore, currentFunnelId } from "../../components/store.ts"; // Import the store variable
+    import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels } from "../../components/store.ts"; // Import the store variable
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
     // import MainSteps from "../../components/systems/steps/StepsTowardsSubscribe/MainSteps.svelte";
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
@@ -45,14 +45,30 @@
 
         if (browser) {
             // Only run in browser
-            // Set funnel id from query param
+            // Set funnel id and version from query params
             const params = new URLSearchParams(window.location.search);
             const funnelId = params.get("id");
+            const funnelVersion = params.get("version");
             if (funnelId) {
                 currentFunnelId.set(funnelId);
+                if (funnelVersion) {
+                    currentFunnelVersion.set(funnelVersion);
+                } else {
+                    // Pick a random version from the available keys in funnels[funnelId]
+                    const unsubscribe = funnels.subscribe(($funnels) => {
+                        const versions = $funnels[funnelId] ? Object.keys($funnels[funnelId]) : [];
+                        if (versions.length > 0) {
+                            const randomVersion = versions[Math.floor(Math.random() * versions.length)];
+                            currentFunnelVersion.set(randomVersion);
+                        } else {
+                            currentFunnelVersion.set(null);
+                        }
+                        unsubscribe();
+                    });
+                }
             } else {
-                // Optionally, set a default or handle missing id
                 currentFunnelId.set(null);
+                currentFunnelVersion.set(null);
             }
 
             // Extract additional query params

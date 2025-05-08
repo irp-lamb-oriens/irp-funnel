@@ -11,16 +11,19 @@ export const isScrollingDown = writable<boolean>(false); // Add state for scroll
  // Funnels store: object keyed by funnel id
 import funnelsData, { type Funnel } from "./funnels.ts";
 
-export const funnels = writable<Record<string, Funnel>>(funnelsData);
+export const funnels = writable<Record<string, Record<string, Funnel>>>(funnelsData);
 
-// Store for the currently selected funnel id
+// Store for the currently selected funnel id and version
 export const currentFunnelId = writable<string | null>(null);
+export const currentFunnelVersion = writable<string | null>(null);
 
 // Derived store for the currently selected funnel object
 export const currentFunnel = derived(
-  [funnels, currentFunnelId],
-  ([$funnels, $currentFunnelId]) =>
-    $currentFunnelId && $funnels[$currentFunnelId] ? $funnels[$currentFunnelId] : null
+  [funnels, currentFunnelId, currentFunnelVersion],
+  ([$funnels, $currentFunnelId, $currentFunnelVersion]) =>
+    $currentFunnelId && $currentFunnelVersion && $funnels[$currentFunnelId]?.[$currentFunnelVersion]
+      ? $funnels[$currentFunnelId][$currentFunnelVersion]
+      : null
 );
 
 const store = writable<Store>({
