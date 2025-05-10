@@ -1,0 +1,45 @@
+<script lang="ts">
+  export let images: string[] = [];
+</script>
+
+<div class="image-grid-wrapper">
+  <div class="image-grid">
+    {#each images as url (url)}
+      <div class="image-row">
+        <img src={url} alt="Image" />
+      </div>
+    {/each}
+  </div>
+</div>
+
+<style lang="scss">
+.image-grid-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10rem 0;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-gap: 7rem;
+  width: 100%;
+}
+
+.image-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.image-row img {
+  display: block;
+  max-width: 200px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+</style>

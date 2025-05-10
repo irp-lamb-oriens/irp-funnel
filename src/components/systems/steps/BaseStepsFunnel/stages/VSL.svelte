@@ -6,6 +6,7 @@
 	import Video from '../../../../Video/Video.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
+    import ImageGrid from '../../../wrappers/ImageGrid/ImageGrid.svelte';
 
 	export let canReveal = false;
 
@@ -67,6 +68,20 @@
 			<p>Funnel not found. Please check your link or try again.</p>
 		</div>
 	{/if}
+
+	<ImageGrid images={[
+		"icons/partners/AAA.svg",
+		"icons/partners/AAB.svg",
+		"icons/partners/AAC.svg",
+		"icons/partners/AAD.svg",
+		"icons/partners/AAE.webp",
+		"icons/partners/AAF.svg",
+		"icons/partners/AAG.svg",
+		"icons/partners/AAH.svg",
+		"icons/partners/AAI.svg",
+		"icons/partners/AAJ.png",
+		"icons/partners/AAK.svg"
+	]}/>
 </Page>
 
 
