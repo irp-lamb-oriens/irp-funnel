@@ -70,7 +70,7 @@
 	{/if}
 
 	<ImageGrid images={[
-		"icons/partners/AAA.svg",
+		"icons/partners/AAA.png",
 		"icons/partners/AAB.svg",
 		"icons/partners/AAC.svg",
 		"icons/partners/AAD.svg",

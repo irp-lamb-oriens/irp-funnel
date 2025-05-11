@@ -1,15 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, setContext } from "svelte";
+  let pageDiv: HTMLDivElement | null = null;
 
   onMount(async () => {
-
+    if (pageDiv) {
+      setContext('scrollContainer', pageDiv);
+    }
     // if (!(await askIsAuthCodeValid())) {
     //   window.location.href = "/";
     // }
   });
 </script>
 
-<div class="page">
+<div class="page" bind:this={pageDiv}>
   <slot />
 </div>
 

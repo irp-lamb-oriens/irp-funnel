@@ -41,7 +41,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close—no lingering regret.
       `
     },
 
@@ -100,7 +100,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close—no lingering regret.
       `
     },
 
@@ -159,7 +159,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/18d3c4d86d275c76b3f60626279dd5a4/manifest/video.m3u8",
       copy: `
-      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close—no lingering regret.
       `
     },
 
@@ -218,7 +218,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/32c7393cede3cc5288ecce0c22b65248/manifest/video.m3u8",
       copy: `
-      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close**—no lingering regret.
+      ## **The cost of paradise? **Missed birthdays and empty holidays.** We map flights and calls so **family stays close—no lingering regret.
       `
     },
 
