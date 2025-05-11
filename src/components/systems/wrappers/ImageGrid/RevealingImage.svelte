@@ -4,17 +4,18 @@
   export let url: string;
 </script>
 
-<RevealOnScroll>
+<!-- <RevealOnScroll> -->
   <img
     src={url}
     alt="Image"
     class="reveal-img"
   />
-</RevealOnScroll>
+<!-- </RevealOnScroll> -->
 
 <style>
   .reveal-img {
     max-height: 200px;
     width: 100%;  
+    object-fit: contain;
   }
 </style>
