@@ -39,7 +39,7 @@ $: {
         <MarkdownText {canReveal}>
             ## **Shipment** costs per **international move** an **average** of $10,000 (USD), or more.
 
-            ### **Do you** have the **budget** to afford this?
+            ### **Is this** within the **budget** you anticipated?
         </MarkdownText>
 
         <div class="radio-options">
