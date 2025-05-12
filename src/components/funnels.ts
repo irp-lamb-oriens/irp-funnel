@@ -6,6 +6,14 @@ export type Funnel = {
 
 const funnels: Record<string, Record<string, Funnel>> = {
   "costa-rica": {
+    "a": {
+      country: "Costa Rica",
+      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
+      copy: `
+        ## I’ll show you how you can successfully relocate to Costa Rica** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      `
+    },
+
 
     /* —–– pain-point hooks start here —–– */
 
@@ -65,11 +73,18 @@ const funnels: Record<string, Record<string, Funnel>> = {
   },
 
   "general": {
+    "a": {
+      country: "",
+      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
+      copy: `
+        ## I’ll show you how you can successfully relocate ** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      `
+    },
 
     /* —–– pain-point hooks start here —–– */
 
     "b": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -78,7 +93,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
     },
 
     "c": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -87,7 +102,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
     },
 
     "d": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -96,7 +111,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
     },
 
     "e": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -105,7 +120,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
     },
 
     "f": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -114,7 +129,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
     },
 
     "g": {
-      country: "Costa Rica",
+      country: "",
       videoSrc:
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
@@ -125,6 +140,14 @@ const funnels: Record<string, Record<string, Funnel>> = {
 
   "mexico": {
 
+    "a": {
+      country: "Mexico",
+      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/18d3c4d86d275c76b3f60626279dd5a4/manifest/video.m3u8",
+      copy: `
+        ## I’ll show you how you can successfully relocate to Mexico** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      `
+    },
+  
     /* —–– pain-point hooks start here —–– */
 
     "b": {
@@ -184,6 +207,13 @@ const funnels: Record<string, Record<string, Funnel>> = {
 
   "panama": {
 
+    "a": {
+      country: "Panama",
+      videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/32c7393cede3cc5288ecce0c22b65248/manifest/video.m3u8",
+      copy: `
+        ## I’ll show you how you can successfully relocate to Panama** without the **stress of bureaucracy,** the **overwhelm of logistics,** or the **risk of making costly mistakes.
+      `
+    },
     /* —–– pain-point hooks start here —–– */
 
     "b": {
