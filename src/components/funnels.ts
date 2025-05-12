@@ -36,7 +36,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       country: "Costa Rica",
       videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
       copy: `
-      ## **Delivery delays** and **damaged goods** are all too common—**we track in real-time** and **resolve issues** before they arrive.
+      ## **Late deliveries** and **damaged items** happen too often—**we watch every step** and **make it right** before it reaches you.
       `
     }
   },
@@ -72,7 +72,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       country: "",
       videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
-      ## **Delivery delays** and **damaged goods** are all too common—**we track in real-time** and **resolve issues** before they arrive.
+      ## **Late deliveries** and **damaged items** happen too often—**we watch every step** and **make it right** before it reaches you.
       `
     }
   },
@@ -108,7 +108,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       country: "México",
       videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/18d3c4d86d275c76b3f60626279dd5a4/manifest/video.m3u8",
       copy: `
-      ## **Delivery delays** and **damaged goods** are all too common—**we track in real-time** and **resolve issues** before they arrive.
+      ## **Late deliveries** and **damaged items** happen too often—**we watch every step** and **make it right** before it reaches you.
       `
     }
   },
@@ -144,7 +144,7 @@ const funnels: Record<string, Record<string, Funnel>> = {
       country: "Panamá",
       videoSrc: "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/32c7393cede3cc5288ecce0c22b65248/manifest/video.m3u8",
       copy: `
-      ## **Delivery delays** and **damaged goods** are all too common—**we track in real-time** and **resolve issues** before they arrive.
+      ## **Late deliveries** and **damaged items** happen too often—**we watch every step** and **make it right** before it reaches you.
       `
     }
   }
