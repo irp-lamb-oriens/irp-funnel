@@ -144,7 +144,7 @@
   display: flex;
   place-items: center;
   justify-content: center;
-  margin: 150px 0 100px;
+  margin: 15px 0 100px;
 
   .overlay {
     position: absolute;
