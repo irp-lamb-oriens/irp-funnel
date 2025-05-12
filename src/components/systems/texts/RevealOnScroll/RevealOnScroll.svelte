@@ -31,7 +31,6 @@
     const visibleHeight =
       Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0);
     const goingToReveal = visibleHeight > 0;
-    console.log("wr", !!wrapper, goingToReveal);
 
     if (!$isRevealed && goingToReveal && canReveal) {
       await seconds(0.5);

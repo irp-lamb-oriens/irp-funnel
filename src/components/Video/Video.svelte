@@ -1,238 +1,205 @@
+<!-- Video.svelte -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import Hls from "hls.js";
-  import { videoInteractionStore } from "./VideoInteractionStore.ts";
-  import type { VideoEvent } from "./VideoInteractionStore.ts";
 
-  let videoElement: HTMLVideoElement;
+  /* ---------- refs & props ---------- */
+  let videoEl: HTMLVideoElement;
+  let container: HTMLDivElement;
+
   export let src: string;
-  export let autoplay: boolean = false;
-  export let poster: string = "miniatura de video 9s.png";
+  export let poster = "miniatura de video 9s.png";
+
+  /* ---------- state ---------- */
+  let isMobile = false;
+  let canPlay = false;
+  let playing = false;
+  let interactionDone = false;
+
+  // anti-doble-clic (absorbe clics rápidos)
+  let justActivated = false;          // ignora el click de la misma pulsación
+  let clickCooldownUntil = 0;        // ignora clics en los próximos N ms
 
   let hls: Hls | null = null;
   let error: string | null = null;
-  let isVideoPaused: boolean = false;
-  let videoDurationMinutes: number | null = null;
-  let isMuted: boolean = true;
-  let interactionHandled = false;
-  let videoContainer: HTMLDivElement;
 
-  function handleUserInteraction() {
-    if (interactionHandled) return;
-    interactionHandled = true;
-    isMuted = false;
-    if (videoElement) {
-      videoElement.muted = false;
-      videoElement.volume = 1;
-      videoElement.play();
-    }
-    videoInteractionStore.set({ type: "interaction" });
-    // Remove listeners
-    videoContainer?.removeEventListener("mouseover", handleUserInteraction);
-    videoContainer?.removeEventListener("click", handleUserInteraction);
-    window.removeEventListener("scroll", handleUserInteraction);
-  }
+  /* ---------- helpers ---------- */
+  async function tryPlay() {
+    if (!canPlay || !videoEl) return;
 
-  function setIsVideoPaused() {
-    const { currentTime, paused, ended } = videoElement;
-    isVideoPaused = currentTime > 0 && !paused && !ended;
-  }
+    try {
+      if (isMobile && !playing) await videoEl.play();
+      videoEl.muted = false;
+      videoEl.volume = 1;
 
-  function changeVideo() {
-    setIsVideoPaused();
-    if (!isVideoPaused) videoElement.play();
-    if (isVideoPaused) videoElement.pause();
-  }
+      interactionDone = true;
+      playing = true;
 
-  function handleTimeUpdate() {
-    videoInteractionStore.set({ type: "timeupdate", currentTime: videoElement.currentTime });
-  }
+      /* ── absorción de clices rápidos ── */
+      justActivated = true;                    // ignora click del mismo gesto
+      clickCooldownUntil = Date.now() + 400;   // y los que lleguen en 400 ms
+      setTimeout(() => (justActivated = false)); // libera tras el tick
 
-  function handleEnded() {
-    isVideoPaused = true;
-    videoInteractionStore.set({ type: "ended" });
-  }
-
-  let unsubscribe: () => void;
-
-  function handleExternalVideoEvent(event: VideoEvent | null) {
-    if (!event) return;
-    if (event.type === "stop" && videoElement) {
-      videoElement.pause();
-      videoElement.currentTime = 0;
-      isVideoPaused = true;
+      removeActivationListeners();
+    } catch (err) {
+      console.error("play() bloqueado:", err);
     }
   }
 
+  function togglePlay(e: Event) {
+    e.stopPropagation();
+
+    /* descarta: 1) click del mismo gesto  2) clics dentro del cooldown */
+    if (justActivated || Date.now() < clickCooldownUntil) return;
+
+    if (playing) {
+      videoEl.pause();
+      playing = false;
+    } else {
+      videoEl.play().then(() => (playing = true)).catch(console.error);
+    }
+  }
+
+  /* ---------- activation listeners ---------- */
+  function addActivationListeners() {
+    if (isMobile) {
+      container.addEventListener("touchstart", tryPlay, { once: true });
+    } else {
+      container.addEventListener("pointerdown", tryPlay, { once: true });
+      window.addEventListener("keydown", tryPlay, { once: true });
+    }
+  }
+  function removeActivationListeners() {
+    container.removeEventListener("touchstart", tryPlay);
+    container.removeEventListener("pointerdown", tryPlay);
+    window.removeEventListener("keydown", tryPlay);
+  }
+
+  /* ---------- lifecycle ---------- */
   onMount(() => {
-    unsubscribe = videoInteractionStore.subscribe(handleExternalVideoEvent);
-    if (videoElement) {
-      // Set volume to max
+    isMobile = matchMedia("(pointer: coarse)").matches;
 
-      if (Hls.isSupported()) {
-        hls = new Hls();
-        hls.loadSource(src);
-        hls.attachMedia(videoElement);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (autoplay) {
-            videoElement.play();
-            videoElement.volume = 1;
-          }
-          if (videoElement?.duration) {
-            videoDurationMinutes = Math.ceil(videoElement.duration / 60);
-          }
-        });
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                error = "Network error loading video.";
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                error = "Media error loading video.";
-                hls?.recoverMediaError();
-                break;
-              default:
-                error = "Error loading video.";
-                hls?.destroy();
-                hls = null;
-                break;
-            }
-          }
-        });
-      } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
-        // Safari support
-        videoElement.src = src;
-        videoElement.addEventListener("loadedmetadata", () => {
-          if (autoplay) {
-            videoElement.play();
-          }
-          if (videoElement?.duration) {
-            videoDurationMinutes = Math.ceil(videoElement.duration / 60);
-          }
-        });
-        videoElement.addEventListener("error", () => {
-          error = "Error loading video (native).";
-        });
-      } else {
-        error = "HLS video playback is not supported in this browser.";
-      }
-
-      videoElement.addEventListener("timeupdate", handleTimeUpdate);
-      videoElement.addEventListener("ended", handleEnded);
+    if (videoEl) {
+      videoEl.muted = true;
+      if (!isMobile) videoEl.autoplay = true;          // desktop: autoplay silenciado
+      initHls();
     }
 
-    // Add user interaction listeners for unmuting and playing with sound
-    videoContainer?.addEventListener("mouseover", handleUserInteraction, { once: true });
-    videoContainer?.addEventListener("click", handleUserInteraction, { once: true });
-    window.addEventListener("scroll", handleUserInteraction, { once: true });
+    addActivationListeners();
   });
 
   onDestroy(() => {
-    if (unsubscribe) unsubscribe();
-    if (hls) {
-      hls.destroy();
-      hls = null;
-    }
-    videoElement?.removeEventListener("timeupdate", handleTimeUpdate);
-    videoElement?.removeEventListener("ended", handleEnded);
+    removeActivationListeners();
+    hls?.destroy();
   });
+
+  function initHls() {
+    if (Hls.isSupported()) {
+      hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(videoEl);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => (canPlay = true));
+      hls.on(Hls.Events.ERROR, (_e, d) => (error = d.details ?? "HLS error"));
+    } else if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
+      videoEl.src = src;
+      videoEl.addEventListener("loadedmetadata", () => (canPlay = true));
+    } else {
+      error = "HLS no soportado.";
+    }
+  }
 </script>
-  
-  {#if error}
-    <p style="color: red;">{error}</p>
+
+{#if error}
+  <p style="color:red">{error}</p>
+{/if}
+
+<div class="video" bind:this={container}>
+  {#if !interactionDone}
+    <div class="overlay">
+      {isMobile ? "Tap to play with sound" : "Click to activate sound"}
+    </div>
   {/if}
-  <div class="video" bind:this={videoContainer} on:click={changeVideo}>
-    <video
-      bind:this={videoElement}
-      class="hero-banner-video"
-      id="videoPlayer"
-      {poster}
-      {autoplay}
-      playsinline
-      muted={isMuted}
-    />
-    <button on:click={changeVideo} class="video--play-button {isVideoPaused}">
-      <div class="play-container">
-        <img class="ghost" src="./icons/play.svg" alt="video play button" />
-        <img src="./icons/play.svg" alt="video play button" />
-      </div>
-    </button>
-  </div>
-  
-  <style lang="scss">
-    .video {
-      position: relative;
-      display: flex;
-      place-items: center;
-      justify-content: center;
-      margin: 150px 0 100px;
-  
-      &::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: block;
-        z-index: 1;
-        width: 100%;
-        height: 100%;
-      }
-  
-      .play-container {
-        position: relative;
-      }
-  
-      .ghost {
-        position: absolute;
-        top: 0;
-        left: 0;
-        opacity: 0.875;
-        filter: blur(5px);
-      }
-  
-      &--play-button {
-        cursor: pointer;
-        border: 0;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        position: absolute;
-        transition: var(--transition-shortest-duration);
-        filter: invert(0);
-        mix-blend-mode: difference;
-  
-        &.false {
-          opacity: 0;
-        }
-  
-        &:hover {
-          transform: scale(1.05);
-        }
-  
-        &:active {
-          transform: scale(1.2);
-          opacity: 0.5;
-  
-          .ghost {
-            animation: fade-grow var(--transition-shortest-duration) ease-out;
-          }
-        }
-      }
+
+  <video
+    bind:this={videoEl}
+    class="hero-banner-video"
+    playsinline
+    {poster}
+    on:click={togglePlay} />
+
+  <!-- botón “play” con icono + ghost -->
+  <button
+    on:click|stopPropagation={togglePlay}
+    class="video--play-button {playing ? 'false' : ''}">
+    <div class="play-container">
+      <img class="ghost" src="./icons/play.svg" alt="video play button" />
+      <img src="./icons/play.svg" alt="video play button" />
+    </div>
+  </button>
+</div>
+
+<style lang="scss">
+.video {
+  position: relative;
+  display: flex;
+  place-items: center;
+  justify-content: center;
+  margin: 150px 0 100px;
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font: 600 clamp(1rem, 3vw, 1.5rem)/1.2 sans-serif;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .play-container { position: relative; }
+
+  .ghost {
+    position: absolute;
+    inset: 0;
+    opacity: 0.875;
+    filter: blur(5px);
+  }
+
+  .video--play-button {
+    cursor: pointer;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    position: absolute;
+    mix-blend-mode: difference;
+    z-index: 3;
+    transition: var(--transition-shortest-duration);
+
+    &.false {
+      opacity: 0;
+      pointer-events: none;
     }
-  
-    @keyframes fade-grow {
-      100% {
-        opacity: 0;
-        transform: scale(calc(1.25 * 1.25), calc(1.35 * 1.25));
-      }
+
+    &:hover { transform: scale(1.05); }
+
+    &:active {
+      transform: scale(1.2);
+      opacity: 0.5;
+      .ghost { animation: fade-grow var(--transition-shortest-duration) ease-out; }
     }
-  
-    .hero-banner-video {
-      object-fit: cover;
-      width: 100%;
-      height: clamp(50vw, 100vh, min(50vh, 80vh));
-    }
-  </style>
+  }
+}
+
+@keyframes fade-grow {
+  100% { opacity: 0; transform: scale(1.5625, 1.6875); }
+}
+
+.hero-banner-video {
+  object-fit: cover;
+  width: 100%;
+  height: clamp(50vw, 100vh, min(50vh, 80vh));
+}
+</style>

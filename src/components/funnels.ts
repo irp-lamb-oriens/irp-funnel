@@ -35,15 +35,6 @@ const funnels: Record<string, Record<string, Funnel>> = {
       `
     },
 
-    "d": {
-      country: "Costa Rica",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/1e11b4c27969ea032f97979415965c4a/manifest/video.m3u8",
-      copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
-      `
-    },
-
     "f": {
       country: "Costa Rica",
       videoSrc:
@@ -89,15 +80,6 @@ const funnels: Record<string, Record<string, Funnel>> = {
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
       copy: `
       ## **Everyday errands turn into **charades when your Spanish falters.** Skip the stress of **mis-signed forms** and **wrong prescriptions**—**we translate life.
-      `
-    },
-
-    "d": {
-      country: "",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/d3412a106068b592a8622b2556d1ff51/manifest/video.m3u8",
-      copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
       `
     },
 
@@ -150,15 +132,6 @@ const funnels: Record<string, Record<string, Funnel>> = {
       `
     },
 
-    "d": {
-      country: "México",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/18d3c4d86d275c76b3f60626279dd5a4/manifest/video.m3u8",
-      copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
-      `
-    },
-
     "f": {
       country: "México",
       videoSrc:
@@ -204,15 +177,6 @@ const funnels: Record<string, Record<string, Funnel>> = {
         "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/32c7393cede3cc5288ecce0c22b65248/manifest/video.m3u8",
       copy: `
       ## **Everyday errands turn into **charades when your Spanish falters.** Skip the stress of **mis-signed forms** and **wrong prescriptions**—**we translate life.
-      `
-    },
-
-    "d": {
-      country: "Panamá",
-      videoSrc:
-        "https://customer-ygvpdn9is2a2i5fz.cloudflarestream.com/32c7393cede3cc5288ecce0c22b65248/manifest/video.m3u8",
-      copy: `
-      ## **A sudden illness abroad can **wipe out your Medicare safety net** and drop you in a **cash-only Emergency Room.** We lock in **real coverage before wheels-up.
       `
     },
 
