@@ -57,7 +57,9 @@
                         } else {
                             currentFunnelVersion.set(null);
                         }
-                        unsubscribe();
+                        setTimeout(() => {
+                            unsubscribe();
+                        });
                     });
                 }
             } else {
