@@ -17,41 +17,35 @@
   let interactionDone = false;
 
   // anti-doble-clic (absorbe clics rápidos)
-  let justActivated = false;          // ignora el click de la misma pulsación
-  let clickCooldownUntil = 0;        // ignora clics en los próximos N ms
+  let justActivated = false;
+  let clickCooldownUntil = 0;
 
   let hls: Hls | null = null;
   let error: string | null = null;
 
   /* ---------- helpers ---------- */
-  async function tryPlay() {
-    if (!canPlay || !videoEl) return;
-
-    try {
-      if (isMobile && !playing) await videoEl.play();
-      videoEl.muted = false;
-      videoEl.volume = 1;
-
-      interactionDone = true;
-      playing = true;
-
-      /* ── absorción de clices rápidos ── */
-      justActivated = true;                    // ignora click del mismo gesto
-      clickCooldownUntil = Date.now() + 400;   // y los que lleguen en 400 ms
-      setTimeout(() => (justActivated = false)); // libera tras el tick
-
-      removeActivationListeners();
-    } catch (err) {
-      console.error("play() bloqueado:", err);
+  function gtagEvent(name: string, params: Record<string, any>) {
+    if (typeof gtag === 'function') {
+      gtag('event', name, params, { transport_type: 'beacon' });
     }
+  }
+
+  function tryPlay() {
+    if (!canPlay || !videoEl) return;
+    videoEl.muted = false;
+    videoEl.volume = 1;
+    interactionDone = true;
+    playing = true;
+    justActivated = true;
+    clickCooldownUntil = Date.now() + 400;
+    setTimeout(() => (justActivated = false));
+    removeActivationListeners();
+    videoEl.play().catch(console.error);
   }
 
   function togglePlay(e: Event) {
     e.stopPropagation();
-
-    /* descarta: 1) click del mismo gesto  2) clics dentro del cooldown */
     if (justActivated || Date.now() < clickCooldownUntil) return;
-
     if (playing) {
       videoEl.pause();
       playing = false;
@@ -60,37 +54,77 @@
     }
   }
 
+  /* Custom video event handlers */
+  function onPause() {
+    gtagEvent('video_pause', {
+      video_src: src,
+      video_current_time: Math.floor(videoEl.currentTime),
+      video_duration: Math.floor(videoEl.duration)
+    });
+  }
+
+  function onEnded() {
+    gtagEvent('video_complete', {
+      video_src: src,
+      video_duration: Math.floor(videoEl.duration)
+    });
+  }
+
+  function onPageUnload() {
+    if (playing && videoEl) {
+      gtagEvent('video_exit', {
+        video_src: src,
+        video_current_time: Math.floor(videoEl.currentTime),
+        video_duration: Math.floor(videoEl.duration)
+      });
+    }
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) {
+      onPageUnload();
+    }
+  }
+
   /* ---------- activation listeners ---------- */
   function addActivationListeners() {
     if (isMobile) {
-      container.addEventListener("touchstart", tryPlay, { once: true });
+      container.addEventListener('touchstart', tryPlay, { once: true });
     } else {
-      container.addEventListener("pointerdown", tryPlay, { once: true });
-      window.addEventListener("keydown", tryPlay, { once: true });
+      container.addEventListener('pointerdown', tryPlay, { once: true });
+      window.addEventListener('keydown', tryPlay, { once: true });
     }
   }
   function removeActivationListeners() {
-    container.removeEventListener("touchstart", tryPlay);
-    container.removeEventListener("pointerdown", tryPlay);
-    window.removeEventListener("keydown", tryPlay);
+    container.removeEventListener('touchstart', tryPlay);
+    container.removeEventListener('pointerdown', tryPlay);
+    window.removeEventListener('keydown', tryPlay);
   }
 
   /* ---------- lifecycle ---------- */
   onMount(() => {
-    isMobile = matchMedia("(pointer: coarse)").matches;
-
+    isMobile = matchMedia('(pointer: coarse)').matches;
     if (videoEl) {
       videoEl.muted = true;
-      if (!isMobile) videoEl.autoplay = true;          // desktop: autoplay silenciado
+      // removed automatic autoplay; play only on user interaction
       initHls();
+      videoEl.addEventListener('pause', onPause);
+      videoEl.addEventListener('ended', onEnded);
     }
-
     addActivationListeners();
+    window.addEventListener('beforeunload', onPageUnload);
+    document.addEventListener('visibilitychange', onVisibilityChange);
   });
 
   onDestroy(() => {
     removeActivationListeners();
     hls?.destroy();
+    if (videoEl) {
+      videoEl.removeEventListener('pause', onPause);
+      videoEl.removeEventListener('ended', onEnded);
+    }
+    window.removeEventListener('beforeunload', onPageUnload);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
   });
 
   function initHls() {
@@ -99,12 +133,12 @@
       hls.loadSource(src);
       hls.attachMedia(videoEl);
       hls.on(Hls.Events.MANIFEST_PARSED, () => (canPlay = true));
-      hls.on(Hls.Events.ERROR, (_e, d) => (error = d.details ?? "HLS error"));
-    } else if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
+      hls.on(Hls.Events.ERROR, (_e, d) => (error = d.details ?? 'HLS error'));
+    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
       videoEl.src = src;
-      videoEl.addEventListener("loadedmetadata", () => (canPlay = true));
+      videoEl.addEventListener('loadedmetadata', () => (canPlay = true));
     } else {
-      error = "HLS no soportado.";
+      error = 'HLS no soportado.';
     }
   }
 </script>
@@ -116,18 +150,15 @@
 <div class="video" bind:this={container}>
   {#if !interactionDone}
     <div class="overlay">
-      {isMobile ? "Tap to play with sound" : "Click to activate sound"}
+      {isMobile ? 'Tap to play with sound' : 'Click to activate sound'}
     </div>
   {/if}
-
   <video
     bind:this={videoEl}
     class="hero-banner-video"
     playsinline
     {poster}
     on:click={togglePlay} />
-
-  <!-- botón “play” con icono + ghost -->
   <button
     on:click|stopPropagation={togglePlay}
     class="video--play-button {playing ? 'false' : ''}">
