@@ -74,10 +74,10 @@
             }
 
             // Extract additional query params
-            email = params.get("email");
-            name = params.get("name");
-            countryFrom = params.get("countryFrom");
-            countryTo = params.get("countryTo");
+            email = params.get("customer_email");
+            name = params.get("customer_name");
+            countryFrom = params.get("customer_Origin");
+            countryTo = params.get("customer_Destination");
 
             // Collect all other params into submit object
             submit = {};
