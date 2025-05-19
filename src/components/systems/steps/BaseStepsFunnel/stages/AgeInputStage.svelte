@@ -6,6 +6,8 @@
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
     import WheelPicker from '../../../selectors/WheelPicker.svelte';
 
+    export let canReveal;
+
     // Helper functions
     function getDaysInMonth(year: number, month: number) {
         return new Date(year, month + 1, 0).getDate();
@@ -99,7 +101,7 @@
 
 <Page>
     <div class="stage-content">
-        <MarkdownText>
+        <MarkdownText {canReveal}>
             ## What is your birthday?
         </MarkdownText>
 
