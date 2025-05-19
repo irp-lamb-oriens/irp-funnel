@@ -64,6 +64,10 @@
             const result = await response.json();
             console.log('Submission successful:', result);
             submitSuccess = true;
+
+            setTimeout(() => {
+                window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou"
+            }, 3000);
             // Optionally clear store or redirect user here
             // saveToStore({ name: '', email: '', budget: null, countryFrom: null, countryTo: null, stepsIndex: 0 }); // Example reset
 
