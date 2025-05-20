@@ -70,7 +70,6 @@
             }, 3000);
             // Optionally clear store or redirect user here
             // saveToStore({ name: '', email: '', budget: null, countryFrom: null, countryTo: null, stepsIndex: 0 }); // Example reset
-
         } catch (error) {
             console.error('Submission failed:', error);
             submitError = error instanceof Error ? error.message : 'An unknown error occurred during submission.';
@@ -88,7 +87,7 @@
 
                 **Your information** has been **submitted successfully.**
             </MarkdownText>
-            <a class="anchor" href="https://www.internationalrelocationpartner.com/">internationalrelocationpartner.com</a>
+            <a class="anchor" href="https://www.internationalrelocationpartner.com?from=thankyou">internationalrelocationpartner.com</a>
             <!-- Optionally add next steps or links here -->
         {:else if submitError}
             <MarkdownText {canReveal}>
