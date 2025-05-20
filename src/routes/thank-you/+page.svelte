@@ -1,5 +1,4 @@
 <script lang="ts">
-    import ChosenShader from "../../components/ShaderToy/ChosenShader/ChosenShader.svelte";
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";

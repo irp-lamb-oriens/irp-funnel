@@ -43,7 +43,6 @@
 		</div>
 		<Video
 			src={$currentFunnel.videoSrc}
-			autoplay={true}
 			on:timeupdate={handleTimeUpdate}
 			on:ended={handleEnded}
 		/>
@@ -65,7 +64,7 @@
 		</div>
 	{:else}
 		<div class="center">
-			<p>Funnel not found. Please check your link or try again.</p>
+			<p>Loading video...</p>
 		</div>
 	{/if}
 

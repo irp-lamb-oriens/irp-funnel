@@ -1,8 +1,5 @@
 <script>
-  import GlobalData from "../components/GlobalData/GlobalData.svelte";
-  import Header from "../components/Header/Header.svelte";
   import ChosenShader from "../components/ShaderToy/ChosenShader/ChosenShader.svelte";
-  import SocketClient from "../components/SocketClient.svelte";
   import { onMount, onDestroy } from "svelte";
   import { browser } from "$app/environment";
   import { isScrollingDown } from "../components/store.ts"; // Import the store variable

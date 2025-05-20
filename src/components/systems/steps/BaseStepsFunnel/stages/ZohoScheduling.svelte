@@ -13,7 +13,7 @@
 	</div>
 	<div class="gap">
 		<div class="spacing">
-			<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder='0' allowfullscreen='' > </iframe>
+			<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder={0} allowfullscreen={true} > </iframe>
 		</div>
 	</div>
 </Page>

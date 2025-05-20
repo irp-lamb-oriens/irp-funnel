@@ -8,6 +8,13 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	interface Window {
+		dataLayer: any[];
+	}
+
+	// If gtag is a global function, declare it here
+	function gtag(...args: any[]): void;
 }
 
 export {};

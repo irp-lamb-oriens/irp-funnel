@@ -3,7 +3,7 @@
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";
-    import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels } from "../../components/store.ts"; // Import the store variable
+    import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels, funnelsLoaded } from "../../components/store.ts"; // Import the store variable
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
     // import MainSteps from "../../components/systems/steps/StepsTowardsSubscribe/MainSteps.svelte";
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
@@ -48,18 +48,27 @@
                 if (funnelVersion) {
                     currentFunnelVersion.set(funnelVersion);
                 } else {
-                    // Pick a random version from the available keys in funnels[funnelId]
-                    const unsubscribe = funnels.subscribe(($funnels) => {
-                        const versions = $funnels[funnelId] ? Object.keys($funnels[funnelId]) : [];
-                        if (versions.length > 0) {
-                            const randomVersion = versions[Math.floor(Math.random() * versions.length)];
-                            currentFunnelVersion.set(randomVersion);
-                        } else {
-                            currentFunnelVersion.set(null);
+                    // Wait for funnels to be loaded before picking a random version
+                    const unsubscribeFunnelsLoaded = funnelsLoaded.subscribe(($loaded) => {
+                        if ($loaded) {
+                            const unsubscribeFunnels = funnels.subscribe(($funnels) => {
+                                const versions = $funnels[funnelId] ? Object.keys($funnels[funnelId]) : [];
+                                if (versions.length > 0) {
+                                    const randomVersion = versions[Math.floor(Math.random() * versions.length)];
+                                    currentFunnelVersion.set(randomVersion);
+                                    console.log(`Random version selected for ${funnelId}: ${randomVersion}`);
+                                } else {
+                                    currentFunnelVersion.set(null);
+                                    console.warn(`No versions found for funnelId: ${funnelId} after funnels loaded.`);
+                                }
+                                // Unsubscribe after processing
+                                setTimeout(() => {
+                                   if (typeof unsubscribeFunnels === 'function') unsubscribeFunnels();
+                                });
+                            });
+                            // Unsubscribe from funnelsLoaded as it has served its purpose
+                            if (typeof unsubscribeFunnelsLoaded === 'function') unsubscribeFunnelsLoaded();
                         }
-                        setTimeout(() => {
-                            unsubscribe();
-                        });
                     });
                 }
             } else {

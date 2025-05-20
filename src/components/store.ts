@@ -8,10 +8,70 @@ export const latestMessage = writable<string>("");
 export const socket = writable<Socket | null>(null);
 export const isScrollingDown = writable<boolean>(false); // Add state for scroll direction
 
- // Funnels store: object keyed by funnel id
-import funnelsData, { type Funnel } from "./funnels.ts";
+// Define Funnel types based on API structure
+export interface Funnel {
+  country: string; // from API object's title
+  videoSrc: string; // from API version's cloudflare_video_src
+  copy: string; // from API version's copy
+}
 
-export const funnels = writable<Record<string, Record<string, Funnel>>>(funnelsData);
+interface ApiFunnelVersion {
+  cloudflare_video_src: string;
+  copy: string;
+}
+
+interface ApiFunnelObject {
+  slug: string;
+  title: string;
+  type: string; // "funnels"
+  metadata: {
+    versions: ApiFunnelVersion[];
+  };
+}
+
+interface ApiResponse {
+  objects: ApiFunnelObject[];
+  total: number;
+}
+
+export const funnels = writable<Record<string, Record<string, Funnel>>>({});
+export const funnelsLoaded = writable<boolean>(false); // Store to track if funnels are loaded
+
+// Function to load funnels from the API
+async function loadFunnelsFromAPI() {
+  const apiUrl = "https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22funnels%22%7D&limit=10&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type";
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data: ApiResponse = await response.json();
+
+    const transformedFunnels: Record<string, Record<string, Funnel>> = {};
+    data.objects.forEach((apiObject) => {
+      const funnelVersions: Record<string, Funnel> = {};
+      apiObject.metadata.versions.forEach((version, index) => {
+        funnelVersions[index.toString()] = { // Use index as string for the version key
+          country: apiObject.title,
+          videoSrc: version.cloudflare_video_src,
+          copy: version.copy,
+        };
+      });
+      transformedFunnels[apiObject.slug] = funnelVersions;
+    });
+    funnels.set(transformedFunnels);
+    funnelsLoaded.set(true); // Indicate that funnels have been loaded
+    console.log("Funnels loaded from API:", get(funnels));
+  } catch (error) {
+    console.error("Failed to load funnels from API:", error);
+    // Optionally, set funnels to a default state or handle error appropriately
+    funnels.set({}); // Set to empty if fetch fails
+    funnelsLoaded.set(true); // Still set to true to allow dependent logic to proceed, even if with empty data
+  }
+}
+
+// Load funnels when the store is initialized
+loadFunnelsFromAPI();
 
 // Store for the currently selected funnel id and version
 export const currentFunnelId = writable<string | null>(null);
