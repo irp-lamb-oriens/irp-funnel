@@ -1,6 +1,6 @@
 <script lang="ts">
     import { get } from 'svelte/store';
-    import store from '../../../../store.ts';
+    import store from '../../../../store.ts'; // currentFunnelId and currentFunnelVersion will be read from localStorage directly
     import Page from '../../../wrappers/Page/Page.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
@@ -43,7 +43,17 @@
         submitSuccess = false;
 
         const storeData = get(store);
-        console.log("SubmitStage: full store payload before fetch:", JSON.stringify(storeData, null, 2));
+        // Get funnelId and funnelVersion directly from localStorage at submission time
+        const funnelId = localStorage.getItem('currentFunnelId');
+        const funnelVersion = localStorage.getItem('currentFunnelVersion');
+
+        const payload = {
+            ...storeData,
+            funnelId, // This might be null if not found in localStorage
+            funnelVersion // This might be null if not found in localStorage
+        };
+
+        console.log("SubmitStage: full payload before fetch (funnelId/Version from localStorage):", JSON.stringify(payload, null, 2));
 
         const apiUrl = storeData.apiURL ? storeData.apiURL() : window.location.origin;
 
@@ -53,7 +63,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(storeData),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {

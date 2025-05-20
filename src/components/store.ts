@@ -73,9 +73,32 @@ async function loadFunnelsFromAPI() {
 // Load funnels when the store is initialized
 loadFunnelsFromAPI();
 
-// Store for the currently selected funnel id and version
-export const currentFunnelId = writable<string | null>(null);
-export const currentFunnelVersion = writable<string | null>(null);
+import { browser } from '$app/environment';
+
+// Initialize currentFunnelId and currentFunnelVersion from localStorage if in browser
+const initialFunnelId = browser ? localStorage.getItem('currentFunnelId') : null;
+export const currentFunnelId = writable<string | null>(initialFunnelId);
+
+const initialFunnelVersion = browser ? localStorage.getItem('currentFunnelVersion') : null;
+export const currentFunnelVersion = writable<string | null>(initialFunnelVersion);
+
+if (browser) {
+  currentFunnelId.subscribe(value => {
+    if (value !== null) {
+      localStorage.setItem('currentFunnelId', value);
+    } else {
+      localStorage.removeItem('currentFunnelId');
+    }
+  });
+
+  currentFunnelVersion.subscribe(value => {
+    if (value !== null) {
+      localStorage.setItem('currentFunnelVersion', value);
+    } else {
+      localStorage.removeItem('currentFunnelVersion');
+    }
+  });
+}
 
 // Derived store for the currently selected funnel object
 export const currentFunnel = derived(
