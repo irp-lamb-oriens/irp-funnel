@@ -82,24 +82,6 @@ export const currentFunnelId = writable<string | null>(initialFunnelId);
 const initialFunnelVersion = browser ? localStorage.getItem('currentFunnelVersion') : null;
 export const currentFunnelVersion = writable<string | null>(initialFunnelVersion);
 
-if (browser) {
-  currentFunnelId.subscribe(value => {
-    if (value !== null) {
-      localStorage.setItem('currentFunnelId', value);
-    } else {
-      localStorage.removeItem('currentFunnelId');
-    }
-  });
-
-  currentFunnelVersion.subscribe(value => {
-    if (value !== null) {
-      localStorage.setItem('currentFunnelVersion', value);
-    } else {
-      localStorage.removeItem('currentFunnelVersion');
-    }
-  });
-}
-
 // Derived store for the currently selected funnel object
 export const currentFunnel = derived(
   [funnels, currentFunnelId, currentFunnelVersion],

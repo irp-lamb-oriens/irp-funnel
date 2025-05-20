@@ -2,6 +2,7 @@
     import ChosenShader from "../../components/ShaderToy/ChosenShader/ChosenShader.svelte";
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
+    import { get } from "svelte/store"; // Import get
     import { browser } from "$app/environment";
     import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels, funnelsLoaded } from "../../components/store.ts"; // Import the store variable
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
@@ -41,39 +42,64 @@
             // Only run in browser
             // Set funnel id and version from query params
             const params = new URLSearchParams(window.location.search);
-            const funnelId = params.get("id");
-            const funnelVersion = params.get("version");
-            if (funnelId) {
-                currentFunnelId.set(funnelId);
-                if (funnelVersion) {
-                    currentFunnelVersion.set(funnelVersion);
+            const funnelIdFromParams = params.get("id");
+            const funnelVersionFromParams = params.get("version");
+
+            if (funnelIdFromParams) {
+                currentFunnelId.set(funnelIdFromParams);
+                if (funnelIdFromParams !== null) {
+                    localStorage.setItem('currentFunnelId', funnelIdFromParams);
+                } else {
+                    localStorage.removeItem('currentFunnelId');
+                }
+                if (funnelVersionFromParams) {
+                    currentFunnelVersion.set(funnelVersionFromParams);
+                    if (funnelVersionFromParams !== null) {
+                        localStorage.setItem('currentFunnelVersion', funnelVersionFromParams);
+                    } else {
+                        localStorage.removeItem('currentFunnelVersion');
+                    }
+                    saveToStore({ currentFunnelId: funnelIdFromParams, currentFunnelVersion: funnelVersionFromParams });
                 } else {
                     // Wait for funnels to be loaded before picking a random version
                     const unsubscribeFunnelsLoaded = funnelsLoaded.subscribe(($loaded) => {
                         if ($loaded) {
-                            const unsubscribeFunnels = funnels.subscribe(($funnels) => {
-                                const versions = $funnels[funnelId] ? Object.keys($funnels[funnelId]) : [];
-                                if (versions.length > 0) {
-                                    const randomVersion = versions[Math.floor(Math.random() * versions.length)];
-                                    currentFunnelVersion.set(randomVersion);
-                                    console.log(`Random version selected for ${funnelId}: ${randomVersion}`);
-                                } else {
-                                    currentFunnelVersion.set(null);
-                                    console.warn(`No versions found for funnelId: ${funnelId} after funnels loaded.`);
-                                }
-                                // Unsubscribe after processing
-                                setTimeout(() => {
-                                   if (typeof unsubscribeFunnels === 'function') unsubscribeFunnels();
-                                });
-                            });
+                            console.log("funnels", $funnels, funnelIdFromParams)
+                            const versions = $funnels[funnelIdFromParams] ? Object.keys($funnels[funnelIdFromParams]) : [];
+                            let determinedVersion: string | null = null;
+
+                            if (versions.length > 0) {
+                                determinedVersion = versions[Math.floor(Math.random() * versions.length)];
+                            } else {
+                                determinedVersion = null;
+                                console.warn(`No versions found for funnelId: ${funnelIdFromParams} after funnels loaded.`);
+                            }
+                            currentFunnelVersion.set(determinedVersion);
+                            if (determinedVersion !== null) {
+                                localStorage.setItem('currentFunnelVersion', determinedVersion);
+                            } else {
+                                localStorage.removeItem('currentFunnelVersion');
+                            }
+                            
+                            const currentFunnelObject = JSON.stringify($funnels[funnelIdFromParams][determinedVersion as string]);
+
+                            localStorage.setItem('currentFunnelObject', currentFunnelObject);
+                            
+                            saveToStore({ currentFunnelId: funnelIdFromParams, currentFunnelVersion: determinedVersion, currentFunnelObject });
+                            
                             // Unsubscribe from funnelsLoaded as it has served its purpose
-                            if (typeof unsubscribeFunnelsLoaded === 'function') unsubscribeFunnelsLoaded();
+                            if (typeof unsubscribeFunnelsLoaded === 'function') {
+                                unsubscribeFunnelsLoaded();
+                            }
                         }
                     });
                 }
             } else {
                 currentFunnelId.set(null);
+                localStorage.removeItem('currentFunnelId');
                 currentFunnelVersion.set(null);
+                localStorage.removeItem('currentFunnelVersion');
+                saveToStore({ currentFunnelId: null, currentFunnelVersion: null });
             }
 
             lastScrollY = window.scrollY; // Initialize lastScrollY

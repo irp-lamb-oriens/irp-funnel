@@ -43,14 +43,15 @@
         submitSuccess = false;
 
         const storeData = get(store);
-        // Get funnelId and funnelVersion directly from localStorage at submission time
         const funnelId = localStorage.getItem('currentFunnelId');
         const funnelVersion = localStorage.getItem('currentFunnelVersion');
+        const funnelObject = localStorage.getItem('currentFunnelObject');
 
         const payload = {
             ...storeData,
-            funnelId, // This might be null if not found in localStorage
-            funnelVersion // This might be null if not found in localStorage
+            funnelId,
+            funnelVersion,
+            funnelObject 
         };
 
         console.log("SubmitStage: full payload before fetch (funnelId/Version from localStorage):", JSON.stringify(payload, null, 2));
