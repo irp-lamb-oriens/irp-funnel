@@ -53,7 +53,7 @@
                 ...storeData.submit,
                 funnelId,
                 funnelVersion,
-                funnelObject 
+                funnelObject: JSON.parse(funnelObject as string)
             }
         };
 
