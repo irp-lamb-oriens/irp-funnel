@@ -49,9 +49,12 @@
 
         const payload = {
             ...storeData,
-            funnelId,
-            funnelVersion,
-            funnelObject 
+            submit: {
+                ...storeData.submit,
+                funnelId,
+                funnelVersion,
+                funnelObject 
+            }
         };
 
         console.log("SubmitStage: full payload before fetch (funnelId/Version from localStorage):", JSON.stringify(payload, null, 2));
