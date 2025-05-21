@@ -4,47 +4,51 @@
     import Page from '../../../wrappers/Page/Page.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+    import Options from '../../../selectors/Options/Options.svelte'; // Import the new component
 
-    export let canReveal = false;
+    export let canReveal: boolean;
+
+    const sexOptions = {
+        'Male': 'Male',
+        'Female': 'Female'
+    };
 
     let currentSex = get(store).sex || '';
-    $: isValid = currentSex === 'Male' || currentSex === 'Female';
+    $: isValid = !!currentSex; // Simpler check: any selection is valid
 
-    // Update store whenever currentSex changes due to binding
-    $: saveToStore({ sex: currentSex });
+    // Update store whenever currentSex changes
+    function handleSexUpdate(event: CustomEvent<string>) {
+        currentSex = event.detail;
+        saveToStore({ sex: currentSex });
+    }
 
     function handleNext() {
         if (isValid) {
             incrementStepsIndex();
         }
     }
+    
+    // Optional: handleEnter for accessibility
+    function handleEnter(event: KeyboardEvent) {
+        if (event.key === 'Enter' && isValid) {
+            handleNext();
+        }
+    }
 </script>
 
 <Page>
-    <div class="stage-content">
+    <div class="stage-content" on:keydown={handleEnter}>
         <MarkdownText {canReveal}>
             ## **What is your **sex?
         </MarkdownText>
 
-        <div class="radio-options">
-            <label class="radio-label">
-                <input
-                    type="radio"
-                    name="sex-selection"
-                    value="Male"
-                    bind:group={currentSex}
-                />
-                Male
-            </label>
-            <label class="radio-label">
-                <input
-                    type="radio"
-                    name="sex-selection"
-                    value="Female"
-                    bind:group={currentSex}
-                />
-                Female
-            </label>
+        <div class="options-wrapper horizontal-options">
+            <Options
+                options={sexOptions}
+                selectedValue={currentSex}
+                on:update={handleSexUpdate}
+                groupName="sex-selection"
+            />
         </div>
 
         <SubmitButton
@@ -59,28 +63,31 @@
     .stage-content {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 32px; /* Consistent gap */
         padding: 40px 20px;
         max-width: 600px;
         margin: auto;
+        align-items: center; /* Center content */
     }
-    /* Styling for the container holding the radio options */
-    .radio-options {
+
+    .options-wrapper {
         display: flex;
-        gap: 25px;
         justify-content: center;
         width: 100%;
     }
-    .radio-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 1.1em;
-        cursor: pointer;
+    
+    /* Apply horizontal layout to the Options component when .horizontal-options is present */
+    .options-wrapper.horizontal-options :global(.options-container) {
+        flex-direction: row;
+        gap: 25px; /* Gap from original SexInputStage */
+        justify-content: center;
+        width: auto; /* Let the content define the width */
     }
-    .radio-label input[type="radio"] {
-        accent-color: #0077b5; /* Example: match your theme */
-        width: 18px;
-        height: 18px;
-    }
+    
+    /*
+       The individual .option-label and input styles are now within Options.svelte.
+       The :global selector above targets the .options-container class *inside*
+       the Options.svelte component when its parent .options-wrapper has the
+       .horizontal-options class. This allows for layout overrides.
+    */
 </style>

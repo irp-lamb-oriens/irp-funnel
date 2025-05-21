@@ -19,31 +19,7 @@
 
   // Validate birthday: must be a string in YYYY-MM-DD, not in the future, not before 1920-01-01, and age > 0
   const isBirthdayValid = () => {
-    const birthday = get(store).birthday;
-    if (typeof birthday !== "string") return false;
-    // Regex for YYYY-MM-DD
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) return false;
-    const [year, month, day] = birthday.split("-").map(Number);
-    if (
-      isNaN(year) ||
-      isNaN(month) ||
-      isNaN(day) ||
-      year < 1920 ||
-      month < 1 ||
-      month > 12 ||
-      day < 1 ||
-      day > 31
-    )
-      return false;
-    const date = new Date(birthday);
-    const now = new Date();
-    if (date > now) return false;
-    // Age calculation
-    let age = now.getFullYear() - year;
-    const m = now.getMonth() + 1 - month;
-    if (m < 0 || (m === 0 && now.getDate() < day)) age--;
-    if (age <= 0) return false;
-    return true;
+    return !!get(store).age && get(store).age > 0;
   };
   const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
   const isBudgetValid = () => typeof get(store).budget === 'number';
