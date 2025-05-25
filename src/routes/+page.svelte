@@ -36,7 +36,7 @@
   });
 </script>
 
-<ChosenShader />
+<!-- <ChosenShader /> -->
 
 <style lang="scss">
   @use "./styles/everything.scss";

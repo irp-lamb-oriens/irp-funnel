@@ -186,7 +186,7 @@
   </MarkdownText>
 
   <!-- AI-Powered Smart Suggestions Panel -->
-  <section class="suggestion-panel" aria-label="Smart Color Suggestions">
+  <!-- <section class="suggestion-panel" aria-label="Smart Color Suggestions">
     <ul class="suggestion-list">
       {#each suggestions as suggestion, index (suggestion.candidate + "-" + index)}
         <li class="suggestion-item">
@@ -217,7 +217,7 @@
         </li>
       {/each}
     </ul>
-  </section>
+  </section> -->
 </div>
 
 <style lang="scss">
