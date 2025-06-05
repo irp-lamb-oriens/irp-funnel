@@ -21,7 +21,7 @@
   const isBirthdayValid = () => {
     return !!get(store).age && get(store).age > 0;
   };
-  const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
+  // const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
   const isBudgetValid = () => typeof get(store).budget === 'number';
 
   const isReasonsValid = () => Array.isArray(get(store).reasonsForMoving) && get(store).reasonsForMoving.length > 0 && get(store).reasonsForMoving.some((r: string) => r.trim() !== '');
@@ -31,8 +31,8 @@
   const components = [
     [() => true, ThankYou], // VSL always shows first
     [() => true, AgeInputStage], // Age input requires a valid email
-    [isBirthdayValid, SexInputStage], // Sex input requires a valid birthday
-    [isSexValid, BudgetInputStage], // Budget requires a valid sex
+    // [isBirthdayValid, SexInputStage], // Sex input requires a valid birthday
+    [isBirthdayValid, BudgetInputStage], // Budget now requires a valid birthday (effectively following AgeInputStage)
     [isBudgetValid, ReasonInputStage], // Reason requires a valid Country To
     [isReasonsValid, SubmitStage], // Submit stage requires at least one reason
   ];
