@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 156.6 227.5" style="enable-background:new 0 0 156.6 227.5;" xml:space="preserve" class="injected-svg" data-src="/img/icon-building-apartment.svg" role="img">
+    <style type="text/css">
+        .st0{fill:#FFFFFF;}
+        .st1{fill:#F0A91E;}
+    </style>
+    <g>
+        <path class="st0" d="M42.7,159.5h71.3v51.9h26.7V16H16v195.5h26.7V159.5z M99.3,27.9h28v28h-28V27.9z M99.3,63.4h28v28h-28V63.4z    M99.3,98.8h28v28h-28V98.8z M64.3,27.9h28v28h-28V27.9z M64.3,63.4h28v28h-28V63.4z M64.3,98.8h28v28h-28V98.8z M29.3,27.9h28v28   h-28V27.9z M29.3,63.4h28v28h-28V63.4z M29.3,98.8h28v28h-28V98.8z"></path>
+        <rect x="58.7" y="175.5" class="st1" width="39.3" height="35.9"></rect>
+        <g>
+            <rect x="64.3" y="27.9" width="28" height="28"></rect>
+            <rect x="64.3" y="63.4" width="28" height="28"></rect>
+            <rect x="64.3" y="98.8" width="28" height="28"></rect>
+            <rect x="29.3" y="27.9" width="28" height="28"></rect>
+            <rect x="29.3" y="63.4" width="28" height="28"></rect>
+            <rect x="29.3" y="98.8" width="28" height="28"></rect>
+            <rect x="99.3" y="27.9" width="28" height="28"></rect>
+            <rect x="99.3" y="63.4" width="28" height="28"></rect>
+            <rect x="99.3" y="98.8" width="28" height="28"></rect>
+            <path d="M0,0v227.5h156.6V0H0z M97.9,211.5H58.7v-35.9h39.3V211.5z M140.6,211.5h-26.7v-51.9H42.7v51.9H16V16h124.6V211.5z"></path>
+        </g>
+    </g>
+    </svg>

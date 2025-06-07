@@ -20,7 +20,10 @@
   .page {
     padding: 160px 25px;
     overflow: auto;
-    max-height: 100vh;
+    height: 100vh;
+    display: grid;
+    place-items: center;
+    justify-content: center;
 
     @media (max-width: 1024px) {
       padding: 160px 25px;

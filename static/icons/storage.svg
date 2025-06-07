@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="icon-warehouse-storage" x="0px" y="0px" viewBox="0 0 77 68" style="enable-background:new 0 0 77 68;" xml:space="preserve" class="tricolor-icon injected-svg" aria-hidden="true" data-src="/img/icon-building-storage.svg" role="img">
+    <style type="text/css">
+        .st-white{fill:#FFFFFF;}
+        .st-gold{fill:#F5A800;}
+        .st-black{fill:#231F20;}
+        .st-none-spec{fill:none;stroke:#231F20;stroke-width:5.385;stroke-miterlimit:10;}
+    </style>
+    <polygon class="st-white fill-white" points="70.2,66.6 17.7,66.6 6.6,60.5 6.6,1.3 57.8,1.3 70.2,8 "></polygon>
+    <rect x="6.6" y="8" class="st-gold fill-brand" width="13.8" height="44"></rect>
+    <g>
+        <path class="st-black fill-black" d="M57.4-0.2H5.3V0L5.2-0.1v51.6l0,0v9.8L17.7,68h0.1v0h54.3v-9.5v-2.7V13.6V7.5V6.8L57.4-0.2z M17.7,51.5   l-7.2-3.4V8.4l7.2,3.4V51.5z M10.6,58.4v-4.3l7.1,3.4v1V62L10.6,58.4z M23.1,58.5h19.1v4.1H23.1V58.5z M66.7,62.6H47.6v-4.1h19.1   V62.6z M66.7,53.1H23.1V12.8h43.6v0.8V53.1z M21,7.5l-4.7-2.2h39.9l4.7,2.2H21z"></path>
+        <path class="st-black fill-black" d="M53.3,29.3v-3.5c0-4.6-3.7-8.3-8.3-8.3c-4.6,0-8.3,3.7-8.3,8.3v3.5c-1.4,0.6-2.3,1.9-2.3,3.5v11.6   c0,2.1,1.7,3.8,3.8,3.8h13.7c2.1,0,3.8-1.7,3.8-3.8V32.8C55.6,31.2,54.6,29.9,53.3,29.3z M46.1,38.8V43c0,0.6-0.5,1.2-1.2,1.2   s-1.2-0.5-1.2-1.2v-4.2c-0.7-0.4-1.2-1.2-1.2-2.1c0-1.3,1.1-2.4,2.4-2.4s2.4,1.1,2.4,2.4C47.4,37.6,46.9,38.4,46.1,38.8z M49.7,29   h-9.4v-3.2c0-2.6,2.1-4.7,4.7-4.7c2.6,0,4.7,2.1,4.7,4.7V29z"></path>
+    </g>
+    <path class="st-none-spec fill-black" d="M20.4,65.3"></path>
+    </svg>
