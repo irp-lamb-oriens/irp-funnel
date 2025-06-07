@@ -83,9 +83,12 @@
   }
 
   .input-label {
-    margin-bottom: 0.5rem;
     color: var(--color-foreground);
     font-size: 1rem;
+
+    &::not(:empty) {
+      margin-bottom: 0.5rem;
+    }
   }
 
   input {

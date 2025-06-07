@@ -92,12 +92,13 @@ export const currentFunnel = derived(
 );
 
 const store = writable<Store>({
-  keysToSave: ["name", "email", "age", "sex", "budget", "reasonsForMoving"],
+  keysToSave: ["name", "email", "age", "sex", "budget", "reasonsForMoving", "squareFeet"],
   name: "",
   email: "",
   age: null,
-  sex: "",
+  sex: "", // This was part of a previous task to deactivate, but leaving as is for now
   budget: null,
+  squareFeet: undefined, // Or null, consistent with other nullable fields like age/budget
   reasonsForMoving: [],
   appLanguage: "en",
   apiURL: () => window.location.origin.startsWith('http://localhost') ? "http://localhost:8000" : "https://irp-funnel-server.onrender.com",

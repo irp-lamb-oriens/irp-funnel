@@ -4,12 +4,10 @@
     import Page from '../../../wrappers/Page/Page.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
-    import { onMount } from 'svelte';
 
     let isLoading = false;
     let submitError: string | null = null;
     let submitSuccess = false;
-    import { derived } from 'svelte/store';
     let userData: any;
     let stepsIndex: number = 0;
 

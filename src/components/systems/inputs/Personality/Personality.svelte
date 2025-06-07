@@ -1,7 +1,7 @@
 <!-- src/components/systems/inputs/PersonalityField.svelte -->
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { generatePersonality } from "../../requests/generatePersonality.ts"; // Change back to .ts
+  // import { generatePersonality } from "../../requests/generatePersonality.ts"; // Change back to .ts
   import { latestMessage } from "../../../store.ts"; // Change back to .ts
   import { writable } from "svelte/store";
   import SubmitButton from "../../buttons/SubmitButton/SubmitButton.svelte";
@@ -34,19 +34,19 @@
     generationError.set(null);
     latestMessage.set("Generating personality...");
 
-    try {
-      const result = await generatePersonality(currentContent, newsSourceId);
-      onChange(result.personality); // Update parent, which updates prop, which updates textarea
-      latestMessage.set("Personality generated successfully!");
-    } catch (error: any) {
-      const message =
-        error?.message || "An unknown error occurred during generation.";
-      generationError.set(message);
-      onError(message);
-      latestMessage.set("");
-    } finally {
-      isGenerating.set(false);
-    }
+    // try {
+    //   const result = await generatePersonality(currentContent, newsSourceId);
+    //   onChange(result.personality); // Update parent, which updates prop, which updates textarea
+    //   latestMessage.set("Personality generated successfully!");
+    // } catch (error: any) {
+    //   const message =
+    //     error?.message || "An unknown error occurred during generation.";
+    //   generationError.set(message);
+    //   onError(message);
+    //   latestMessage.set("");
+    // } finally {
+    //   isGenerating.set(false);
+    // }
   }
 </script>
 
