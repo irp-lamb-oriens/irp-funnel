@@ -8,7 +8,9 @@
   import AgeInputStage from "./stages/AgeInputStage.svelte";
   // import SexInputStage from "./stages/SexInputStage.svelte"; // Already commented out or removed
   import BudgetInputStage from "./stages/BudgetInputStage.svelte";
-  import SquareFeetInputStage from "./stages/SquareFeetInputStage.svelte"; // Import new stage
+  import SquareFeetInputStage from "./stages/SquareFeetInputStage.svelte";
+  import PropertyTypeFromInputStage from "./stages/PropertyTypeFromInputStage.svelte"; // Import new stage
+  import PropertyTypeToInputStage from "./stages/PropertyTypeToInputStage.svelte"; // Import new stage
   import CountryFromInputStage from "./stages/CountryFromInputStage.svelte";
   import CountryToInputStage from "./stages/CountryToInputStage.svelte";
   import ReasonInputStage from "./stages/ReasonInputStage.svelte";
@@ -25,6 +27,8 @@
   // const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
   const isBudgetValid = () => typeof get(store).budget === 'number';
   const isSquareFeetValid = () => typeof get(store).squareFeet === 'number'; // Includes -1 for "don't know"
+  const isPropertyTypeFromValid = () => !!get(store).propertyTypeFrom;
+  const isPropertyTypeToValid = () => !!get(store).propertyTypeTo;
 
   const isReasonsValid = () => Array.isArray(get(store).reasonsForMoving) && get(store).reasonsForMoving.length > 0 && get(store).reasonsForMoving.some((r: string) => r.trim() !== '');
 
@@ -35,8 +39,10 @@
     [() => true, AgeInputStage], // Age input requires a valid email
     // [isBirthdayValid, SexInputStage], // Sex input requires a valid birthday
     [isBirthdayValid, BudgetInputStage], // Budget now requires a valid birthday (effectively following AgeInputStage)
-    [isBudgetValid, SquareFeetInputStage], // New stage after Budget
-    [isSquareFeetValid, ReasonInputStage], // Reason now requires valid squareFeet
+    [isBudgetValid, SquareFeetInputStage], // SquareFeet stage after Budget
+    [isSquareFeetValid, PropertyTypeFromInputStage], // PropertyTypeFrom after SquareFeet
+    [isPropertyTypeFromValid, PropertyTypeToInputStage], // PropertyTypeTo after PropertyTypeFrom
+    [isPropertyTypeToValid, ReasonInputStage], // Reason now requires valid propertyTypeTo
     [isReasonsValid, SubmitStage], // Submit stage requires at least one reason
   ];
 </script>
