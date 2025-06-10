@@ -181,7 +181,7 @@
     position: absolute;
     inset: 0;
     z-index: 2;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--color-background);
     color: #fff;
     font: 600 clamp(1rem, 3vw, 1.5rem)/1.2 sans-serif;
     display: grid;
