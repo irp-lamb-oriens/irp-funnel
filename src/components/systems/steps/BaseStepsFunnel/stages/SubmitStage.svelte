@@ -99,28 +99,8 @@
 
             const result = await response.json();
             console.log('Submission successful:', result);
-            
-            // Prepare data for display on success screen, similar to review screen
-            // Use storeData for most fields, and payload.funnelCopy for the VSL copy
-            const dataSnapshot = get(store); // Get a fresh snapshot of the store at time of successful submission
-            const submittedAgeValue = dataSnapshot.age?.toString();
-            // Use bidirectional map for direct lookup
-            const submittedAgeRangeDisplay = submittedAgeValue ? AGE_RANGES_BIDI[submittedAgeValue] || submittedAgeValue : dataSnapshot.age;
 
-            submittedDataForDisplay = {
-                Name: dataSnapshot.name,
-                Email: dataSnapshot.email,
-                'Age Range': submittedAgeRangeDisplay,
-                Budget: dataSnapshot.budget >= 10000 ? "over 10000" : "under 10000",
-                'Square Feet': dataSnapshot.squareFeet === -1 ? "I don't know" : dataSnapshot.squareFeet,
-                'Moving From Property Type': dataSnapshot.propertyTypeFrom,
-                'Moving To Property Type': dataSnapshot.propertyTypeTo,
-                'Reasons for Moving': dataSnapshot.reasonsForMoving?.join(', '),
-                'Country From': dataSnapshot.countryFrom,
-                'Country To': dataSnapshot.countryTo,
-                'VSL Copy': payload.funnelCopy, // This comes directly from the payload
-            };
-            submitSuccess = true; // Set this after preparing submittedDataForDisplay
+            submitSuccess = true; // Set this after preparing 
 
             setTimeout(() => {
                 window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou"
@@ -143,17 +123,7 @@
                 ## Thank You!
 
                 **Your information** has been **submitted successfully.**
-                Here's a summary of what was sent:
             </MarkdownText>
-            <div class="review-data">
-                 <ul>
-                    {#each Object.entries(submittedDataForDisplay) as [key, value]}
-                        {#if value !== undefined && value !== null && value !== ''}
-                            <li><strong>{key}:</strong> {String(value)}</li>
-                        {/if}
-                    {/each}
-                </ul>
-            </div>
             <!-- Optionally add next steps or links here -->
         {:else if submitError}
             <MarkdownText {canReveal}>
