@@ -20,7 +20,7 @@
   on:click={callback}
   class:loading
 >
-  {label}
+  {label.replace(/_/g, "⠀")}
 </button>
 
 <style lang="scss">
