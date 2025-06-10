@@ -6,15 +6,9 @@
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
     import Options from '../../../selectors/Options/Options.svelte'; // Import the new component
     import { isBirthdayValid } from '../../../helpers/validationRules.ts';
+    import { AGE_RANGES_OPTIONS } from '../../../helpers/constants.ts';
 
     export let canReveal: boolean;
-
-    const ageRanges = {
-        '18 - 35': '18',
-        '36 - 55': '36',
-        '56 - 65': '56',
-        '65+': '65' // Value for 65+ will be 65
-    };
 
     // Always default to "56-65" range on component load.
     // The value for this option is "56".
@@ -52,7 +46,7 @@
 
         <div class="options-wrapper">
             <Options
-                options={ageRanges}
+                options={AGE_RANGES_OPTIONS}
                 selectedValue={currentAgeRange}
                 on:update={handleAgeUpdate}
                 groupName="age-range-selection"

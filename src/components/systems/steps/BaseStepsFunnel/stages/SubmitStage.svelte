@@ -5,10 +5,12 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
     import { browser } from '$app/environment';
+    import { AGE_RANGES_BIDI } from '../../../helpers/constants.ts';
 
     let isLoading = false;
     let submitError: string | null = null;
     let submitSuccess = false;
+    let submittedDataForDisplay: Record<string, any> = {}; // To display data on success
     // let userData: any; // No longer needed
     // let stepsIndex: number = 0; // No longer needed for this logic
 
@@ -21,10 +23,15 @@
 
     $: {
         const currentStoreData = get(store);
+        const ageValue = currentStoreData.age?.toString();
+        // Use bidirectional map for direct lookup
+        const ageRangeDisplay = ageValue ? AGE_RANGES_BIDI[ageValue] || ageValue : currentStoreData.age;
+
+
         displayData = {
             Name: currentStoreData.name,
             Email: currentStoreData.email,
-            Age: currentStoreData.age,
+            'Age Range': ageRangeDisplay,
             // Sex: currentStoreData.sex, // Sex step is deactivated
             Budget: currentStoreData.budget,
             'Square Feet': currentStoreData.squareFeet === -1 ? "I don't know" : currentStoreData.squareFeet,
@@ -92,7 +99,28 @@
 
             const result = await response.json();
             console.log('Submission successful:', result);
-            submitSuccess = true;
+            
+            // Prepare data for display on success screen, similar to review screen
+            // Use storeData for most fields, and payload.funnelCopy for the VSL copy
+            const dataSnapshot = get(store); // Get a fresh snapshot of the store at time of successful submission
+            const submittedAgeValue = dataSnapshot.age?.toString();
+            // Use bidirectional map for direct lookup
+            const submittedAgeRangeDisplay = submittedAgeValue ? AGE_RANGES_BIDI[submittedAgeValue] || submittedAgeValue : dataSnapshot.age;
+
+            submittedDataForDisplay = {
+                Name: dataSnapshot.name,
+                Email: dataSnapshot.email,
+                'Age Range': submittedAgeRangeDisplay,
+                Budget: dataSnapshot.budget >= 10000 ? "over 10000" : "under 10000",
+                'Square Feet': dataSnapshot.squareFeet === -1 ? "I don't know" : dataSnapshot.squareFeet,
+                'Moving From Property Type': dataSnapshot.propertyTypeFrom,
+                'Moving To Property Type': dataSnapshot.propertyTypeTo,
+                'Reasons for Moving': dataSnapshot.reasonsForMoving?.join(', '),
+                'Country From': dataSnapshot.countryFrom,
+                'Country To': dataSnapshot.countryTo,
+                'VSL Copy': payload.funnelCopy, // This comes directly from the payload
+            };
+            submitSuccess = true; // Set this after preparing submittedDataForDisplay
 
             setTimeout(() => {
                 window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou"
@@ -115,8 +143,17 @@
                 ## Thank You!
 
                 **Your information** has been **submitted successfully.**
+                Here's a summary of what was sent:
             </MarkdownText>
-            <a class="anchor" href="https://www.internationalrelocationpartner.com?from=thankyou">internationalrelocationpartner.com</a>
+            <div class="review-data">
+                 <ul>
+                    {#each Object.entries(submittedDataForDisplay) as [key, value]}
+                        {#if value !== undefined && value !== null && value !== ''}
+                            <li><strong>{key}:</strong> {String(value)}</li>
+                        {/if}
+                    {/each}
+                </ul>
+            </div>
             <!-- Optionally add next steps or links here -->
         {:else if submitError}
             <MarkdownText {canReveal}>
@@ -143,9 +180,6 @@
                             <li><strong>{key}:</strong> {value}</li>
                         {/if}
                     {/each}
-                    {#if funnelCopyForDisplay}
-                        <li><strong>VSL Copy:</strong> <span class="vsl-copy-display">{funnelCopyForDisplay}</span></li>
-                    {/if}
                 </ul>
             </div>
             <SubmitButton
@@ -180,27 +214,22 @@
         list-style: none;
         padding: 0;
         text-align: left;
-        background: var(--color-background-secondary, #f0f0f0); /* Use theme variable */
-        padding: 15px;
         border-radius: 8px; /* Consistent border-radius */
-        margin-top: 10px;
         /* display: inline-block; /* Fit content width */
         /* width: 100%; /* Make it full width of its container */
         max-width: 500px; /* Limit width */
         margin-left: auto;
         margin-right: auto;
-        border: 1px solid var(--color-border, #ddd);
     }
     li {
         margin-bottom: 8px; /* Slightly more spacing */
         word-break: break-word; /* Prevent long strings from breaking layout */
     }
     li strong {
-        color: var(--color-text-primary, #333);
+        color: var(--color-background);
     }
     .review-data {
         width: 100%;
-        margin-bottom: 1rem;
     }
     .vsl-copy-display {
         display: block;
