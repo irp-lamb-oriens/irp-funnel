@@ -33,7 +33,7 @@
             Email: currentStoreData.email,
             'Age Range': ageRangeDisplay,
             // Sex: currentStoreData.sex, // Sex step is deactivated
-            Budget: currentStoreData.budget,
+            Budget: currentStoreData.budget >= 10000 ? "over 10000" : "under 10000",
             'Square Feet': currentStoreData.squareFeet === -1 ? "I don't know" : currentStoreData.squareFeet,
             'Moving From Property Type': currentStoreData.propertyTypeFrom,
             'Moving To Property Type': currentStoreData.propertyTypeTo,
