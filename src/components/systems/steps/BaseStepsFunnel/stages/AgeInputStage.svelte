@@ -67,7 +67,7 @@
         display: flex;
         flex-direction: column;
         gap: 32px; /* Consistent gap */
-        padding: 40px 20px;
+        padding: 0px 20px;
         max-width: 600px;
         margin: auto;
         align-items: center; /* Center content */

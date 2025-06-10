@@ -18,6 +18,10 @@
 
 
 <style>
+	.pt	{
+		padding-top: 100px;
+	}
+
 	.spacing {
 		padding: 25px 0;
 		background: #f7f8fc;

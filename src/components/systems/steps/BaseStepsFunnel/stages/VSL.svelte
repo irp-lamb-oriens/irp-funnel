@@ -84,22 +84,26 @@
 	{/if}
 
 	<ImageGrid images={[
-		"icons/partners/AAA.png",
+		"icons/partners/AAH.svg",
+		"icons/partners/AAE.webp",
+		"icons/partners/AAK.svg",
 		"icons/partners/AAB.svg",
 		"icons/partners/AAC.svg",
+		"icons/partners/AAA.png",
 		"icons/partners/AAD.svg",
-		"icons/partners/AAE.webp",
 		"icons/partners/AAF.svg",
 		"icons/partners/AAG.svg",
-		"icons/partners/AAH.svg",
 		"icons/partners/AAI.svg",
 		"icons/partners/AAJ.png",
-		"icons/partners/AAK.svg"
 	]}/>
 </Page>
 
 
 <style>
+	.pt	{
+		padding-top: 100px;
+	}
+
 	.center {
 		display: grid;
 		place-items: center;

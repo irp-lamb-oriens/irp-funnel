@@ -19,7 +19,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 10rem 0;
+  padding: 3.5rem 1rem;
 }
 
 .image-grid {
@@ -27,7 +27,7 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   grid-gap: 7rem;
   width: 100%;
-  filter: grayscale(100%);
+  filter: grayscale(100%) invert(1);
 
   @media (max-width: 1024px) {
     grid-template-columns: 1fr 1fr;

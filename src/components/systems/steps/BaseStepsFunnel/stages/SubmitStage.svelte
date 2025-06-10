@@ -175,7 +175,7 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
-        padding: 40px 20px;
+        padding: 0px 20px;
         max-width: 600px;
         margin: auto;
         text-align: center; /* Center text */
