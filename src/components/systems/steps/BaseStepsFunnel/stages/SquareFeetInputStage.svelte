@@ -79,7 +79,7 @@
         onEnter={() => isValid && handleNext()}
       />
       <SecondaryButton
-        label="Don't_know"
+        label="Don't⠀know"
         callback={handleDontKnow}
         color="info" 
       />
