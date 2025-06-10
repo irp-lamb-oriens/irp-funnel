@@ -6,12 +6,13 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import IconButton from '../../../buttons/IconButton/IconButton.svelte'; // Assuming an IconButton exists for '+'
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+    import { isReasonsValid } from '../../../helpers/validationRules.ts';
 
     export let canReveal = false;
 
     let reasons = [...get(store).reasonsForMoving, '']; // Start with one empty reason input
     // Validate if at least one non-empty reason exists
-    $: isValid = reasons.some((reason: string) => reason.trim() !== ''); // Added type string
+    $: isValid = ($store.reasonsForMoving, isReasonsValid());
 
     function updateReason(index: number, value: string) {
         reasons[index] = value;
@@ -80,6 +81,7 @@
         <SubmitButton
             label="Next"
             callback={handleNext}
+            active={isValid}
             disabled={!isValid}
         />
     </div>

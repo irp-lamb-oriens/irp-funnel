@@ -6,6 +6,7 @@
   import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
   import NumberInput from '../../../inputs/Number/Number.svelte';
   import SecondaryButton from '../../../buttons/SubmitButton/SubmitButton.svelte'; // Used for "I don't know"
+  import { isSquareFeetValid } from '../../../helpers/validationRules.ts';
 
   export let canReveal: boolean;
 
@@ -18,7 +19,7 @@
   // Validation: any number (including -1 for "don't know") is considered valid once set.
   // Or simply that it's not undefined if we want to ensure an explicit choice.
   // For now, let's say any interaction that sets it to a number is valid.
-  $: isValid = typeof currentSquareFeet === 'number';
+  $: isValid = ($store.squareFeet, isSquareFeetValid());
 
   // onChange for NumberInput
   function handleNumberInputChange(newValue: string) {
@@ -43,7 +44,7 @@
     inputValue = ''; // Clear the NumberInput field visually
     currentSquareFeet = -1;
     saveToStore({ squareFeet: currentSquareFeet });
-    // Consider if NumberInput's internal store needs reset or if binding inputValue is enough
+    incrementStepsIndex();
   }
 
   function handleNext() {
@@ -88,6 +89,7 @@
     <MainSubmitButton
       label="Next"
       callback={handleNext}
+      active={isValid}
       disabled={!isValid}
     />
   </div>
@@ -113,14 +115,12 @@
   }
 
   .input-container {
-    display: flex;
-    flex-direction: row; /* Stack input and button */
-    align-items: center;
+    display: grid;
     place-items: center;
     justify-content: center;
-    gap: 16px;
+    grid-gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     width: 100%;
-    max-width: 350px; /* Or adjust as needed */
   }
 
   /* .square-feet-input styling is now handled by NumberInput.svelte */

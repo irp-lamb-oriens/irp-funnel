@@ -5,6 +5,7 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
     import Options from '../../../selectors/Options/Options.svelte'; // Import the new component
+    import { isBirthdayValid } from '../../../helpers/validationRules.ts';
 
     export let canReveal: boolean;
 
@@ -20,7 +21,8 @@
     let currentAgeRange = '56'; 
     saveToStore({ age: Number(currentAgeRange) }); // Save this default to the store immediately.
 
-    $: isValid = !!currentAgeRange;
+    // Make isValid reactive to changes in the store's age property
+    $: isValid = ($store.age, isBirthdayValid());
 
     // Update store whenever currentAgeRange changes
     function handleAgeUpdate(event: CustomEvent<string>) {
@@ -60,6 +62,7 @@
         <SubmitButton
             label="Next"
             callback={handleNext}
+            active={isValid}
             disabled={!isValid}
         />
     </div>

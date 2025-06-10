@@ -27,6 +27,14 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   grid-gap: 7rem;
   width: 100%;
+  filter: grayscale(100%);
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 3rem;
+    width: 100%;
+    padding: 25px;
+  }
 }
 
 .image-row {

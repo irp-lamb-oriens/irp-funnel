@@ -5,6 +5,7 @@ import { onMount } from 'svelte';
 import Page from '../../../wrappers/Page/Page.svelte';
 import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
 import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+import { isBudgetValid } from '../../../helpers/validationRules.ts';
 
 onMount(() => {
     const currentStore = get(store);
@@ -14,7 +15,9 @@ onMount(() => {
 export let canReveal = false;
 
 let hasBudget = get(store).hasBudget || 'Yes';
-$: isValid = hasBudget === 'Yes' || hasBudget === 'No';
+// The reactive block below ensures store.budget becomes a number once 'Yes' or 'No' is selected.
+// So isBudgetValid() will become true once a selection is made.
+$: isValid = ($store.budget, isBudgetValid()); 
 
 // Update store and budget value whenever hasBudget changes
 $: {
@@ -66,6 +69,7 @@ $: {
         <SubmitButton
             label="Next"
             callback={handleNext}
+            active={isValid}
             disabled={!isValid}
         />
     </div>

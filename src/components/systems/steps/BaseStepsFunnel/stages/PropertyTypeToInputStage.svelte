@@ -5,6 +5,7 @@
   import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
   import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
   import IconGridSelector from '../../../selectors/IconGridSelector/IconGridSelector.svelte';
+  import { isPropertyTypeToValid } from '../../../helpers/validationRules.ts';
 
   export let canReveal: boolean;
 
@@ -17,7 +18,7 @@
 
   let selectedPropertyTypeTo: string | undefined = get(store).propertyTypeTo;
 
-  $: isValid = !!selectedPropertyTypeTo;
+  $: isValid = ($store.propertyTypeTo, isPropertyTypeToValid());
 
   function handleSelectionUpdate(event: CustomEvent<string>) {
     selectedPropertyTypeTo = event.detail;
@@ -46,6 +47,7 @@
     <SubmitButton
       label="Next"
       callback={handleNext}
+      active={isValid}
       disabled={!isValid}
     />
   </div>

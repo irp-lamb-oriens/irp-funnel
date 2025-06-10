@@ -19,18 +19,14 @@
   import { get } from "svelte/store";
   import NameInputStage from "./stages/NameInputStage.svelte";
   import ThankYou from "./stages/ThankYou.svelte";
-
-  // Validate birthday: must be a string in YYYY-MM-DD, not in the future, not before 1920-01-01, and age > 0
-  const isBirthdayValid = () => {
-    return !!get(store).age && get(store).age > 0;
-  };
-  // const isSexValid = () => get(store).sex === "Male" || get(store).sex === "Female";
-  const isBudgetValid = () => typeof get(store).budget === 'number';
-  const isSquareFeetValid = () => typeof get(store).squareFeet === 'number'; // Includes -1 for "don't know"
-  const isPropertyTypeFromValid = () => !!get(store).propertyTypeFrom;
-  const isPropertyTypeToValid = () => !!get(store).propertyTypeTo;
-
-  const isReasonsValid = () => Array.isArray(get(store).reasonsForMoving) && get(store).reasonsForMoving.length > 0 && get(store).reasonsForMoving.some((r: string) => r.trim() !== '');
+  import {
+    isBirthdayValid,
+    isBudgetValid,
+    isSquareFeetValid,
+    isPropertyTypeFromValid,
+    isPropertyTypeToValid,
+    isReasonsValid
+  } from '../../helpers/validationRules.ts'; // Adjusted path
 
   // Define the sequence of components and their conditions
   // Define the sequence of components and their conditions

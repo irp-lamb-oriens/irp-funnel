@@ -39,33 +39,36 @@
 </script>
 
 <Page>
-	<div class="gap center">
-		<MarkdownText {canReveal}>
-			### Welcome to **International Relocation Partner**
+	<div>
 
-			## You've **scheduled** a **call** with us.
-		</MarkdownText>
-		{#if email || name || countryFrom || countryTo}
-			<div class="thankyou-details">
-				{#if name}<div><b>Name:</b> {name}</div>{/if}
-				{#if email}<div><b>Email:</b> {email}</div>{/if}
-				{#if countryFrom}<div><b>From:</b> {countryFrom}</div>{/if}
-				{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
-			</div>
-		{/if}
-	</div>
-	<div class="center">
-		<SubmitButton
-			color="error"
-			label="NEXT STEPS"
-			callback={() => {
-				videoInteractionStore.set({ type: "stop" });
-				saveToStore({
-					stepsIndex: $store.stepsIndex + 1
-				});
-			}}
-			disabled={false}
-		/>
+		<div class="gap center">
+			<MarkdownText {canReveal}>
+				### Welcome to **International Relocation Partner**
+	
+				## You've **scheduled** a **call** with us.
+			</MarkdownText>
+			{#if email || name || countryFrom || countryTo}
+				<div class="thankyou-details">
+					{#if name}<div><b>Name:</b> {name}</div>{/if}
+					{#if email}<div><b>Email:</b> {email}</div>{/if}
+					{#if countryFrom}<div><b>From:</b> {countryFrom}</div>{/if}
+					{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
+				</div>
+			{/if}
+		</div>
+		<div class="center">
+			<SubmitButton
+				color="error"
+				label="NEXT STEPS"
+				callback={() => {
+					videoInteractionStore.set({ type: "stop" });
+					saveToStore({
+						stepsIndex: $store.stepsIndex + 1
+					});
+				}}
+				disabled={false}
+			/>
+		</div>
 	</div>
 </Page>
 
