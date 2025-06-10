@@ -62,7 +62,8 @@
 
         const payload = {
             ...storeData,
-            funnelCopy: funnelCopyText, // Add funnelCopy here
+            // Ensure funnelCopy is undefined if funnelCopyText is null, otherwise use funnelCopyText
+            funnelCopy: funnelCopyText === null ? undefined : funnelCopyText, 
             submit: {
                 ...(storeData.submit || {}), // Ensure storeData.submit exists
                 funnelId,
