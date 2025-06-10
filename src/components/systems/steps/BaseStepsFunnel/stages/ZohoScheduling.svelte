@@ -11,10 +11,8 @@
 			## **Here you** schedule the call with us.
 		</MarkdownText>
 	</div>
-	<div class="gap">
-		<div class="spacing">
-			<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder={0} allowfullscreen={true} > </iframe>
-		</div>
+	<div class="spacing">
+		<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder={0} allowfullscreen={true} > </iframe>
 	</div>
 </Page>
 
@@ -29,9 +27,6 @@
 	.gap {
 		display: grid;
 		grid-gap: 25px;
-	}
-
-	.gap {
 		max-width: 1024px;
 		margin: auto;
 		
