@@ -4,36 +4,41 @@
     import Page from '../../../wrappers/Page/Page.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+    import { browser } from '$app/environment';
 
     let isLoading = false;
     let submitError: string | null = null;
     let submitSuccess = false;
-    let userData: any;
-    let stepsIndex: number = 0;
+    // let userData: any; // No longer needed
+    // let stepsIndex: number = 0; // No longer needed for this logic
 
     export let canReveal = false;
 
-    $: stepsIndex = get(store).stepsIndex ?? 0;
+    // $: stepsIndex = get(store).stepsIndex ?? 0; // Not directly used for display logic here
 
-    // userData is no longer needed; submission will use the full store state
+    let displayData: Record<string, any> = {};
+    let funnelCopyForDisplay: string | null = null;
 
-    $: if (stepsIndex === 5) {
-        // Debug log for error check
-        console.log("SubmitStage (stepsIndex 5): userData =", userData, "age:", userData.age, "sex:", userData.sex, "budget:", userData.budget, "reasonsForMoving:", userData.reasonsForMoving);
-        // Basic check if essential data is present
-        if (
-            userData.age == null ||
-            !userData.sex ||
-            userData.budget == null ||
-            !userData.reasonsForMoving ||
-            !Array.isArray(userData.reasonsForMoving) ||
-            userData.reasonsForMoving.length === 0
-        ) {
-            submitError = "Some information is missing. Please go back and complete all steps.";
-        } else {
-            submitError = null;
+    $: {
+        const currentStoreData = get(store);
+        displayData = {
+            Name: currentStoreData.name,
+            Email: currentStoreData.email,
+            Age: currentStoreData.age,
+            // Sex: currentStoreData.sex, // Sex step is deactivated
+            Budget: currentStoreData.budget,
+            'Square Feet': currentStoreData.squareFeet === -1 ? "I don't know" : currentStoreData.squareFeet,
+            'Moving From Property Type': currentStoreData.propertyTypeFrom,
+            'Moving To Property Type': currentStoreData.propertyTypeTo,
+            'Reasons for Moving': currentStoreData.reasonsForMoving?.join(', '),
+            'Country From': currentStoreData.countryFrom, // Assuming these are in store
+            'Country To': currentStoreData.countryTo,     // Assuming these are in store
+        };
+        if (browser) {
+            funnelCopyForDisplay = localStorage.getItem('funnelCopyText');
         }
     }
+    // Removed the old error checking block based on stepsIndex and userData
 
     async function handleSubmit() {
         isLoading = true;
@@ -41,17 +46,28 @@
         submitSuccess = false;
 
         const storeData = get(store);
-        const funnelId = localStorage.getItem('currentFunnelId');
-        const funnelVersion = localStorage.getItem('currentFunnelVersion');
-        const funnelObject = localStorage.getItem('currentFunnelObject');
+        const funnelId = browser ? localStorage.getItem('currentFunnelId') : null;
+        const funnelVersion = browser ? localStorage.getItem('currentFunnelVersion') : null;
+        const funnelObjectString = browser ? localStorage.getItem('currentFunnelObject') : null;
+        const funnelCopyText = browser ? localStorage.getItem('funnelCopyText') : null;
+
+        let funnelObjectParsed = null;
+        if (funnelObjectString) {
+            try {
+                funnelObjectParsed = JSON.parse(funnelObjectString);
+            } catch (e) {
+                console.error("Error parsing funnelObject from localStorage:", e);
+            }
+        }
 
         const payload = {
             ...storeData,
+            funnelCopy: funnelCopyText, // Add funnelCopy here
             submit: {
-                ...storeData.submit,
+                ...(storeData.submit || {}), // Ensure storeData.submit exists
                 funnelId,
                 funnelVersion,
-                funnelObject: JSON.parse(funnelObject as string)
+                funnelObject: funnelObjectParsed
             }
         };
 
@@ -119,14 +135,18 @@
 
                 **Please review** your information below.
             </MarkdownText>
-            <!-- Optional: Display collected data for review -->
-            <!-- <ul>
-                <li>Name: {userData.name}</li>
-                <li>Email: {userData.email}</li>
-                <li>Budget: ${userData.budget}</li>
-                <li>Moving From: {userData.countryFrom}</li>
-                <li>Moving To: {userData.countryTo}</li>
-            </ul> -->
+            <div class="review-data">
+                <ul>
+                    {#each Object.entries(displayData) as [key, value]}
+                        {#if value !== undefined && value !== null && value !== ''}
+                            <li><strong>{key}:</strong> {value}</li>
+                        {/if}
+                    {/each}
+                    {#if funnelCopyForDisplay}
+                        <li><strong>VSL Copy:</strong> <span class="vsl-copy-display">{funnelCopyForDisplay}</span></li>
+                    {/if}
+                </ul>
+            </div>
             <SubmitButton
                 label="Submit Information"
                 callback={handleSubmit}
@@ -149,7 +169,6 @@
     .stage-content {
         display: flex;
         flex-direction: column;
-        
         gap: 20px;
         padding: 40px 20px;
         max-width: 600px;
@@ -160,13 +179,37 @@
         list-style: none;
         padding: 0;
         text-align: left;
-        background: #f9f9f9;
+        background: var(--color-background-secondary, #f0f0f0); /* Use theme variable */
         padding: 15px;
-        border-radius: 5px;
+        border-radius: 8px; /* Consistent border-radius */
         margin-top: 10px;
-        display: inline-block; /* Fit content width */
+        /* display: inline-block; /* Fit content width */
+        /* width: 100%; /* Make it full width of its container */
+        max-width: 500px; /* Limit width */
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid var(--color-border, #ddd);
     }
     li {
-        margin-bottom: 5px;
+        margin-bottom: 8px; /* Slightly more spacing */
+        word-break: break-word; /* Prevent long strings from breaking layout */
+    }
+    li strong {
+        color: var(--color-text-primary, #333);
+    }
+    .review-data {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    .vsl-copy-display {
+        display: block;
+        margin-top: 4px;
+        font-style: italic;
+        font-size: 0.9em;
+        max-height: 100px; /* Limit height for long copy */
+        overflow-y: auto; /* Allow scrolling for long copy */
+        padding: 5px;
+        background-color: rgba(0,0,0,0.03);
+        border-radius: 4px;
     }
 </style>

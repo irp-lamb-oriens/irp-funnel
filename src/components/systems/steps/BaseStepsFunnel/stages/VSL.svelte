@@ -7,6 +7,7 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
     import ImageGrid from '../../../wrappers/ImageGrid/ImageGrid.svelte';
+    import { browser } from '$app/environment';
 
 	export let canReveal = false;
 
@@ -32,6 +33,18 @@
 		
 		videoInteractionStore.set({ type: "stop" });
 	});
+
+  // Save funnel copy to localStorage when available
+  $: {
+    if (browser && $currentFunnel && typeof $currentFunnel.copy === 'string') {
+      try {
+        localStorage.setItem('funnelCopyText', $currentFunnel.copy);
+        console.log('Funnel copy saved to localStorage.');
+      } catch (error) {
+        console.error('Error saving funnel copy to localStorage:', error);
+      }
+    }
+  }
 </script>
 
 <Page>
@@ -58,9 +71,11 @@
 				}}
 				disabled={false}
 			/>
-			<MarkdownText {canReveal}>
-				You can **only** schedule your **consultation** call from **three** to **five** days in advance.
-			</MarkdownText>
+			<div class="gap">
+				<MarkdownText {canReveal}>
+					You can **only** schedule your **consultation** call from **three** to **five** days in advance.
+				</MarkdownText>
+			</div>
 		</div>
 	{:else}
 		<div class="center">
@@ -161,9 +176,9 @@
 	.gap {
 		max-width: 1024px;
 		margin: auto;
+		padding: 25px;
 		
 		@media (max-width: 1024px) {
-			padding: 25px;
 		}
 	}
 </style>

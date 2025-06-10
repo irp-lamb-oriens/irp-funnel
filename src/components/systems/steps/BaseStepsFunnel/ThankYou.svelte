@@ -35,15 +35,15 @@
   // Define the sequence of components and their conditions
   // Define the sequence of components and their conditions
   const components = [
-    [() => true, ThankYou], // VSL always shows first
-    [() => true, AgeInputStage], // Age input requires a valid email
-    // [isBirthdayValid, SexInputStage], // Sex input requires a valid birthday
-    [isBirthdayValid, BudgetInputStage], // Budget now requires a valid birthday (effectively following AgeInputStage)
-    [isBudgetValid, SquareFeetInputStage], // SquareFeet stage after Budget
-    [isSquareFeetValid, PropertyTypeFromInputStage], // PropertyTypeFrom after SquareFeet
-    [isPropertyTypeFromValid, PropertyTypeToInputStage], // PropertyTypeTo after PropertyTypeFrom
-    [isPropertyTypeToValid, ReasonInputStage], // Reason now requires valid propertyTypeTo
-    [isReasonsValid, SubmitStage], // Submit stage requires at least one reason
+    [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
+    // New Order:
+    [() => true, PropertyTypeFromInputStage], // Assuming this can start after VSL
+    [isPropertyTypeFromValid, PropertyTypeToInputStage],
+    [isPropertyTypeToValid, SquareFeetInputStage],
+    [isSquareFeetValid, BudgetInputStage],
+    [isBudgetValid, AgeInputStage],
+    [isBirthdayValid, ReasonInputStage], // Age input now depends on reasons being valid
+    [isReasonsValid, SubmitStage], // Submit stage now depends on age (birthday) being valid
   ];
 </script>
 

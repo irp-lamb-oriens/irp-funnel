@@ -18,7 +18,6 @@
 
 <style lang="scss">
   .page {
-    padding: 160px 25px;
     overflow: auto;
     height: 100vh;
     display: grid;
@@ -26,7 +25,6 @@
     justify-content: center;
 
     @media (max-width: 1024px) {
-      padding: 160px 25px;
     }
   }
 </style>
