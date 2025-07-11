@@ -13,6 +13,7 @@
     // Always default to "56-65" range on component load.
     // The value for this option is "56".
     let currentAgeRange = '56'; 
+    saveToStore({ age: Number(currentAgeRange) }); // Save this default to the store immediately.
 
     // Make isValid reactive to changes in the store's age property
     $: isValid = ($store.age, isBirthdayValid());
@@ -21,6 +22,7 @@
     function handleAgeUpdate(event: CustomEvent<string>) {
         currentAgeRange = event.detail;
         saveToStore({ age: Number(currentAgeRange) }); // Save as number
+        console.log("currentAgeRange", currentAgeRange);
     }
     
     function handleNext() {
@@ -46,7 +48,8 @@
         <div class="options-wrapper">
             <Options
                 options={AGE_RANGES_OPTIONS}
-                handleUpdate={handleAgeUpdate}
+                selectedValue={currentAgeRange}
+                on:update={handleAgeUpdate}
                 groupName="age-range-selection"
             />
         </div>
