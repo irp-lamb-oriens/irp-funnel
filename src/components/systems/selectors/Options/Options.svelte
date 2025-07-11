@@ -1,26 +1,33 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { writable, type Writable } from 'svelte/store';
+  import { onDestroy } from 'svelte';
 
-  export let options: Record<string, string>; // { label: value }
-  export let selectedValue: string | undefined = undefined;
-  export let groupName: string = "radio-options-group-" + Math.random().toString(36).substring(2, 15); // Unique group name
+  /** Options to render: { "Label": "value" } */
+  export let options: Record<string, string>;
 
-  const dispatch = createEventDispatcher<{ update: string }>();
+  /** Optional store supplied by the parent.
+   *  If none is passed, we create a local one so the component still works standalone. */
+  export let selected: Writable<string | undefined> = writable(undefined);
 
-  let internalSelectedValue = selectedValue;
+  /** Unique <input name> so multiple RadioOptions on the same page don’t clash. */
+  export let groupName: string =
+    'radio-options-group-' + Math.random().toString(36).slice(2, 15);
+
+  /** Local mirror for bind:group on each <input>. */
+  let internalSelectedValue: string | undefined;
+
+  /* ---------- two-way wiring between store and local value ---------- */
+  const unsubscribe = selected.subscribe(value => {
+    if (value !== internalSelectedValue) internalSelectedValue = value;
+  });
 
   function handleChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    internalSelectedValue = target.value;
-    dispatch('update', internalSelectedValue);
+    const { value } = event.target as HTMLInputElement;
+    internalSelectedValue = value;
+    selected.set(value);          // propagate to whoever owns the store
   }
 
-  // React to external changes to selectedValue
-  $: {
-    if (selectedValue !== undefined && selectedValue !== internalSelectedValue) {
-      internalSelectedValue = selectedValue;
-    }
-  }
+  onDestroy(unsubscribe);
 </script>
 
 <div class="options-container">
@@ -29,7 +36,7 @@
       <input
         type="radio"
         name={groupName}
-        {value}
+        value={value}
         bind:group={internalSelectedValue}
         on:change={handleChange}
       />
@@ -41,62 +48,33 @@
 <style>
   .options-container {
     display: flex;
-    flex-direction: column; /* Default: column. Can be overridden by parent for row display. */
-    gap: 15px; /* Default gap, can be overridden */
-    /* Styles from SexInputStage for a row layout (if parent applies .horizontal-options) */
-    /* justify-content: center; */ /* This might be too specific for a general component */
-    /* width: 100%; */ /* This might be too specific for a general component */
+    flex-direction: column;  /* parent can override for row layout */
+    gap: 15px;
   }
 
   .option-label {
     display: flex;
     align-items: center;
-    gap: 8px; /* From SexInputStage */
-    font-size: 1.1em; /* From SexInputStage */
+    gap: 8px;
+    font-size: 1.1em;
     cursor: pointer;
-    padding: 8px 12px; /* Keep some padding for click area */
-    border: 1px solid transparent; /* Default to transparent, can be styled by parent */
+    padding: 8px 12px;
+    border: 1px solid transparent;
     border-radius: 4px;
     transition: background-color 0.2s ease-in-out;
   }
 
   .option-label:hover {
-    background-color: rgba(0, 0, 0, 0.05); /* Subtle hover */
+    background-color: rgba(0, 0, 0, 0.05);
   }
 
-  .option-label input[type="radio"] {
-    accent-color: var(--color-primary, #0077b5); /* From SexInputStage, with var fallback */
-    width: 18px; /* From SexInputStage */
-    height: 18px; /* From SexInputStage */
-    margin-right: 0; /* Gap is handled by parent .option-label */
+  .option-label input[type='radio'] {
+    accent-color: var(--color-primary, #0077b5);
+    width: 18px;
+    height: 18px;
   }
 
-  .option-label input[type="radio"]:checked + .label-text {
+  .option-label input[type='radio']:checked + .label-text {
     font-weight: bold;
   }
-  
-  .label-text {
-    /* font-size is now on .option-label */
-  }
-
-  /* Example for parent to make options horizontal like in SexInputStage */
-  /*
-  :global(.horizontal-options.options-container) {
-    flex-direction: row;
-    justify-content: center;
-    gap: 25px;
-    width: 100%;
-  }
-  */
-  /* If you want to apply horizontal styling directly when a prop is set:
-     e.g., export let layout: 'vertical' | 'horizontal' = 'vertical';
-  */
-  /*
-  .options-container.horizontal {
-    flex-direction: row;
-    justify-content: center;
-    gap: 25px;
-    width: 100%;
-  }
-  */
 </style>
