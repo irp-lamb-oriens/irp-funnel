@@ -53,10 +53,10 @@
         submitSuccess = false;
 
         const storeData = get(store);
-        const funnelId = browser ? localStorage.getItem('currentFunnelId') : null;
-        const funnelVersion = browser ? localStorage.getItem('currentFunnelVersion') : null;
-        const funnelObjectString = browser ? localStorage.getItem('currentFunnelObject') : null;
-        const funnelCopyText = browser ? localStorage.getItem('funnelCopyText') : null;
+        const funnelId = localStorage.getItem('currentFunnelId');
+        const funnelVersion = localStorage.getItem('currentFunnelVersion');
+        const funnelObjectString = localStorage.getItem('currentFunnelObject');
+        const funnelCopyText = localStorage.getItem('funnelCopyText');
 
         let funnelObjectParsed = null;
         if (funnelObjectString) {

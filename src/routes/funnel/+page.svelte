@@ -94,12 +94,6 @@
                         }
                     });
                 }
-            } else {
-                currentFunnelId.set(null);
-                localStorage.removeItem('currentFunnelId');
-                currentFunnelVersion.set(null);
-                localStorage.removeItem('currentFunnelVersion');
-                saveToStore({ currentFunnelId: null, currentFunnelVersion: null });
             }
 
             lastScrollY = window.scrollY; // Initialize lastScrollY

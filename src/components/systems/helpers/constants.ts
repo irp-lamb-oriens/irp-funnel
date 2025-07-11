@@ -3,7 +3,8 @@
 // Original one-way map for UI components like Options
 export const AGE_RANGES_OPTIONS: Record<string, string> = {
   '18 - 35': '18',
-  '36 - 55': '36',
+  '36 - 45': '36',
+  '46 - 55': '46',
   '56 - 65': '56',
   '65+': '65'
 };
