@@ -46,8 +46,7 @@
         <div class="options-wrapper">
             <Options
                 options={AGE_RANGES_OPTIONS}
-                selectedValue={currentAgeRange}
-                on:update={handleAgeUpdate}
+                handleUpdate={handleAgeUpdate}
                 groupName="age-range-selection"
             />
         </div>

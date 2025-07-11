@@ -5,6 +5,8 @@
   /** Options to render: { "Label": "value" } */
   export let options: Record<string, string>;
 
+  export let handleUpdate = (value: any) => {};
+
   /** Optional store supplied by the parent.
    *  If none is passed, we create a local one so the component still works standalone. */
   export let selected: Writable<string | undefined> = writable(undefined);
@@ -25,6 +27,7 @@
     const { value } = event.target as HTMLInputElement;
     internalSelectedValue = value;
     selected.set(value);          // propagate to whoever owns the store
+    handleUpdate(value);
   }
 
   onDestroy(unsubscribe);
