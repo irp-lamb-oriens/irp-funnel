@@ -20,8 +20,9 @@
 	/* reactive sync */
 	$: {
 		const numericAge = Number($age);
+        console.log("age", $age)
 		saveToStore({ age: numericAge });
-		isValid = isBirthdayValid(numericAge);
+		isValid = isBirthdayValid();
 		console.log('[Parent] $age →', $age, '| isValid →', isValid);
 	}
 

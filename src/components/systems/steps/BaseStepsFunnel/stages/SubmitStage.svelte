@@ -18,29 +18,23 @@
 
     // $: stepsIndex = get(store).stepsIndex ?? 0; // Not directly used for display logic here
 
-    let displayData: Record<string, any> = {};
+    let getDisplayData: () => Record<string, any>;
     let funnelCopyForDisplay: string | null = null;
 
     $: {
-        const currentStoreData = get(store);
-        const ageValue = currentStoreData.age?.toString();
-        // Use bidirectional map for direct lookup
-        const ageRangeDisplay = ageValue ? AGE_RANGES_BIDI[ageValue] || ageValue : currentStoreData.age;
-
-
-        displayData = {
-            Name: currentStoreData.name,
-            Email: currentStoreData.email,
-            'Age Range': ageRangeDisplay,
-            // Sex: currentStoreData.sex, // Sex step is deactivated
-            Budget: currentStoreData.budget >= 10000 ? "over 10000" : "under 10000",
-            'Square Feet': currentStoreData.squareFeet === -1 ? "I don't know" : currentStoreData.squareFeet,
-            'Moving From Property Type': currentStoreData.propertyTypeFrom,
-            'Moving To Property Type': currentStoreData.propertyTypeTo,
-            'Reasons for Moving': currentStoreData.reasonsForMoving?.join(', '),
-            'Country From': currentStoreData.countryFrom, // Assuming these are in store
-            'Country To': currentStoreData.countryTo,     // Assuming these are in store
-        };
+        getDisplayData = () => ({
+            Name: $store.name,
+            Email: $store.email,
+            'Age Range': $store.age?.toString() ? AGE_RANGES_BIDI[$store.age?.toString()] || $store.age?.toString() : $store.age,
+            // Sex: $store.sex, // Sex step is deactivated
+            Budget: $store.budget >= 10000 ? "over 10000" : "under 10000",
+            'Square Feet': $store.squareFeet === -1 ? "I don't know" : $store.squareFeet,
+            'Moving From Property Type': $store.propertyTypeFrom,
+            'Moving To Property Type': $store.propertyTypeTo,
+            'Reasons for Moving': $store.reasonsForMoving?.join(', '),
+            'Country From': $store.countryFrom, // Assuming these are in store
+            'Country To': $store.countryTo,     // Assuming these are in store
+        });
         if (browser) {
             funnelCopyForDisplay = localStorage.getItem('funnelCopyText');
         }
@@ -52,7 +46,7 @@
         submitError = null;
         submitSuccess = false;
 
-        const storeData = get(store);
+        const storeData = $store;
         const funnelId = localStorage.getItem('currentFunnelId');
         const funnelVersion = localStorage.getItem('currentFunnelVersion');
         const funnelObjectString = localStorage.getItem('currentFunnelObject');
@@ -145,7 +139,7 @@
             </MarkdownText>
             <div class="review-data">
                 <ul>
-                    {#each Object.entries(displayData) as [key, value]}
+                    {#each Object.entries(getDisplayData()) as [key, value]}
                         {#if value !== undefined && value !== null && value !== ''}
                             <li><strong>{key}:</strong> {value}</li>
                         {/if}
