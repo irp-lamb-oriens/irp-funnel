@@ -1,48 +1,40 @@
 <script lang="ts">
-  import { writable, type Writable } from 'svelte/store';
-  import { onDestroy } from 'svelte';
+	import { writable, type Writable } from 'svelte/store';
+	import { onDestroy } from 'svelte';
 
-  /** Options to render: { "Label": "value" } */
-  export let options: Record<string, string>;
+	export let options: Record<string, string>;
+	export let selected: Writable<string | undefined> = writable(undefined);
+	export let groupName =
+		'radio-options-group-' + Math.random().toString(36).slice(2, 15);
 
-  /** Optional store supplied by the parent.
-   *  If none is passed, we create a local one so the component still works standalone. */
-  export let selected: Writable<string | undefined> = writable(undefined);
+	let internalSelected: string | undefined;
 
-  /** Unique <input name> so multiple RadioOptions on the same page don’t clash. */
-  export let groupName: string =
-    'radio-options-group-' + Math.random().toString(36).slice(2, 15);
+	const unsub = selected.subscribe(v => {
+		if (v !== internalSelected) internalSelected = v;
+	});
 
-  /** Local mirror for bind:group on each <input>. */
-  let internalSelectedValue: string | undefined;
+	function handleChange(e: Event) {
+		const { value } = e.target as HTMLInputElement;
+		console.log('[Options] user picked', value);   // DEBUG
+		internalSelected = value;
+		selected.set(value);
+	}
 
-  /* ---------- two-way wiring between store and local value ---------- */
-  const unsubscribe = selected.subscribe(value => {
-    if (value !== internalSelectedValue) internalSelectedValue = value;
-  });
-
-  function handleChange(event: Event) {
-    const { value } = event.target as HTMLInputElement;
-    internalSelectedValue = value;
-    selected.set(value);          // propagate to whoever owns the store
-  }
-
-  onDestroy(unsubscribe);
+	onDestroy(unsub);
 </script>
 
 <div class="options-container">
-  {#each Object.entries(options) as [label, value] (value)}
-    <label class="option-label">
-      <input
-        type="radio"
-        name={groupName}
-        value={value}
-        bind:group={internalSelectedValue}
-        on:change={handleChange}
-      />
-      <span class="label-text">{label}</span>
-    </label>
-  {/each}
+	{#each Object.entries(options) as [label, value] (value)}
+		<label class="option-label">
+			<input
+				type="radio"
+				name={groupName}
+				value={value}
+				bind:group={internalSelected}
+				on:change={handleChange} />
+			<span class="label-text">{label}</span>
+		</label>
+	{/each}
 </div>
 
 <style>

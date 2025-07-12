@@ -1,66 +1,58 @@
 <script lang="ts">
-    import { get } from 'svelte/store';
-    import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
-    import Page from '../../../wrappers/Page/Page.svelte';
-    import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
-    import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
-    import Options from '../../../selectors/Options/Options.svelte'; // Import the new component
-    import { isBirthdayValid } from '../../../helpers/validationRules.ts';
-    import { AGE_RANGES_OPTIONS } from '../../../helpers/constants.ts';
+	import { writable } from 'svelte/store';
+	import { saveToStore, incrementStepsIndex } from '../../../../store.ts';
+	import { AGE_RANGES_OPTIONS } from '../../../helpers/constants.ts';
+	import { isBirthdayValid } from '../../../helpers/validationRules.ts';
+	import Options from '../../../selectors/Options/Options.svelte';
+	import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
+	import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+	import Page from '../../../wrappers/Page/Page.svelte';
 
-    export let canReveal: boolean;
+	export let canReveal: boolean;
 
-    // Always default to "56-65" range on component load.
-    // The value for this option is "56".
-    let currentAgeRange = '56'; 
-    saveToStore({ age: Number(currentAgeRange) }); // Save this default to the store immediately.
+	/* shared age store */
+	const age = writable('56');
 
-    // Make isValid reactive to changes in the store's age property
-    $: isValid = ($store.age, isBirthdayValid());
+	/* --------- declare here --------- */
+	let isValid = false;          // initial value
+	/* -------------------------------- */
 
-    // Update store whenever currentAgeRange changes
-    function handleAgeUpdate(event: CustomEvent<string>) {
-        currentAgeRange = event.detail;
-        saveToStore({ age: Number(currentAgeRange) }); // Save as number
-        console.log("currentAgeRange", currentAgeRange);
-    }
-    
-    function handleNext() {
-        if (isValid) {
-            incrementStepsIndex();
-        }
-    }
+	/* reactive sync */
+	$: {
+		const numericAge = Number($age);
+		saveToStore({ age: numericAge });
+		isValid = isBirthdayValid(numericAge);
+		console.log('[Parent] $age →', $age, '| isValid →', isValid);
+	}
 
-    // Optional: handleEnter for accessibility, though SubmitButton might handle it
-    function handleEnter(event: KeyboardEvent) {
-        if (event.key === 'Enter' && isValid) {
-            handleNext();
-        }
-    }
+	function handleNext() {
+		if (isValid) incrementStepsIndex();
+	}
+
+	function handleEnter(e: KeyboardEvent) {
+		if (e.key === 'Enter' && isValid) handleNext();
+	}
 </script>
 
 <Page>
-    <div class="stage-content" on:keydown={handleEnter}>
-        <MarkdownText {canReveal}>
-            ## **What is your age range?**
-        </MarkdownText>
+	<div class="stage-content" on:keydown={handleEnter}>
+		<MarkdownText {canReveal}>
+			## **What is your age range?**
+		</MarkdownText>
 
-        <div class="options-wrapper">
-            <Options
-                options={AGE_RANGES_OPTIONS}
-                selectedValue={currentAgeRange}
-                on:update={handleAgeUpdate}
-                groupName="age-range-selection"
-            />
-        </div>
+		<div class="options-wrapper">
+			<Options
+				options={AGE_RANGES_OPTIONS}
+				selected={age}                 
+				groupName="age-range-selection" />
+		</div>
 
-        <SubmitButton
-            label="Next"
-            callback={handleNext}
-            active={isValid}
-            disabled={!isValid}
-        />
-    </div>
+		<SubmitButton
+			label="Next"
+			callback={handleNext}
+			active={isValid}
+			disabled={!isValid} />
+	</div>
 </Page>
 
 <style>
