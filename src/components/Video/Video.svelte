@@ -17,7 +17,7 @@
   let hasMetadata = false;   // whether loadedmetadata fired for current src
   let canPlay = false;
   let playing = false;
-  let interactionDone = false;
+  let interactionDone = false; // becomes true after user activates full playback
   let justActivated = false;
   let clickCooldownUntil = 0;
   let error: string | null = null;
@@ -26,6 +26,63 @@
 
   type NetState = 'idle'|'loading'|'metadata'|'ready'|'buffering'|'error';
   let netState: NetState = 'idle';
+
+  // === Montage (preview) mode ===
+  // Plays tiny 1/8s snippets at evenly spaced points, looping until user hits Play.
+  let montageMode = false;
+  const snippetLen = 0.125;            // seconds
+  const montageSlots = 12;             // number of evenly spaced snippet positions
+  let montageStarts: number[] = [];    // computed after metadata
+  let montageIndex = 0;
+  let segmentEnd = 0;                  // current snippet end time (seconds)
+
+  function buildMontageStops() {
+    montageStarts = [];
+    if (!videoEl || !isFinite(videoEl.duration) || videoEl.duration <= 0) return;
+    const dur = videoEl.duration;
+    const maxStart = Math.max(0, dur - snippetLen);
+    const slots = Math.max(2, montageSlots);
+    for (let i = 0; i < slots; i++) {
+      // Evenly spaced from 0 to maxStart (exclude exact end to avoid clamp churn)
+      montageStarts.push((maxStart * i) / slots);
+    }
+    if (montageStarts.length === 0) montageStarts = [0];
+  }
+
+  function setSegment(i: number) {
+    if (!videoEl || montageStarts.length === 0) return;
+    montageIndex = (i + montageStarts.length) % montageStarts.length;
+    const start = montageStarts[montageIndex];
+    segmentEnd = Math.min(start + snippetLen, Math.max(0, videoEl.duration || 0));
+    try { videoEl.currentTime = start; } catch {}
+  }
+
+  function startMontage() {
+    if (!videoEl) return;
+    buildMontageStops();
+    montageMode = true;
+    playing = true;
+    videoEl.muted = true;     // required for autoplay
+    videoEl.volume = 0;
+    // Kick off playback and jump to first snippet
+    setSegment(0);
+    videoEl.play().catch(() => { playing = false; /* ignore – will retry on canplay */ });
+  }
+
+  function stopMontageAndPlayFromStartUnmuted() {
+    if (!videoEl) return;
+    montageMode = false;
+    interactionDone = true;
+    justActivated = true;
+    clickCooldownUntil = Date.now() + 400;
+    setTimeout(() => (justActivated = false), 400);
+
+    try { videoEl.pause(); } catch {}
+    videoEl.muted = false;
+    videoEl.volume = 1;
+    try { videoEl.currentTime = 0; } catch {}
+    videoEl.play().then(() => (playing = true)).catch(() => (playing = false));
+  }
 
   // Spinner with hysteresis (delay-in, instant-out)
   let showSpinner = false;
@@ -52,6 +109,12 @@
     hasMetadata = false;
     canPlay = false;
     error = null;
+    montageMode = false;
+    montageStarts = [];
+    montageIndex = 0;
+    segmentEnd = 0;
+    interactionDone = false;
+    playing = false;
   }
 
   /** React to src + inView (lazy) changes */
@@ -63,7 +126,6 @@
     } else if (!newSrc || (lazy && !inView)) {
       // Idle: detach to abort network and avoid misleading spinner
       try { videoEl.pause(); } catch {}
-      playing = false;
       resetForNewSrcState();
       lastSrc = "";
       videoEl.removeAttribute("src");
@@ -73,15 +135,14 @@
     } else if (newSrc !== lastSrc) {
       // Abort previous fetch cleanly, then set new source
       try { videoEl.pause(); } catch {}
-      playing = false;
+      resetForNewSrcState();
       videoEl.removeAttribute("src");
       videoEl.load();
 
       lastSrc = newSrc;
-      resetForNewSrcState();
-      videoEl.muted = true; // will unmute on user gesture
+      videoEl.muted = true;        // ensure autoplay eligibility before setting src
       videoEl.src = newSrc;
-      videoEl.load();       // kick off load pipeline
+      videoEl.load();              // kick off load pipeline
       netState = 'loading';
       scheduleSpinner();
     }
@@ -89,20 +150,20 @@
 
   /** Activation / playback */
   function tryPlay() {
-    if (!canPlay || !videoEl) return;
-    videoEl.muted = false;
-    videoEl.volume = 1;
-    interactionDone = true;
-    playing = true;
-    justActivated = true;
-    clickCooldownUntil = Date.now() + 400;
-    setTimeout(() => (justActivated = false), 400);
-    videoEl.play().catch(() => { playing = false; });
+    // Called from overlay (if shown). We use it to exit montage and play normally.
+    stopMontageAndPlayFromStartUnmuted();
   }
 
   function togglePlay(e: Event) {
     e.stopPropagation();
     if (justActivated || Date.now() < clickCooldownUntil) return;
+
+    if (montageMode) {
+      // User explicitly wants full playback
+      stopMontageAndPlayFromStartUnmuted();
+      return;
+    }
+
     if (playing) {
       videoEl.pause();
       playing = false;
@@ -113,12 +174,31 @@
 
   /** Media events → state transitions */
   function onLoadStart() { netState = 'loading'; scheduleSpinner(); }
-  function onLoadedMetadata() { hasMetadata = true; error = null; netState = 'metadata'; hideSpinner(); }
-  function onCanPlay() { canPlay = true; netState = 'ready'; hideSpinner(); }
+  function onLoadedMetadata() {
+    hasMetadata = true; error = null; netState = 'metadata'; hideSpinner();
+    buildMontageStops();
+  }
+  function onCanPlay() {
+    canPlay = true; netState = 'ready'; hideSpinner();
+    // Autoplay muted + montage, only if user hasn't interacted yet
+    if (!interactionDone && !montageMode) startMontage();
+  }
   function onPlaying() { playing = true; if (netState !== 'ready') netState = 'ready'; hideSpinner(); }
   function onWaiting() { if (playing) { netState = 'buffering'; scheduleSpinner(); } }
   function onStalled() { if (playing) { netState = 'buffering'; scheduleSpinner(); } }
-  function onTimeUpdate() { if (playing && netState === 'buffering') { netState = 'ready'; hideSpinner(); } }
+  function onTimeUpdate() {
+    if (playing && netState === 'buffering') { netState = 'ready'; hideSpinner(); }
+
+    // Advance montage snippets while in preview mode
+    if (montageMode && videoEl && isFinite(segmentEnd) && segmentEnd > 0) {
+      // Small epsilon to avoid stutter loops
+      if (videoEl.currentTime >= segmentEnd - 0.01) {
+        setSegment((montageIndex + 1) % Math.max(1, montageStarts.length));
+        // Ensure playback continues after seek
+        videoEl.play().catch(() => {});
+      }
+    }
+  }
   function onError() {
     hasMetadata = false; canPlay = false; playing = false;
     netState = 'error'; hideSpinner();
@@ -193,7 +273,9 @@
     class="hero-banner-video"
     class:ready={hasMetadata}
     playsinline
+    autoplay            
     preload="metadata"
+    muted              
     {poster}
     on:loadstart={onLoadStart}
     on:loadedmetadata={onLoadedMetadata}
@@ -211,7 +293,8 @@
     <div class="overlay">No video source</div>
   {:else if showSpinner}
     <Loading />
-  {:else if hasMetadata && !interactionDone}
+  {:else if hasMetadata && !interactionDone && !montageMode}
+    <!-- If you still want a hint before autoplay starts for some edge case -->
     <div class="overlay" on:click={tryPlay}>
       {isMobile ? "Tap to play with sound" : "Click to activate sound"}
     </div>
@@ -220,8 +303,8 @@
   <button
     on:click|stopPropagation={togglePlay}
     class="video--play-button"
-    class:hidden={playing}
-    aria-label={playing ? "Pause" : "Play"}>
+    class:hidden={!montageMode ? playing : false}  
+    aria-label={playing && !montageMode ? "Pause" : "Play"}>
     <div class="play-container">
       <img class="ghost" src="./icons/play.svg" alt="" />
       <img src="./icons/play.svg" alt="Play video" />
@@ -243,13 +326,14 @@
       position: absolute;
       inset: 0;
       z-index: 2;
-      background: var(--color-background);
+      background: transparent; /* don't block preview */
       color: #fff;
       font: 600 clamp(1rem, 3vw, 1.5rem)/1.2 sans-serif;
       display: grid;
       place-items: center;
       cursor: pointer;
       user-select: none;
+      pointer-events: none; /* purely informational in preview */
     }
 
     .play-container { position: relative; }

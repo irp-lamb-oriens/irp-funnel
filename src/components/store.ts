@@ -10,15 +10,26 @@ export const isScrollingDown = writable<boolean>(false); // Add state for scroll
 
 // Define Funnel types based on API structure
 export interface Funnel {
-  country: string; // from API object's title
-  videoSrc: string; // from API version's cloudflare_video_src
-  copy: string; // from API version's copy
+  country: string;
+  videoSrc: string;
+  copy: string;
   thankYouSrc: string;
+  brand?: string;
+  eyebrow?: string;
+  headline?: string;
+  subhead?: string;
+  ratingValue?: string;
+  ratingCount?: string;
 }
 
 interface ApiFunnelVersion {
   cloudflare_video_src: string;
   copy: string;
+  eyebrow?: string;
+  headline?: string;
+  subhead?: string;
+  rating_value?: string;
+  rating_count?: string;
 }
 
 interface ApiFunnelObject {
@@ -28,6 +39,7 @@ interface ApiFunnelObject {
   metadata: {
     versions: ApiFunnelVersion[];
     thank_you_video: string;
+    brand?: string;
   };
 }
 
@@ -53,11 +65,17 @@ async function loadFunnelsFromAPI() {
     data.objects.forEach((apiObject) => {
       const funnelVersions: Record<string, Funnel> = {};
       apiObject.metadata.versions.forEach((version, index) => {
-        funnelVersions[index.toString()] = { // Use index as string for the version key
+        funnelVersions[index.toString()] = {
           country: apiObject.title,
           videoSrc: version.cloudflare_video_src,
           thankYouSrc: apiObject.metadata.thank_you_video,
           copy: version.copy,
+          brand: apiObject.metadata.brand,
+          eyebrow: version.eyebrow,
+          headline: version.headline,
+          subhead: version.subhead,
+          ratingValue: version.rating_value,
+          ratingCount: version.rating_count,
         };
       });
       transformedFunnels[apiObject.slug] = funnelVersions;

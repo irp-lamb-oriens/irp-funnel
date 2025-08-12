@@ -56,9 +56,19 @@
 	
 				## You've **scheduled** a **call** with us.
 			</MarkdownText>
-			{#key $currentFunnel}
-				<Video src={$currentFunnel?.thankYouSrc as string}/>
-			{/key}
+			<div class="center">
+				<SubmitButton
+					color="error"
+					label="NEXT STEPS"
+					callback={() => {
+						videoInteractionStore.set({ type: "stop" });
+						saveToStore({
+							stepsIndex: $store.stepsIndex + 1
+						});
+					}}
+					disabled={false}
+				/>
+			</div>
 			{#if email || name || countryFrom || countryTo}
 				<div class="thankyou-details">
 					{#if name}<div><b>Name:</b> {name}</div>{/if}
@@ -67,19 +77,9 @@
 					{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
 				</div>
 			{/if}
-		</div>
-		<div class="center">
-			<SubmitButton
-				color="error"
-				label="NEXT STEPS"
-				callback={() => {
-					videoInteractionStore.set({ type: "stop" });
-					saveToStore({
-						stepsIndex: $store.stepsIndex + 1
-					});
-				}}
-				disabled={false}
-			/>
+			{#key $currentFunnel}
+				<Video src={$currentFunnel?.thankYouSrc as string}/>
+			{/key}
 		</div>
 	</div>
 </Page>
