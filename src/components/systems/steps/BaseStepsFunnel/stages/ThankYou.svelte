@@ -6,6 +6,7 @@
 	import Video from '../../../../Video/Video.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
+    import { onMount } from 'svelte';
 
 	export let canReveal = false;
 
@@ -36,6 +37,14 @@
 		
 		videoInteractionStore.set({ type: "stop" });
 	});
+
+	$: currentFunnel;
+
+	// onMount(() => {
+	// 	setTimeout(() => {
+	// 		console.log("$currentFunnel hoa", $currentFunnel)
+	// 	}, 2e3)
+	// })
 </script>
 
 <Page>
@@ -47,6 +56,9 @@
 	
 				## You've **scheduled** a **call** with us.
 			</MarkdownText>
+			{#key $currentFunnel}
+				<Video src={$currentFunnel?.thankYouSrc as string}/>
+			{/key}
 			{#if email || name || countryFrom || countryTo}
 				<div class="thankyou-details">
 					{#if name}<div><b>Name:</b> {name}</div>{/if}

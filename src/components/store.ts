@@ -13,6 +13,7 @@ export interface Funnel {
   country: string; // from API object's title
   videoSrc: string; // from API version's cloudflare_video_src
   copy: string; // from API version's copy
+  thankYouSrc: string;
 }
 
 interface ApiFunnelVersion {
@@ -26,6 +27,7 @@ interface ApiFunnelObject {
   type: string; // "funnels"
   metadata: {
     versions: ApiFunnelVersion[];
+    thank_you_video: string;
   };
 }
 
@@ -54,6 +56,7 @@ async function loadFunnelsFromAPI() {
         funnelVersions[index.toString()] = { // Use index as string for the version key
           country: apiObject.title,
           videoSrc: version.cloudflare_video_src,
+          thankYouSrc: apiObject.metadata.thank_you_video,
           copy: version.copy,
         };
       });
@@ -75,21 +78,56 @@ loadFunnelsFromAPI();
 
 import { browser } from '$app/environment';
 
-// Initialize currentFunnelId and currentFunnelVersion from localStorage if in browser
-const initialFunnelId = browser ? localStorage.getItem('currentFunnelId') : null;
-export const currentFunnelId = writable<string | null>(initialFunnelId);
+// Initialize currentFunnelId and currentFunnelVersion to null initially.
+// They will be populated from localStorage on the client-side after page load.
+export const currentFunnelId = writable<string | null>(null);
+export const currentFunnelVersion = writable<string | null>(null);
 
-const initialFunnelVersion = browser ? localStorage.getItem('currentFunnelVersion') : null;
-export const currentFunnelVersion = writable<string | null>(initialFunnelVersion);
+if (browser) {
+	// We defer this to run after the initial script evaluation.
+	// This ensures that it runs on the client when localStorage is available.
+	setTimeout(() => {
+		const storedFunnelId = localStorage.getItem('currentFunnelId');
+		if (storedFunnelId) {
+			currentFunnelId.set(storedFunnelId);
+		}
 
-// Derived store for the currently selected funnel object
-export const currentFunnel = derived(
-  [funnels, currentFunnelId, currentFunnelVersion],
-  ([$funnels, $currentFunnelId, $currentFunnelVersion]) =>
-    $currentFunnelId && $currentFunnelVersion && $funnels[$currentFunnelId]?.[$currentFunnelVersion]
-      ? $funnels[$currentFunnelId][$currentFunnelVersion]
-      : null
-);
+    console.log("storedFunnelId", storedFunnelId)
+		const storedFunnelVersion = localStorage.getItem('currentFunnelVersion');
+		if (storedFunnelVersion) {
+			currentFunnelVersion.set(storedFunnelVersion);
+		}
+
+    console.log("storedFunnelVersion", storedFunnelVersion)
+	}, 0);
+}
+
+export const currentFunnel = writable<Funnel | null>(null);
+
+// Manually derive and update currentFunnel when its dependencies change.
+const updateCurrentFunnel = () => {
+	const $funnels = get(funnels);
+	const $currentFunnelId = get(currentFunnelId);
+	const $currentFunnelVersion = get(currentFunnelVersion);
+
+  console.log("$funnels hey", $funnels)
+  console.log("$currentFunnelId", $currentFunnelId)
+  console.log("$currentFunnelVersion", $currentFunnelVersion)
+
+	const newFunnel =
+		$currentFunnelId && $currentFunnelVersion && $funnels[$currentFunnelId]?.[$currentFunnelVersion]
+			? $funnels[$currentFunnelId][$currentFunnelVersion]
+			: null;
+
+	currentFunnel.set(newFunnel);
+
+  console.log("currentFunnel", get(currentFunnel))
+};
+
+// Subscribe to changes in dependencies.
+funnels.subscribe(updateCurrentFunnel);
+currentFunnelId.subscribe(updateCurrentFunnel);
+currentFunnelVersion.subscribe(updateCurrentFunnel);
 
 const store = writable<Store>({
   keysToSave: ["name", "email", "age", "sex", "budget", "reasonsForMoving", "squareFeet", "propertyTypeFrom", "propertyTypeTo"],
