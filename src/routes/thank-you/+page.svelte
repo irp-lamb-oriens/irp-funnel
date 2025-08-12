@@ -8,6 +8,7 @@
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
     import type { PageData } from './$types.ts'; // Import PageData type
     import ThankYou from "../../components/systems/steps/BaseStepsFunnel/ThankYou.svelte";
+    import Brand from "../../components/Brand/Brand.svelte";
 
     export let data: PageData; // Receive data from load function
 
@@ -118,6 +119,7 @@
     });
 </script>
 
+<Brand />
 <ThemeChanger visible={false} />
 <GlobalData />
 <SocketClient />

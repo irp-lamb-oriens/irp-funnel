@@ -7,6 +7,7 @@
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
     import { onMount } from 'svelte';
+    import Brand from '../../../../Brand/Brand.svelte';
 
 	export let canReveal = false;
 

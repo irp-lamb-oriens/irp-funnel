@@ -1,6 +1,9 @@
 <script lang="ts">
-  import LegalPageLayout from '../../components/systems/wrappers/LegalPageLayout/LegalPageLayout.svelte';
+  import Brand from '../../components/Brand/Brand.svelte';
+import LegalPageLayout from '../../components/systems/wrappers/LegalPageLayout/LegalPageLayout.svelte';
 </script>
+
+<Brand />
 
 <LegalPageLayout title="Privacy Policy" lastUpdated="August 12, 2025">
   <div class="tldr">
@@ -63,7 +66,7 @@
 
   <h2>4. Your Rights and How to Exercise Them</h2>
   <p>
-    You have rights over your personal data. Depending on your region, these may include the right to access, correct, or delete your information. To exercise these rights, please contact our Data Protection Officer at <a href="mailto:privacy@example.com">privacy@example.com</a>.
+    You have rights over your personal data. Depending on your region, these may include the right to access, correct, or delete your information. To exercise these rights, please contact our Data Protection Officer at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
   </p>
 
   <h2>5. Data Security & Retention</h2>
@@ -78,7 +81,7 @@
 
   <h2>7. Changes & Contact</h2>
   <p>
-    We may update this policy from time to time. If you have any questions, please contact us at <a href="mailto:privacy@example.com">privacy@example.com</a>.
+    We may update this policy from time to time. If you have any questions, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
   </p>
 </LegalPageLayout>
 

@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
 
-const COLOR_1 = "#f24e02";
-const COLOR_2 = "#03a9f4";
+const COLOR_1 = "#02b5bb";
+const COLOR_2 = "#02b5bb";
 
 export const themeIndex = writable<number>();
 export const foregroundColor = writable<string>(COLOR_1);

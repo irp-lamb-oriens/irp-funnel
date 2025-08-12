@@ -38,14 +38,14 @@
 
   const updateTheme = () => {
     themeIndex.set(+$isDarkTheme);
-    setThemeCSSVar("color-background", ["#fff", "#181818"]);
-    setThemeCSSVar("color-background-opaque", ["#fff8", "#18181888"]);
-    setThemeCSSVar("color-background-very-opaque", ["#ffffff0f", "#1818180f"]);
+    setThemeCSSVar("color-background", ["#fff", "#2c2c2c"]);
+    setThemeCSSVar("color-background-opaque", ["#fff8", "#2c2c2c88"]);
+    setThemeCSSVar("color-background-very-opaque", ["#ffffff0f", "#2c2c2c0f"]);
     setThemeCSSVar("color-foreground-opaque", [$complementaryColor + "88", $foregroundColor + "88"]);
     setThemeCSSVar("color-foreground-very-opaque", [$foregroundColor + "0f", $foregroundColor + "0f"]);
     setThemeCSSVar("color-foreground", [$complementaryColor, $foregroundColor]);
     setThemeCSSVar("color-foreground-inversion", [$complementaryColor, "#fff"]);
-    setThemeCSSVar("color-outline", ["#181818", "#fff"]);
+    setThemeCSSVar("color-outline", ["#2c2c2c", "#fff"]);
     setThemeCSSVar("color-untamed", ["#000", "#f5f5f5"]);
     setThemeCSSVar("color-tamed", ["#262626", "#d2d2d2"]);
     setThemeCSSVar("bg-filter", [

@@ -8,6 +8,7 @@
   import { videoInteractionStore } from '../../../../Video/VideoInteractionStore.ts';
   import ImageGrid from '../../../wrappers/ImageGrid/ImageGrid.svelte';
   import { browser } from '$app/environment';
+    import Brand from '../../../../Brand/Brand.svelte';
 
 	export let canReveal = false;
   export let thankYouUrl: string = '/thank-you';
@@ -92,7 +93,11 @@
   </script>
 </svelte:head>
 
+
+<Brand />
+
 <Page>
+
 	{#if $currentFunnel}
     <!-- New top fold: eyebrow → headline → subhead → primary CTA -->
     <div class="hero center">
@@ -175,6 +180,15 @@
 <style>
 	.pt	{ padding-top: 100px; }
 
+	.wrapper {
+		background: var(--color-background);
+	}
+
+	.logo {
+		width: 150px;
+		display: block;
+	}
+
 	.center {
 		display: grid;
 		place-items: center;
@@ -187,12 +201,13 @@
   .hero.center { max-width: 1024px; margin-top: 24px; gap: 14px; padding: 0 2rem; }
 
   .eyebrow {
-    font-size: 0.875rem;
+    font-size: 1.5rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     opacity: 0.9;
     position: relative;
-	color: var(--color-background);
+	color: var(--color-highlight);
+	filter: brightness(2);
   }
   .eyebrow-dot {
     display: inline-block;
@@ -204,16 +219,18 @@
   }
 
   .headline {
-    font-size: clamp(36px, 6vw, 50px);
+    font-size: clamp(18px,8vw,60px);
     line-height: 1.1;
     margin: 0;
 	font-family: var(--font-subtitle);
+	color: var(--color-background);
   }
   .subhead {
-    font-size: clamp(16px, 2vw, 18px);
+    font-size: clamp(20px, 3vw, 24px);
     opacity: 0.9;
     margin: 0;
-	color: var(--color-background);
+	color: var(--color-highlight);
+	filter: brightness(2);
   }
   .arrow-bounce {
     font-size: 100px;

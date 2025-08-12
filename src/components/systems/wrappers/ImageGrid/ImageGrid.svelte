@@ -16,13 +16,16 @@
   let container: HTMLDivElement;
   let track: HTMLDivElement;
 
-  // Tripled list so we can wrap seamlessly
-  $: tripled = images.length ? [...images, ...images, ...images] : [];
+  let numCopies = 3;
+
+  // Multiplied list so we can wrap seamlessly
+  $: tripled = images.length ? Array(numCopies).fill(0).flatMap(() => images) : [];
 
   // Writable store for X translation (required for Svelte $store syntax)
   const x = writable(0);
 
   let segment = 0;        // width of a single set of images
+  let minX = 0;           // dynamic lower bound to prevent seeing beyond the track
   let dragging = false;   
   let pointerId: number | null = null;
   let lastX = 0;          // last pointer x
@@ -34,9 +37,20 @@
 
   function measure() {
     if (!track) return;
-    // The track contains 3 copies of the list; divide to get one segment's width
-    segment = track.scrollWidth / 3;
-    x.set(-segment);
+    // The track contains numCopies sets of the list; divide to get one segment's width
+    segment = track.scrollWidth / numCopies;
+    minX = - (track.scrollWidth - (container?.clientWidth || 0)) || 0;
+    checkAndUpdateCopies();
+  }
+
+  function checkAndUpdateCopies() {
+    if (!segment || !container) return;
+    const w = container.clientWidth;
+    if (w <= 0) return;
+    const needed = 2 + Math.ceil(w / segment);
+    if (needed > numCopies) {
+      numCopies = needed;
+    }
   }
 
   onMount(() => {
@@ -64,6 +78,7 @@
     };
 
     gsap.ticker.add(tickerFn);
+    x.set(-segment);
   });
 
   onDestroy(() => {
@@ -74,8 +89,8 @@
 
   function wrap(nx: number) {
     if (!segment) return nx;
-    // Keep x in [-2*segment, 0) so we always have items on both sides
-    while (nx <= -2 * segment) nx += segment;
+    // Keep x in [minX, 0)
+    while (nx < minX) nx += segment;
     while (nx >= 0) nx -= segment;
     return nx;
   }

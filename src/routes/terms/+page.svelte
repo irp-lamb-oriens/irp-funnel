@@ -1,6 +1,9 @@
 <script lang="ts">
-  import LegalPageLayout from '../../components/systems/wrappers/LegalPageLayout/LegalPageLayout.svelte';
+  import Brand from '../../components/Brand/Brand.svelte';
+import LegalPageLayout from '../../components/systems/wrappers/LegalPageLayout/LegalPageLayout.svelte';
 </script>
+
+<Brand />
 
 <LegalPageLayout title="Terms of Service" lastUpdated="August 12, 2025">
   <div class="tldr">
