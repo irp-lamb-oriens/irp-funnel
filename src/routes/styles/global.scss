@@ -2,7 +2,7 @@
 @font-face {
   font-family: "Spartan Black";
   font-weight: bold;
-  src: url("./fonts/League_Spartan/static/LeagueSpartan-Black.ttf")
+  src: url("/fonts/League_Spartan/static/LeagueSpartan-Black.ttf")
     format("truetype");
 }
 
@@ -10,14 +10,14 @@
 @font-face {
   font-family: "Jost";
   font-weight: normal;
-  src: url("./fonts/JOST/Jost-Light.ttf") format("truetype");
+  src: url("/fonts/JOST/Jost-Light.ttf") format("truetype");
 }
 
 /* Kiona */
 @font-face {
   font-family: "Kiona Regular";
   font-weight: normal;
-  src: url("./fonts/KIONA/Kiona-Regular.ttf") format("truetype");
+  src: url("/fonts/KIONA/Kiona-Regular.ttf") format("truetype");
 }
 
 :global(:root) {
