@@ -1,7 +1,6 @@
 <!-- Video.svelte -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import Hls from "hls.js";
 
   /* ---------- refs & props ---------- */
   let videoEl: HTMLVideoElement;
@@ -20,7 +19,6 @@
   let justActivated = false;
   let clickCooldownUntil = 0;
 
-  let hls: Hls | null = null;
   let error: string | null = null;
 
   /* ---------- helpers ---------- */
@@ -106,8 +104,9 @@
     isMobile = matchMedia('(pointer: coarse)').matches;
     if (videoEl) {
       videoEl.muted = true;
-      // removed automatic autoplay; play only on user interaction
-      initHls();
+      videoEl.src = src;
+      videoEl.addEventListener('loadedmetadata', () => (canPlay = true));
+      videoEl.addEventListener('error', () => (error = 'Video format not supported or failed to load.'));
       videoEl.addEventListener('pause', onPause);
       videoEl.addEventListener('ended', onEnded);
     }
@@ -118,7 +117,6 @@
 
   onDestroy(() => {
     removeActivationListeners();
-    hls?.destroy();
     if (videoEl) {
       videoEl.removeEventListener('pause', onPause);
       videoEl.removeEventListener('ended', onEnded);
@@ -126,21 +124,6 @@
     window.removeEventListener('beforeunload', onPageUnload);
     document.removeEventListener('visibilitychange', onVisibilityChange);
   });
-
-  function initHls() {
-    if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(src);
-      hls.attachMedia(videoEl);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => (canPlay = true));
-      hls.on(Hls.Events.ERROR, (_e, d) => (error = d.details ?? 'HLS error'));
-    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-      videoEl.src = src;
-      videoEl.addEventListener('loadedmetadata', () => (canPlay = true));
-    } else {
-      error = 'HLS no soportado.';
-    }
-  }
 </script>
 
 {#if error}
