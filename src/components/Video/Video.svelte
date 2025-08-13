@@ -2,6 +2,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import Loading from "./Loading.svelte";
+  import { autoLoad } from "./videoLoader.js";
+  import type { AutoLoaderResult } from "./types.js";
 
   let videoEl: HTMLVideoElement;
   let container: HTMLDivElement;
@@ -23,6 +25,8 @@
   let error: string | null = null;
   let lastSrc = "";
   let inView = true; // managed by IO when lazy=true
+  let activeLoader: AutoLoaderResult | null = null;
+  let abortController: AbortController | null = null;
 
   type NetState = 'idle'|'loading'|'metadata'|'ready'|'buffering'|'error';
   let netState: NetState = 'idle';
@@ -105,7 +109,15 @@
     }
   }
 
-  function resetForNewSrcState() {
+  async function resetForNewSrcState() {
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
+    }
+    if (activeLoader?.teardown) {
+      await activeLoader.teardown();
+    }
+    activeLoader = null;
     hasMetadata = false;
     canPlay = false;
     error = null;
@@ -125,26 +137,34 @@
       // not mounted yet
     } else if (!newSrc || (lazy && !inView)) {
       // Idle: detach to abort network and avoid misleading spinner
-      try { videoEl.pause(); } catch {}
-      resetForNewSrcState();
-      lastSrc = "";
-      videoEl.removeAttribute("src");
-      videoEl.load();
-      netState = 'idle';
-      hideSpinner();
+      (async () => {
+        try { videoEl.pause(); } catch {}
+        await resetForNewSrcState();
+        lastSrc = "";
+        videoEl.removeAttribute("src");
+        videoEl.load();
+        netState = 'idle';
+        hideSpinner();
+      })();
     } else if (newSrc !== lastSrc) {
-      // Abort previous fetch cleanly, then set new source
-      try { videoEl.pause(); } catch {}
-      resetForNewSrcState();
-      videoEl.removeAttribute("src");
-      videoEl.load();
-
-      lastSrc = newSrc;
-      videoEl.muted = true;        // ensure autoplay eligibility before setting src
-      videoEl.src = newSrc;
-      videoEl.load();              // kick off load pipeline
-      netState = 'loading';
-      scheduleSpinner();
+      (async () => {
+        await resetForNewSrcState();
+        lastSrc = newSrc;
+        netState = 'loading';
+        scheduleSpinner();
+        abortController = new AbortController();
+        try {
+          activeLoader = await autoLoad(newSrc, { signal: abortController.signal });
+          activeLoader.attach(videoEl);
+          videoEl.muted = true; // ensure autoplay eligibility
+          videoEl.load(); // kick off load pipeline
+        } catch (e) {
+          const err = e as Error;
+          error = err.message;
+          netState = 'error';
+          hideSpinner();
+        }
+      })();
     }
   }
 
@@ -259,6 +279,7 @@
     window.removeEventListener("beforeunload", onPageUnload);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     hideSpinner();
+    resetForNewSrcState();
   });
 </script>
 
