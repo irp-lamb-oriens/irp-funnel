@@ -130,9 +130,9 @@
     <div class="center proof">
       <div
         class="rating"
-        aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '90')} google reviews"
+        aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '89')} google reviews"
       >
-		<span class="stars">★★★★★</span> {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '90')} google reviews
+		<span class="stars">★★★★★</span> {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '89')} google reviews
       </div>
     </div>
 
