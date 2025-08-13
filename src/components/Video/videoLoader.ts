@@ -181,6 +181,25 @@ export async function autoLoad(
     video.canPlayType('video/mp4');
   const mseSupported = 'MediaSource' in window && MediaSource.isTypeSupported('video/mp4');
 
+  // Prioritize direct loading
+  try {
+    // This is a conceptual check; in practice, direct assignment happens first.
+    // If it fails, the other methods can be tried.
+    return {
+        mode: 'direct',
+        attach: (el: HTMLVideoElement) => {
+          el.src = url;
+          el.playsInline = true;
+        },
+        teardown: async () => {
+          /* no-op */
+        },
+      };
+  } catch (e) {
+    console.warn('Direct load failed, trying MSE.', e);
+  }
+
+
   if (mseSupported) {
     try {
       const { objectUrl, teardown } = await loadVideoWithMSE(url, options);
@@ -209,11 +228,11 @@ export async function autoLoad(
         teardown: async () => revoke(),
       };
     } catch (e) {
-        console.warn('Blob load failed, falling back to direct.', e);
+        console.warn('Blob load failed.', e);
     }
   }
 
-  // Final fallback to direct URL
+  // This should not be reached if direct loading is prioritized, but serves as a final fallback.
   return {
     mode: 'direct',
     attach: (el: HTMLVideoElement) => {

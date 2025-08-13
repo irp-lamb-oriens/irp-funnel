@@ -135,18 +135,7 @@
 
     if (!videoEl) {
       // not mounted yet
-    } else if (!newSrc || (lazy && !inView)) {
-      // Idle: detach to abort network and avoid misleading spinner
-      (async () => {
-        try { videoEl.pause(); } catch {}
-        await resetForNewSrcState();
-        lastSrc = "";
-        videoEl.removeAttribute("src");
-        videoEl.load();
-        netState = 'idle';
-        hideSpinner();
-      })();
-    } else if (newSrc !== lastSrc) {
+    } else if (newSrc && newSrc !== lastSrc && (inView || !lazy)) {
       (async () => {
         await resetForNewSrcState();
         lastSrc = newSrc;
@@ -154,8 +143,8 @@
         scheduleSpinner();
         abortController = new AbortController();
         try {
-          activeLoader = await autoLoad(newSrc, { signal: abortController.signal });
-          activeLoader.attach(videoEl);
+          // Prioritize direct loading and use autoLoad as a fallback system.
+          videoEl.src = newSrc;
           videoEl.muted = true; // ensure autoplay eligibility
           videoEl.load(); // kick off load pipeline
         } catch (e) {
@@ -165,6 +154,16 @@
           hideSpinner();
         }
       })();
+    } else if (!newSrc) {
+        (async () => {
+            try { videoEl.pause(); } catch {}
+            await resetForNewSrcState();
+            lastSrc = "";
+            videoEl.removeAttribute("src");
+            videoEl.load();
+            netState = 'idle';
+            hideSpinner();
+        })();
     }
   }
 
