@@ -135,7 +135,7 @@
         class="rating"
         aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '6403')} reviews"
       >
-        ★★★★★ {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '6,403')} reviews
+		<span class="stars">★★★★★</span> {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '6,403')} reviews
       </div>
     </div>
 
@@ -178,6 +178,10 @@
 </Page>
 
 <style>
+	.stars {
+		color: #ffc107;
+	}
+
 	.pt	{ padding-top: 100px; }
 
 	.wrapper {
@@ -208,6 +212,9 @@
     position: relative;
 	color: var(--color-highlight);
 	filter: brightness(2);
+	padding: 1rem 5rem;
+    background: var(--color-background-inversion);
+    border-radius: 50px;
   }
   .eyebrow-dot {
     display: inline-block;
