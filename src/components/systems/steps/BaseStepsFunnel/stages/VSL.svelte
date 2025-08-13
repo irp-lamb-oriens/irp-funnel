@@ -99,7 +99,7 @@
     <!-- New top fold: eyebrow → headline → subhead → primary CTA -->
     <div class="hero center">
       <span class="eyebrow">
-        {$currentFunnel.eyebrow ?? 'New Appointment Revealed'}
+        {$currentFunnel.eyebrow ?? 'Public Speaker Relocation Expert — Helps Thousands of Families Move Abroad'}
         <span class="eyebrow-dot"></span>
       </span>
 
@@ -108,7 +108,7 @@
       </h1>
 
       <p class="subhead">
-        {$currentFunnel.subhead ?? 'Schedule your strategy consult. No fluff—see your gaps, your numbers, your plan.'}
+        {$currentFunnel.subhead ?? "Learn about the risks, requirements and regulations, you don't have to do it alone"}
       </p>
 
       <SubmitButton
@@ -202,7 +202,7 @@
   .hero.center { max-width: 1024px; margin-top: 24px; gap: 14px; padding: 0 2rem; }
 
   .eyebrow {
-    font-size: 1.5rem;
+    font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     opacity: 0.9;
