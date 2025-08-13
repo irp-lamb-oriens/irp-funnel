@@ -202,7 +202,7 @@
   .hero.center { max-width: 1024px; margin-top: 24px; gap: 14px; padding: 0 2rem; }
 
   .eyebrow {
-    font-size: 1rem;
+    font-size: clamp(10px, 2vw, 16px);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     opacity: 0.9;
