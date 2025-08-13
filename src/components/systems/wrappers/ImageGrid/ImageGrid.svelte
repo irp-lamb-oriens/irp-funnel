@@ -1,146 +1,141 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import gsap from 'gsap';
-  import { writable, get } from 'svelte/store';
+  import { onMount, onDestroy, tick } from 'svelte';
+  import { writable } from 'svelte/store';
   import RevealingImage from './RevealingImage.svelte';
 
   // Public props
   export let images: string[] = [];
   export let autoplay = true;        // continuous auto-scroll
-  export let speed = 0.06;           // px per ms for autoplay
+  export let speed = 0.06;           // px per ms for autoplay (positive = scroll left)
   export let gap = 28;               // px gap between items
   export let itemWidth = 'clamp(180px, 22vw, 260px)';
-  export let throwFactor = 220;      // ms-scale for release momentum
+  export let throwFactor = 220;      // scales release momentum (ms-like feel)
   export let friction = 0.95;        // per-16ms decay factor for inertia
 
   let container: HTMLDivElement;
   let track: HTMLDivElement;
 
-  let numCopies = 3;
-
-  // Multiplied list so we can wrap seamlessly
-  $: tripled = images.length ? Array(numCopies).fill(0).flatMap(() => images) : [];
-
-  // Writable store for X translation (required for Svelte $store syntax)
+  // translation store
   const x = writable(0);
 
-  let segment = 0;        // width of a single set of images
-  let minX = 0;           // dynamic lower bound to prevent seeing beyond the track
-  let dragging = false;   
-  let pointerId: number | null = null;
-  let lastX = 0;          // last pointer x
-  let lastT = 0;          // last timestamp (ms)
-  let velocity = 0;       // px per ms, updated while dragging
-  let ro: ResizeObserver;
-  let releaseTween: gsap.core.Tween | null = null;
-  let tickerFn: () => void;
+  // 3x list for seamless wrap
+  const COPIES = 3;
+  $: tripled = images.length ? Array(COPIES).fill(0).flatMap(() => images) : [];
 
-  function measure() {
-    if (!track) return;
-    // The track contains numCopies sets of the list; divide to get one segment's width
-    segment = track.scrollWidth / numCopies;
-    minX = - (track.scrollWidth - (container?.clientWidth || 0)) || 0;
-    checkAndUpdateCopies();
-  }
+  // width of a single set of images (first copy), including gaps
+  let segment = 0;
+  let rAF: number | null = null;
+  let ro: ResizeObserver | null = null;
 
-  function checkAndUpdateCopies() {
-    if (!segment || !container) return;
-    const w = container.clientWidth;
-    if (w <= 0) return;
-    const needed = 2 + Math.ceil(w / segment);
-    if (needed > numCopies) {
-      numCopies = needed;
+  function measureSegment() {
+    if (!track || !images.length) { segment = 0; return; }
+    const children = Array.from(track.children) as HTMLElement[];
+    if (!children.length) { segment = 0; return; }
+
+    // sum widths of the first images.length items + gaps between them
+    let w = 0;
+    const styles = getComputedStyle(track);
+    const gapPx = parseFloat(styles.gap || '0') || gap;
+    for (let i = 0; i < Math.min(images.length, children.length); i++) {
+      const el = children[i];
+      w += el.getBoundingClientRect().width;
+      if (i < images.length - 1) w += gapPx;
     }
+    segment = w;
   }
 
-  onMount(() => {
-    measure();
-    ro = new ResizeObserver(measure);
-    ro.observe(track);
-
-    lastT = performance.now();
-    tickerFn = () => {
-      const now = performance.now();
-      const dt = now - lastT; // ms
-      lastT = now;
-
-      if (!dragging && segment) {
-        // decay previously captured velocity for a smooth glide
-        const decay = Math.pow(friction, dt / 16);
-        velocity *= decay;
-
-        const auto = autoplay ? -speed * dt : 0;
-        const delta = auto + velocity * dt;
-
-        const nx = wrap(get(x) + delta);
-        x.set(nx);
-      }
-    };
-
-    gsap.ticker.add(tickerFn);
-    x.set(-segment);
-  });
-
-  onDestroy(() => {
-    ro && ro.disconnect();
-    tickerFn && gsap.ticker.remove(tickerFn);
-    releaseTween && releaseTween.kill();
-  });
-
-  function wrap(nx: number) {
-    if (!segment) return nx;
-    // Keep x in [minX, 0)
-    while (nx < minX) nx += segment;
-    while (nx >= 0) nx -= segment;
-    return nx;
+  function wrapX(v: number) {
+    if (segment <= 0) return v;
+    // keep x in [-segment, 0)
+    while (v <= -segment) v += segment;
+    while (v > 0) v -= segment;
+    return v;
   }
+
+  // drag state
+  const drag = {
+    active: false,
+    id: -1,
+    lastX: 0,
+    lastT: 0,
+    v: 0 // px/ms
+  };
 
   function onPointerDown(e: PointerEvent) {
-    if (pointerId !== null) return; // already dragging
-    pointerId = e.pointerId;
-    container.setPointerCapture(pointerId);
-    dragging = true;
-    velocity = 0; // reset inertia
-    lastX = e.clientX;
-    lastT = performance.now();
-    if (releaseTween) { releaseTween.kill(); releaseTween = null; }
+    if (drag.active) return;
+    container.setPointerCapture(e.pointerId);
+    drag.active = true;
+    drag.id = e.pointerId;
+    drag.lastX = e.clientX;
+    drag.lastT = performance.now();
+    drag.v = 0;
   }
 
   function onPointerMove(e: PointerEvent) {
-    if (!dragging || e.pointerId !== pointerId) return;
+    if (!drag.active || e.pointerId !== drag.id) return;
     const now = performance.now();
-    const dx = e.clientX - lastX;
-    const dt = Math.max(1, now - lastT);
+    const dx = e.clientX - drag.lastX;
+    const dt = Math.max(1, now - drag.lastT);
 
-    const nx = wrap(get(x) + dx);
-    x.set(nx);
+    drag.v = dx / dt; // px/ms
+    drag.lastX = e.clientX;
+    drag.lastT = now;
 
-    velocity = dx / dt; // px per ms
-    lastX = e.clientX;
-    lastT = now;
+    x.update((curr) => wrapX(curr + dx));
   }
 
   function onPointerUp(e: PointerEvent) {
-    if (e.pointerId !== pointerId) return;
-    container.releasePointerCapture(pointerId);
-    pointerId = null;
-    dragging = false;
-
-    // Throw with a little elastic bounce using GSAP
-    const start = get(x);
-    const target = wrap(start + velocity * throwFactor);
-    const proxy = { v: start };
-    releaseTween = gsap.to(proxy, {
-      v: target,
-      duration: 0.8,
-      ease: 'elastic.out(0.6, 0.5)',
-      onUpdate: () => x.set(wrap(proxy.v)),
-      onComplete: () => { releaseTween = null; }
-    });
+    if (!drag.active || e.pointerId !== drag.id) return;
+    container.releasePointerCapture(e.pointerId);
+    // carry some momentum after release; scale to feel like milliseconds of travel
+    drag.v *= (throwFactor / 1000);
+    drag.active = false;
+    drag.id = -1;
   }
+
+  function loop(prev = performance.now()) {
+    const now = performance.now();
+    const dt = now - prev; // ms
+    let delta = 0;
+
+    // autoplay contribution (scrolls left by default)
+    if (autoplay && speed !== 0) delta += -speed * dt;
+
+    // inertia contribution when not dragging
+    if (!drag.active && Math.abs(drag.v) > 0.02) {
+      delta += drag.v * dt;
+      // exponential decay based on friction per ~16ms frame
+      const decay = Math.pow(friction, dt / 16);
+      drag.v *= decay;
+    }
+
+    if (delta !== 0) x.update((curr) => wrapX(curr + delta));
+
+    rAF = requestAnimationFrame(() => loop(now));
+  }
+
+  // re-measure when images or layout change
+  $: (async () => {
+    // wait for DOM to reflect images/tripled
+    await tick();
+    measureSegment();
+  })();
+
+  onMount(() => {
+    // observe layout changes affecting widths/gaps
+    ro = new ResizeObserver(() => measureSegment());
+    if (track) ro.observe(track);
+
+    rAF = requestAnimationFrame(() => loop());
+  });
+
+  onDestroy(() => {
+    if (rAF != null) cancelAnimationFrame(rAF);
+    ro?.disconnect();
+  });
 </script>
 
-<div 
+<div
   class="carousel"
   bind:this={container}
   on:pointerdown={onPointerDown}
@@ -148,11 +143,12 @@
   on:pointerup={onPointerUp}
   on:pointercancel={onPointerUp}
   on:lostpointercapture={onPointerUp}
+  style="--gap: {gap}px; --item-w: {itemWidth};"
 >
-  <div 
-    class="track" 
+  <div
+    class="track"
     bind:this={track}
-    style="transform: translate3d({$x}px, 0, 0); gap: {gap}px; --item-w: {itemWidth};"
+    style="transform: translate3d({$x}px, 0, 0);"
   >
     {#if tripled.length === 0}
       <div class="placeholder">No images</div>
@@ -195,6 +191,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
   }
 
   .item :global(img) {
