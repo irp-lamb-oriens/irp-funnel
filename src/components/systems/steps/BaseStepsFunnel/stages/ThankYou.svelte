@@ -161,6 +161,7 @@
 	.gap {
 		max-width: 1024px;
 		margin: auto;
+		padding: 5rem 0;
 		
 		@media (max-width: 1024px) {
 			padding: 25px;
