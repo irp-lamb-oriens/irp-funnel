@@ -109,7 +109,7 @@
 
       <SubmitButton
         color="error"
-        label="SCHEDULE CONSULTATION"
+        label="GET YOUR FREE TRAINING CALL BEFORE MOVING TO OUR COUNTRY"
         callback={() => handleCTA('hero_cta')}
         disabled={false}
       />
@@ -139,7 +139,7 @@
 		<div class="center">
 			<SubmitButton
 				color="error"
-				label="SCHEDULE CONSULTATION"
+				label="GET YOUR FREE TRAINING CALL BEFORE MOVING TO OUR COUNTRY"
 				callback={() => handleCTA('below_video_cta')}
 				disabled={false}
 			/>
