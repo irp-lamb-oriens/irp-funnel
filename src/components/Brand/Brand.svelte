@@ -1,4 +1,8 @@
-<div class="wrapper"><img src="/IRP-LOGO.jpg" alt="" class="logo"></div>
+<div class="wrapper">
+    <a href="https://www.internationalrelocationpartner.com/">    
+        <img src="/IRP-LOGO.jpg" alt="" class="logo">
+    </a>    
+</div>
 
 <style>
 	.wrapper {
