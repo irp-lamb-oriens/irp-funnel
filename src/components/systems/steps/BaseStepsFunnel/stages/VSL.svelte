@@ -230,7 +230,7 @@
 	color: var(--color-background);
   }
   .subhead {
-    font-size: clamp(20px, 3vw, 24px);
+    font-size: clamp(20px, 3vw, 26px);
     opacity: 0.9;
     margin: 0;
 	color: var(--color-highlight);
