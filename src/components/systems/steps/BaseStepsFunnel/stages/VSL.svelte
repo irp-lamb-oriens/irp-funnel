@@ -93,9 +93,6 @@
   </script>
 </svelte:head>
 
-
-<Brand />
-
 <Page>
 
 	{#if $currentFunnel}
@@ -133,9 +130,9 @@
     <div class="center proof">
       <div
         class="rating"
-        aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '6403')} reviews"
+        aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '90')} google reviews"
       >
-		<span class="stars">★★★★★</span> {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '6,403')} reviews
+		<span class="stars">★★★★★</span> {($currentFunnel?.ratingValue ?? '4.9')}/5 · {($currentFunnel?.ratingCount ?? '90')} google reviews
       </div>
     </div>
 

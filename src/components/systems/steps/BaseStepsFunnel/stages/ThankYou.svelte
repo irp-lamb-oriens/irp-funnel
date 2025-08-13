@@ -48,42 +48,40 @@
 	// })
 </script>
 
-<Page>
-	<div>
+<div>
+	<Brand />
+	<div class="gap center">
+		<MarkdownText {canReveal}>
+			### Welcome to **International Relocation Partner**
 
-		<div class="gap center">
-			<MarkdownText {canReveal}>
-				### Welcome to **International Relocation Partner**
-	
-				## You've **scheduled** a **call** with us.
-			</MarkdownText>
-			<div class="center">
-				<SubmitButton
-					color="error"
-					label="NEXT STEPS"
-					callback={() => {
-						videoInteractionStore.set({ type: "stop" });
-						saveToStore({
-							stepsIndex: $store.stepsIndex + 1
-						});
-					}}
-					disabled={false}
-				/>
-			</div>
-			{#if email || name || countryFrom || countryTo}
-				<div class="thankyou-details">
-					{#if name}<div><b>Name:</b> {name}</div>{/if}
-					{#if email}<div><b>Email:</b> {email}</div>{/if}
-					{#if countryFrom}<div><b>From:</b> {countryFrom}</div>{/if}
-					{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
-				</div>
-			{/if}
-			{#key $currentFunnel}
-				<Video src={$currentFunnel?.thankYouSrc as string}/>
-			{/key}
+			## You've **scheduled** a **call** with us.
+		</MarkdownText>
+		<div class="center">
+			<SubmitButton
+				color="error"
+				label="NEXT STEPS"
+				callback={() => {
+					videoInteractionStore.set({ type: "stop" });
+					saveToStore({
+						stepsIndex: $store.stepsIndex + 1
+					});
+				}}
+				disabled={false}
+			/>
 		</div>
+		{#if email || name || countryFrom || countryTo}
+			<div class="thankyou-details">
+				{#if name}<div><b>Name:</b> {name}</div>{/if}
+				{#if email}<div><b>Email:</b> {email}</div>{/if}
+				{#if countryFrom}<div><b>From:</b> {countryFrom}</div>{/if}
+				{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
+			</div>
+		{/if}
+		{#key $currentFunnel}
+			<Video src={$currentFunnel?.thankYouSrc as string}/>
+		{/key}
 	</div>
-</Page>
+</div>
 
 
 <style>

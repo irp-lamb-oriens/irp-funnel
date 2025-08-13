@@ -1,6 +1,6 @@
 .multi-slot-component {
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   height: 100vh;
 
   &--component-slot {

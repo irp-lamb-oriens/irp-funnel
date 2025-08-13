@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, setContext } from "svelte";
+  import Brand from "../../../Brand/Brand.svelte"
   let pageDiv: HTMLDivElement | null = null;
 
   onMount(async () => {
@@ -13,10 +14,20 @@
 </script>
 
 <div class="page" bind:this={pageDiv}>
+  <div class="brand">
+    <Brand/>
+  </div>
   <slot />
 </div>
 
 <style lang="scss">
+  .brand {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
   .logo {
     width: 200px;
     padding: 100px 0;
@@ -29,6 +40,7 @@
     place-items: center;
     justify-content: center;
     padding: 100px 0;
+    position: relative;
 
     @media (max-width: 1024px) {
     }

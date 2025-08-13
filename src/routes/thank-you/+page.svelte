@@ -9,6 +9,7 @@
     import type { PageData } from './$types.ts'; // Import PageData type
     import ThankYou from "../../components/systems/steps/BaseStepsFunnel/ThankYou.svelte";
     import Brand from "../../components/Brand/Brand.svelte";
+    import Page from '../../components/systems/wrappers/Page/Page.svelte';
 
     export let data: PageData; // Receive data from load function
 
@@ -119,7 +120,6 @@
     });
 </script>
 
-<Brand />
 <ThemeChanger visible={false} />
 <GlobalData />
 <SocketClient />
