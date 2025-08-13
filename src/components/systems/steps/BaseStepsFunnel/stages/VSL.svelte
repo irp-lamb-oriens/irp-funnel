@@ -107,16 +107,16 @@
         {@html $currentFunnel.copy}
       </h1>
 
-      <p class="subhead">
-        {$currentFunnel.subhead ?? "Learn about the risks, requirements and regulations, you don't have to do it alone"}
-      </p>
-
       <SubmitButton
         color="error"
         label="SCHEDULE CONSULTATION"
         callback={() => handleCTA('hero_cta')}
         disabled={false}
       />
+
+      <p class="subhead">
+        {$currentFunnel.subhead ?? "Learn about the risks, requirements and regulations, you don't have to do it alone"}
+      </p>
 
       <div class="arrow-bounce" aria-hidden="true">⬇</div>
     </div>
