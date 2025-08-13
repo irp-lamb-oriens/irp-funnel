@@ -104,7 +104,7 @@
       </span>
 
       <h1 class="headline">
-        {$currentFunnel.copy}
+        {@html $currentFunnel.copy}
       </h1>
 
       <p class="subhead">
