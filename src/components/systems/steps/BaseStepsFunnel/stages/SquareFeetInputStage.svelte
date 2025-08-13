@@ -86,6 +86,8 @@
       />
     </div>
 
+    If you don't know, press the button that says "Don't know"
+
     <MainSubmitButton
       label="Next"
       callback={handleNext}

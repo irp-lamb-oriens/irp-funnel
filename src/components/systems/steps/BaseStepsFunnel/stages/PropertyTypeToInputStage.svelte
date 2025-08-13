@@ -44,6 +44,8 @@
       on:update={handleSelectionUpdate}
     />
 
+    You have to choose one these four options
+
     <SubmitButton
       label="Next"
       callback={handleNext}

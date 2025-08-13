@@ -146,6 +146,9 @@
                     {/each}
                 </ul>
             </div>
+
+            Press this button so we taylor a call for you with this information
+
             <SubmitButton
                 label="Submit Information"
                 callback={handleSubmit}

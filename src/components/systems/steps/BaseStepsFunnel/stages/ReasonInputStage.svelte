@@ -78,6 +78,8 @@
          <!-- Use src and callback for IconButton -->
         <IconButton src="/icons/plus.svg" callback={addReason} label="Add Another Reason" />
 
+        Type at least one reason
+
         <SubmitButton
             label="Next"
             callback={handleNext}
