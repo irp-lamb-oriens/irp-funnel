@@ -71,7 +71,6 @@
         cta: label,
         src: 'landing'
       });
-      window.location.href = `${thankYouUrl}?${params.toString()}`;
     }
   }
 </script>
