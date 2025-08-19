@@ -70,7 +70,7 @@
     videoEl.volume = 0;
     // Kick off playback and jump to first snippet
     setSegment(0);
-    videoEl.play().catch(() => { playing = false; /* ignore – will retry on canplay */ });
+    videoEl.play().catch(() => { playing = false; /* ignore, will retry on canplay */ });
   }
 
   function stopMontageAndPlayFromStartUnmuted() {

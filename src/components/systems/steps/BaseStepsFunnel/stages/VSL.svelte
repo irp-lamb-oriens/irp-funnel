@@ -98,7 +98,7 @@
     <!-- New top fold: eyebrow → headline → subhead → primary CTA -->
     <div class="hero center">
       <span class="eyebrow">
-        {$currentFunnel.eyebrow ?? 'Public Speaker Relocation Expert — Helps Thousands of Families Move Abroad'}
+        {$currentFunnel.eyebrow ?? 'Public Speaker Relocation Expert, Helps Thousands of Families Move Abroad'}
         <span class="eyebrow-dot"></span>
       </span>
 
@@ -108,7 +108,7 @@
 
       <SubmitButton
         color="error"
-        label="GET YOUR FREE TRAINING CALL BEFORE MOVING TO OUR COUNTRY"
+        label="Schedule a call with us"
         callback={() => handleCTA('hero_cta')}
         disabled={false}
       />
@@ -138,7 +138,7 @@
 		<div class="center">
 			<SubmitButton
 				color="error"
-				label="GET YOUR FREE TRAINING CALL BEFORE MOVING TO OUR COUNTRY"
+				label="Schedule a call with us"
 				callback={() => handleCTA('below_video_cta')}
 				disabled={false}
 			/>
