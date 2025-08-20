@@ -86,6 +86,38 @@
                 body: JSON.stringify(payload),
             });
 
+            // Normalize function to handle accents and special characters
+            function normalize(str: string) {
+                return str.toLowerCase().replace(/-/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            // Determine the newsSourceId based on the funnelId
+            let newsSourceId;
+            const normalizedFunnelId = normalize(funnelId as string);
+            if (normalizedFunnelId.includes('costa rica')) {
+                newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460';
+            } else if (normalizedFunnelId.includes('panama')) {
+                newsSourceId = '9c67a6a84c4c05fb02ffd0ec620d7fa30804c3d84e2605046306a7a7f1bfded7';
+            } else if (normalizedFunnelId.includes('mexico')) {
+                newsSourceId = '460b3b4148238d1ffa62fd36a3427aac493befb047d23ee24f7a215b5274c3c4';
+            }
+
+            // Additional fetch to the public subscribe endpoint
+            await fetch('https://aibanewsletter.club/public-subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    configuratorId: 'consultation@internationalrelocationpartner.com',
+                    newsSourceId,
+                    email: $store.email,
+                    name: $store.name,
+                    language: 'en',
+                    bio: "",
+                }),
+            });
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
