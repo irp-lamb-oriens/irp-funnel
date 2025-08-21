@@ -103,7 +103,7 @@
             }
 
             // Additional fetch to the public subscribe endpoint
-            await fetch('https://irp-funnel-server.onrender.com/public-subscribe', {
+            await fetch('https://ai-newsletter-translated.onrender.com/public-subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
