@@ -135,7 +135,7 @@
             // saveToStore({ name: '', email: '', budget: null, countryFrom: null, countryTo: null, stepsIndex: 0 }); // Example reset
         } catch (error) {
             console.error('Submission failed:', error);
-            submitError = error instanceof Error ? error.message : 'An unknown error occurred during submission.';
+            // submitError = error instanceof Error ? error.message : 'An unknown error occurred during submission.';
         } finally {
             isLoading = false;
         }
