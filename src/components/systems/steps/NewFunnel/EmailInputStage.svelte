@@ -36,6 +36,8 @@
 <Page>
     <div class="stage-content">
         <MarkdownText {canReveal}>
+            Subscribe to our local news translated to English
+
             ## What's your email address?
         </MarkdownText>
 

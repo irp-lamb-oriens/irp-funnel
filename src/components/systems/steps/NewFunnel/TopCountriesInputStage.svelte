@@ -31,7 +31,7 @@
 <Page>
   <div class="stage-content">
     <MarkdownText {canReveal}>
-      ## Top 3 Countries to Visit
+      ## Top 3 countries you are considering to move abroad
     </MarkdownText>
 
     <div class="stepper" aria-live="polite" aria-atomic="true">
@@ -80,7 +80,7 @@
     font-size: 0.95rem;
     line-height: 1.2;
     margin-top: 0.25rem;
-    color: #666;
+    color: var(--color-background);
   }
 
   .countries {

@@ -237,7 +237,7 @@
   aria-owns={open ? "language-listbox" : undefined}
 >
   {#if label}
-    <span class="block mb-2 text-sm font-medium text-gray-700" id="language-select-label">
+    <span class="block mb-2 text-sm font-medium" id="language-select-label">
       {label}
     </span>
   {/if}
@@ -273,7 +273,7 @@
             <span class="text-lg" aria-hidden="true">{selectedCountry.flag}</span>
           {/if}
           <span class="truncate">{selectedCountry.name}</span>
-          <span class="text-gray-500 text-xs">({selectedCountry.code})</span>
+          <span class="text-xs">({selectedCountry.code})</span>
         </span>
       {:else}
         <span class="text-gray-500">Select a language</span>
@@ -291,7 +291,7 @@
 
   {#if selectedCountry && !showInput}
     <div
-      class="mt-2 text-sm text-gray-700 flex items-center gap-2"
+      class="mt-2 text-sm flex items-center gap-2"
       in:fade={{ duration: 200 }}
       out:fade={{ duration: 200 }}
     >
