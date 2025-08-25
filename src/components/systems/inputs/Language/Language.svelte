@@ -1,48 +1,44 @@
-<!-- LanguageSelect.svelte -->
 <script lang="ts">
   import { onMount, onDestroy, tick } from "svelte";
   import { writable } from "svelte/store";
   import fuzzysort from "fuzzysort";
+  import { fade, slide } from "svelte/transition";
 
-  // Assuming languages.ts is in the same directory or adjust path
-  import languagesData from "./languages.ts"; // Import the language list
+  // Assuming languages.ts is in the same directory
+  import languagesData from "./languages.ts";
 
-  // Define the Language type (or import it if defined elsewhere)
   interface Language {
     code: string;
     name: string;
-    flag: string | null; // Flag can be null
+    flag: string | null;
   }
 
-  // Use the imported data
   const languages: Language[] = languagesData;
 
-  // --- Props ---
+  // Props
   export let defaultLanguageCode: string | null = null;
-  export let label = "Language"; // Default label
+  export let label = "Language";
   export let onSelect: (selectedCode: string | null) => void = () => {};
 
-  // --- State ---
+  // State
   let selectedLanguage: Language | null = null;
   export const selectedLanguageStore = writable<Language | null>(null);
-
   let open = false;
+  let showInput = false;
   let dropdownRef: HTMLElement;
+  let inputRef: HTMLInputElement;
   let buttonRef: HTMLButtonElement;
   let listRef: HTMLUListElement;
   let listItems: Array<HTMLLIElement | null> = [];
 
-  // --- Typeahead & Highlighting ---
+  // Typeahead & Highlighting
   let typeahead = "";
-  let typeaheadTimeout: number;
   let searchDebounceTimeout: number;
-  const TYPEAHEAD_RESET_DELAY = 1200;
   const SEARCH_DEBOUNCE_DELAY = 150;
-
   let highlightedIndex: number = -1;
   let lastValidHighlightedIndex: number = -1;
 
-  // --- Lifecycle ---
+  // Lifecycle
   onMount(() => {
     const initialLanguage = defaultLanguageCode
       ? findLanguageByCode(defaultLanguageCode)
@@ -62,11 +58,10 @@
 
   onDestroy(() => {
     document.removeEventListener("click", handleClickOutside);
-    clearTimeout(typeaheadTimeout);
     clearTimeout(searchDebounceTimeout);
   });
 
-  // --- Utility ---
+  // Utility
   function findLanguageByCode(code: string): Language | null {
     return languages.find((language) => language.code === code) || null;
   }
@@ -75,9 +70,10 @@
     return languages.findIndex((language) => language.code === code);
   }
 
-  // --- Event Handlers ---
+  // Event Handlers
   function toggleOpen() {
     open = !open;
+    showInput = open; // Input visibility tied to dropdown state
     if (open) {
       typeahead = "";
       highlightedIndex = selectedLanguage
@@ -85,8 +81,8 @@
         : lastValidHighlightedIndex !== -1
           ? lastValidHighlightedIndex
           : 0;
-
       tick().then(() => {
+        inputRef?.focus();
         focusAndScrollToHighlightedItem();
       });
     } else {
@@ -99,6 +95,7 @@
     selectedLanguageStore.set(language);
     lastValidHighlightedIndex = findIndexByCode(language.code);
     open = false;
+    showInput = false;
     typeahead = "";
     highlightedIndex = -1;
     onSelect(language.code);
@@ -108,6 +105,7 @@
   function handleClickOutside(event: MouseEvent) {
     if (open && dropdownRef && !dropdownRef.contains(event.target as Node)) {
       open = false;
+      showInput = false;
       typeahead = "";
       buttonRef?.focus();
     }
@@ -117,15 +115,12 @@
     if (highlightedIndex >= 0 && highlightedIndex < listItems.length) {
       const targetItem = listItems[highlightedIndex];
       if (targetItem) {
-        // targetItem.focus(); // Focusing list items directly can be jerky with scroll; highlighting is often enough
         targetItem.scrollIntoView({ block: "nearest" });
       }
     }
   }
 
-  // --- Keyboard Navigation & Smart Search ---
   async function handleKeydown(event: KeyboardEvent) {
-    // --- 1. Handle Navigation Keys When Open ---
     if (open) {
       switch (event.key) {
         case "ArrowDown":
@@ -158,9 +153,7 @@
           return;
 
         case "Enter":
-        case " ": // Space selects too
           if (highlightedIndex !== -1 && highlightedIndex < languages.length) {
-            // Check bounds
             event.preventDefault();
             selectLanguage(languages[highlightedIndex]);
           }
@@ -169,59 +162,28 @@
         case "Escape":
           event.preventDefault();
           open = false;
+          showInput = false;
           typeahead = "";
           buttonRef?.focus();
           return;
 
         case "Tab":
           open = false;
+          showInput = false;
           typeahead = "";
           return;
       }
     } else {
-      // --- Open dropdown on ArrowDown/Up/Enter/Space if closed ---
-      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+      if (["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) {
         event.preventDefault();
         toggleOpen();
         return;
       }
     }
+  }
 
-    // --- 2. Handle Typeahead Input (Printable Chars & Backspace) ---
-    let isTypeaheadKey = false;
-    if (event.key === "Backspace") {
-      if (typeahead.length > 0) {
-        typeahead = typeahead.slice(0, -1);
-        isTypeaheadKey = true;
-      } else {
-        return;
-      }
-      event.preventDefault();
-    } else if (
-      event.key.length === 1 &&
-      !event.altKey &&
-      !event.ctrlKey &&
-      !event.metaKey
-    ) {
-      typeahead += event.key.toLowerCase(); // Often better to search lowercase
-      isTypeaheadKey = true;
-      event.preventDefault();
-    }
-
-    if (!isTypeaheadKey) {
-      return;
-    }
-
-    // --- 3. Perform Smart Search ---
-    if (!open) {
-      open = true;
-      await tick();
-    }
-
-    clearTimeout(typeaheadTimeout);
-    typeaheadTimeout = window.setTimeout(() => {
-      typeahead = "";
-    }, TYPEAHEAD_RESET_DELAY);
+  async function handleInput(event: Event) {
+    typeahead = (event.target as HTMLInputElement).value.toLowerCase();
 
     clearTimeout(searchDebounceTimeout);
     searchDebounceTimeout = window.setTimeout(() => {
@@ -252,9 +214,6 @@
           highlightedIndex = bestMatchIndex;
           lastValidHighlightedIndex = highlightedIndex;
           focusAndScrollToHighlightedItem();
-        } else {
-          highlightedIndex = lastValidHighlightedIndex;
-          focusAndScrollToHighlightedItem();
         }
       } else {
         highlightedIndex = lastValidHighlightedIndex;
@@ -264,8 +223,12 @@
   }
 </script>
 
+<svelte:head>
+  <script src="https://cdn.tailwindcss.com"></script>
+</svelte:head>
+
 <div
-  class="dropdown"
+  class="relative font-sans z-10"
   bind:this={dropdownRef}
   on:keydown={handleKeydown}
   role="combobox"
@@ -274,60 +237,89 @@
   aria-owns={open ? "language-listbox" : undefined}
 >
   {#if label}
-    <!-- Associate label with button using aria-labelledby if button had an id -->
-    <span class="label" id="language-select-label">{label}</span>
+    <span class="block mb-2 text-sm font-medium text-gray-700" id="language-select-label">
+      {label}
+    </span>
   {/if}
 
-  <button
-    type="button"
-    class="dropdown-toggle"
-    bind:this={buttonRef}
-    on:click={toggleOpen}
-    aria-controls={open ? "language-listbox" : undefined}
-    aria-autocomplete="list"
-    aria-labelledby="language-select-label {selectedLanguage
-      ? 'selected-language-label'
-      : ''}"
-  >
-    {#if selectedLanguage}
-      <span id="selected-language-label" class="selected-value-wrapper">
-        {#if selectedLanguage.flag}<span
-            class="language-flag"
-            aria-hidden="true">{selectedLanguage.flag}</span
-          >{/if}
-        <span class="language-name">{selectedLanguage.name}</span>
-        <span class="language-code">({selectedLanguage.code})</span>
-      </span>
-    {:else}
-      <span class="placeholder">Select a language</span>
-    {/if}
-    <svg
-      class="arrow {open ? 'open' : ''}"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
+  {#if showInput}
+    <input
+      type="text"
+      bind:this={inputRef}
+      value={typeahead}
+      on:input={handleInput}
+      placeholder="Type to search language..."
+      class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out"
+      aria-autocomplete="list"
+      aria-controls={open ? "language-listbox" : undefined}
+      aria-labelledby="language-select-label"
+      in:fade={{ duration: 200 }}
+      out:fade={{ duration: 200 }}
+    />
+  {:else}
+    <button
+      type="button"
+      bind:this={buttonRef}
+      on:click={toggleOpen}
+      class="w-full max-w-xs px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out flex items-center justify-between"
+      aria-controls={open ? "language-listbox" : undefined}
+      aria-labelledby="language-select-label {selectedLanguage ? 'selected-language-label' : ''}"
+      in:fade={{ duration: 200 }}
+      out:fade={{ duration: 200 }}
     >
-      <path d="M7 10l5 5 5-5z" />
-    </svg>
-  </button>
+      {#if selectedLanguage}
+        <span class="flex items-center gap-2 truncate">
+          {#if selectedLanguage.flag}
+            <span class="text-lg" aria-hidden="true">{selectedLanguage.flag}</span>
+          {/if}
+          <span class="truncate">{selectedLanguage.name}</span>
+          <span class="text-gray-500 text-xs">({selectedLanguage.code})</span>
+        </span>
+      {:else}
+        <span class="text-gray-500">Select a language</span>
+      {/if}
+      <svg
+        class="w-4 h-4 transform transition-transform duration-200 {open ? 'rotate-180' : ''}"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M7 10l5 5 5-5z" />
+      </svg>
+    </button>
+  {/if}
+
+  {#if selectedLanguage && !showInput}
+    <div
+      class="mt-2 text-sm text-gray-700 flex items-center gap-2"
+      in:fade={{ duration: 200 }}
+      out:fade={{ duration: 200 }}
+    >
+      Selected:
+      {#if selectedLanguage.flag}
+        <span class="text-lg" aria-hidden="true">{selectedLanguage.flag}</span>
+      {/if}
+      <span>{selectedLanguage.name} ({selectedLanguage.code})</span>
+    </div>
+  {/if}
 
   {#if open}
     <ul
-      class="dropdown-menu"
       bind:this={listRef}
       role="listbox"
       id="language-listbox"
-      aria-labelledby="language-select-label"
+      class="absolute w-full max-w-xs mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
       tabindex="-1"
+      aria-labelledby="language-select-label"
+      in:slide={{ duration: 200 }}
+      out:slide={{ duration: 200 }}
     >
       {#each languages as language, index (language.code)}
         <li
           bind:this={listItems[index]}
           id={`language-option-${language.code}`}
-          class:dropdown-item={true}
-          class:highlighted={highlightedIndex === index}
+          class="px-4 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors duration-150 ease-in-out {highlightedIndex === index ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}"
+          class:selected={selectedLanguage?.code === language.code}
           role="option"
           aria-selected={selectedLanguage?.code === language.code}
           tabindex="-1"
@@ -336,176 +328,19 @@
             highlightedIndex = index;
           }}
         >
-          {#if language.flag}<span class="language-flag" aria-hidden="true"
-              >{language.flag}</span
-            >{/if}
-          <span class="language-name">{language.name}</span>
-          <span class="language-code">({language.code})</span>
+          {#if language.flag}
+            <span class="text-lg" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="truncate">{language.name}</span>
+          <span class="{highlightedIndex === index ? 'text-white' : 'text-gray-500'} text-xs">
+            ({language.code})
+          </span>
         </li>
       {:else}
-        <li class="dropdown-item disabled" role="option" aria-disabled="true">
+        <li class="px-4 py-2 text-sm text-gray-500" role="option" aria-disabled="true">
           No languages available.
         </li>
       {/each}
     </ul>
   {/if}
 </div>
-
-<style lang="scss">
-  // --- Styles are largely the same, just rename classes if needed ---
-  // --- (e.g., .country-flag to .language-flag) ---
-
-  .label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--color-background);
-  }
-
-  .dropdown {
-    position: relative;
-    display: inline-block;
-    font-family: sans-serif;
-    z-index: 2; // Ensure dropdown is above static content
-
-    &:focus-within {
-      // Style container when button or list has focus
-      // Consider adding outline here if you remove from button :focus-visible
-    }
-  }
-
-  .dropdown-toggle {
-    background: var(--color-background, #fff);
-    color: var(--color-background-inversion);
-    border: 1px solid var(--color-border, #ccc);
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    
-    gap: 0.5rem;
-    width: 100%;
-    max-width: 280px; // Adjust as needed for language names
-    min-width: 180px;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-    text-align: left;
-    outline: none; // Manage focus visually
-
-    &:focus-visible {
-      // Good for keyboard focus indication
-      outline: 2px solid dodgerblue;
-      outline-offset: 2px;
-    }
-  }
-
-  // Wrapper for selected value to help with labelling
-  .selected-value-wrapper {
-    display: flex;
-    
-    gap: 0.5rem;
-    flex-grow: 1; // Allow wrapper to take space
-    overflow: hidden; // Prevent overflow issues
-  }
-
-  .language-flag {
-    // Renamed class
-    font-size: 1.2em;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-  .language-code {
-    // Renamed class
-    color: var(--color-foreground-muted, #666);
-    font-size: 0.9em;
-    margin-left: auto;
-    padding-left: 0.5rem;
-    flex-shrink: 0;
-  }
-
-  .language-name {
-    // Renamed class
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .placeholder {
-    color: var(--color-placeholder, #888);
-    flex-grow: 1;
-  }
-
-  .arrow {
-    flex-shrink: 0;
-    fill: currentColor;
-    transition: transform 0.2s ease;
-  }
-
-  .arrow.open {
-    transform: rotate(180deg);
-  }
-
-  .dropdown-menu {
-    background: var(--color-background, #fff);
-    border: 1px solid var(--color-border, #ccc);
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    border-radius: 8px;
-    padding: 0.25rem 0;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    outline: none;
-    width: 100%; // Ensure menu matches button width
-    box-sizing: border-box; // Include padding/border in width
-  }
-
-  .dropdown-item {
-    padding: 0.6rem 1rem;
-    display: flex;
-    
-    gap: 0.5rem;
-    cursor: pointer;
-    transition:
-      background-color 0.15s ease,
-      color 0.15s ease;
-    color: var(--color-background-inversion);
-    white-space: nowrap;
-    outline: none;
-
-    &.disabled {
-      color: #aaa;
-      cursor: default;
-    }
-
-    &:not(.disabled):hover,
-    &.highlighted:not(.disabled) {
-      background-color: var(--color-highlight-bg, dodgerblue);
-      color: var(--color-highlight-fg, #fff);
-
-      .language-code {
-        // Adjust code color on highlight
-        color: var(--color-highlight-fg-muted, rgba(255, 255, 255, 0.8));
-      }
-    }
-  }
-
-  /* Optional fadeSlide animation */
-  @keyframes fadeSlide {
-    from {
-      opacity: 0;
-      transform: translateY(-5px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  // uncomment below to use animation
-  // .dropdown-menu { animation: fadeSlide 0.15s ease-out forwards; }
-</style>
