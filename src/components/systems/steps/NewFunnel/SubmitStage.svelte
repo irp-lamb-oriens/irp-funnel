@@ -5,6 +5,7 @@
     import SubmitButton from '../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../texts/MarkdownText/MarkdownText.svelte';
     import { browser } from '$app/environment';
+    import countries from '../../inputs/Country/countries.ts';
 
     let isLoading = false;
     let submitError: string | null = null;
@@ -19,8 +20,7 @@
         getDisplayData = () => ({
             Name: get(name),
             Email: get(email),
-            'Top Countries': get(topCountries).join(', '),
-            'Funnel Type': get(funnelType),
+            "I'm interested in": countries.find(({ code }) => code === get(topCountries)[0])?.name + " news",
         });
     }
 
@@ -110,7 +110,7 @@
             </MarkdownText>
             <div class="review-data">
                 <ul>
-                    {#each Object.entries(getDisplayData()).slice(0, -1) as [key, value]}
+                    {#each Object.entries(getDisplayData()) as [key, value]}
                         {#if value !== undefined && value !== null && value !== ''}
                             <li><strong>{key}:</strong> {value}</li>
                         {/if}

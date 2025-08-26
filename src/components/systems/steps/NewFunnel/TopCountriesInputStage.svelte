@@ -31,38 +31,19 @@
 <Page>
   <div class="stage-content">
     <MarkdownText {canReveal}>
-      ## Top 3 countries you are considering to move abroad
+      ## Top country you are considering to move abroad
     </MarkdownText>
 
     <div class="stepper" aria-live="polite" aria-atomic="true">
-      {#if !$topCountries[0] || !$topCountries[0].trim()}Step 1 of 3{/if}
-      {#if $topCountries[0]?.trim() && (!$topCountries[1] || !$topCountries[1].trim())}Step 2 of 3{/if}
-      {#if $topCountries[0]?.trim() && $topCountries[1]?.trim() && (!$topCountries[2] || !$topCountries[2].trim())}Step 3 of 3{/if}
       {#if isValid}All set{/if}
     </div>
 
     <div class="countries" role="group" aria-label="Top countries">
       <!-- 1. Always show the first -->
       <Country
-        label={$topCountries[0] ?? "Country 1"}
+        label={$topCountries[0] ?? "Country"}
         onSelect={(v: string | null) => handleInput(0, v ?? "")}
       />
-
-      <!-- 2. Show the second only after the first is chosen -->
-      {#if $topCountries[0]?.trim()}
-        <Country
-          label={$topCountries[1] ?? "Country 2"}
-          onSelect={(v: string | null) => handleInput(1, v ?? "")}
-        />
-      {/if}
-
-      <!-- 3. Show the third only after the first two are chosen -->
-      {#if $topCountries[0]?.trim() && $topCountries[1]?.trim()}
-        <Country
-          label={$topCountries[2] ?? "Country 3"}
-          onSelect={(v: string | null) => handleInput(2, v ?? "")}
-        />
-      {/if}
     </div>
 
     <SubmitButton label="Next" callback={handleNext} disabled={!isValid} />
