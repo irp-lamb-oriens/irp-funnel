@@ -88,7 +88,7 @@
 
             // Normalize function to handle accents and special characters
             function normalize(str: string) {
-                return str.toLowerCase().replace(/-/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return str?.toLowerCase().replace(/-/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             }
 
             // Determine the newsSourceId based on the funnelId
