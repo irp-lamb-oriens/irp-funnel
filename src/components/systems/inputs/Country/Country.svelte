@@ -276,7 +276,7 @@
           <span class="text-xs">({selectedCountry.code})</span>
         </span>
       {:else}
-        <span class="text-gray-500">Select a language</span>
+        <span class="text-gray-500">Select a country</span>
       {/if}
       <svg
         class="w-4 h-4 transform transition-transform duration-200 {open ? 'rotate-180' : ''}"
