@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './colombia.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="colombia-hero">
-    <h1>Colombia</h1>
-  </section>
+<CountryLayout heroTitle="Colombia" heroUrl="https://images.pexels.com/photos/8264573/pexels-photo-8264573.jpeg">
   <section class="colombia-content">
     <h4>Why Colombia is a Rising Star for Expats, Retirees, and Investors</h4>
     <p><b>By Pablo Arias, Founder of International Relocation Partner</b><br>
@@ -34,16 +32,6 @@
       As the founder of International Relocation Partner, I’ve made it my mission to explore and connect with destinations that are gaining traction among expats. Colombia is one of those places that keeps surprising me. The country has everything—warm people, rich culture, breathtaking landscapes, and endless opportunities for those looking to start a new chapter in life.<br>
       If you’re considering relocating, Colombia is definitely worth exploring. I’d love to hear your thoughts: What excites you most about Colombia? Or, if you’ve already visited, what stood out to you? Let’s start the conversation!</p>
   </section>
-  <section class="colombia-cta">
-    <div class="cta-content">
-      <h6>Choose the best moving company for your relocation</h6>
-      <h2>Contact us & Get a free moving consultation</h2>
-      <div class="button-row">
-        <a class="cta-btn" href="/consultation">Schedule Consultation</a>
-        <a class="tertiary-btn" href="/contact-us">Contact Us</a>
-      </div>
-    </div>
-  </section>
-</main>
+</CountryLayout>
 
 <Footer />

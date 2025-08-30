@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './mexico.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="mexico-hero">
-    <h1>Mexico</h1>
-  </section>
+<CountryLayout heroTitle="Mexico" heroUrl="https://images.pexels.com/photos/12610744/pexels-photo-12610744.jpeg">
   <section class="mexico-content">
     <p>Mexico is the most popular expat destination for North Americans in the world, with as many as 1 million U.S. and Canadian citizens calling it their home. Mexico has a lot to offer, from its convenient location to its lower cost of living and enticing differences that make it so special.</p>
     <p>From the U.S. and Canada, you can drive to Mexico in your own car or fly there in a few hours. Mexico offers many of the conveniences we’re used to in the First-World, including good highways, plenty of airports, reliable telephone service, and fast internet connections. And with a lower cost of living, a comfortable and fulfilling life will cost you a fraction of what you pay back home, up to 50% less than in the rest of North America.</p>
@@ -19,16 +17,6 @@
     <p>Mexico’s proximity to the U.S. is perhaps its greatest benefit, with much of the U.S. accessible in under two hours from major international airports. And for those so inclined, one can simply drive across the border. However, even your crazy uncle and cantankerous mother-in-law will want to visit you in this wonderful land of Aztec and Maya ruins, with bright sun, tropical beaches, ample tequila, warm water, and world-class food.</p>
     <p>While there may be challenges when it comes to doing business in Mexico, seeking professional assistance can help make the relocation process much more comfortable. International Relocation Partner LLC specializes in managing international moving projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid surprises and hidden costs.</p>
   </section>
-  <section class="mexico-cta">
-    <div class="cta-content">
-      <h6>Choose the best moving company for your relocation</h6>
-      <h2>Contact us & Get a free moving consultation</h2>
-      <div class="button-row">
-        <a class="cta-btn" href="/consultation">Schedule Consultation</a>
-        <a class="tertiary-btn" href="/contact-us">Contact Us</a>
-      </div>
-    </div>
-  </section>
-</main>
+</CountryLayout>
 
 <Footer />

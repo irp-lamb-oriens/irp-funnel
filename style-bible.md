@@ -1,7 +1,7 @@
 # International Relocation Partner Style Bible
 
 ## 1. Color Palette
-- **Primary Teal:** #1ccfc9 (logo, buttons, highlights)
+- **Primary Teal:** var(--color-highlight-2) (logo, buttons, highlights)
 - **Accent Blue:** var(--color-highlight-1) (CTA, links, hover)
 - **Dark Gray:** #222 (footer, text)
 - **Light Gray:** #f8f8f8 (backgrounds, section dividers)

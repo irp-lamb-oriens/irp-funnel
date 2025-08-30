@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './news-updates.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="news-hero">
-    <h1>News</h1>
-  </section>
+<CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
   <section class="news-list">
     <div class="news-grid">
       <!-- Blog Post 1 -->
@@ -140,6 +138,6 @@
       <a href="/news-updates/page/2/?et_blog">« Older Entries</a>
     </div>
   </section>
-</main>
+</CountryLayout>
 
 <Footer />

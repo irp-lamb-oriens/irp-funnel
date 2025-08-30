@@ -2,17 +2,7 @@
 
 /* Colombia page styles */
 
-.colombia-hero {
-  background: #f8f8f8;
-  padding: 2.5rem 0 1.5rem 0;
-  text-align: center;
-  h1 {
-    color: #1ccfc9;
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0;
-  }
-}
+/* Removed .colombia-hero: now handled by HeroSection component */
 
 .colombia-content {
   max-width: 900px;
@@ -28,7 +18,7 @@
     margin-bottom: 1.2rem;
   }
   h5 {
-    color: #1ccfc9;
+    color: var(--color-highlight-2);
     font-size: 1.1rem;
     font-weight: 700;
     margin-top: 1.5rem;

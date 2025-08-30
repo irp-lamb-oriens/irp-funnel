@@ -12,9 +12,9 @@
       <p>Our goal is to make the journey of thousands of expatriates easier and enjoyable by providing useful information and specialized services, such as:</p>
       <p>Relocation tours</p>
       <ul>
-        <li>International Moving Services</li>
-        <li>Courier Assistance</li>
-        <li>Automobile & Boat Shipping</li>
+        <li class="service">International Moving Services</li>
+        <li class="service">Courier Assistance</li>
+        <li class="service">Automobile & Boat Shipping</li>
       </ul>
       <p>Our services are aimed at providing the highest quality with a software designed to show our clients the progress of their entire relocation in a visual timeline, enabling them to better prepare for their travel arrangements, the immigration process, and some other relevant processes.</p>
       <p>​Every day we strive to provide the best customer experience and first-class relocation services.</p>
@@ -23,7 +23,7 @@
       <p>IRP, Chief Executive Officer</p>
       <div class="button-row">
         <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="primary" target="_blank" />
+        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>
     <div class="col col-right">
@@ -42,7 +42,7 @@
   .col-left {
     flex: 1 1 60%;
     h4 {
-      color: #1ccfc9;
+      color: var(--color-highlight-2);
       font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 0.7rem;
@@ -89,6 +89,9 @@
     }
   }
 }
+  .service {
+    text-align: left;
+  }
 @media (max-width: 1200px) {
   .row {
     flex-direction: column;

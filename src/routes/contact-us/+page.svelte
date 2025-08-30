@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './contact-us.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="contact-hero">
-    <h1>Contact Us</h1>
-  </section>
+<CountryLayout heroTitle="Contact Us" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
   <section class="contact-location">
     <h2>Our Location</h2>
     <p>Every move is led by professionals with more than 14 years of experience</p>
@@ -76,6 +74,6 @@
         frameborder="0" allowfullscreen></iframe>
     </div>
   </section>
-</main>
+</CountryLayout>
 
 <Footer />

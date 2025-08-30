@@ -6,7 +6,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Panama">
+<CountryLayout heroTitle="Panama" heroUrl="https://images.pexels.com/photos/21054043/pexels-photo-21054043.jpeg">
   <div>
     <h3>Discover Panama: The Top Expat Destination in Central America:</h3>
     <p>Why do so many expats choose Panama? Often the intangibles…the feel of a place…play a big role. But there are also a lot of concrete, quantifiable reasons Panama is so appealing, starting with its modern infrastructure.</p>

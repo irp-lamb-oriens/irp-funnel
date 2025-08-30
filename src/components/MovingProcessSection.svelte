@@ -40,7 +40,7 @@
       <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
     </div>
     <div class="col">
-      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="primary" target="_blank" />
+      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
     </div>
   </div>
 </section>
@@ -92,7 +92,7 @@
   transition: background 0.15s, color 0.15s;
   cursor: pointer;
   &:hover {
-    background: #1877c9;
+    background: var(--color-outline);
   }
 }
 .primary-btn {

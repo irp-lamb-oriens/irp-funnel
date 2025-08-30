@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './careers.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="careers-hero">
-    <h1>IRP Careers</h1>
-  </section>
+<CountryLayout heroTitle="IRP Careers" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
   <section class="careers-why">
     <h3>Why Work with Us?</h3>
     <p>You’re the best. We attract and develop the most exceptional professionals in our industry. You will be part of a unique global team of talented and motivated professionals from a multitude of countries and diverse backgrounds around the world.</p>
@@ -85,6 +83,6 @@
     </ul>
     <p>Send your CV to <a href="mailto:jobs@internationalrelocationpartner.com">jobs@internationalrelocationpartner.com</a></p>
   </section>
-</main>
+</CountryLayout>
 
 <Footer />

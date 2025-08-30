@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './terms-of-sale.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="terms-sale-hero">
-    <h1>Terms of Sale</h1>
-  </section>
+<CountryLayout heroTitle="Terms of Sale" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
   <section class="terms-sale-content">
     <p>
       These Terms of Sale govern the purchase of products and services from International Relocation Partner. By placing an order, you agree to these terms.
@@ -35,6 +33,6 @@
       For questions regarding these Terms of Sale, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
     </p>
   </section>
-</main>
+</CountryLayout>
 
 <Footer />

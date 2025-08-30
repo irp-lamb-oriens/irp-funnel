@@ -7,7 +7,7 @@
   padding: 2.5rem 0 1.5rem 0;
   text-align: center;
   h1 {
-    color: #1ccfc9;
+    color: var(--color-highlight-2);
     font-size: 2.2rem;
     font-weight: 800;
     margin: 0;
@@ -15,30 +15,43 @@
 }
 
 .country-content {
-  max-width: 900px;
-  margin: 2rem auto;
   padding: 2rem;
   background: #fff;
-  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .country-cta {
   max-width: 900px;
   margin: 2rem auto;
-  padding: 2rem;
-  background: #f8f8f8;
+  padding: 5rem 0;
+  display: block;
+  position: relative;
+  background: url(https://images.pexels.com/photos/4245992/pexels-photo-4245992.jpeg);
+  background-attachment: fixed;
+  background-size: cover;
   border-radius: 8px;
+  box-shadow: inset 0 0 0 1000px #0004;
+
+  @media (max-width: 900px) {
+    margin: 0 auto;
+    border-radius: 0;
+  }
+
   .cta-content {
     text-align: center;
+
+    @media (max-width: 1024px) {
+      padding: 1rem;
+    }
+
     h6 {
-      color: var(--color-highlight-1);
+      color: var(--color-highlight-2);
       font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
     }
     h2 {
-      color: #222;
+      color: var(--color-background);
       font-size: 1.5rem;
       font-weight: 800;
       margin-bottom: 1.2rem;
@@ -50,11 +63,5 @@
       margin-top: 1.2rem;
       
     }
-  }
-}
-
-@media (max-width: 1024px) {
-  .country-content, .country-cta {
-    padding: 1rem;
   }
 }

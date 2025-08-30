@@ -1,17 +1,7 @@
 
 /* Cookie Policy page styles */
 
-.cookie-policy-hero {
-  background: #f8f8f8;
-  padding: 2.5rem 0 1.5rem 0;
-  text-align: center;
-  h1 {
-    color: #1ccfc9;
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0;
-  }
-}
+/* Removed .cookie-policy-hero: now handled by HeroSection component */
 
 .cookie-policy-content {
   max-width: 1100px;
@@ -30,7 +20,7 @@
     text-decoration: underline;
     font-weight: 600;
     &:hover {
-      color: #1877c9;
+      color: var(--color-outline);
     }
   }
   .cookie-table-section {
@@ -48,7 +38,7 @@
         font-size: 1rem;
       }
       th {
-        background: #1ccfc9;
+        background: var(--color-highlight-2);
         color: #fff;
         font-weight: 700;
         text-align: center;

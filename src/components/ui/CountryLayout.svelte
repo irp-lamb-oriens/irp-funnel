@@ -1,17 +1,17 @@
 <script lang="ts">
   export let heroTitle: string;
+  export let heroUrl: string | undefined = undefined;
   export let ctaTitle: string = "Contact us & Get a free moving consultation";
   export let ctaSubtitle: string = "Choose the best moving company for your relocation";
   export let ctaPrimary: { label: string; href: string } = { label: "Schedule Consultation", href: "/consultation" };
   export let ctaSecondary: { label: string; href: string } = { label: "Contact Us", href: "/contact-us" };
 
   import CTAButton from "../Header/CTAButton.svelte";
+  import HeroSection from "../HeroSection.svelte";
   import "./country-layout.scss";
 </script>
 
-<section class="country-hero">
-  <h1>{heroTitle}</h1>
-</section>
+<HeroSection text={heroTitle} url={heroUrl} />
 <section class="country-content">
   <slot />
 </section>

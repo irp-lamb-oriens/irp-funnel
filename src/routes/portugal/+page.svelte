@@ -6,7 +6,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Portugal">
+<CountryLayout heroTitle="Portugal" heroUrl="https://images.pexels.com/photos/33659317/pexels-photo-33659317.jpeg">
   <div>
     <p>Portugal, the westernmost country in continental Europe, is a dream destination for those seeking an old-style, old-world life. Its rich history, stunning natural beauty, and laid-back lifestyle make it an attractive destination for retirees. Despite modernity quickly overtaking Portugal, the country’s infrastructure, education system, and healthcare are still advanced.</p>
     <p>What makes Portugal truly magical are the people. Friendly, courteous, and highly conscious of their illustrious history, the Portuguese are what make the country such a welcoming destination. Family and friends are important, and people know their neighbors and local shopkeepers.<br>Portugal’s location is also advantageous. Its sliver of coastline and interior can take you back centuries in time, yet it’s only a two-hour flight from most major European cities. The country’s warm weather and Mediterranean lifestyle make it a perfect place for those seeking to enjoy the sea, fish, seafood, good food, wine, and olive oil at inexpensive prices. In addition, Portugal is arguably Western Europe’s most affordable country. Even in Lisbon, one of Europe’s most charming and underrated cities, a couple can live comfortably for $3,500 a month.</p>

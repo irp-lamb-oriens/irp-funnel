@@ -96,16 +96,16 @@
     </div>
     <div class="col col-content">
       <h6>Every move is led by professionals with more than 14 years of experience</h6>
-      <h1>Personalized relocation assistance delivered through well planned, tracked and executed projects!</h1>
+      <h1 class="moto">Personalized relocation assistance <br/> delivered through well planned, <br/> tracked and executed projects!</h1>
       <h4>Relocation services for expats, newcomers and retirees:</h4>
       <ul>
-        <li>International Moving Services</li>
-        <li>Package Forwarding</li>
-        <li>Automobile & Boat Shipping</li>
+        <li class="service">International Moving Services</li>
+        <li class="service">Package Forwarding</li>
+        <li class="service">Automobile & Boat Shipping</li>
       </ul>
       <div class="button-row">
         <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="primary" target="_blank" />
+        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>
   </div>
@@ -207,7 +207,7 @@
   .col-content {
     flex: 1 1 60%;
     h6 {
-      color: #1ccfc9;
+      color: var(--color-highlight-2);
       font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -218,6 +218,7 @@
       font-weight: 800;
       margin-bottom: 1.2rem;
       color: #222;
+      text-align: left;
     }
     h4 {
       color: var(--color-highlight-1);
@@ -230,6 +231,7 @@
       li {
         font-size: 1.1rem;
         margin-bottom: 0.3rem;
+        text-align: left;
       }
     }
   }
@@ -251,7 +253,7 @@
   transition: background 0.15s, color 0.15s;
   cursor: pointer;
   &:hover {
-    background: #1877c9;
+    background: var(--color-outline);
   }
 }
 .primary-btn {

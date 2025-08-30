@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './legal.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="legal-hero">
-    <h1>Legal Notice</h1>
-  </section>
+<CountryLayout heroTitle="Legal Notice" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
   <section class="legal-content">
     <p>
       This Legal Notice governs the use of this website and the services provided by International Relocation Partner. By accessing or using this website, you agree to comply with and be bound by the terms and conditions set forth herein.
@@ -27,6 +25,6 @@
       For any questions regarding this Legal Notice, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
     </p>
   </section>
-</main>
+</CountryLayout>
 
 <Footer />

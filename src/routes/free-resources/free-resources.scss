@@ -2,33 +2,26 @@
 
 /* Free Resources page styles */
 
-.free-resources-hero {
-  background: #f8f8f8;
-  padding: 2.5rem 0 1.5rem 0;
-  text-align: center;
-  h1 {
-    color: #1ccfc9;
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0;
-  }
+/* Removed .free-resources-hero: now handled by HeroSection component */
+
+img { 
+  object-fit: cover;
 }
 
 .free-resources-checklist,
 .free-resources-advice,
 .free-resources-packers,
 .free-resources-ebook {
-  max-width: 1100px;
-  margin: 2rem auto;
-  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-gap: 2rem;
+  padding: 5rem;
   background: #fff;
-  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2rem;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    grid-gap: 5rem;
   }
   .col-content {
     flex: 1 1 55%;
@@ -62,7 +55,6 @@
     display: flex;
     justify-content: center;
     img {
-      border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       max-width: 100%;
       height: auto;
@@ -86,3 +78,15 @@
     }
   }
 }
+  .free-resources-packers,
+  .free-resources-ebook {
+    padding: 1rem;
+    .row {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .col-content, .col-image {
+      flex: 1 1 100%;
+      text-align: center;
+    }
+  }

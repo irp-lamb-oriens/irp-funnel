@@ -10,7 +10,7 @@
       <p>Moving abroad is a unique experience for everybody, with different motives, family sizes, and needs.  Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your relocation project. </p>
       <div class="button-row">
         <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="primary" target="_blank" />
+        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>
     <div class="col col-location">
@@ -127,7 +127,7 @@
         box-shadow: 0 1px 4px rgba(30,144,255,0.05);
         padding: 1rem;
         h5 {
-          color: #1ccfc9;
+          color: var(--color-highlight-2);
           font-size: 1.1rem;
           font-weight: 700;
           margin-bottom: 0.5rem;

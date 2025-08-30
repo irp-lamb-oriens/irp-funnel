@@ -65,7 +65,7 @@
 <style lang="scss" src="./Header.scss"></style>
 
 <div class="header-space"></div>
-<header class="header-section">
+<header class="header-section" class:turnNeomorphicPlasticGlass={$doHide}>
   <div class="header-row main-row">
     <div class="logo-col">
       <Logo />

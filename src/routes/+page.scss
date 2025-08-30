@@ -31,7 +31,7 @@
   }
 }
 .tertiary-btn {
-  background: #1ccfc9;
+  background: var(--color-highlight-2);
   color: #fff;
   &:hover {
     background: #159e9a;
@@ -59,7 +59,7 @@
   .col-content {
     flex: 1 1 60%;
     h6 {
-      color: #1ccfc9;
+      color: var(--color-highlight-2);
       font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 1rem;
@@ -120,7 +120,7 @@
   .col-left {
     flex: 1 1 60%;
     h4 {
-      color: #1ccfc9;
+      color: var(--color-highlight-2);
       font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 0.7rem;
@@ -402,7 +402,7 @@
         box-shadow: 0 1px 4px rgba(30,144,255,0.05);
         padding: 1rem;
         h5 {
-          color: #1ccfc9;
+          color: var(--color-highlight-2);
           font-size: 1.1rem;
           font-weight: 700;
           margin-bottom: 0.5rem;

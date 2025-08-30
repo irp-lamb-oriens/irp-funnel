@@ -1,15 +1,13 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './costa-rica.scss';
 </script>
 
 <Header />
 
-<main id="main-content">
-  <section class="costa-rica-hero">
-    <h1>Costa Rica</h1>
-  </section>
+<CountryLayout heroTitle="Costa Rica" heroUrl="https://images.pexels.com/photos/834958/pexels-photo-834958.jpeg">
   <section class="costa-rica-content">
     <p>Costa Rica is a destination that continues to attract people from all over the world, and for good reason. It offers a unique combination of modern conveniences and natural beauty, making it an ideal place to live, work, or retire. And when it comes to location, Costa Rica truly has it all.</p>
     <p>In addition to its close proximity to North America, Costa Rica is a hub for travel within Central America. From here, you can easily explore neighboring countries like Panama, Nicaragua, and Guatemala. Costa Rica’s international airport is modern, efficient, and serviced by major airlines from all over the world. This makes it easy to travel to and from Costa Rica, whether you’re visiting family, taking a vacation, or conducting business.</p>
@@ -19,16 +17,6 @@
     <p>For those considering a move to Costa Rica, it’s important to work with a trusted partner who can guide you through the process. International Relocation Partner LLC is a company that specializes in managing international moving projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid surprises and hidden costs.</p>
     <p>In conclusion, Costa Rica’s location is just one of the many reasons why it’s such a great place to live, work, or retire. Whether you’re looking for adventure, relaxation, or a new community to call home, Costa Rica has something to offer everyone.</p>
   </section>
-  <section class="costa-rica-cta">
-    <div class="cta-content">
-      <h6>Choose the best moving company for your relocation</h6>
-      <h2>Contact us & Get a free moving consultation</h2>
-      <div class="button-row">
-        <a class="cta-btn" href="/consultation">Schedule Consultation</a>
-        <a class="tertiary-btn" href="/contact-us">Contact Us</a>
-      </div>
-    </div>
-  </section>
-</main>
+</CountryLayout>
 
 <Footer />

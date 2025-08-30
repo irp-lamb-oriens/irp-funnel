@@ -12,6 +12,7 @@
       | "secondary-inverted"
       | "primary-scaled" = "primary";
   
+    export let callback: Function | null = null;
     export let disabled: boolean = false;
     export let loading: boolean = false;
     export let fullWidth: boolean = false;
@@ -26,6 +27,7 @@
   
     function onClick(e: MouseEvent) {
       if (!isLink) e.preventDefault();
+      if (callback) callback();
     }
   
     function onKeydown(e: KeyboardEvent) {
@@ -160,11 +162,11 @@
   
     /* SECONDARY (borde con bac--color-background para contraste; hover eleva a bac--color-background) */
     .cta-secondary {
-      background-color: var(--color-background);
-      color: var(--color-background-inversion);
-      border-color: var(--color-background);
+      background-color: var(--color-highlight-2);
+      color: var(--color-background);
+      border-color: var(--color-highlight-2);
     }
-    .cta-secondary:hover { border-color: var(--color-background); color: var(--color-background); }
+    .cta-secondary:hover { color: var(--color-background-inversion); background-color: transparent; }
   
     /* SECONDARY INVERTED (pensado para fondos con bac--color-background/2 oscuros o imágenes) */
     .cta-secondary-inverted {

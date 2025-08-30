@@ -6,7 +6,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Spain">
+<CountryLayout heroTitle="Spain" heroUrl="https://images.pexels.com/photos/1500599/pexels-photo-1500599.jpeg">
   <div>
     <p>Spain is a country that captures the essence of old Europe, with its cobblestone alleys, medieval walls, and castles. It’s a country that exudes history, beauty, and a laidback lifestyle that is rich in every standard other than financial. The people of Spain are friendly, highly conscious of their illustrious history, and what makes the country a magical destination to retire to.</p>
     <p>With nearly 3,100 miles of coastline, Spain offers fantastic variety in terrain, culture, and lifestyle. From its rocky, rugged Atlantic coasts to its green hills, winding country roads, and bustling cities, Spain has something for everyone. It’s easy to get around the country thanks to its rapid public transportation, high-speed and suburban train lines, and extensive bus and metro services. Spain has three international airports servicing many airlines, connecting the country with the rest of Europe.</p>
