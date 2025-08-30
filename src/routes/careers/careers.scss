@@ -1,0 +1,81 @@
+
+
+/* Careers page styles */
+
+.careers-hero {
+  background: #f8f8f8;
+  padding: 2.5rem 0 1.5rem 0;
+  text-align: center;
+  h1 {
+    color: #1ccfc9;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0;
+  }
+}
+
+.careers-why {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  h3 {
+    color: var(--color-highlight-1);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #222;
+  }
+}
+
+.careers-job {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #f8f8f8;
+  border-radius: 8px;
+  h5 {
+    color: #1ccfc9;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.7rem;
+  }
+  p, ul {
+    font-size: 1.05rem;
+    color: #222;
+    margin-bottom: 0.7rem;
+  }
+  ul {
+    margin-left: 1.2rem;
+    margin-bottom: 1.2rem;
+    li {
+      margin-bottom: 0.3rem;
+    }
+  }
+  a {
+    color: var(--color-highlight-1);
+    text-decoration: underline;
+    font-weight: 600;
+    &:hover {
+      color: #1877c9;
+    }
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 2rem 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .careers-why, .careers-job {
+    padding: 1rem;
+  }
+}

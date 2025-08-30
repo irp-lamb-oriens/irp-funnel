@@ -1,0 +1,77 @@
+<script lang="ts">
+  import Header from '../../components/Header/Header.svelte';
+  import Footer from '../../components/Footer/Footer.svelte';
+  import CTAButton from '../../components/Header/CTAButton.svelte';
+  import './free-resources.scss';
+</script>
+
+<Header />
+
+<main id="main-content">
+  <section class="free-resources-hero">
+    <h1>Free Resources</h1>
+  </section>
+  <section class="free-resources-checklist">
+    <div class="row">
+      <div class="col col-content">
+        <h2>DO IT YOURSELF Moving Checklist Guide</h2>
+        <h5>Moving abroad has a series of steps that we need to diligently follow to guarantee a successful and easy relocation journey, that is why we had made this helpful guide for you!</h5>
+        <CTAButton label="Do It Yourself Relocation Checklist" href="/wp-content/uploads/2022/03/Do-It-Yourself-Moving-Checklist.pdf" variant="primary" target="_blank" />
+      </div>
+      <div class="col col-image">
+        <a href="/Do-It-Yourself-Moving-Checklist.pdf" target="_blank">
+          <img src="https://www.internationalrelocationpartner.com/wp-content/uploads/2022/03/Do-It-Yourself-Relocation-checklist.jpg" alt="Do It Yourself Relocation checklist" width="480" />
+        </a>
+      </div>
+    </div>
+  </section>
+  <section class="free-resources-advice">
+    <h2>Want Relocation Advice Personalized to YOUR Situation?</h2>
+    <div class="row">
+      <div class="col col-image">
+        <img src="https://www.internationalrelocationpartner.com/wp-content/uploads/2022/07/Pablo-smiling-.png" alt="Pablo smiling" width="480" />
+      </div>
+      <div class="col col-content">
+        <h4>We know you have several questions, so we prepare for you an initial consultation call with two main objectives:</h4>
+        <ul>
+          <li>– Understanding your requirements. We like to know what your needs are and know what is important to you.</li>
+          <li>– Explain to you the rules and regulations that may affect your shipment process, this quick call can help us review these rules and advice depending on your specific case.</li>
+        </ul>
+        <CTAButton label="Schedule Consultation" href="/consultation" variant="primary" />
+      </div>
+    </div>
+  </section>
+  <section class="free-resources-packers">
+    <div class="row">
+      <div class="col col-image">
+        <a href="/Do-It-Yourself-Moving-Checklist.pdf" target="_blank">
+          <img src="https://www.internationalrelocationpartner.com/wp-content/uploads/2022/03/Hiring-Professional-Packers-2.png" alt="Hiring Professional Packers" width="320" />
+        </a>
+      </div>
+      <div class="col col-content">
+        <h2>Hiring Packers Checklist</h2>
+        <h5>Moving abroad has a numbers of steps that we need to diligently follow to ensure a smooth and successful journey. Take a look at this checklist and start your relocation journey with the right foot. </h5>
+        <CTAButton label="Download Hiring Packers Checklist" href="/wp-content/uploads/2022/03/Hiring-Profesional-Packers-CHECK-LIST.pdf" variant="primary" target="_blank" />
+      </div>
+    </div>
+  </section>
+  <section class="free-resources-ebook">
+    <div class="row">
+      <div class="col col-content">
+        <h2>Move Overseas with Ease</h2>
+        <h5>by Deborah Dahab Free Ebook</h5>
+        <p>We understand how stressful and complicated just thinking about moving abroad could be, we want to let our customers know, that there is nothing to be afraid of, as long as you have the information needed to make a well-informed decision.</p>
+        <p>We want to help out not only to our ex-pat community but also whoever is thinking of moving abroad and starting a new adventure, so if you are looking for tips and ideas on how to live your best life abroad this free Ebook, by Deborah Dahab, Expat Coach, is for you.</p>
+        <p>Check it out:<br />By Sandra</p>
+        <CTAButton label="Download Move overseas with ease ebook" href="/wp-content/uploads/2022/08/Move-overseas-with-ease-ebook-DeborahDahab-May21.pdf" variant="primary" target="_blank" />
+      </div>
+      <div class="col col-image">
+        <a href="/Do-It-Yourself-Moving-Checklist.pdf" target="_blank">
+          <img src="https://www.internationalrelocationpartner.com/wp-content/uploads/2022/08/Move-overseas-with-ease-ebook-DeborahDahab-May21_Page_01-791x1024.jpg" alt="Move overseas with ease ebook" width="320" />
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<Footer />

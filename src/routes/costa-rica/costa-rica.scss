@@ -1,0 +1,65 @@
+
+
+/* Costa Rica page styles */
+
+.costa-rica-hero {
+  background: #f8f8f8;
+  padding: 2.5rem 0 1.5rem 0;
+  text-align: center;
+  h1 {
+    color: #1ccfc9;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0;
+  }
+}
+
+.costa-rica-content {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #222;
+  }
+}
+
+.costa-rica-cta {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #f8f8f8;
+  border-radius: 8px;
+  .cta-content {
+    text-align: center;
+    h6 {
+      color: var(--color-highlight-1);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      color: #222;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 1.2rem;
+    }
+    .button-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1.2rem;
+      
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .costa-rica-content, .costa-rica-cta {
+    padding: 1rem;
+  }
+}

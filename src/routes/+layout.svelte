@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { afterNavigate } from "$app/navigation";
+    import ThemeChanger from "../components/ThemeChanger/ThemeChanger.svelte";
     const MEASUREMENT_ID = "G-3X226YFLE6";
 
     onMount(() => {
@@ -20,4 +21,10 @@
     });
 </script>
 
+<ThemeChanger visible={false} />
+
 <slot />
+
+<style lang="scss">
+    @use "./styles/everything.scss";
+</style>
