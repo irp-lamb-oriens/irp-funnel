@@ -24,7 +24,7 @@
           <li><a href="/terms-of-use">Terms of Use</a></li>
           <li><a href="/earnings-disclaimer">Earnings Disclaimer</a></li>
           <li><a href="/terms-of-sale">Terms of Sale</a></li>
-          <li><a href="/privacy-policy">Privacy Policy</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
           <li><a href="/cookie-policy">Cookie Policy</a></li>
         </ul>
       </div>
@@ -68,8 +68,8 @@
     </div>
     <div class="footer-row copyright-row">
       <p>
-        Copyright © 2022 Heredia, Costa Rica | Built by
-        <a href="https://thedigitalnavigator.com/" target="_blank" rel="noopener">The Digital Navigator</a>
+        Copyright © 2025 Heredia, Costa Rica | Built by
+        <a href="https://aiexecutions.com/" target="_blank" rel="noopener">AI Executions</a> at <a href="https://testcoder.netlify.app/" target="_blank" rel="noopener">Oriens Studios</a>
       </p>
     </div>
   </div>

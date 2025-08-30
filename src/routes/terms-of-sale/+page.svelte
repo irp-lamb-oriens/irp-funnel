@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Terms of Sale" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="Terms of Sale" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="terms-sale-content">
     <p>
       These Terms of Sale govern the purchase of products and services from International Relocation Partner. By placing an order, you agree to these terms.

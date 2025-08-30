@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Personalized relocation assistance delivered through well planned, tracked and executed projects!" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroSubTitle="Delivered through well planned, tracked and executed projects!" heroTitle="Personalized relocation assistance" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="consultation-info">
     <h3>We know you have several questions, so we prepare for you an initial consultation call with two main objectives:</h3>
     <ul>

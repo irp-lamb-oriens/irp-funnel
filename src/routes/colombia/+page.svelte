@@ -3,12 +3,13 @@
   import Footer from '../../components/Footer/Footer.svelte';
   import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import './colombia.scss';
+  import CountryContentWrapper from '../../components/ui/CountryContentWrapper.svelte';
 </script>
 
 <Header />
 
-<CountryLayout heroTitle="Colombia" heroUrl="https://images.pexels.com/photos/8264573/pexels-photo-8264573.jpeg">
-  <section class="colombia-content">
+<CountryLayout heroTitle="Colombia" heroUrl="https://images.pexels.com/photos/8264573/pexels-photo-8264573.jpeg?w=2000">
+  <CountryContentWrapper>
     <h4>Why Colombia is a Rising Star for Expats, Retirees, and Investors</h4>
     <p><b>By Pablo Arias, Founder of International Relocation Partner</b><br>
       Colombia has been steadily gaining attention as one of the most promising destinations for expats, retirees, and international investors. As someone who has been closely following this trend, I’ve made it a point to visit Colombia regularly, connecting with local experts and experiencing the country firsthand. Each visit reinforces why this country is becoming such an appealing option for people looking to relocate abroad.<br>
@@ -31,7 +32,7 @@
     <p><b>Final Thoughts</b><br>
       As the founder of International Relocation Partner, I’ve made it my mission to explore and connect with destinations that are gaining traction among expats. Colombia is one of those places that keeps surprising me. The country has everything—warm people, rich culture, breathtaking landscapes, and endless opportunities for those looking to start a new chapter in life.<br>
       If you’re considering relocating, Colombia is definitely worth exploring. I’d love to hear your thoughts: What excites you most about Colombia? Or, if you’ve already visited, what stood out to you? Let’s start the conversation!</p>
-  </section>
+  </CountryContentWrapper>
 </CountryLayout>
 
 <Footer />

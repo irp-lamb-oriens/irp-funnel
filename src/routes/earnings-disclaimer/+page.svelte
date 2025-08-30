@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Earnings Disclaimer" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="Earnings Disclaimer" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="disclaimer-content">
     <p>
       The information provided by International Relocation Partner (“we,” “us” or “our”) on this website is for general informational purposes only. All information on the site is provided in good faith, however we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability or completeness of any information on the site.

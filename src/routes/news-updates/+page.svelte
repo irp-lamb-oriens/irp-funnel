@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="news-list">
     <div class="news-grid">
       <!-- Blog Post 1 -->

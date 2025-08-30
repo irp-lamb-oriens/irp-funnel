@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Legal Notice" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="Legal Notice" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="legal-content">
     <p>
       This Legal Notice governs the use of this website and the services provided by International Relocation Partner. By accessing or using this website, you agree to comply with and be bound by the terms and conditions set forth herein.

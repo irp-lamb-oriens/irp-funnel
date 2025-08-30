@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="IRP Careers" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="IRP Careers" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="careers-why">
     <h3>Why Work with Us?</h3>
     <p>You’re the best. We attract and develop the most exceptional professionals in our industry. You will be part of a unique global team of talented and motivated professionals from a multitude of countries and diverse backgrounds around the world.</p>

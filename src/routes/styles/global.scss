@@ -57,9 +57,8 @@
 
 :global(body) {
   overflow-x: hidden;
-  background-color: var(--color-background-inversion);
   color: var(--color-foreground);
-  background: var(--color-x-gradient);
+  background: var(--color-foreground-opaque);;
 }
 
 :global(*) {

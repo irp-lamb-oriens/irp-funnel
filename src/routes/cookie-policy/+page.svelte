@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Cookie Policy" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg">
+<CountryLayout heroTitle="Cookie Policy" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
   <section class="cookie-policy-content">
     <!-- ...texto introductorio idéntico... -->
 
