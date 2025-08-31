@@ -1,6 +1,6 @@
 .footer-section {
-  background: #222;
-  color: var(--color-background);
+  background: var(--color-highlight-2);
+  color: var(--color-background-inversion);
   padding: 0 0 1.5rem 0;
   font-family: inherit;
 }
@@ -27,7 +27,7 @@
 
 .footer-col h5,
 .footer-heading {
-  color: var(--color-background);
+  color: var(--color-background-inversion);
   font-size: 1.1rem;
   margin-bottom: 1rem;
   font-weight: 600;
@@ -48,7 +48,7 @@
 
 .footer-menu a,
 .footer-link {
-  color: var(--color-highlight-2);
+  color: var(--color-background);
   text-decoration: none;
   font-size: 1rem;
   position: relative;
@@ -79,7 +79,7 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  color: var(--color-highlight-2);
+  color: var(--color-background);
   text-decoration: none;
   font-size: 1rem;
   position: relative;
@@ -144,7 +144,7 @@
 
 .footer-destinations-list a,
 .footer-destination-link {
-  color: var(--color-highlight-2);
+  color: var(--color-background);
   text-decoration: none;
   font-weight: 500;
   display: flex;
@@ -208,17 +208,17 @@
 
 .copyright-row {
   text-align: center;
-  color: var(--color-background);
+  color: var(--color-background-inversion);
   font-size: 0.95rem;
   margin-top: 1.5rem;
 }
 .footer-copyright {
-  color: var(--color-background);
+  color: var(--color-background-inversion);
   font-size: 0.95rem;
   margin: 0;
 }
 .footer-copyright-link {
-  color: var(--color-highlight-2);
+  color: var(--color-background);
   text-decoration: underline;
   font-weight: 500;
   transition: color 0.2s cubic-bezier(0.4,0,0.2,1), text-decoration-color 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s;
