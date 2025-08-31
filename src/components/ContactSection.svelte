@@ -300,7 +300,6 @@
       object-fit: contain;
       border-radius: 6px;
       box-shadow: 0 1px 4px rgba(30,144,255,0.08);
-      background: #fff;
     }
     .location-card__info {
       flex: 1 1 0;

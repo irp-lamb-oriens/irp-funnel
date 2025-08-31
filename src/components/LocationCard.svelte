@@ -49,7 +49,7 @@
     {#if open}
       {#each details as detail}
         <div class="location-card__detail">
-          <img class="location-card__img" src="/map.png" alt={detail.imgAlt} />
+          <img class="location-card__img" src="/icons/map.png" alt={detail.imgAlt} />
           <div class="location-card__info">
             {#if detail.label}
               <h5 class="location-card__label">
@@ -192,10 +192,10 @@ $shadow-min-duration: 0s;
       object-fit: contain;
       border-radius: 6px;
       box-shadow: 0 1px 4px rgba(30,144,255,0.08);
-      background: #fff;
     }
     .location-card__info {
       flex: 1 1 0;
+      text-align-last: left;
   .location-card__label {
     color: #fff;
     font-size: 1.05rem;
