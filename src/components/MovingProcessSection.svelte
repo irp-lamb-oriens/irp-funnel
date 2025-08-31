@@ -211,7 +211,7 @@
       <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
     </div>
     <div class="moving-process-btn-wrapper">
-      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
+      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />
     </div>
   </div>
 </section>
