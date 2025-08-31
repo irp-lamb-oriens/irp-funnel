@@ -36,7 +36,7 @@
 }
 .footer-heading:hover,
 .footer-heading:active {
-  color: #b3d1ff;
+  color: #fff;
   letter-spacing: 0.08em;
   transition: letter-spacing 0.2s cubic-bezier(0.4,0,0.2,1), color 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s;
 }
@@ -53,7 +53,7 @@
 }
 
 $footer-shadow-count: 8;
-$footer-shadow-base-color: #02b5bb;
+$footer-shadow-base-color: #fff;
 $footer-shadow-base-opacity: 0.18;
 $footer-shadow-min-opacity: 0.03;
 $footer-shadow-base-duration: 0.5s;
@@ -92,7 +92,6 @@ $footer-shadow-min-duration: 0s;
 .footer-link:active,
 .footer-menu a:focus,
 .footer-link:focus {
-  padding: 1rem 3rem;
   color: #fff;
   background: transparent;
   text-decoration: underline;
@@ -210,7 +209,7 @@ $footer-shadow-min-duration: 0s;
 
 .footer-destinations-list a,
 .footer-destination-link {
-  color: #b3d1ff;
+  color: #fff;
   text-decoration: none;
   font-weight: 500;
   display: flex;
@@ -300,12 +299,12 @@ $footer-shadow-min-duration: 0s;
 
 .copyright-row {
   text-align: center;
-  color: #b3d1ff;
+  color: #fff;
   font-size: 0.95rem;
   margin-top: 1.5rem;
 }
 .footer-copyright {
-  color: #b3d1ff;
+  color: #fff;
   font-size: 0.95rem;
   margin: 0;
   transition: color 0.3s cubic-bezier(0.4,0,0.2,1);
@@ -318,7 +317,7 @@ $footer-shadow-min-duration: 0s;
 }
 .footer-copyright-link:hover,
 .footer-copyright-link:active {
-  color: #b3d1ff;
-  text-decoration-color: #b3d1ff;
+  color: #fff;
+  text-decoration-color: #fff;
   transition: text-decoration-color 0.2s cubic-bezier(0.4,0,0.2,1), color 0.4s cubic-bezier(0.4,0,0.2,1) 0.2s;
 }
