@@ -57,12 +57,12 @@
     <div class="footer-row destinations-footer-row">
       <nav class="footer-destinations-menu">
         <ul class="footer-destinations-list">
-          <li><a class="footer-destination-link" href="/costa-rica"><img class="footer-destination-img" src="/countries/costa-rica.png" alt="Costa Rica" />Costa Rica</a></li>
-          <li><a class="footer-destination-link" href="/panama"><img class="footer-destination-img" src="/countries/panama.png" alt="Panama" />Panama</a></li>
-          <li><a class="footer-destination-link" href="/mexico"><img class="footer-destination-img" src="/countries/mexico.png" alt="Mexico" />Mexico</a></li>
-          <li><a class="footer-destination-link" href="/portugal"><img class="footer-destination-img" src="/countries/portugal.png" alt="Portugal" />Portugal</a></li>
-          <li><a class="footer-destination-link" href="/spain"><img class="footer-destination-img" src="/countries/spain.png" alt="Spain" />Spain</a></li>
-          <li><a class="footer-destination-link" href="/colombia"><img class="footer-destination-img" src="/countries/colombia.png" alt="Colombia" />Colombia</a></li>
+          <li><a class="footer-destination-link" href="/costa-rica"><img class="footer-destination-img" src="/countries/costa-rica.png" alt="Costa Rica" /><span class="footer-country-name">Costa Rica</span></a></li>
+          <li><a class="footer-destination-link" href="/panama"><img class="footer-destination-img" src="/countries/panama.png" alt="Panama" /><span class="footer-country-name">Panama</span></a></li>
+          <li><a class="footer-destination-link" href="/mexico"><img class="footer-destination-img" src="/countries/mexico.png" alt="Mexico" /><span class="footer-country-name">Mexico</span></a></li>
+          <li><a class="footer-destination-link" href="/portugal"><img class="footer-destination-img" src="/countries/portugal.png" alt="Portugal" /><span class="footer-country-name">Portugal</span></a></li>
+          <li><a class="footer-destination-link" href="/spain"><img class="footer-destination-img" src="/countries/spain.png" alt="Spain" /><span class="footer-country-name">Spain</span></a></li>
+          <li><a class="footer-destination-link" href="/colombia"><img class="footer-destination-img" src="/countries/colombia.png" alt="Colombia" /><span class="footer-country-name">Colombia</span></a></li>
         </ul>
       </nav>
     </div>

@@ -2,7 +2,7 @@
   background: var(--color-highlight-2);
   color: var(--color-background-inversion);
   padding: 0 0 1.5rem 0;
-  font-family: inherit;
+  font-family: var(--font-paragraph);
 }
 
 .footer-inner {
@@ -32,8 +32,12 @@
   margin-bottom: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  font-family: var(--font-title);
 }
 /* Removed hover/active transitions for non-interactive headings */
+.footer-country-name {
+  font-family: var(--font-title);
+}
 
 .footer-menu {
   list-style: none;
