@@ -1,114 +1,31 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import VideoBanner from "./VideoBanner.svelte";
   import CTAButton from "./Header/CTAButton.svelte";
+
   export let videoUrl: string = "https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4";
   export let imageUrl: string = "/video-lightbox1b-480x590.jpg";
   export let imageAlt: string = "video-lightbox1b";
-
-  let isPlaying = false;
-  let isHovered = false;
-  let isVideoPlaying = false;
-  let videoEl: HTMLVideoElement | null = null;
-
-  function playVideo() {
-    isPlaying = true;
-    setTimeout(() => {
-      videoEl?.play();
-    }, 100);
-  }
-
-  function replayVideo() {
-    if (videoEl) {
-      videoEl.currentTime = 0;
-      videoEl.play();
-    }
-  }
-
-  function resetVideo() {
-    isPlaying = false;
-    isVideoPlaying = false;
-    if (videoEl) {
-      videoEl.currentTime = 0;
-      videoEl.pause();
-    }
-  }
 </script>
 
 <section class="home-banner">
-  <div class="row">
-    <div class="col col-image">
-      <div
-        class="media-container"
-        on:mouseenter={() => isHovered = true}
-        on:mouseleave={() => isHovered = false}
-      >
-        {#if !isPlaying}
-          <img
-            class="media-image {isHovered ? 'hovered' : ''}"
-            src={imageUrl}
-            alt={imageAlt}
-            width="480"
-            height="590"
-            on:click={playVideo}
-            draggable="false"
-          />
-          <button
-            class="play-btn {isHovered ? 'hovered' : ''}"
-            aria-label="Play video"
-            on:click={playVideo}
-            tabindex="0"
-            type="button"
-          >
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)" />
-              <polygon points="26,20 48,32 26,44" fill="#fff"/>
-            </svg>
-          </button>
-        {:else}
-          <div class="video-wrapper">
-            <video
-              bind:this={videoEl}
-              class="media-video"
-              src={videoUrl}
-              poster={imageUrl}
-              preload="auto"
-              playsinline
-              controls
-              on:play={() => isVideoPlaying = true}
-              on:pause={() => isVideoPlaying = false}
-              on:ended={resetVideo}
-            />
-            <button
-              class="play-btn over-video {isHovered ? 'hovered' : ''} {isVideoPlaying ? 'hidden' : ''}"
-              aria-label="Replay video"
-              on:click={replayVideo}
-              tabindex="0"
-              type="button"
-            >
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.55)" />
-                <polygon points="26,20 48,32 26,44" fill="#fff"/>
-              </svg>
-            </button>
-          </div>
-        {/if}
-      </div>
+  <VideoBanner
+    videoUrl={videoUrl}
+    videoPoster={imageUrl}
+    videoAlt={imageAlt}
+  >
+    <h6>Every move is led by professionals with more than 14 years of experience</h6>
+    <h1 class="moto">Personalized relocation assistance <br/> delivered through well planned, <br/> tracked and executed projects!</h1>
+    <h4>Relocation services for expats, newcomers and retirees:</h4>
+    <ul>
+      <li class="service">International Moving Services</li>
+      <li class="service">Package Forwarding</li>
+      <li class="service">Automobile & Boat Shipping</li>
+    </ul>
+    <div class="button-row">
+      <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
+      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
     </div>
-    <div class="col col-content">
-      <h6>Every move is led by professionals with more than 14 years of experience</h6>
-      <h1 class="moto">Personalized relocation assistance <br/> delivered through well planned, <br/> tracked and executed projects!</h1>
-      <h4>Relocation services for expats, newcomers and retirees:</h4>
-      <ul>
-        <li class="service">International Moving Services</li>
-        <li class="service">Package Forwarding</li>
-        <li class="service">Automobile & Boat Shipping</li>
-      </ul>
-      <div class="button-row">
-        <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
-      </div>
-    </div>
-  </div>
+  </VideoBanner>
 </section>
 
 <style lang="scss">
@@ -116,164 +33,194 @@
   background: #f8f8f8;
   padding: 2.5rem 0;
   .row {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 2.5rem;
+    transition: gap 0.6s cubic-bezier(.77,0,.18,1);
+    &.expanded {
+      gap: 0;
+    }
   }
   .col-image {
-    flex: 1 1 40%;
+    flex: 1 1 40ch;
     display: flex;
     justify-content: center;
+    min-width: 0;
+    position: relative;
+    transition: flex-basis 0.7s cubic-bezier(.77,0,.18,1), width 0.7s cubic-bezier(.77,0,.18,1);
+    z-index: 2;
     .media-container {
       position: relative;
-      width: 480px;
-      height: 590px;
+      width: min(100vw, 480px);
+      aspect-ratio: 480/590;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       user-select: none;
-      .media-image,
+      transition: width 0.5s cubic-bezier(.77,0,.18,1), aspect-ratio 0.5s cubic-bezier(.77,0,.18,1);
+    }
+    .row.expanded .col-image .media-container {
+      width: 100%;
+      aspect-ratio: auto;
+      height: 100%;
+      max-width: none;
+    }
+    .media-image {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+      transition: filter 0.3s;
+      &:focus-visible {
+        outline: 2px solid var(--color-highlight-1);
+      }
+    }
+    .play-btn {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 2;
+      transform: translate(-50%, -50%);
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      transition: transform 0.3s;
+      &:hover, &:focus-visible {
+        transform: translate(-50%, -50%) scale(1.12);
+      }
+    }
+    .video-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border-radius: 8px;
+      animation: expandIn 0.5s cubic-bezier(.77,0,.18,1);
+      transition: width 0.5s cubic-bezier(.77,0,.18,1), height 0.5s cubic-bezier(.77,0,.18,1);
       .media-video {
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        max-width: 100%;
+        width: 100%;
         height: 100%;
+        border-radius: 8px;
+        background: #000;
+        outline: none;
         object-fit: cover;
-        display: block;
-        transition: transform 0.5s cubic-bezier(.77,0,.18,1), filter 0.4s;
       }
-      .media-image {
-        z-index: 1;
-        filter: brightness(0.95);
-        transition: transform 0.5s cubic-bezier(.77,0,.18,1), filter 0.4s;
-      }
-      .media-image.hovered {
-        transform: scale(1.04) translateY(-8px) rotate(-1.5deg);
-        filter: brightness(1.05) saturate(1.1);
-      }
-      .play-btn {
+      .play-btn.over-video {
         position: absolute;
         left: 50%;
         top: 50%;
-        z-index: 2;
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-        opacity: 1;
+        z-index: 10;
+        transform: translate(-50%, -50%);
         background: none;
         border: none;
-        outline: none;
         cursor: pointer;
-        transition:
-          opacity 0.35s cubic-bezier(.77,0,.18,1),
-          transform 0.5s cubic-bezier(.77,0,.18,1);
-        will-change: opacity, transform;
-        pointer-events: auto;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+        &:hover, &:focus-visible {
+          opacity: 1;
+        }
       }
-      .play-btn.hovered {
-        transform: translate(-50%, -60%) scale(1.12) rotate(-6deg);
-        opacity: 0.92;
-      }
-      .play-btn.over-video {
-        z-index: 3;
-        pointer-events: auto;
-        transition:
-          opacity 0.35s cubic-bezier(.77,0,.18,1),
-          transform 0.5s cubic-bezier(.77,0,.18,1);
-      }
-      .play-btn.over-video.hidden {
-        opacity: 0;
-        transform: translate(-50%, -30%) scale(0.7) rotate(8deg);
-        pointer-events: none;
-      }
-      .play-btn.over-video.hovered:not(.hidden) {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.08) rotate(-8deg);
-      }
-      .video-wrapper {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        z-index: 1;
-        .media-video {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 8px;
-          background: #000;
+      .close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(0,0,0,0.5);
+        border: none;
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: background 0.2s;
+        &:hover, &:focus-visible {
+          background: rgba(0,0,0,0.8);
+        }
+        svg {
+          display: block;
         }
       }
     }
+    .row.expanded .col-image .video-wrapper {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
+    }
   }
   .col-content {
-    flex: 1 1 60%;
-    h6 {
-      color: var(--color-highlight-2);
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      letter-spacing: 0.02em;
+    flex: 1 1 40ch;
+    min-width: 0;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: flex-basis 0.7s cubic-bezier(.77,0,.18,1), width 0.7s cubic-bezier(.77,0,.18,1), opacity 0.5s cubic-bezier(.77,0,.18,1);
+    &.collapsed {
+      flex-basis: 0 !important;
+      width: 0 !important;
+      min-width: 0 !important;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
     }
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1.2rem;
-      color: #222;
-      text-align: left;
-    }
-    h4 {
-      color: var(--color-highlight-1);
-      font-size: 1.3rem;
-      margin-bottom: 0.8rem;
-      font-weight: 700;
-    }
-    ul {
-      margin-bottom: 1.2rem;
-      li {
-        font-size: 1.1rem;
-        margin-bottom: 0.3rem;
-        text-align: left;
+  }
+  @media (max-width: 1200px) {
+    .row {
+      flex-direction: column;
+      gap: 1.5rem;
+      &.expanded {
+        gap: 1.5rem;
       }
     }
+    .col-image, .col-content {
+      flex: 1 1 100%;
+      width: 100%;
+      min-width: 0;
+      padding: 0;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      overflow: visible !important;
+    }
+    .col-content.collapsed {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      overflow: visible !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+    }
+    .media-container {
+      width: 100vw;
+      max-width: 480px;
+    }
+    .video-wrapper {
+      width: 100%;
+      max-width: 100vw;
+    }
   }
-}
-.button-row {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.2rem;
-  flex-wrap: wrap;
-}
-.cta-btn, .primary-btn {
-  background: var(--color-highlight-1);
-  color: #fff;
-  display: inline-block;
-  border-radius: 4px;
-  padding: 0.5rem 1.2rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.15s, color 0.15s;
-  cursor: pointer;
-  &:hover {
-    background: var(--color-outline);
-  }
-}
-.primary-btn {
-  background: var(--color-highlight-1);
-  color: #fff;
-}
-@media (max-width: 1200px) {
-  .row {
-    flex-direction: column;
-    padding: 0 1rem;
-  }
-  .col, .col-content, .col-image {
-    flex: 1 1 100%;
-    min-width: 0;
-    text-align: center;
-  }
-}
-@media (max-width: 700px) {
-  .home-banner {
+  @media (max-width: 700px) {
     padding: 1.2rem 0;
+    .media-container {
+      max-width: 100vw;
+    }
+    .video-wrapper {
+      max-width: 100vw;
+    }
   }
+}
+
+@keyframes expandIn {
+  from { opacity: 0; transform: scale(0.98);}
+  to { opacity: 1; transform: scale(1);}
 }
 </style>
