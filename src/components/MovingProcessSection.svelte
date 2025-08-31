@@ -48,6 +48,15 @@
   // Store for the current step index in view
   const currentStep = writable(0);
 
+  // Reference to the main section
+  let sectionRef: HTMLElement | null = null;
+  // Array of card refs for sticky narrative cards
+  let cardRefs: (HTMLElement | null)[] = [null, null, null, null];
+  // Array of step refs for timeline steps
+  let stepRefs: (HTMLElement | null)[] = [null, null, null, null];
+
+  let section: HTMLElement | null = null;
+
   // Unique key for animation reset
   let currentStepKey = '';
   $: currentStepKey = `${$currentStep}-${Date.now()}`;
@@ -103,67 +112,68 @@
     });
   }
 
-  // Array of step refs
-  let stepRefs: (HTMLElement | undefined)[] = [];
+  // No need for setCardRef, use bind:this={cardRefs[pidx]} in markup
 
-  // Custom action to set ref
-  function setStepRef(node: HTMLElement, idx: number) {
-    stepRefs[idx] = node;
-    return {
-      destroy() {
-        stepRefs[idx] = undefined;
-      }
-    };
+  // Centralized function to calculate the current step index
+  function getCurrentStepIndex(cardRefs: (HTMLElement | null)[]): number {
+    // Use the center of the viewport as the reference
+    const sectionY = (section?.getBoundingClientRect().y ?? 0) + window.scrollY;
+    const offsetScrollY = window.scrollY - sectionY;
+    const normalizedScrollY = offsetScrollY / (section?.clientHeight ?? 0);
+    const scaledScrollY = Math.round(normalizedScrollY * cardRefs.length);
+    const boundedScrollY = Math.max(0, Math.min(cardRefs.length, scaledScrollY));
+    const cardIndex = boundedScrollY;
+
+    return cardIndex;
+  }
+
+  // Scroll-based progress detection
+  function updateCurrentStepOnScroll() {
+    if (!sectionRef || !cardRefs.length) return;
+    const sectionRect = sectionRef.getBoundingClientRect();
+    // Only update if section is in view
+    if (sectionRect.bottom < 0 || sectionRect.top > window.innerHeight) return;
+    const idx = getCurrentStepIndex(cardRefs);
+    currentStep.set(idx);
   }
 
   onMount(() => {
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        let maxRatio = 0;
-        let maxIdx = 0;
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
-            maxRatio = entry.intersectionRatio;
-            maxIdx = stepRefs.findIndex(el => el === entry.target);
-          }
-        });
-        if (maxRatio > 0) {
-          currentStep.set(maxIdx);
-        }
-      },
-      {
-        root: null,
-        rootMargin: "0px",
-        threshold: Array.from({ length: 11 }, (_, i) => i / 10)
-      }
-    );
-    stepRefs.forEach(el => {
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
+    window.addEventListener("scroll", updateCurrentStepOnScroll, { passive: true });
+    window.addEventListener("resize", updateCurrentStepOnScroll, { passive: true });
+    // Initial call
+    setTimeout(updateCurrentStepOnScroll, 50);
+    return () => {
+      window.removeEventListener("scroll", updateCurrentStepOnScroll);
+      window.removeEventListener("resize", updateCurrentStepOnScroll);
+    };
   });
 </script>
 
-<section class="moving-process-section">
+<section bind:this={section} class="moving-process-section">
   <div class="moving-process-grid">
     <!-- Left: Sticky Narrative Card(s) (desktop only) -->
     <div class="moving-process-intro-sticky" bind:this={stickyRef}>
-      {#key currentStepKey}
-        <div class="moving-process-card-group">
-          {#each currentParagraphs as para, pidx}
-            <div class="moving-process-card">
-              <p class="moving-process-intro-text">
-                {#each para.split(/(\s+)/) as word, widx}
-                  <span
-                    class="fade-word"
-                    style="white-space: pre; transition-delay: {(currentWordOffsets[pidx] + widx + 1) * baseDelay}s"
-                  >{word}</span>
-                {/each}
-              </p>
-            </div>
-          {/each}
-        </div>
-      {/key}
+      <section bind:this={sectionRef} class="moving-process-section-ref">
+        {#key currentStepKey}
+          <div class="moving-process-progress-indicator">
+            {($currentStep + 1)} / {steps.length}
+          </div>
+          <div class="moving-process-card-group">
+            {#each currentParagraphs as para, pidx}
+              <div class="moving-process-card" bind:this={cardRefs[pidx]}>
+                <p class="moving-process-intro-text">
+                  {#each para.split(/(\s+)/) as word, widx}
+                    <span
+                      class="fade-word"
+                      style="white-space: pre; transition-delay: {(currentWordOffsets[pidx] + widx + 1) * baseDelay}s"
+                    >{word}</span>
+                  {/each}
+                </p>
+              </div>
+            {/each}
+          </div>
+        {/key}
+      </section>
     </div>
 
     <!-- Center: Vertical Timeline (desktop) / Stepper (mobile) -->
@@ -172,7 +182,7 @@
         {#each steps as step, i}
           <div
             class="moving-process-step"
-            use:setStepRef={i}
+            bind:this={stepRefs[i]}
             aria-current={$currentStep === i ? "step" : undefined}
           >
             <div class="moving-process-icon-circle">
@@ -241,6 +251,16 @@
   flex-direction: column;
   gap: 1.2rem;
   min-height: 200px;
+}
+
+.moving-process-progress-indicator {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #1de9b6;
+  margin-bottom: 0.5rem;
+  text-align: right;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
 }
 
 .moving-process-card-group {
