@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, afterUpdate } from "svelte";
   import CTAButton from "./Header/CTAButton.svelte";
   import { writable } from "svelte/store";
   import { fade } from "svelte/transition";
+  import gsap from "gsap";
 
   // Data for each step
   const steps = [
@@ -51,37 +52,34 @@
   let currentStepKey = '';
   $: currentStepKey = `${$currentStep}-${Date.now()}`;
 
+  // GSAP animation for fade-in words
+  afterUpdate(() => {
+    // Timeout to ensure DOM is updated
+    setTimeout(() => {
+      const fadeWords = document.querySelectorAll('.moving-process-intro-sticky .fade-word');
+      if (fadeWords.length) {
+        gsap.set(fadeWords, { opacity: 0, textShadow: "0 0 10px #fff", filter: "blur(8px)" });
+        gsap.to(fadeWords, {
+          opacity: 1,
+          textShadow: "0 0 0px #fff",
+          filter: "blur(0px)",
+          duration: 0.6,
+          stagger: 0.08,
+          ease: "power2.out"
+        });
+      }
+    }, 0);
+  });
+
   // For CSS animation trigger
-  let animateClass = '';
   let stickyRef: HTMLElement | null = null;
-  let inView = false;
-  let lastStep = -1;
-  $: {
-    if (inView && $currentStep !== undefined && $currentStep !== lastStep) {
-      animateClass = '';
-      setTimeout(() => {
-        animateClass = 'animate';
-        lastStep = $currentStep;
-      }, 10);
-    }
-  }
-  // Intersection Observer for sticky container
+  // No animateClass, inView, or lastStep logic needed
+  // Intersection Observer for sticky container (still used for stickyRef, but not for animation)
   onMount(() => {
     let observer: IntersectionObserver | null = null;
     if (stickyRef) {
       observer = new window.IntersectionObserver(
-        (entries) => {
-          entries.forEach(entry => {
-            inView = entry.isIntersecting;
-            if (inView) {
-              animateClass = '';
-              setTimeout(() => {
-                animateClass = 'animate';
-                lastStep = $currentStep;
-              }, 10);
-            }
-          });
-        },
+        () => {},
         { threshold: 0.2 }
       );
       observer.observe(stickyRef);
@@ -151,7 +149,7 @@
     <!-- Left: Sticky Narrative Card(s) (desktop only) -->
     <div class="moving-process-intro-sticky" bind:this={stickyRef}>
       {#key currentStepKey}
-        <div class="moving-process-card-group {animateClass}">
+        <div class="moving-process-card-group">
           {#each currentParagraphs as para, pidx}
             <div class="moving-process-card">
               <p class="moving-process-intro-text">
@@ -253,11 +251,10 @@
 
 .fade-word {
   opacity: 0;
-  transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1);
   display: inline-block;
-}
-.moving-process-card-group.animate .fade-word {
-  opacity: 1;
+  text-shadow: 0 0 10px #fff;
+  filter: blur(8px);
+  /* fallback for initial state if JS fails */
 }
 
 .moving-process-title {
