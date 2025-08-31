@@ -92,7 +92,7 @@
   // For staggered delay offset between cards
   let currentParagraphs: string[] = [];
   let currentWordOffsets: number[] = [];
-  const baseDelay = 0.18;
+  const baseDelay = 0.08;
   $: {
     const step = $currentStep !== undefined ? steps[$currentStep] : steps[0];
     currentParagraphs = step.narrative;
