@@ -88,6 +88,9 @@
 
   .re-wrap {
     position: relative;
+    @media (max-width: 1024px) {
+      padding: 0 1rem;
+    }
   }
 
   .video {
