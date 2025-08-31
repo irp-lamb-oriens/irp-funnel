@@ -135,6 +135,10 @@
     position: relative;
     transition-delay: 1s opacity;
 
+    &::before, &::after {
+      pointer-events: none;
+    }
+
     &::before {
       transition: .5s width, .5s height, .5s top, .5s left, 1s box-shadow, opacity .5s;
       transition-timing-function: cubic-bezier(0.39, -0.575, 0.565, 1);

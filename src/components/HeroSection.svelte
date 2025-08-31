@@ -1,4 +1,6 @@
 <script lang="ts">
+    import LetterByLetter from "./LetterByLetter.svelte";
+
   export let text: string;
   export let url: string | undefined = undefined;
   export let subtitle: string | undefined = undefined;
@@ -10,9 +12,13 @@
     ? `background-image: url('${url}'); background-attachment: fixed; background-size: cover;`
     : ''}
 >
-  <h1>{text}</h1>
+  <h1>
+    <LetterByLetter {text} />
+  </h1>
   {#if subtitle}
-    <p class="hero-subtitle">{subtitle}</p>
+    <p class="hero-subtitle">
+      <LetterByLetter text={subtitle} initialOffset={.5} />
+    </p>
   {/if}
 </section>
 
