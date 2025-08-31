@@ -32,7 +32,7 @@
         “Each and every international move should be efficient, secure, and memorable for you and your family. Your international relocation partner should be accountable for making your move easy and enjoyable.”
       </blockquote>
       <GroupImageMagnifier
-        src="/Group-Picture_resize.jpg"
+        src="/1.png"
         alt="Group Picture"
         width="900"
         height="600"
