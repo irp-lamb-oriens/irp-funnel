@@ -13,7 +13,7 @@
   import './+page.scss';
 
   // FAQ data
-  const faqs = [
+  const moreFaqs = [
     {
       question: "Does my shipment include insurance? Or Am I protected against loss or damage while my goods are in transit?",
       answer: "Providing insurance to your shipment is an additional service we offer, please contact one of Relocation Specialists for information about the different policies available for your shipment."
@@ -39,10 +39,6 @@
       answer: "The total time it takes for goods to get from point A to point B, transit time may vary depending on different factors such as the specific route and how many stops the shipping company will make, it can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your shipment,<strong> please contact our Relocation Specialist.</strong>"
     },
     {
-      question: "How long does it take for my shipment to be delivered or to arrive at its destination?",
-      answer: "Many factors can come into play when determining an estimated delivery time, as transit time and custom. We have developed a unique <strong>Timeline Relocation Project Management</strong>, whose uniqueness resides in allowing customization, for our customer to track each step of their shipment."
-    },
-    {
       question: "How long does it take for customs to clear my shipment?",
       answer: "It takes approximately from 1 to 10 weeks depending on the destination country rules and requirements. <strong>Please contact our Relocation Specialist for more information.</strong>"
     },
@@ -55,7 +51,7 @@
       answer: "We offer a variety of services that may include full packing and packing materials. This is an option and we ask our customers to confirm if this service is available in your local area and for your specific shipment."
     }
   ];
-  const moreFaqs = [
+  const faqs = [
     {
       question: "How can I confirm my moving and relocation service with International Relocation Partner?",
       answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international shipping cost, rules and regulations. This online document has the option to confirm and accept"
