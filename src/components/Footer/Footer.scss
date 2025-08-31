@@ -1,6 +1,6 @@
 .footer-section {
   background: #222;
-  color: #fff;
+  color: var(--color-background);
   padding: 0 0 1.5rem 0;
   font-family: inherit;
 }
@@ -27,19 +27,13 @@
 
 .footer-col h5,
 .footer-heading {
-  color: #fff;
+  color: var(--color-background);
   font-size: 1.1rem;
   margin-bottom: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  transition: color 0.3s cubic-bezier(0.4,0,0.2,1), letter-spacing 0.4s cubic-bezier(0.4,0,0.2,1) 0.1s;
 }
-.footer-heading:hover,
-.footer-heading:active {
-  color: #fff;
-  letter-spacing: 0.08em;
-  transition: letter-spacing 0.2s cubic-bezier(0.4,0,0.2,1), color 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s;
-}
+/* Removed hover/active transitions for non-interactive headings */
 
 .footer-menu {
   list-style: none;
@@ -52,39 +46,14 @@
   margin: 2rem 0;
 }
 
-$footer-shadow-count: 8;
-$footer-shadow-base-color: #fff;
-$footer-shadow-base-opacity: 0.18;
-$footer-shadow-min-opacity: 0.03;
-$footer-shadow-base-duration: 0.5s;
-$footer-shadow-min-duration: 0s;
-
 .footer-menu a,
 .footer-link {
-  padding: 0;
-  color: #02b5bb;
+  color: var(--color-highlight-2);
   text-decoration: none;
   font-size: 1rem;
   position: relative;
   z-index: 1;
-  transition: padding .5s, color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
-
-  // Multi-layered animated shadows for hover/focus
-  @for $i from 1 through $footer-shadow-count {
-    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
-    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      position: absolute;
-      left: 0; top: 0; height: 100%; width: 0%;
-      pointer-events: none;
-      z-index: 0;
-      background: rgba(2,181,187, $opacity);
-      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
-      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
-      transition-property: width, clip-path;
-      transition-duration: $duration;
-    }
-  }
+  transition: color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
 }
 .footer-menu a:hover,
 .footer-link:hover,
@@ -97,14 +66,6 @@ $footer-shadow-min-duration: 0s;
   text-decoration: underline;
   transform: translateY(-2px) scale(1.04);
   z-index: 2;
-  @for $i from 1 through $footer-shadow-count {
-    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      width: 100%;
-      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
-      transition-duration: $hover-duration;
-    }
-  }
 }
 
 .footer-social {
@@ -118,30 +79,12 @@ $footer-shadow-min-duration: 0s;
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  color: #02b5bb;
+  color: var(--color-highlight-2);
   text-decoration: none;
   font-size: 1rem;
   position: relative;
   z-index: 1;
   transition: color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
-
-  // Multi-layered animated shadows for hover/focus
-  @for $i from 1 through $footer-shadow-count {
-    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
-    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      position: absolute;
-      left: 0; top: 0; height: 100%; width: 0%;
-      pointer-events: none;
-      z-index: 0;
-      border-radius: 0.4rem;
-      background: rgba(2,181,187, $opacity);
-      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
-      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
-      transition-property: width, clip-path;
-      transition-duration: $duration;
-    }
-  }
 }
 .footer-social a:hover,
 .footer-social-link:hover,
@@ -153,14 +96,6 @@ $footer-shadow-min-duration: 0s;
   background: transparent;
   transform: translateY(-2px) scale(1.04) rotate(-1deg);
   z-index: 2;
-  @for $i from 1 through $footer-shadow-count {
-    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      width: 100%;
-      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
-      transition-duration: $hover-duration;
-    }
-  }
 }
 
 .footer-social img,
@@ -209,7 +144,7 @@ $footer-shadow-min-duration: 0s;
 
 .footer-destinations-list a,
 .footer-destination-link {
-  color: #fff;
+  color: var(--color-highlight-2);
   text-decoration: none;
   font-weight: 500;
   display: flex;
@@ -226,24 +161,6 @@ $footer-shadow-min-duration: 0s;
         gap: 0rem;
         padding: 0;
     }
-
-  // Multi-layered animated shadows for hover/focus
-  @for $i from 1 through $footer-shadow-count {
-    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
-    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      position: absolute;
-      left: 0; top: 0; height: 100%; width: 0%;
-      pointer-events: none;
-      z-index: 0;
-      border-radius: 0.4rem;
-      background: rgba(2,181,187, $opacity);
-      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
-      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
-      transition-property: width, clip-path;
-      transition-duration: $duration;
-    }
-  }
 }
 .footer-destinations-list a:hover,
 .footer-destination-link:hover,
@@ -255,14 +172,6 @@ $footer-shadow-min-duration: 0s;
   background: transparent;
   transform: translateY(-2px) scale(1.04) rotate(1deg);
   z-index: 2;
-  @for $i from 1 through $footer-shadow-count {
-    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
-    .footer-shadow#{$i} {
-      width: 100%;
-      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
-      transition-duration: $hover-duration;
-    }
-  }
 }
 
 .footer-destinations-list img,
@@ -299,15 +208,14 @@ $footer-shadow-min-duration: 0s;
 
 .copyright-row {
   text-align: center;
-  color: #fff;
+  color: var(--color-background);
   font-size: 0.95rem;
   margin-top: 1.5rem;
 }
 .footer-copyright {
-  color: #fff;
+  color: var(--color-background);
   font-size: 0.95rem;
   margin: 0;
-  transition: color 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 .footer-copyright-link {
   color: var(--color-highlight-2);
