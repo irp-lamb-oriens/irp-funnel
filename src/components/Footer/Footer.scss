@@ -25,12 +25,20 @@
   min-width: 220px;
 }
 
-.footer-col h5 {
+.footer-col h5,
+.footer-heading {
   color: #fff;
   font-size: 1.1rem;
   margin-bottom: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+  transition: color 0.3s cubic-bezier(0.4,0,0.2,1), letter-spacing 0.4s cubic-bezier(0.4,0,0.2,1) 0.1s;
+}
+.footer-heading:hover,
+.footer-heading:active {
+  color: #b3d1ff;
+  letter-spacing: 0.08em;
+  transition: letter-spacing 0.2s cubic-bezier(0.4,0,0.2,1), color 0.5s cubic-bezier(0.4,0,0.2,1) 0.1s;
 }
 
 .footer-menu {
@@ -41,18 +49,63 @@
 
 .footer-menu li {
   margin-bottom: 0.5rem;
+  margin: 2rem 0;
 }
 
-.footer-menu a {
-  color: #b3d1ff;
+$footer-shadow-count: 8;
+$footer-shadow-base-color: #02b5bb;
+$footer-shadow-base-opacity: 0.18;
+$footer-shadow-min-opacity: 0.03;
+$footer-shadow-base-duration: 0.5s;
+$footer-shadow-min-duration: 0s;
+
+.footer-menu a,
+.footer-link {
+  padding: 0;
+  color: #02b5bb;
   text-decoration: none;
   font-size: 1rem;
-  transition: color 0.15s;
-}
+  position: relative;
+  z-index: 1;
+  transition: padding .5s, color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
 
-.footer-menu a:hover {
+  // Multi-layered animated shadows for hover/focus
+  @for $i from 1 through $footer-shadow-count {
+    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
+    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      position: absolute;
+      left: 0; top: 0; height: 100%; width: 0%;
+      pointer-events: none;
+      z-index: 0;
+      background: rgba(2,181,187, $opacity);
+      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
+      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
+      transition-property: width, clip-path;
+      transition-duration: $duration;
+    }
+  }
+}
+.footer-menu a:hover,
+.footer-link:hover,
+.footer-menu a:active,
+.footer-link:active,
+.footer-menu a:focus,
+.footer-link:focus {
+  padding: 1rem 3rem;
   color: #fff;
+  background: transparent;
   text-decoration: underline;
+  transform: translateY(-2px) scale(1.04);
+  z-index: 2;
+  @for $i from 1 through $footer-shadow-count {
+    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      width: 100%;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+      transition-duration: $hover-duration;
+    }
+  }
 }
 
 .footer-social {
@@ -61,24 +114,69 @@
   gap: 0.5rem;
 }
 
-.footer-social a {
+.footer-social a,
+.footer-social-link {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  color: #b3d1ff;
+  color: #02b5bb;
   text-decoration: none;
   font-size: 1rem;
-  transition: color 0.15s;
-}
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
 
-.footer-social a:hover {
+  // Multi-layered animated shadows for hover/focus
+  @for $i from 1 through $footer-shadow-count {
+    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
+    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      position: absolute;
+      left: 0; top: 0; height: 100%; width: 0%;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 0.4rem;
+      background: rgba(2,181,187, $opacity);
+      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
+      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
+      transition-property: width, clip-path;
+      transition-duration: $duration;
+    }
+  }
+}
+.footer-social a:hover,
+.footer-social-link:hover,
+.footer-social a:active,
+.footer-social-link:active,
+.footer-social a:focus,
+.footer-social-link:focus {
   color: #fff;
+  background: transparent;
+  transform: translateY(-2px) scale(1.04) rotate(-1deg);
+  z-index: 2;
+  @for $i from 1 through $footer-shadow-count {
+    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      width: 100%;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+      transition-duration: $hover-duration;
+    }
+  }
 }
 
-.footer-social img {
+.footer-social img,
+.footer-social-img {
   width: 32px;
   height: 32px;
   padding: 2px;
+  border-radius: 50%;
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, filter 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
+}
+.footer-social-img:hover,
+.footer-social-img:active {
+  box-shadow: 0 2px 12px 0 rgba(179,209,255,0.18);
+  filter: brightness(1.15) saturate(1.2);
+  transition: filter 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1) 0.1s;
 }
 
 .destinations-footer-row {
@@ -110,7 +208,8 @@
   align-items: center;
 }
 
-.footer-destinations-list a {
+.footer-destinations-list a,
+.footer-destination-link {
   color: #b3d1ff;
   text-decoration: none;
   font-weight: 500;
@@ -118,24 +217,73 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.3rem 0.8rem;
-  transition: background 0.15s;
+  border-radius: 0.5rem;
+  position: relative;
+  z-index: 1;
+  transition: background 0.2s cubic-bezier(0.4,0,0.2,1), color 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, transform 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
 
     @media (max-width: 1024px) {
         font-size: 0;
         gap: 0rem;
         padding: 0;
     }
+
+  // Multi-layered animated shadows for hover/focus
+  @for $i from 1 through $footer-shadow-count {
+    $opacity: $footer-shadow-base-opacity - ($i - 1) * (($footer-shadow-base-opacity - $footer-shadow-min-opacity) / ($footer-shadow-count - 1));
+    $duration: $footer-shadow-base-duration - ($i - 1) * (($footer-shadow-base-duration - $footer-shadow-min-duration) / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      position: absolute;
+      left: 0; top: 0; height: 100%; width: 0%;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 0.4rem;
+      background: rgba(2,181,187, $opacity);
+      clip-path: polygon(0 100%, 0 100%, 100% 100%, 0 100%);
+      transition-timing-function: cubic-bezier(.4,-1.6,.6,1);
+      transition-property: width, clip-path;
+      transition-duration: $duration;
+    }
+  }
+}
+.footer-destinations-list a:hover,
+.footer-destination-link:hover,
+.footer-destinations-list a:active,
+.footer-destination-link:active,
+.footer-destinations-list a:focus,
+.footer-destination-link:focus {
+  color: #fff;
+  background: transparent;
+  transform: translateY(-2px) scale(1.04) rotate(1deg);
+  z-index: 2;
+  @for $i from 1 through $footer-shadow-count {
+    $hover-duration: ($i - 1) * (1.2s / ($footer-shadow-count - 1));
+    .footer-shadow#{$i} {
+      width: 100%;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+      transition-duration: $hover-duration;
+    }
+  }
 }
 
-.footer-destinations-list img {
+.footer-destinations-list img,
+.footer-destination-img {
   width: 28px;
   margin-right: 0.3rem;
+  border-radius: 0.3rem;
+  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s, filter 0.25s cubic-bezier(0.4,0,0.2,1) 0.05s;
 
   @media (max-width: 1024px) {
       font-size: 0;
       width: 5vw;
       margin-right: 0;
   }
+}
+.footer-destination-img:hover,
+.footer-destination-img:active {
+  box-shadow: 0 2px 12px 0 rgba(179,209,255,0.18);
+  filter: brightness(1.15) saturate(1.2);
+  transition: filter 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1) 0.1s;
 }
 
 @media (max-width: 1024px) {
@@ -156,9 +304,21 @@
   font-size: 0.95rem;
   margin-top: 1.5rem;
 }
-
-.copyright-row a {
+.footer-copyright {
+  color: #b3d1ff;
+  font-size: 0.95rem;
+  margin: 0;
+  transition: color 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.footer-copyright-link {
   color: var(--color-highlight-1);
   text-decoration: underline;
   font-weight: 500;
+  transition: color 0.2s cubic-bezier(0.4,0,0.2,1), text-decoration-color 0.3s cubic-bezier(0.4,0,0.2,1) 0.1s;
+}
+.footer-copyright-link:hover,
+.footer-copyright-link:active {
+  color: #b3d1ff;
+  text-decoration-color: #b3d1ff;
+  transition: text-decoration-color 0.2s cubic-bezier(0.4,0,0.2,1), color 0.4s cubic-bezier(0.4,0,0.2,1) 0.2s;
 }
