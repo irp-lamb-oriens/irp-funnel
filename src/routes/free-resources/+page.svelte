@@ -78,7 +78,9 @@
         <CTAButton
           label="Download Hiring Packers Checklist"
           variant="primary"
-          callback={() => downloadFile('/Hiring-Profesional-Packers-CHECK-LIST.pdf')}
+          callback={() => {
+            downloadFile('/Hiring-Profesional-Packers-CHECK-LIST.pdf')
+          }}
         />
       </div>
     </div>

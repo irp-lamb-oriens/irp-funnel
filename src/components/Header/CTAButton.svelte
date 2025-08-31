@@ -26,8 +26,8 @@
     $: variantClass = `cta-${variant}`;
   
     function onClick(e: MouseEvent) {
+      callback?.();
       if (!isLink) e.preventDefault();
-      if (callback) callback();
     }
   
     function onKeydown(e: KeyboardEvent) {
@@ -45,7 +45,6 @@
       data-disabled="false"
       target={target}
       rel={target === "_blank" ? (rel ? rel : "noopener noreferrer") : rel}
-      on:click={onClick}
       on:keydown={onKeydown}
     >
       <span class="cta-btn__inner">
@@ -62,6 +61,7 @@
       aria-label={ariaLabel || label}
       aria-busy={loading ? "true" : "false"}
       {disabled}
+      on:click={onClick}
       data-disabled={disabled || loading ? "true" : "false"}
     >
       <span class="cta-btn__inner">
