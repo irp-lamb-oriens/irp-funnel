@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Privacy Policy" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
+<CountryLayout heroTitle="Privacy Policy" heroUrl="https://images.pexels.com/photos/955395/pexels-photo-955395.jpeg?w=2000">
   <CountryContentWrapper>
     <div class="tldr">
       <h3>TL;DR (The Short Version)</h3>

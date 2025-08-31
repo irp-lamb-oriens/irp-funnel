@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Contact Us" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
+<CountryLayout heroTitle="Contact Us" heroUrl="https://images.pexels.com/photos/3935702/pexels-photo-3935702.jpeg?w=2000">
   <section class="contact-location">
     <h2>Our Location</h2>
     <p>Every move is led by professionals with more than 14 years of experience</p>

@@ -18,11 +18,11 @@
 </section>
 <section class="country-cta">
   <div class="cta-content">
-    <h6>{ctaSubtitle}</h6>
     <h2>{ctaTitle}</h2>
     <div class="button-row">
       <CTAButton label={ctaPrimary.label} href={ctaPrimary.href} variant="primary" />
-      <CTAButton label={ctaSecondary.label} href={ctaSecondary.href} variant="secondary" />
+      <CTAButton label={ctaSecondary.label} href={ctaSecondary.href} variant="secondary-inverted" />
     </div>
+    <h6>{ctaSubtitle}</h6>
   </div>
 </section>

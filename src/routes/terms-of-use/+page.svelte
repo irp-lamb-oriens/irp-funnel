@@ -7,7 +7,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Terms of Use" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
+<CountryLayout heroTitle="Terms of Use" heroUrl="https://images.pexels.com/photos/8293700/pexels-photo-8293700.jpeg?w=2000">
   <section class="terms-content">
     <p>
       These Terms of Use govern your use of this website and the services provided by International Relocation Partner. By accessing or using this website, you agree to comply with and be bound by these terms.

@@ -18,7 +18,7 @@
 
 <Header />
 
-<CountryLayout heroTitle="Free Resources" heroUrl="https://images.pexels.com/photos/4569340/pexels-photo-4569340.jpeg?w=2000">
+<CountryLayout heroTitle="Free Resources" heroUrl="https://images.pexels.com/photos/1106468/pexels-photo-1106468.jpeg?w=2000">
   <section class="free-resources-checklist free-resource-card">
     <div class="row free-resource-card__row">
       <div class="col col-content free-resource-card__content">
