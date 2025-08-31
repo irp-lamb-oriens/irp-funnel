@@ -1,92 +1,185 @@
-
-
 /* Free Resources page styles */
 
-/* Removed .free-resources-hero: now handled by HeroSection component */
+$card-bg: #fff;
+$card-shadow: 0 2px 16px rgba(0,0,0,0.08);
+$card-radius: 1.2rem;
+$card-padding: 3rem;
+$card-gap: 2rem;
+$highlight: var(--color-highlight-1, #1ccfc9);
+$text-main: #222;
+$text-sub: #1ccfc9;
+$transition-fast: 0.18s;
+$transition-mid: 0.32s;
+$transition-slow: 0.5s;
+$transition-ease: cubic-bezier(0.4, 0.2, 0.2, 1);
 
 img { 
   object-fit: cover;
 }
 
+/* Card container */
+.free-resource-card {
+  background: $card-bg;
+  padding: $card-padding;
+  margin-bottom: 2.5rem;
+  transition:
+    box-shadow $transition-mid $transition-ease,
+    transform $transition-slow $transition-ease,
+    opacity $transition-fast $transition-ease;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  will-change: transform, box-shadow, opacity;
+
+  &:hover,
+  &:focus-within {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    transform: translateY(-8px) scale(1.025);
+    opacity: 0.98;
+    transition-delay: 0s, 0.08s, 0.16s;
+    // Staggered transitions: shadow, then transform, then opacity
+  }
+
+  &.is-active {
+    // Invert transition order: opacity, then transform, then shadow
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    transform: translateY(0) scale(0.98);
+    opacity: 0.92;
+    transition-delay: 0.16s, 0.08s, 0s;
+  }
+}
+
+.free-resource-card__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: $card-gap;
+  align-items: center;
+}
+
+.free-resource-card__content {
+  flex: 1 1 55%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0 1rem;
+}
+
+.free-resource-card__image {
+  flex: 1 1 45%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.free-resource-card__title {
+  color: $highlight;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
+  transition: color $transition-fast $transition-ease;
+}
+
+.free-resource-card__subtitle {
+  color: $text-sub;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  transition: color $transition-fast $transition-ease;
+}
+
+.free-resource-card__desc {
+  font-size: 1.08rem;
+  color: $text-main;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  transition: color $transition-fast $transition-ease, opacity $transition-fast $transition-ease;
+}
+
+.free-resource-card__author {
+  font-style: italic;
+  color: $text-sub;
+  font-size: 1rem;
+}
+
+.free-resource-card__list {
+  font-size: 1.08rem;
+  color: $text-main;
+  margin-bottom: 0.5rem;
+  margin-left: 1.2rem;
+  padding-left: 0.5rem;
+  list-style: disc inside;
+  transition: color $transition-fast $transition-ease;
+}
+
+.free-resource-card__list-item {
+  margin-bottom: 0.3rem;
+  transition: color $transition-fast $transition-ease, opacity $transition-fast $transition-ease;
+}
+
+.free-resource-card__img {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.7rem;
+  transition:
+    box-shadow $transition-mid $transition-ease,
+    transform $transition-slow $transition-ease,
+    opacity $transition-fast $transition-ease;
+  opacity: 1;
+  transform: scale(1);
+  will-change: transform, box-shadow, opacity;
+}
+
+.free-resource-card__download-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: filter $transition-fast $transition-ease;
+  &:hover,
+  &:focus {
+    filter: brightness(0.95) contrast(1.1);
+  }
+}
+
+/* Card hover/active transitions for children */
+.free-resource-card:hover .free-resource-card__img,
+.free-resource-card:focus-within .free-resource-card__img {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+  transform: scale(1.04) rotate(-1deg);
+  opacity: 0.97;
+  transition-delay: 0.08s, 0.16s, 0s;
+}
+
+.free-resource-card.is-active .free-resource-card__img {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  transform: scale(0.97) rotate(1deg);
+  opacity: 0.92;
+  transition-delay: 0.16s, 0.08s, 0s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .free-resource-card {
+    padding: 1.2rem;
+  }
+  .free-resource-card__row {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .free-resource-card__content,
+  .free-resource-card__image {
+    flex: 1 1 100%;
+    text-align: center;
+    padding: 0;
+  }
+}
+
+/* Legacy section classes for compatibility */
 .free-resources-checklist,
 .free-resources-advice,
 .free-resources-packers,
 .free-resources-ebook {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  grid-gap: 2rem;
-  padding: 5rem;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  .row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    grid-gap: 5rem;
-  }
-  .col-content {
-    flex: 1 1 55%;
-    h2 {
-      color: var(--color-highlight-1);
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: 0.7rem;
-    }
-    h4, h5 {
-      color: #1ccfc9;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 0.7rem;
-    }
-    p, ul {
-      font-size: 1.1rem;
-      color: #222;
-      margin-bottom: 0.7rem;
-    }
-    ul {
-      margin-left: 1.2rem;
-      li {
-        margin-bottom: 0.3rem;
-      }
-    }
-    
-  }
-  .col-image {
-    flex: 1 1 45%;
-    display: flex;
-    justify-content: center;
-    img {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      max-width: 100%;
-      height: auto;
-    }
-  }
+  /* No additional styles, handled by .free-resource-card */
 }
-
-@media (max-width: 1024px) {
-  .free-resources-checklist,
-  .free-resources-advice,
-  .free-resources-packers,
-  .free-resources-ebook {
-    padding: 1rem;
-    .row {
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .col-content, .col-image {
-      flex: 1 1 100%;
-      text-align: center;
-    }
-  }
-}
-  .free-resources-packers,
-  .free-resources-ebook {
-    padding: 1rem;
-    .row {
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .col-content, .col-image {
-      flex: 1 1 100%;
-      text-align: center;
-    }
-  }

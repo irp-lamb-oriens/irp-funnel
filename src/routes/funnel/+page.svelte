@@ -10,6 +10,7 @@
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
     import type { PageData } from './$types.ts'; // Import PageData type
     import MainSteps from "../../components/systems/steps/BaseStepsFunnel/Funnel.svelte";
+    import BgWrapper from "../../components/BgWrapper.svelte";
 
     export let data: PageData; // Receive data from load function
 
@@ -109,10 +110,12 @@
     });
 </script>
 
-<ThemeChanger visible={false} />
-<GlobalData />
-<SocketClient />
-<MainSteps />
+<BgWrapper>
+  <ThemeChanger visible={false} />
+  <GlobalData />
+  <SocketClient />
+  <MainSteps />
+</BgWrapper>
 
 <style lang="scss">
     @use "../styles/everything.scss";

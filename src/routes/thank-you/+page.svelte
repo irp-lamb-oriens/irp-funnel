@@ -10,6 +10,7 @@
     import ThankYou from "../../components/systems/steps/BaseStepsFunnel/ThankYou.svelte";
     import Brand from "../../components/Brand/Brand.svelte";
     import Page from '../../components/systems/wrappers/Page/Page.svelte';
+    import BgWrapper from "../../components/BgWrapper.svelte";
 
     export let data: PageData; // Receive data from load function
 
@@ -120,10 +121,12 @@
     });
 </script>
 
-<ThemeChanger visible={false} />
-<GlobalData />
-<SocketClient />
-<ThankYou />
+<BgWrapper>
+  <ThemeChanger visible={false} />
+  <GlobalData />
+  <SocketClient />
+  <ThankYou />
+</BgWrapper>
 
 <style lang="scss">
     @use "../styles/everything.scss";

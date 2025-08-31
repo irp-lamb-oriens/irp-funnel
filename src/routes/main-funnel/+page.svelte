@@ -3,9 +3,10 @@
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";
     import SocketClient from "../../components/SocketClient.svelte";
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
-    import { isScrollingDown, saveToStore } from "../../components/store.ts";
-    import MainFunnel from "../../components/systems/steps/NewFunnel/MainFunnel.svelte";
-    import { browser } from "$app/environment";
+import { isScrollingDown, saveToStore } from "../../components/store.ts";
+import MainFunnel from "../../components/systems/steps/NewFunnel/MainFunnel.svelte";
+import { browser } from "$app/environment";
+import BgWrapper from "../../components/BgWrapper.svelte";
 
 export let data: PageData; // Receive data from load function
 
@@ -54,10 +55,12 @@ onDestroy(() => {
 });
 </script>
 
-<ThemeChanger visible={false} />
-<GlobalData />
-<SocketClient />
-<MainFunnel />
+<BgWrapper>
+  <ThemeChanger visible={false} />
+  <GlobalData />
+  <SocketClient />
+  <MainFunnel />
+</BgWrapper>
 
 <style lang="scss">
     @use "../styles/everything.scss";
