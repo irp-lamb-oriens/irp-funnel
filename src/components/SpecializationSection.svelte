@@ -295,7 +295,7 @@
   .specialization .row {
     grid-template-columns: 1fr;
     gap: 2.2rem;
-    padding: 0 1rem;
+    padding: 2rem;
   }
   .specialization .col,
   .specialization .col-content,
@@ -312,7 +312,6 @@
   }
   .specialization .row {
     gap: 1.2rem;
-    padding: 0 0.2rem;
   }
   .specialization-title {
     font-size: clamp(1.1rem, 2vw + 0.7rem, 1.4rem);

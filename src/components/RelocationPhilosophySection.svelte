@@ -59,6 +59,8 @@
 
 .col-left, .col-right {
   min-width: 0;
+  text-align: left;
+  padding: 2rem;
 }
 
 .col-left {
@@ -81,7 +83,6 @@
     }
   }
   img {
-    margin: 1rem 0;
     max-width: 184px;
     height: auto;
   }
@@ -141,7 +142,7 @@
 }
 
 .relocation-philosophy__signature {
-  margin: 1rem 0;
+  margin: 0;
   max-width: 184px;
   height: auto;
   display: block;
@@ -173,21 +174,25 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   max-width: 100%;
   height: auto;
-  margin-top: 1rem;
 }
 
 .service {
   text-align: left;
 }
 @media (max-width: 900px) {
+  .relocation-philosophy {
+    &__signature {
+      margin: auto;
+    }
+  }
   .row {
     grid-template-columns: 1fr;
     gap: 2rem;
     padding: 0 1rem;
   }
   .col-left, .col-right {
-    text-align: center;
-    padding: 0;
+    padding: 2rem;
+    text-align: left;
   }
   .button-row {
     justify-content: center;
@@ -199,11 +204,11 @@
     padding: 1.2rem 0;
   }
   .row {
-    padding: 0 0.5rem;
     gap: 1.2rem;
+    text-align: left;
   }
   .card {
-    padding: 0.8rem;
+    padding: 2rem;
   }
 }
 </style>

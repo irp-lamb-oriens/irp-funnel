@@ -4,6 +4,7 @@
 </script>
 
 <section class="contact-cta">
+  <div class="cta-bg-overlay"></div>
   <div class="row">
     <div class="col col-large">
       <h6>Choose the best moving company for your relocation</h6>
@@ -11,17 +12,33 @@
     </div>
     <div class="col col-buttons">
       <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-      <CTAButton label="Contact Us" href="/contact-us/" variant="secondary" />
+      <CTAButton label="Contact Us" href="/contact-us/" variant="secondary-inverted" />
     </div>
   </div>
 </section>
 
 <style lang="scss">
 .contact-cta {
-  background: var(--color-highlight-1);
+  position: relative;
   color: #fff;
   padding: 2rem 0;
+  overflow: hidden;
+  background-image: url('https://images.pexels.com/photos/21014/pexels-photo.jpg?w=2000');
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  .cta-bg-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(20, 20, 20, 0.7);
+    z-index: 1;
+    pointer-events: none;
+  }
   .row {
+    position: relative;
+    z-index: 2;
     align-items: center;
   }
   h6 {
