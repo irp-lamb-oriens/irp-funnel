@@ -165,7 +165,7 @@
 .search-bar-wrap {
   display: flex;
   justify-content: center;
-  margin: 10rem auto;
+  margin: 0rem auto 10rem;
   animation: fadeInUp 0.7s cubic-bezier(0.4,0,0.2,1);
   z-index: 20;
   background: rgba(255,255,255,0.97);
