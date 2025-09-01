@@ -22,44 +22,39 @@
   let total = 0;
   let loading = true;
 
+  // For search across all blogs
+  let allBlogs: any[] = [];
+  let allBlogsLoaded = false;
+  let searchLoading = false;
+
   // Search state and filtering
   let search = '';
   let searchFocused = false;
   let searchTouched = false;
-  // Utility: normalize text for flexible search (lowercase, remove accents, trim)
-  function normalize(str: string) {
-    return (str || '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+
+  // Fetch all blogs for search (when needed), single request with high limit
+  async function fetchAllBlogs() {
+    if (allBlogsLoaded) return;
+    searchLoading = true;
+    const limit = 1000;
+    const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${limit}&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    allBlogs = Array.isArray(data.objects) ? data.objects : [];
+    allBlogsLoaded = true;
+    searchLoading = false;
   }
 
-  // Utility: get all searchable text from a blog object
-  function getAllSearchText(blog: any) {
-    const title = normalize(blog.title);
-    const slug = normalize(blog.slug);
-    const excerpt = normalize(getExcerpt(blog.metadata?.title || '', 500));
-    const htmlText = normalize(
-      (() => {
-        const div = document.createElement('div');
-        div.innerHTML = blog.metadata?.title || '';
-        return div.textContent || div.innerText || '';
-      })()
-    );
-    return [title, slug, excerpt, htmlText].join(' ');
+  // Watch search and load all blogs if needed
+  $: if (search.length > 0 && !allBlogsLoaded && !searchLoading) {
+    fetchAllBlogs();
   }
 
-  // Super flexible search: all words in query must match somewhere in the blog fields
+  // Filter logic: search all blogs if searching, else use paginated blogs
   $: filteredBlogs = search
-    ? blogs.filter(blog => {
-        const searchText = getAllSearchText(blog);
-        return normalize(search)
-          .split(' ')
-          .filter(Boolean)
-          .every(word => searchText.includes(word));
-      })
+    ? (allBlogsLoaded ? allBlogs : blogs).filter(blog =>
+        blog.title?.toLowerCase().trim().includes(search.toLowerCase().trim())
+      )
     : blogs;
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
@@ -147,8 +142,12 @@
     {#if loading}
       <div class="loading">Loading...</div>
     {:else}
-      {#if isSearching && filteredBlogs.length === 0}
-        <div class="no-results">No news found for "<span>{search}</span>"</div>
+      {#if isSearching}
+        {#if searchLoading || (!allBlogsLoaded && search.length > 0)}
+          <div class="loading">Searching...</div>
+        {:else if filteredBlogs.length === 0}
+          <div class="no-results">No news found for "<span>{search}</span>"</div>
+        {/if}
       {/if}
       <div class="news-grid">
         {#each filteredBlogs as blog (blog.slug)}
