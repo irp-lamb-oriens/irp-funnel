@@ -26,11 +26,40 @@
   let search = '';
   let searchFocused = false;
   let searchTouched = false;
+  // Utility: normalize text for flexible search (lowercase, remove accents, trim)
+  function normalize(str: string) {
+    return (str || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Utility: get all searchable text from a blog object
+  function getAllSearchText(blog: any) {
+    const title = normalize(blog.title);
+    const slug = normalize(blog.slug);
+    const excerpt = normalize(getExcerpt(blog.metadata?.title || '', 500));
+    const htmlText = normalize(
+      (() => {
+        const div = document.createElement('div');
+        div.innerHTML = blog.metadata?.title || '';
+        return div.textContent || div.innerText || '';
+      })()
+    );
+    return [title, slug, excerpt, htmlText].join(' ');
+  }
+
+  // Super flexible search: all words in query must match somewhere in the blog fields
   $: filteredBlogs = search
-    ? blogs.filter(blog =>
-        (blog.title?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (getExcerpt(blog.metadata?.title || '').toLowerCase().includes(search.toLowerCase()))
-      )
+    ? blogs.filter(blog => {
+        const searchText = getAllSearchText(blog);
+        return normalize(search)
+          .split(' ')
+          .filter(Boolean)
+          .every(word => searchText.includes(word));
+      })
     : blogs;
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
