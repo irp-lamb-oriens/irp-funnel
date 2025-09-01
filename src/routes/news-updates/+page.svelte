@@ -4,99 +4,161 @@
   import CountryLayout from '../../components/ui/CountryLayout.svelte';
   import NewsCard from '../../components/NewsCard.svelte';
   import './news-updates.scss';
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';
+
+  // Pagination constants
+  const LIMIT = 9;
+
+  // Get page index from query params (default 0)
+  let pageIndex = 0;
+  $: {
+    const url = $page.url;
+    const pageParam = url.searchParams.get('page');
+    pageIndex = pageParam ? parseInt(pageParam) : 0;
+  }
+
+  let blogs: any[] = [];
+  let total = 0;
+  let loading = true;
+
+  // Fetch blogs from CosmicJS API
+  async function fetchBlogs() {
+    loading = true;
+    const skip = LIMIT * pageIndex;
+    const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    blogs = data.objects || [];
+    total = data.total || 0;
+    loading = false;
+  }
+
+  // Generate excerpt from HTML content
+  function getExcerpt(html: string, maxLength = 180) {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || '';
+    if (text.length <= maxLength) return text;
+    // Try to cut at the last space before maxLength
+    const cut = text.lastIndexOf(' ', maxLength);
+    return text.slice(0, cut > 0 ? cut : maxLength) + '...';
+  }
+
+  // Animation state for pagination
+  let animating: 'newer' | 'older' | null = null;
+  let pendingPage: number | null = null;
+
+  function goToPage(newPage: number) {
+    const params = new URLSearchParams($page.url.searchParams);
+    params.set('page', newPage.toString());
+    window.location.search = params.toString();
+  }
+
+  function handlePaginate(direction: 'newer' | 'older') {
+    if (animating) return;
+    animating = direction;
+    pendingPage = direction === 'newer' ? pageIndex - 1 : pageIndex + 1;
+    setTimeout(() => {
+      animating = null;
+      if (pendingPage !== null) {
+        goToPage(pendingPage);
+        pendingPage = null;
+      }
+    }, 420); // match animation duration
+  }
+
+  $: $page, fetchBlogs();
+
 </script>
 
 <Header />
 
 <CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/10464468/pexels-photo-10464468.jpeg?w=2000">
   <section class="news-list">
-    <div class="news-grid">
-      <!-- Blog Post 1 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/What-Ive-Learned-From-Helping-People-Move-Abroad--400x250.jpg"
-  imageAlt="What I’ve Learned From Helping People Move Abroad"
-  title="What I’ve Learned From Helping People Move Abroad"
-  excerpt="Moving abroad is an exciting yet complex process that involves both logistical and emotional challenges. From navigating bureaucracy and cultural adjustments to settling into a new environment,..."
-  link="/what-ive-learned-from-helping-people-move-abroad/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 2 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/01/alicia-christin-gerald-bV7WI-AeiTA-unsplash-400x250.jpg"
-  imageAlt="The 7 Things You Should Do After You Have Moved Abroad"
-  title="The 7 Things You Should Do After You Have Moved Abroad"
-  excerpt="Moving abroad is an exhilarating experience but comes with its fair share of challenges. Once you’ve landed in your new home, the initial days and weeks are crucial for setting the tone for your..."
-  link="/the-7-things-you-should-do-after-you-have-moved-abroad/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 3 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/markus-spiske-RWTUrJf7I5w-unsplash-400x250.jpg"
-  imageAlt="What Are The Hidden Costs of Moving Abroad?"
-  title="What Are The Hidden Costs of Moving Abroad?"
-  excerpt="The excitement of relocating to a new country often comes with dreams of new adventures, cultural experiences, and a fresh start. However, while many expats plan for obvious expenses like flights,..."
-  link="/what-are-the-hidden-costs-of-moving-abroad/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 4 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/How-ti-Import-a-Car-to-Panama-400x250.jpg"
-  imageAlt="How to Import a Car to Panama"
-  title="How to Import a Car to Panama"
-  excerpt="Moving to Panama and considering bringing your car with you? While importing a vehicle can be a great way to maintain familiarity, it requires careful planning and adherence to local regulations. In..."
-  link="/how-to-import-a-car-to-panama/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 5 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/Import-a-Car-to-Panama-400x250.jpg"
-  imageAlt="Everything You Need to Know About Importing a Car to Panama"
-  title="Everything You Need to Know About Importing a Car to Panama"
-  excerpt="Moving to a new country often involves deciding what to do about your vehicle. For many, importing a car to Panama can be a practical choice, especially if you have a vehicle you love or need for..."
-  link="/everything-you-need-to-know-about-importing-a-car-to-panama/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 6 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/01/alex-knight-j4uuKnN43_M-unsplash-400x250.jpg"
-  imageAlt="Moving Electronics Abroad: What You Need to Know"
-  title="Moving Electronics Abroad: What You Need to Know"
-  excerpt="Moving abroad comes with its fair share of challenges, and transporting your electronics safely is one of them. From laptops and gaming consoles to kitchen appliances and smart home devices, your..."
-  link="/moving-electronics-abroad-what-you-need-to-know/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 7 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/Docuents-You-Need-to-Move-to-Spain-400x250.jpg"
-  imageAlt="Documents You Need To Move To Spain"
-  title="Documents You Need To Move To Spain"
-  excerpt="Planning your move to Spain is an exciting time filled with new opportunities and experiences, but it also comes with a fair share of paperwork. Whether you’re relocating for work, retirement, or..."
-  link="/documents-you-need-to-move-to-spain/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 8 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/Prohibited-Items-For-Moving-to-Portugal-400x250.jpg"
-  imageAlt="10 Prohibited Items When You Move to Portugal"
-  title="10 Prohibited Items When You Move to Portugal"
-  excerpt="Moving to Portugal is an exciting journey filled with new opportunities and cultural experiences. However, like any international move, there are rules and regulations to follow when it comes to..."
-  link="/10-prohibited-items-when-you-move-to-portugal/"
-  readMoreText="read more"
-/>
-      <!-- Blog Post 9 -->
-      <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/01/eva-darron-oCdVtGFeDC0-unsplash-400x250.jpg"
-  imageAlt="How to Build a Support Network When Moving Alone"
-  title="How to Build a Support Network When Moving Alone"
-  excerpt="Moving abroad is an exciting adventure filled with opportunities for personal growth, exploration, and new experiences. However, if you’re making the move solo, it’s natural to feel a little..."
-  link="/how-to-build-a-support-network-when-moving-alone/"
-  readMoreText="read more"
-/>
-    </div>
-    <div class="pagination">
-      <a href="/news-updates/page/2/?et_blog">« Older Entries</a>
-    </div>
+    {#if loading}
+      <div class="loading">Loading...</div>
+    {:else}
+      <div class="news-grid">
+        {#each blogs as blog}
+          <NewsCard
+            imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ''}
+            imageAlt={blog.title}
+            title={blog.title}
+            excerpt={getExcerpt(blog.metadata?.title)}
+            link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}`}
+            readMoreText="read more"
+          />
+        {/each}
+      </div>
+      <div class="pagination">
+        <button
+          class="pagination-btn newer {animating === 'newer' ? 'animating' : ''}"
+          on:click={() => handlePaginate('newer')}
+          disabled={pageIndex === 0 || animating}
+        >
+          « Newer Entries
+        </button>
+        <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT)}</span>
+        <button
+          class="pagination-btn older {animating === 'older' ? 'animating' : ''}"
+          on:click={() => handlePaginate('older')}
+          disabled={(LIMIT * (pageIndex + 1)) >= total || animating}
+        >
+          Older Entries »
+        </button>
+      </div>
+    {/if}
   </section>
 </CountryLayout>
 
 <Footer />
+
+<style>
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+.pagination-btn {
+  background: none;
+  border: none;
+  color: #222;
+  font-size: 1rem;
+  padding: 0.5em 1.2em;
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1);
+  outline: none;
+  min-width: 120px;
+}
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.pagination-btn:not(:disabled):hover {
+  background: #f3f3f3;
+  color: #0077cc;
+}
+.pagination-btn.animating.newer {
+  animation: slideLeft 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+.pagination-btn.animating.older {
+  animation: slideRight 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes slideLeft {
+  0% { transform: translateX(0); opacity: 1; }
+  60% { transform: translateX(-16px); opacity: 0.7; }
+  100% { transform: translateX(-32px); opacity: 0; }
+}
+@keyframes slideRight {
+  0% { transform: translateX(0); opacity: 1; }
+  60% { transform: translateX(16px); opacity: 0.7; }
+  100% { transform: translateX(32px); opacity: 0; }
+}
+</style>
