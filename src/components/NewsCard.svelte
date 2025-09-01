@@ -7,20 +7,22 @@
   export let readMoreText: string = "READ MORE";
 </script>
 
-<article class="news-item">
-  <div class="news-item-image-wrapper">
-    <img class="news-item-image" src={imageSrc} alt={imageAlt} />
-  </div>
-  <div class="news-item-card">
-    <a class="news-item-link" href={link}>
-      <div class="news-item-texts">
-        <h5 class="news-item-title">{title}</h5>
-        <p class="news-item-desc">{excerpt}</p>
-        <span class="more-link">{readMoreText}</span>
+<a href={link}>
+    <article class="news-item">
+      <div class="news-item-image-wrapper">
+        <img class="news-item-image" src={imageSrc} alt={imageAlt} />
       </div>
-    </a>
-  </div>
-</article>
+      <div class="news-item-card">
+        <span class="news-item-link">
+          <div class="news-item-texts">
+            <h5 class="news-item-title">{title}</h5>
+            <p class="news-item-desc">{excerpt}</p>
+            <span class="more-link">{readMoreText}</span>
+          </div>
+        </span>
+      </div>
+    </article>
+</a>
 
 <style lang="scss">
 // Main section styling for card only (no section or grid styles)
