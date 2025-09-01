@@ -1,7 +1,32 @@
 <script lang="ts">
-    import CtaButton from './Header/CTAButton.svelte';
+  import CtaButton from './Header/CTAButton.svelte';
   import NewsCard from './NewsCard.svelte';
-  // No props for now, but could be made data-driven if needed
+  import { onMount } from 'svelte';
+
+  let blogs: any[] = [];
+  let loading = true;
+
+  // Fetch latest 3 blogs from CosmicJS API
+  async function fetchLatestBlogs() {
+    loading = true;
+    const apiUrl = 'https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=3&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type';
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    blogs = data.objects || [];
+    loading = false;
+  }
+
+  function getExcerpt(html: string, maxLength = 140) {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || '';
+    if (text.length <= maxLength) return text;
+    const cut = text.lastIndexOf(' ', maxLength);
+    return text.slice(0, cut > 0 ? cut : maxLength) + '...';
+  }
+
+  onMount(fetchLatestBlogs);
 </script>
 
 <section class="latest-news">
@@ -9,30 +34,20 @@
     <div class="col">
       <h2 class="latest-news-title">Latest News</h2>
       <div class="news-grid">
-        <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/What-Ive-Learned-From-Helping-People-Move-Abroad--400x250.jpg"
-  imageAlt="What I’ve Learned From Helping People Move Abroad"
-  title="What I’ve Learned From Helping People Move Abroad"
-  excerpt="Moving abroad is an exciting yet complex process that involves both logistical and emotional challenges. From navigating bureaucracy and cultural adjustments to settling into a..."
-  link="/what-ive-learned-from-helping-people-move-abroad/"
-  readMoreText="READ MORE"
-/>
-        <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/How-ti-Import-a-Car-to-Panama-400x250.jpg"
-  imageAlt="How to Import a Car to Panama"
-  title="How to Import a Car to Panama"
-  excerpt="Moving to Panama and considering bringing your car with you? While importing a vehicle can be a great way to maintain familiarity, it requires careful planning and adherence to..."
-  link="/how-to-import-a-car-to-panama/"
-  readMoreText="READ MORE"
-/>
-        <NewsCard
-  imageSrc="https://www.internationalrelocationpartner.com/wp-content/uploads/2025/02/Docuents-You-Need-to-Move-to-Spain-400x250.jpg"
-  imageAlt="Documents You Need To Move To Spain"
-  title="Documents You Need To Move To Spain"
-  excerpt="Planning your move to Spain is an exciting time filled with new opportunities and experiences, but it also comes with a fair share of paperwork. Whether you’re relocating for..."
-  link="/documents-you-need-to-move-to-spain/"
-  readMoreText="READ MORE"
-/>
+        {#if loading}
+          <div>Loading...</div>
+        {:else}
+          {#each blogs as blog (blog.slug)}
+            <NewsCard
+              imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ''}
+              imageAlt={blog.title}
+              title={blog.title}
+              excerpt={getExcerpt(blog.metadata?.title)}
+              link={`/news-updates/blog?slug=${blog.slug}&page=0`}
+              readMoreText="READ MORE"
+            />
+          {/each}
+        {/if}
       </div>
       <div class="button-row">
         <CtaButton label="View All Blog" href="/news-updates" variant="primary" />
