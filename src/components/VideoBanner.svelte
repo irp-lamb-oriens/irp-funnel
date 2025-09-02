@@ -72,7 +72,7 @@
 <style lang="scss">
   .slot-wrap {
     overflow: hidden;
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Shorthand */
+    transition: opacity 1s ease-in-out, transform 0.5s ease-in-out; /* Shorthand */
     opacity: 1;
     transform: translateX(0px);
 
