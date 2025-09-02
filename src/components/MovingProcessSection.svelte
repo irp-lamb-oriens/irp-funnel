@@ -417,12 +417,15 @@
 }
 
 .moving-process-step-heading {
+  background: #23293a;
+  padding: .5rem;
+  border-radius: 5px;
   font-size: 1.6rem;
   font-weight: 700;
   color: #1de9b6;
   margin: 0;
   letter-spacing: -0.5px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  box-shadow: 0 0 10px -5px var(--color-background-inversion);
 }
 
 .moving-process-step-title-mobile,
@@ -447,6 +450,7 @@
   margin: 0.2rem 0;
   display: flex;
   justify-content: center;
+  z-index: 2;
 }
 
 :global(.primary-btn) {
