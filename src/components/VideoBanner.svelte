@@ -72,14 +72,14 @@
 <style lang="scss">
   .slot-wrap {
     overflow: hidden;
-    transition: opacity 0.5s ease-in-out .5s, transform 0.5s ease-in-out 0s; /* Shorthand */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Shorthand */
     opacity: 1;
     transform: translateX(0px);
 
     &.show {
       @media (min-width: 1024px) {
         opacity: 0;
-        transition: opacity 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Shorthand */
         transform: translateX(50vw);
       }
     }
