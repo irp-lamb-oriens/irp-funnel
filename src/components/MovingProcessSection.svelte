@@ -417,7 +417,7 @@
 }
 
 .moving-process-step-heading {
-  font-size: 1.18rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: #1de9b6;
   margin: 0;
