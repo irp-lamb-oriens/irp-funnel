@@ -63,7 +63,7 @@
     <div class="img-wrap" class:show={video ? !video?.paused : false} bind:this={imgWrap}>
       <img class="img" bind:this={img} src={videoPoster} alt={videoAlt}>
     </div>
-    <div bind:this={slotWrap} class:show={video ? !video?.paused : false} class="slot-wrap">
+    <div class:show={video ? !video?.paused : false} class="slot-wrap">
       <slot />
     </div>
   </div>

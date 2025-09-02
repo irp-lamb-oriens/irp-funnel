@@ -1,30 +1,26 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+    import { writable, type Writable } from 'svelte/store';
   let sectionEl: HTMLElement;
   let videoEl: HTMLVideoElement;
-  let unfolded = false;
-  let observer: IntersectionObserver;
+  let unfolded: Writable<boolean> = writable(false);
+
+  function handleScroll() {
+    if (!sectionEl) return;
+    const rect = sectionEl.getBoundingClientRect();
+    // Unfold when the top of the section is below the top of the viewport
+    unfolded.set(rect.y > 0);
+    console.log($unfolded)
+  }
 
   onMount(() => {
-    observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !unfolded) {
-            unfolded = true;
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        root: null,
-        threshold: 0.2 // Unfold when 20% of section is visible
-      }
-    );
-    if (sectionEl) {
-      observer.observe(sectionEl);
-    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    // Initial check in case already in view
+    handleScroll();
     return () => {
-      if (observer && sectionEl) observer.unobserve(sectionEl);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
     };
   });
 </script>
@@ -37,7 +33,7 @@
         controls
         width="100%"
         bind:this={videoEl}
-        class:unfolded={unfolded}
+        class:unfolded={$unfolded}
       >
         <source type="video/mp4" src="https://storage.googleapis.com/videos-irp-funnels/Copia-de-Jill-Reed-International-Relocation-Partner%20(1).mp4" />
         Your browser does not support the video tag.
