@@ -80,7 +80,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  place-items: center;
 }
 
 // Title styling
