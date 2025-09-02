@@ -150,6 +150,22 @@
 </script>
 
 <section bind:this={section} class="moving-process-section">
+  <!-- Video Backgrounds (sticky, only inside section) -->
+  <div class="moving-process-video-bg-wrapper">
+    {#each [1,2,3,4] as n, idx}
+      <video
+        class="moving-process-video-bg {($currentStep === idx) ? 'active' : ''}"
+        src={`https://storage.googleapis.com/videos-irp-funnels/${n}.mp4`}
+        autoplay
+        muted
+        loop
+        playsinline
+        tabindex="-1"
+        aria-hidden="true"
+        style="pointer-events: none;"
+      ></video>
+    {/each}
+  </div>
   <div class="moving-process-grid">
     <!-- Left: Sticky Narrative Card(s) (desktop only) -->
     <div class="moving-process-intro-sticky" bind:this={stickyRef}>
@@ -226,10 +242,39 @@
 
 <style lang="scss">
 .moving-process-section {
-  background: #181c24;
+  /* Remove static background, let video show through */
+  background: transparent;
   color: #fff;
-  padding: 3rem 0 2rem 0;
   font-family: 'Inter', Arial, sans-serif;
+}
+
+/* Video background styles (sticky, only inside section) */
+.moving-process-video-bg-wrapper {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  display: block;
+}
+
+.moving-process-video-bg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.moving-process-video-bg.active {
+  opacity: 1;
+  z-index: 1;
 }
 
 .moving-process-grid {
@@ -487,7 +532,6 @@
 
 @media (max-width: 600px) {
   .moving-process-section {
-    padding: 1.2rem 0 1rem 0;
   }
   .moving-process-title {
     font-size: 1.3rem;
