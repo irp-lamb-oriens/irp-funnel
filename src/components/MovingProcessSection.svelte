@@ -150,7 +150,7 @@
 </script>
 
 <section bind:this={section} class="moving-process-section">
-  <!-- Video Backgrounds (sticky, only inside section) -->
+  <!-- Video Backgrounds (absolute, only inside section, does not take up space) -->
   <div class="moving-process-video-bg-wrapper">
     {#each [1,2,3,4] as n, idx}
       <video
@@ -246,14 +246,16 @@
   background: transparent;
   color: #fff;
   font-family: 'Inter', Arial, sans-serif;
+  position: relative;
+  padding: 3rem 0 2rem 0;
 }
 
-/* Video background styles (sticky, only inside section) */
+/* Video background styles (absolute, only inside section, does not take up space) */
 .moving-process-video-bg-wrapper {
-  position: sticky;
-  top: 0;
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
@@ -264,7 +266,7 @@
   position: absolute;
   top: 0; left: 0;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1);
