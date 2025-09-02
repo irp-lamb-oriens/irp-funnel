@@ -320,7 +320,7 @@
   }
   .specialization-list-item {
     font-size: clamp(0.9rem, 1vw + 0.7rem, 1rem);
-    padding-left: 1.5em;
+    padding-left: 2.5em;
   }
 }
 </style>
