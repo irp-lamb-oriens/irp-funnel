@@ -9,7 +9,7 @@
     if (!sectionEl) return;
     const rect = sectionEl.getBoundingClientRect();
     // Unfold when the top of the section is below the top of the viewport
-    unfolded.set(rect.y > 0);
+    unfolded.set(Math.abs(rect.y) < sectionEl.clientHeight);
     console.log($unfolded)
   }
 
