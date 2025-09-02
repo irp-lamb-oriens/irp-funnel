@@ -376,7 +376,7 @@
 
 @media (max-width: 700px) {
   .contact-section {
-    padding: 1.2rem 0;
+    padding: 2.2rem 0;
   }
   .location-cards-container {
     /* No extra padding */

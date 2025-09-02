@@ -305,7 +305,7 @@
 }
 @media (max-width: 700px) {
   .faq-section {
-    padding: 1.2rem 0;
+    padding: 2.2rem 0;
   }
   .faq-item {
     padding: 0.8rem;

@@ -78,7 +78,7 @@
 }
 @media (max-width: 700px) {
   .contact-cta {
-    padding: 1.2rem 0;
+    padding: 2.2rem 0;
   }
 }
 </style>
