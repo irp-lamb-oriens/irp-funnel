@@ -8,7 +8,6 @@
   let imgWrap: HTMLElement;
   let img: HTMLImageElement;
   let video: HTMLVideoElement;
-  let slotWrap: HTMLElement;
 
   function getImgWrapLeft() {
     const left = imgWrap.getBoundingClientRect().x;
@@ -73,14 +72,14 @@
 <style lang="scss">
   .slot-wrap {
     overflow: hidden;
-    transition: 1s transform, 2s opacity;
+    transition: opacity 0.5s ease-in-out .5s, transform 0.5s ease-in-out 0s; /* Shorthand */
     opacity: 1;
     transform: translateX(0px);
 
     &.show {
       @media (min-width: 1024px) {
         opacity: 0;
-        transition: 1s transform, 1s opacity;
+        transition: opacity 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
         transform: translateX(50vw);
       }
     }
@@ -99,11 +98,11 @@
     position: absolute;
     opacity: 0;
     z-index: 1;
-    transition: .5s;
+    transition: opacity 0.5s ease-in-out .5s, width 0.5s ease-in-out 0s; /* Shorthand */
     cursor: pointer;
     
     &.show {
-      transition: 1s;
+      transition: opacity 0.5s ease-in-out 0s, width 0.5s ease-in-out 0s; /* Shorthand */
       opacity: 1;
     }
   }
