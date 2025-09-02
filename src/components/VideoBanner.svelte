@@ -98,11 +98,11 @@
     position: absolute;
     opacity: 0;
     z-index: 1;
-    transition: opacity 0.5s ease-in-out .5s, width 0.5s ease-in-out 0s; /* Shorthand */
+    transition: opacity 0.5s ease-in-out .5s, width 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
     cursor: pointer;
     
     &.show {
-      transition: opacity 0.5s ease-in-out 0s, width 0.5s ease-in-out 0s; /* Shorthand */
+      transition: opacity 0.5s ease-in-out 0s, width 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
       opacity: 1;
     }
   }
