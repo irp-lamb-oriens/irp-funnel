@@ -19,27 +19,14 @@
   import { get } from "svelte/store";
   import NameInputStage from "./stages/NameInputStage.svelte";
   import ThankYou from "./stages/ThankYou.svelte";
-  import {
-    isBirthdayValid,
-    isBudgetValid,
-    isSquareFeetValid,
-    isPropertyTypeFromValid,
-    isPropertyTypeToValid,
-    isReasonsValid
-  } from '../../helpers/validationRules.ts'; // Adjusted path
 
   // Define the sequence of components and their conditions
   // Define the sequence of components and their conditions
   const components = [
     [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
     // New Order:
-    [() => true, PropertyTypeFromInputStage], // Assuming this can start after VSL
-    [isPropertyTypeFromValid, PropertyTypeToInputStage],
-    [isPropertyTypeToValid, SquareFeetInputStage],
-    [isSquareFeetValid, BudgetInputStage],
-    [isBudgetValid, AgeInputStage],
-    [isBirthdayValid, ReasonInputStage], // Age input now depends on reasons being valid
-    [isReasonsValid, SubmitStage], // Submit stage now depends on age (birthday) being valid
+    // TODO: Make the Thank You The Input and then redirect to IRP new web
+    [() => true, SubmitStage], // Submit stage now depends on age (birthday) being valid
   ];
 </script>
 
