@@ -88,13 +88,14 @@
   color: var(--color-highlight-1);
   font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 1.2rem;
+  margin-bottom: 5rem;
 }
 
 // Responsive grid container
 .news-grid {
   display: grid;
-  place-content: center;
+  place-items: center;
+  justify-content: center;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem; // 32px gutters
   margin-bottom: 6rem;
@@ -241,7 +242,6 @@
 // Responsive breakpoints
 @media (max-width: 1100px) {
   .news-grid {
-    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     height: 700px;
     min-height: 700px;
