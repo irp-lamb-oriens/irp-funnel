@@ -26,7 +26,6 @@
     [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
     // New Order:
     // TODO: Make the Thank You The Input and then redirect to IRP new web
-    [() => true, SubmitStage], // Submit stage now depends on age (birthday) being valid
   ];
 </script>
 

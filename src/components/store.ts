@@ -148,7 +148,7 @@ currentFunnelId.subscribe(updateCurrentFunnel);
 currentFunnelVersion.subscribe(updateCurrentFunnel);
 
 const store = writable<Store>({
-  keysToSave: ["name", "email", "age", "sex", "budget", "reasonsForMoving", "squareFeet", "propertyTypeFrom", "propertyTypeTo"],
+  keysToSave: ["name", "email", "age", "budget", "reasonsForMoving", "squareFeet", "propertyTypeFrom", "propertyTypeTo"],
   name: "",
   email: "",
   age: null,
@@ -177,6 +177,7 @@ export function saveToStore(objectValue: { [index: string]: any }) {
     ...get(store),
     ...objectValue,
   });
+  saveAllKeysToSaveInLocalStorage();
 }
 
 export function populateToStore(propertyPath: string, value: any) {

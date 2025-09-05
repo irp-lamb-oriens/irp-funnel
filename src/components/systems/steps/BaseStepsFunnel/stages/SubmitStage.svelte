@@ -51,6 +51,9 @@
         const funnelVersion = localStorage.getItem('currentFunnelVersion');
         const funnelObjectString = localStorage.getItem('currentFunnelObject');
         const funnelCopyText = localStorage.getItem('funnelCopyText');
+        const locallyStored = Object.fromEntries($store.keysToSave.map((key: string) => {
+            return [key, localStorage.getItem(key)]
+        }));
 
         let funnelObjectParsed = null;
         if (funnelObjectString) {
@@ -65,6 +68,7 @@
             ...storeData,
             // Ensure funnelCopy is undefined if funnelCopyText is null, otherwise use funnelCopyText
             funnelCopy: funnelCopyText === null ? undefined : funnelCopyText, 
+            ...locallyStored,
             submit: {
                 ...(storeData.submit || {}), // Ensure storeData.submit exists
                 funnelId,
