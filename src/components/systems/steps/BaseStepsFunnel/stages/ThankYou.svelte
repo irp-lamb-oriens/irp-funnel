@@ -102,7 +102,7 @@
 		const payload = {
 			...storeData,
 			funnelCopy: funnelCopyText === null ? undefined : funnelCopyText, 
-			...locallyStored,
+			utm: locallyStored,
 			submit: {
 				...(storeData.submit || {}),
 				funnelId,
