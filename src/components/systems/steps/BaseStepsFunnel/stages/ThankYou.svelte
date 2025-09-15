@@ -72,10 +72,23 @@
 		const funnelVersion = localStorage.getItem('currentFunnelVersion');
 		const funnelObjectString = localStorage.getItem('currentFunnelObject');
 		const funnelCopyText = localStorage.getItem('funnelCopyText');
-		const locallyStored = Object.fromEntries($store.keysToSave.map((key: string) => {
-			const value = localStorage.getItem(key);
-			return [key, JSON.parse(value ?? "")]
-		}));
+		const locallyStored: Record<string, any> = {};
+		if (browser) {
+			for (const key in localStorage) {
+				if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+					const value = localStorage.getItem(key);
+					if (value) {
+						try {
+							locallyStored[key] = JSON.parse(value);
+						} catch (e) {
+							locallyStored[key] = value;
+						}
+					} else {
+						locallyStored[key] = value;
+					}
+				}
+			}
+		}
 
 		let funnelObjectParsed = null;
 		if (funnelObjectString) {
@@ -136,7 +149,7 @@
 					email: $store.email,
 					name: $store.name,
 					language: 'en',
-					bio: "",
+					bio: $store.reasonsForMoving?.join(', '),
 				}),
 			});
 

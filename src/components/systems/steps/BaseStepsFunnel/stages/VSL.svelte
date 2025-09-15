@@ -13,7 +13,6 @@
 	export let canReveal = false;
   export let thankYouUrl: string = '/thank-you';
 
-	// Tracking
 	let trackingData: { queryParams?: Record<string, string>; lastKnownTime?: number } = {};
   let utms: Record<string, string> = {};
   let utmCaptured = false;
@@ -36,7 +35,6 @@
 		videoInteractionStore.set({ type: "stop" });
 	});
 
-  // Save funnel copy to localStorage when available
   $: {
     if (browser && $currentFunnel && typeof $currentFunnel.copy === 'string') {
       try {
@@ -54,7 +52,9 @@
       const params = new URLSearchParams(location.search);
       utms = Object.fromEntries(params.entries());
       trackingData = { ...trackingData, queryParams: utms };
-      localStorage.setItem('utm', JSON.stringify(utms));
+      for (const [key, value] of params.entries()) {
+        localStorage.setItem(key, value);
+      }
     } catch { /* noop */ }
     utmCaptured = true;
   }
