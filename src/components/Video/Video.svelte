@@ -274,6 +274,35 @@
     document.addEventListener("visibilitychange", onVisibilityChange);
   });
 
+  onMount(() => {
+    const savedTime = localStorage.getItem("videoCurrentTime");
+    if (savedTime) {
+      const time = parseFloat(savedTime);
+      if (isFinite(time)) {
+        // Wait for metadata to be loaded before setting currentTime
+        const setTime = () => {
+          if (videoEl.readyState >= 1) {
+            videoEl.currentTime = time;
+          } else {
+            videoEl.addEventListener('loadedmetadata', () => videoEl.currentTime = time, { once: true });
+          }
+        };
+        setTime();
+      }
+    }
+
+    const interval = setInterval(() => {
+      if (videoEl && !videoEl.paused && isFinite(videoEl.currentTime)) {
+        localStorage.setItem("videoCurrentTime", videoEl.currentTime.toString());
+      }
+    }, 1000);
+
+    // Cleanup when the component is destroyed
+    return () => {
+      clearInterval(interval);
+    };
+  });
+
   onDestroy(() => {
     window.removeEventListener("beforeunload", onPageUnload);
     document.removeEventListener("visibilitychange", onVisibilityChange);
