@@ -257,21 +257,28 @@
 
   /** Lifecycle */
   onMount(() => {
-    isMobile = matchMedia("(pointer: coarse)").matches;
+    const checkWindow = () => {
+      if (typeof window !== 'undefined') {
+        isMobile = matchMedia("(pointer: coarse)").matches;
 
-    // Lazy: only consider in-view as eligible to load
-    if (lazy) {
-      const io = new IntersectionObserver(
-        ([entry]) => { inView = entry.isIntersecting; },
-        { threshold: 0.1 }
-      );
-      if (container) io.observe(container);
-      // cleanup
-      onDestroy(() => io.disconnect());
-    }
+        // Lazy: only consider in-view as eligible to load
+        if (lazy) {
+          const io = new IntersectionObserver(
+            ([entry]) => { inView = entry.isIntersecting; },
+            { threshold: 0.1 }
+          );
+          if (container) io.observe(container);
+          // cleanup
+          onDestroy(() => io.disconnect());
+        }
 
-    window.addEventListener("beforeunload", onPageUnload);
-    document.addEventListener("visibilitychange", onVisibilityChange);
+        window.addEventListener("beforeunload", onPageUnload);
+        document.addEventListener("visibilitychange", onVisibilityChange);
+      } else {
+        setTimeout(checkWindow, 50); // Check again in 50ms
+      }
+    };
+    checkWindow();
   });
 
   onMount(() => {
@@ -304,8 +311,10 @@
   });
 
   onDestroy(() => {
-    window.removeEventListener("beforeunload", onPageUnload);
-    document.removeEventListener("visibilitychange", onVisibilityChange);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener("beforeunload", onPageUnload);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    }
     hideSpinner();
     resetForNewSrcState();
   });
