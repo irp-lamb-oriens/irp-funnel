@@ -79,7 +79,8 @@
 					const value = localStorage.getItem(key);
 					if (value) {
 						try {
-							locallyStored[key] = JSON.parse(value);
+							const parsedValue = JSON.parse(value);
+                            locallyStored[key] = typeof parsedValue === 'number' ? Math.round(parsedValue) : parsedValue;
 						} catch (e) {
 							locallyStored[key] = value;
 						}
