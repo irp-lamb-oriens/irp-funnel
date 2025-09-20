@@ -14,9 +14,6 @@
 </script>
 
 <div class="page" bind:this={pageDiv}>
-  <div class="brand">
-    <Brand/>
-  </div>
   <slot />
 </div>
 
@@ -30,7 +27,6 @@
 
   .logo {
     width: 200px;
-    padding: 100px 0;
   }
 
   .page {
@@ -39,7 +35,6 @@
     display: grid;
     place-items: center;
     justify-content: center;
-    padding: 100px 0;
     position: relative;
 
     @media (max-width: 1024px) {

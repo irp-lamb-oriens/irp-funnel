@@ -112,12 +112,6 @@
         callback={() => handleCTA('hero_cta')}
         disabled={false}
       />
-
-      <p class="subhead">
-        {$currentFunnel.subhead ?? "Learn about the risks, requirements and regulations, you don't have to do it alone"}
-      </p>
-
-      <div class="arrow-bounce" aria-hidden="true">⬇</div>
     </div>
 		<Video
 			src={$currentFunnel.videoSrc}
@@ -127,6 +121,10 @@
 
     <!-- Simple proof strip -->
     <div class="center proof">
+
+		<p class="subhead">
+		  {$currentFunnel.subhead ?? "Learn about the risks, requirements and regulations, you don't have to do it alone"}
+		</p>
       <div
         class="rating"
         aria-label="{($currentFunnel?.ratingValue ?? '4.9')} out of 5 from {($currentFunnel?.ratingCount ?? '89')} google reviews"
@@ -222,7 +220,7 @@
   }
 
   .headline {
-    font-size: clamp(18px,8vw,60px);
+    font-size: clamp(9px,4vw,30px);
     line-height: 1.1;
     margin: 0;
 	font-family: var(--font-subtitle);

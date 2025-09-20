@@ -31,4 +31,4 @@
 </script>
 
 <MultiSlotComponent steps={$steps} sharedStore={store} />
-<TransitionSteps {components} />
+<!-- <TransitionSteps {components} /> -->
