@@ -129,3 +129,23 @@ export type Populator<T extends object> = (
   propertyPath: string,
   value: any
 ) => T;
+
+export interface MetricsData {
+  totalUsers: number;
+  usersByCountry: { [country: string]: number };
+  averageBudget: number;
+  reasonsForMoving: { [reason: string]: number };
+  propertyTypes: {
+    from: { [type: string]: number };
+    to: { [type: string]: number };
+  };
+  users: any[];
+  abTesting: {
+    copy: { [copy: string]: { users: number; conversionRate: number } };
+    videoSrc: { [src: string]: { users: number; conversionRate: number } };
+    funnelId: { [id: string]: { users: number; conversionRate: number } };
+    influencer: { [influencer: string]: { users: number; conversionRate: number } };
+    utmVideo: { [video: string]: { users: number; conversionRate: number } };
+  };
+  videoPerformance: { [time: number]: number };
+}
