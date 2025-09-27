@@ -13,14 +13,14 @@
     flag: string | null;
   }
 
-  const languages: Language[] = languagesData;
-
   // Props
+  export let whitelist: string[] = [];
   export let defaultLanguageCode: string | null = null;
   export let label = "Language";
   export let onSelect: (selectedCode: string | null) => void = () => {};
 
   // State
+  let languages: Language[] = languagesData.filter(lang => whitelist.length === 0 || whitelist.includes(lang.code));
   let selectedLanguage: Language | null = null;
   export const selectedLanguageStore = writable<Language | null>(null);
   let open = false;

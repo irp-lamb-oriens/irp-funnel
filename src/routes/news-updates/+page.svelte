@@ -1,113 +1,229 @@
 <script lang="ts">
-  import Header from '../../components/Header/Header.svelte';
-  import Footer from '../../components/Footer/Footer.svelte';
-  import CountryLayout from '../../components/ui/CountryLayout.svelte';
-  import NewsCard from '../../components/NewsCard.svelte';
-  import './news-updates.scss';
-  import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import Header from "../../components/Header/Header.svelte";
+  import Footer from "../../components/Footer/Footer.svelte";
+  import CountryLayout from "../../components/ui/CountryLayout.svelte";
+  import NewsCard from "../../components/NewsCard.svelte";
+  import "./news-updates.scss";
+  import { page } from "$app/stores";
+  import { onMount } from "svelte";
+  import { browser } from "$app/environment";
+  import { goto } from "$app/navigation";
+
+  let pageIndex = 0;
+  $: pageIndex = $page.url.searchParams.get("page") ? parseInt($page.url.searchParams.get("page")!) : 0;
 
   // Pagination constants
   const LIMIT = 9;
 
-  // Get page index from query params (default 0)
-  let pageIndex = 0;
-  $: {
-    const url = $page.url;
-    const pageParam = url.searchParams.get('page');
-    pageIndex = pageParam ? parseInt(pageParam) : 0;
-  }
-
   let blogs: any[] = [];
   let total = 0;
+  let cosmicTotal = 0;
+  let renderTotal = 0;
   let loading = true;
+  let initialLoadComplete = false;
 
-  // For search across all blogs
-  let allBlogs: any[] = [];
-  let allBlogsLoaded = false;
-  let searchLoading = false;
+  const articlesCache = new Map<number, any[]>();
 
   // Search state and filtering
-  let search = '';
+  let search = "";
   let searchFocused = false;
   let searchTouched = false;
 
-  // Fetch all blogs for search (when needed), single request with high limit
-  async function fetchAllBlogs() {
-    if (allBlogsLoaded) return;
-    searchLoading = true;
-    const limit = 1000;
-    const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${limit}&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    allBlogs = Array.isArray(data.objects) ? data.objects : [];
-    allBlogsLoaded = true;
-    searchLoading = false;
-  }
-
-  // Watch search and load all blogs if needed
-  $: if (search.length > 0 && !allBlogsLoaded && !searchLoading) {
-    fetchAllBlogs();
-  }
-
-  // Filter logic: search all blogs if searching, else use paginated blogs
+  // Filter logic
   $: filteredBlogs = search
-    ? (allBlogsLoaded ? allBlogs : blogs).filter(blog =>
+    ? blogs.filter(blog =>
         blog.title?.toLowerCase().trim().includes(search.toLowerCase().trim())
       )
     : blogs;
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
 
-  // Fetch blogs from CosmicJS API
-  async function fetchBlogs() {
+  async function initialLoad() {
+    console.log("Initiating primary source load (CosmicJS)...");
     loading = true;
-    const skip = LIMIT * pageIndex;
-    const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    blogs = data.objects || [];
-    total = data.total || 0;
-    loading = false;
+    try {
+      // Fetch Cosmic total and the first page of articles in one go
+      const skip = LIMIT * pageIndex;
+      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const cosmicRes = await fetch(cosmicApiUrl);
+      const cosmicData = await cosmicRes.json();
+
+      cosmicTotal = cosmicData.total || 0;
+      total = cosmicTotal; // Set initial total based on Cosmic
+
+      const firstPageBlogs = cosmicData.objects || [];
+      blogs = firstPageBlogs;
+      articlesCache.set(pageIndex, firstPageBlogs);
+      console.log("Primary source (CosmicJS) loaded successfully.");
+
+    } catch (e) {
+      console.error("Error during initial load", e);
+    } finally {
+      loading = false; // Show content to the user
+      initialLoadComplete = true; // Allow reactive updates for subsequent page changes
+      
+      // Now fetch the secondary source total in the background
+      fetchSecondaryTotal(); 
+    }
+  }
+
+  async function fetchSecondaryTotal() {
+    console.log("Fetching secondary source total (Render API) in the background...");
+    try {
+      const apiUrl = "https://ai-newsletter-translated.onrender.com";
+      const email = "consultation%40internationalrelocationpartner.com";
+      const renderApiUrl = new URL(`${apiUrl}/articles?holder=${email}`);
+      renderApiUrl.searchParams.set("lang", "en");
+      renderApiUrl.searchParams.set("page_en", "0");
+      renderApiUrl.searchParams.set("size", "1");
+      const renderRes = await fetch(renderApiUrl.toString());
+      if (renderRes.ok) {
+        const renderData = await renderRes.json();
+        if (renderData.articles && renderData.articles["en"]) {
+          const { totalWithImages, totalWithoutImages } = renderData.articles["en"];
+          const actualRenderTotal = totalWithImages + totalWithoutImages;
+          renderTotal = Math.min(actualRenderTotal, LIMIT); // Only one page of render articles
+          total = cosmicTotal + renderTotal; // This will reactively update the UI
+          console.log("Secondary source (Render API) total loaded. Total updated to:", total);
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching secondary total", e);
+    }
+  }
+
+  async function fetchPageData(pageToFetch: number): Promise<any[]> {
+    const cosmicPages = cosmicTotal > 0 ? Math.ceil(cosmicTotal / LIMIT) : 0;
+
+    if (pageToFetch < cosmicPages - 1) {
+      // Fetch from CosmicJS
+      const skip = LIMIT * pageToFetch;
+      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const cosmicRes = await fetch(cosmicApiUrl);
+      const cosmicData = await cosmicRes.json();
+      return cosmicData.objects || [];
+    } else if (pageToFetch === cosmicPages - 1) {
+      // Fetch last page of CosmicJS and first page of Render API
+      const skip = LIMIT * pageToFetch;
+      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const cosmicRes = await fetch(cosmicApiUrl);
+      const cosmicData = await cosmicRes.json();
+      const cosmicBlogs = cosmicData.objects || [];
+
+      const renderPageIndex = 0;
+      const apiUrl = "https://ai-newsletter-translated.onrender.com";
+      const email = "consultation%40internationalrelocationpartner.com";
+      const localApiUrl = new URL(`${apiUrl}/articles?`);
+      localApiUrl.searchParams.set("email", email);
+      localApiUrl.searchParams.set("lang", "en");
+      localApiUrl.searchParams.set(`page_en`, renderPageIndex.toString());
+      localApiUrl.searchParams.set("size", (LIMIT - cosmicBlogs.length).toString());
+
+      const localRes = await fetch(localApiUrl.toString());
+      let renderBlogs: any[] = [];
+      if (localRes.ok) {
+        const localData = await localRes.json();
+        if (localData.articles && localData.articles["en"]) {
+          const { withImages, withoutImages } = localData.articles["en"];
+          renderBlogs = [...withImages, ...withoutImages].map(article => ({
+            slug: article.id,
+            title: article.title,
+            metadata: {
+              title: article.content,
+              poster: null // Or map some image if available
+            },
+            type: "blogs" // Assuming same type for consistency
+          }));
+        }
+      }
+      return [...cosmicBlogs, ...renderBlogs];
+    } else {
+      return [];
+    }
+  }
+
+  async function fetchAndCachePage(pageToFetch: number) {
+    if (articlesCache.has(pageToFetch)) {
+      console.log(`Returning page ${pageToFetch} from cache.`);
+      return articlesCache.get(pageToFetch);
+    }
+
+    console.log(`Fetching page ${pageToFetch} from network.`);
+    const pageData = await fetchPageData(pageToFetch);
+    articlesCache.set(pageToFetch, pageData);
+    return pageData;
+  }
+
+  async function loadAndDisplayPage(page: number) {
+    console.log(`Displaying page ${page}...`);
+    if (articlesCache.has(page)) {
+      blogs = articlesCache.get(page)!;
+      return;
+    }
+
+    loading = true;
+    try {
+      const pageData = await fetchAndCachePage(page);
+      blogs = pageData || [];
+
+      // Prefetch sibling pages
+      const totalPages = Math.ceil(total / LIMIT);
+      if (page > 0) {
+        fetchAndCachePage(page - 1).catch(e => console.error("Prefetch previous failed:", e));
+      }
+      if (page < totalPages - 1) {
+        fetchAndCachePage(page + 1).catch(e => console.error("Prefetch next failed:", e));
+      }
+    } catch (err) {
+      console.error("Error fetching article list.", err);
+    } finally {
+      loading = false;
+    }
+  }
+
+  onMount(() => {
+    initialLoad();
+  });
+
+  $: if (browser && initialLoadComplete) {
+    loadAndDisplayPage(pageIndex);
   }
 
   // Generate excerpt from HTML content
   function getExcerpt(html: string, maxLength = 180) {
-    if (!html) return '';
-    const div = document.createElement('div');
+    if (typeof document === "undefined" || !html) return "";
+    const div = document.createElement("div");
     div.innerHTML = html;
-    const text = div.textContent || div.innerText || '';
+    const text = div.textContent || div.innerText || "";
     if (text.length <= maxLength) return text;
     // Try to cut at the last space before maxLength
-    const cut = text.lastIndexOf(' ', maxLength);
-    return text.slice(0, cut > 0 ? cut : maxLength) + '...';
+    const cut = text.lastIndexOf(" ", maxLength);
+    return text.slice(0, cut > 0 ? cut : maxLength) + "...";
   }
 
   // Animation state for pagination
-  let animating: 'newer' | 'older' | null = null;
+  let animating: "newer" | "older" | null = null;
   let pendingPage: number | null = null;
 
   function goToPage(newPage: number) {
     const params = new URLSearchParams($page.url.searchParams);
-    params.set('page', newPage.toString());
-    window.location.search = params.toString();
+    params.set("page", newPage.toString());
+    goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
 
-  function handlePaginate(direction: 'newer' | 'older') {
+  function handlePaginate(direction: "newer" | "older") {
     if (animating) return;
+
     animating = direction;
-    pendingPage = direction === 'newer' ? pageIndex - 1 : pageIndex + 1;
+    pendingPage = direction === "newer" ? pageIndex - 1 : pageIndex + 1;
     setTimeout(() => {
-      animating = null;
-      if (pendingPage !== null) {
-        goToPage(pendingPage);
-        pendingPage = null;
-      }
+        animating = null;
+        if (pendingPage !== null) {
+            goToPage(pendingPage);
+            pendingPage = null;
+        }
     }, 420); // match animation duration
   }
-
-  $: $page, fetchBlogs();
-
 </script>
 
 <Header />
@@ -115,7 +231,7 @@
 <CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/10464468/pexels-photo-10464468.jpeg?w=2000">
   <section class="news-list">
     <div class="search-bar-wrap">
-      <div class="search-bar {searchFocused ? 'focused' : ''} {searchTouched && !search ? 'empty' : ''}">
+      <div class="search-bar {searchFocused ? "focused" : ""} {searchTouched && !search ? "empty" : ""}">
         <svg class="search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none">
           <circle cx="10" cy="10" r="8" stroke="#bbb" stroke-width="2"/>
           <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
@@ -130,7 +246,7 @@
           autocomplete="off"
         />
         {#if search}
-          <button class="clear-btn" on:click={() => { search = ''; }} aria-label="Clear search">
+          <button class="clear-btn" on:click={() => { search = ""; }} aria-label="Clear search">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <line x1="4" y1="4" x2="14" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
               <line x1="14" y1="4" x2="4" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
@@ -143,17 +259,34 @@
       <div class="loading">Loading...</div>
     {:else}
       {#if isSearching}
-        {#if searchLoading || (!allBlogsLoaded && search.length > 0)}
-          <div class="loading">Searching...</div>
-        {:else if filteredBlogs.length === 0}
+       {#if filteredBlogs.length === 0}
           <div class="no-results">No news found for "<span>{search}</span>"</div>
         {/if}
+      {/if}
+      {#if showPagination}
+        <div class="pagination">
+          <button
+            class="pagination-btn newer {animating === "newer" ? "animating" : ""}"
+            on:click={() => handlePaginate("newer")}
+            disabled={pageIndex === 0 || !!animating}
+          >
+            &laquo; Newer Entries
+          </button>
+          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT)}</span>
+          <button
+            class="pagination-btn older {animating === "older" ? "animating" : ""}"
+            on:click={() => handlePaginate("older")}
+            disabled={(LIMIT * (pageIndex + 1)) >= total || !!animating}
+          >
+            Older Entries &raquo;
+          </button>
+        </div>
       {/if}
       <div class="news-grid">
         {#each filteredBlogs as blog (blog.slug)}
           <div class="news-card-anim">
             <NewsCard
-              imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ''}
+              imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ""}
               imageAlt={blog.title}
               title={blog.title}
               excerpt={getExcerpt(blog.metadata?.title)}
@@ -166,19 +299,19 @@
       {#if showPagination}
         <div class="pagination">
           <button
-            class="pagination-btn newer {animating === 'newer' ? 'animating' : ''}"
-            on:click={() => handlePaginate('newer')}
+            class="pagination-btn newer {animating === "newer" ? "animating" : ""}"
+            on:click={() => handlePaginate("newer")}
             disabled={pageIndex === 0 || !!animating}
           >
-            « Newer Entries
+            &laquo; Newer Entries
           </button>
           <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT)}</span>
           <button
-            class="pagination-btn older {animating === 'older' ? 'animating' : ''}"
-            on:click={() => handlePaginate('older')}
+            class="pagination-btn older {animating === "older" ? "animating" : ""}"
+            on:click={() => handlePaginate("older")}
             disabled={(LIMIT * (pageIndex + 1)) >= total || !!animating}
           >
-            Older Entries »
+            Older Entries &raquo;
           </button>
         </div>
       {/if}

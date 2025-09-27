@@ -57,7 +57,6 @@
     window.addEventListener("scroll", event => {
       doHide.set(lastScrollY < window.scrollY);
       lastScrollY = window.scrollY;
-      console.log($doHide, lastScrollY);
     });
   });
 </script>

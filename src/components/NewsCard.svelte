@@ -91,18 +91,18 @@
     transition:
       box-shadow 0.7s cubic-bezier(.22,0,.36,1),
       transform 1.1s cubic-bezier(.22,0,.36,1),
-      top 1.1s cubic-bezier(.22,0,.36,1);
-    will-change: transform, box-shadow, top;
+      top 1.1s cubic-bezier(.22,0,.36,1),
+      min-height 1.1s cubic-bezier(.22,0,.36,1);
+    will-change: transform, box-shadow, top, min-height;
   }
 
   &:hover .news-item-image-wrapper {
-    min-height: 340px;
-    height: 340px;
+    height: 300px;
     transition: height 1.1s cubic-bezier(.22,0,.36,1), min-height 1.1s cubic-bezier(.22,0,.36,1);
   }
   &:hover .news-item-image {
-    height: 340px;
-    transform: translateX(-50%) scale(1.08);
+    height: 400px;
+    transform: translate(-50%, -25%) scale(1.08);
     object-position: 50% 40%;
     transition:
       height 1.1s cubic-bezier(.22,0,.36,1) 0.04s,
@@ -110,11 +110,12 @@
       object-position 1.1s cubic-bezier(.22,0,.36,1) 0.04s;
   }
   &:hover .news-item-card {
-    top: calc(50% + 3rem);
-    transform: translate(-50%, -50%) scale(1.04);
+    top: calc(0% + 3rem);
+    transform: translate(-50%, -25%) scale(1);
     box-shadow: 0 8px 32px rgba(30,144,255,0.16);
     transition:
       top 1.1s cubic-bezier(.22,0,.36,1),
+      min-height 1.1s cubic-bezier(.22,0,.36,1),
       transform 1.1s cubic-bezier(.22,0,.36,1) 0.09s,
       box-shadow 1.1s cubic-bezier(.22,0,.36,1) 0.09s;
   }
