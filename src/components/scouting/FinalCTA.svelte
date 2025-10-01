@@ -39,7 +39,7 @@
         <ul class="card-list">
           <li class="list-item"><strong>Airports:</strong> Cancún (CUN), Tulum (TQO), Cozumel</li>
           <li class="list-item"><strong>Transfers:</strong> Pre-book via our coordinator</li>
-          <li class="list-item"><strong>Hosts:</strong> Sylvia Galambos & Pablo</li>
+          <li class="list-item"><strong>Hosts:</strong> Szylvia Galambosi & Pablo</li>
           <li class="list-item"><strong>Format:</strong> Learn-first scouting with mini-vacation activities</li>
           <li class="list-item"><strong>Optional Add-on:</strong> Xcaret Festival on Oct 31</li>
         </ul>
