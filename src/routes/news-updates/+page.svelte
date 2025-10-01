@@ -94,52 +94,41 @@
 
   async function fetchPageData(pageToFetch: number): Promise<any[]> {
     const cosmicPages = cosmicTotal > 0 ? Math.ceil(cosmicTotal / LIMIT) : 0;
+    // Fetch last page of CosmicJS and first page of Render API
+    const skip = LIMIT * pageToFetch;
+    const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+    const cosmicRes = await fetch(cosmicApiUrl);
+    const cosmicData = await cosmicRes.json();
+    const cosmicBlogs = cosmicData.objects || [];
 
-    if (pageToFetch < cosmicPages - 1) {
-      // Fetch from CosmicJS
-      const skip = LIMIT * pageToFetch;
-      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-      const cosmicRes = await fetch(cosmicApiUrl);
-      const cosmicData = await cosmicRes.json();
-      return cosmicData.objects || [];
-    } else if (pageToFetch === cosmicPages - 1) {
-      // Fetch last page of CosmicJS and first page of Render API
-      const skip = LIMIT * pageToFetch;
-      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-      const cosmicRes = await fetch(cosmicApiUrl);
-      const cosmicData = await cosmicRes.json();
-      const cosmicBlogs = cosmicData.objects || [];
+    const renderPageIndex = 0;
+    const apiUrl = "https://ai-newsletter-translated.onrender.com";
+    const email = "consultation@internationalrelocationpartner.com";
+    const localApiUrl = new URL(`${apiUrl}/articles/${email}`);
+    console.log("localApiUrl", localApiUrl)
+    localApiUrl.searchParams.set("email", email);
+    localApiUrl.searchParams.set("lang", "en");
+    localApiUrl.searchParams.set(`page_en`, renderPageIndex.toString());
+    localApiUrl.searchParams.set("size", (LIMIT - cosmicBlogs.length).toString());
 
-      const renderPageIndex = 0;
-      const apiUrl = "https://ai-newsletter-translated.onrender.com";
-      const email = "consultation%40internationalrelocationpartner.com";
-      const localApiUrl = new URL(`${apiUrl}/articles?`);
-      localApiUrl.searchParams.set("email", email);
-      localApiUrl.searchParams.set("lang", "en");
-      localApiUrl.searchParams.set(`page_en`, renderPageIndex.toString());
-      localApiUrl.searchParams.set("size", (LIMIT - cosmicBlogs.length).toString());
-
-      const localRes = await fetch(localApiUrl.toString());
-      let renderBlogs: any[] = [];
-      if (localRes.ok) {
-        const localData = await localRes.json();
-        if (localData.articles && localData.articles["en"]) {
-          const { withImages, withoutImages } = localData.articles["en"];
-          renderBlogs = [...withImages, ...withoutImages].map(article => ({
-            slug: article.id,
-            title: article.title,
-            metadata: {
-              title: article.content,
-              poster: null // Or map some image if available
-            },
-            type: "blogs" // Assuming same type for consistency
-          }));
-        }
+    const localRes = await fetch(localApiUrl.toString());
+    let renderBlogs: any[] = [];
+    if (localRes.ok) {
+      const localData = await localRes.json();
+      if (localData.articles && localData.articles["en"]) {
+        const { withImages, withoutImages } = localData.articles["en"];
+        renderBlogs = [...withImages, ...withoutImages].map(article => ({
+          slug: article.id,
+          title: article.title,
+          metadata: {
+            title: article.content,
+            poster: null // Or map some image if available
+          },
+          type: "blogs" // Assuming same type for consistency
+        }));
       }
-      return [...cosmicBlogs, ...renderBlogs];
-    } else {
-      return [];
     }
+    return [...cosmicBlogs, ...renderBlogs];
   }
 
   async function fetchAndCachePage(pageToFetch: number) {

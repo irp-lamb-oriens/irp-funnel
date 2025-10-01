@@ -6,7 +6,7 @@
   import gsap from "gsap";
 
   // Data for each step
-  const steps = [
+  const defaultSteps = [
     {
       icon: "/icons/phone-80-3.png",
       title: "Relocation conference call",
@@ -14,7 +14,8 @@
       narrative: [
         "We start with a personalized relocation conference call to understand your unique needs and answer your initial questions.",
         "This is where we set the foundation for a smooth transition, ensuring you feel heard and supported from the very beginning."
-      ]
+      ],
+      videoUrl: "https://storage.googleapis.com/videos-irp-funnels/1.mp4"
     },
     {
       icon: "/icons/support.png",
@@ -23,7 +24,8 @@
       narrative: [
         "Based on your goals, we craft a detailed, step-by-step relocation plan tailored to your timeline, preferences, and requirements.",
         "Our team leverages years of experience and best practices to anticipate challenges and provide clear guidance."
-      ]
+      ],
+      videoUrl: "https://storage.googleapis.com/videos-irp-funnels/2.mp4"
     },
     {
       icon: "/icons/location.png",
@@ -32,7 +34,8 @@
       narrative: [
         "We track every milestone and keep you updated on progress, so you always know what’s next and what’s needed.",
         "Our proactive follow-up ensures nothing falls through the cracks and you stay on schedule."
-      ]
+      ],
+      videoUrl: "https://storage.googleapis.com/videos-irp-funnels/3.mp4"
     },
     {
       icon: "/icons/followup.png",
@@ -41,9 +44,23 @@
       narrative: [
         "Even after arrival, our support continues. We’re here to answer questions, solve issues, and help you settle in.",
         "Your peace of mind is our priority, every step of the way."
-      ]
+      ],
+      videoUrl: "https://storage.googleapis.com/videos-irp-funnels/4.mp4"
     }
   ];
+
+  export let steps: {
+    icon?: string;
+    title: string;
+    rightTitle: string;
+    narrative: string[];
+    videoUrl: string;
+  }[] = [];
+
+  $: finalSteps = steps.map(step => ({
+    ...JSON.parse(JSON.stringify(defaultSteps.find(s => s.icon) || {})),
+    ...step
+  }));
 
   // Store for the current step index in view
   const currentStep = writable(0);
@@ -101,7 +118,7 @@
   let currentWordOffsets: number[] = [];
   const baseDelay = 0.08;
   $: {
-    const step = $currentStep !== undefined ? steps[$currentStep] : steps[0];
+    const step = $currentStep !== undefined ? finalSteps[$currentStep] : finalSteps[0];
     currentParagraphs = step.narrative;
     let offset = 0;
     currentWordOffsets = currentParagraphs.map(para => {
@@ -152,10 +169,10 @@
 <section bind:this={section} class="moving-process-section">
   <!-- Video Backgrounds (absolute, only inside section, does not take up space) -->
   <div class="moving-process-video-bg-wrapper">
-    {#each [1,2,3,4] as n, idx}
+    {#each finalSteps as step, idx}
       <video
         class="moving-process-video-bg {($currentStep === idx) ? 'active' : ''}"
-        src={`https://storage.googleapis.com/videos-irp-funnels/${n}.mp4`}
+        src={step.videoUrl}
         autoplay
         muted
         loop
@@ -172,7 +189,7 @@
       <section bind:this={sectionRef} class="moving-process-section-ref">
         {#key currentStepKey}
           <div class="moving-process-progress-indicator">
-            {($currentStep + 1)} / {steps.length}
+            {($currentStep + 1)} / {finalSteps.length}
           </div>
           <div class="moving-process-card-group">
             {#each currentParagraphs as para, pidx}
@@ -195,7 +212,7 @@
     <!-- Center: Vertical Timeline (desktop) / Stepper (mobile) -->
     <div class="moving-process-timeline-container">
       <div class="moving-process-timeline moving-process-timeline-responsive">
-        {#each steps as step, i}
+        {#each finalSteps as step, i}
           <div
             class="moving-process-step"
             bind:this={stepRefs[i]}
@@ -222,7 +239,7 @@
 
     <!-- Right: Step Titles (desktop only) -->
     <div class="moving-process-steps">
-      {#each steps as step, i}
+      {#each finalSteps as step, i}
         <div class="moving-process-step-title">
           <h5 class="moving-process-step-heading">{step.rightTitle}</h5>
         </div>
