@@ -57,10 +57,7 @@
     videoUrl: string;
   }[] = [];
 
-  $: finalSteps = steps.map(step => ({
-    ...JSON.parse(JSON.stringify(defaultSteps.find(s => s.icon) || {})),
-    ...step
-  }));
+  $: finalSteps = steps && steps.length > 0 ? steps : defaultSteps;
 
   // Store for the current step index in view
   const currentStep = writable(0);
@@ -119,7 +116,7 @@
   const baseDelay = 0.08;
   $: {
     const step = $currentStep !== undefined ? finalSteps[$currentStep] : finalSteps[0];
-    currentParagraphs = step.narrative;
+    currentParagraphs = step?.narrative || [];
     let offset = 0;
     currentWordOffsets = currentParagraphs.map(para => {
       const count = para.split(/(\s+)/).length;

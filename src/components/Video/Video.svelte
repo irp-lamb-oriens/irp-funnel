@@ -10,7 +10,7 @@
 
   /** Public props */
   export let src: string | null = null;
-  export let poster = "miniatura de video 9s.png";
+  export let poster = "/video-lightbox1b-480x590.jpg";
   export let lazy = true;           // only attach src when in view
   export let spinnerDelay = 150;    // ms before showing spinner (prevents flicker)
 
