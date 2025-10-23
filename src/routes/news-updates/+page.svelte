@@ -389,7 +389,7 @@
 .search-bar-wrap {
   display: flex;
   justify-content: center;
-  margin: 0rem auto 10rem;
+  margin: 0rem auto 2.5rem;
   animation: fadeInUp 0.7s cubic-bezier(0.4,0,0.2,1);
   z-index: 20;
   background: rgba(255,255,255,0.97);
@@ -485,7 +485,7 @@
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
-  margin-top: 2.5rem;
+  margin-bottom: 10rem;
 }
 .pagination-btn {
   background: none;
