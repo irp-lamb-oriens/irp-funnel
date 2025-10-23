@@ -12,157 +12,73 @@
   let pageIndex = 0;
   $: pageIndex = $page.url.searchParams.get("page") ? parseInt($page.url.searchParams.get("page")!) : 0;
 
-  // Pagination constants
   const LIMIT = 9;
-
   let blogs: any[] = [];
   let total = 0;
-  let cosmicTotal = 0;
-  let renderTotal = 0;
   let loading = true;
-  let initialLoadComplete = false;
 
-  const articlesCache = new Map<number, any[]>();
+  const articlesCache = new Map<number, any>();
 
-  // Search state and filtering
   let search = "";
   let searchFocused = false;
   let searchTouched = false;
+  let isStreaming = false;
+  let noResults = false;
+  let searchTimeout: ReturnType<typeof setTimeout>;
 
-  // Filter logic
-  $: filteredBlogs = search
-    ? blogs.filter(blog =>
-        blog.title?.toLowerCase().trim().includes(search.toLowerCase().trim())
-      )
-    : blogs;
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
 
-  async function initialLoad() {
-    console.log("Initiating primary source load (CosmicJS)...");
-    loading = true;
-    try {
-      // Fetch Cosmic total and the first page of articles in one go
-      const skip = LIMIT * pageIndex;
-      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-      const cosmicRes = await fetch(cosmicApiUrl);
-      const cosmicData = await cosmicRes.json();
+  const RENDER_API_URL = "https://ai-newsletter-translated.onrender.com";
+  const RENDER_API_HOLDER = "consultation%40internationalrelocationpartner.com";
 
-      cosmicTotal = cosmicData.total || 0;
-      total = cosmicTotal; // Set initial total based on Cosmic
+  function processArticle(article: any) {
+    const titleMatch = article.content ? article.content.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) : null;
+    const title = titleMatch ? titleMatch[1] : "Article";
+    const content = article.content ? article.content.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "") : "";
+    const imageMatch = content.match(/<img[^>]+src="([^">]+)"/);
+    const imageUrl = imageMatch ? imageMatch[1] : "";
 
-      const firstPageBlogs = cosmicData.objects || [];
-      blogs = firstPageBlogs;
-      articlesCache.set(pageIndex, firstPageBlogs);
-      console.log("Primary source (CosmicJS) loaded successfully.");
-
-    } catch (e) {
-      console.error("Error during initial load", e);
-    } finally {
-      loading = false; // Show content to the user
-      initialLoadComplete = true; // Allow reactive updates for subsequent page changes
-      
-      // Now fetch the secondary source total in the background
-      fetchSecondaryTotal(); 
-    }
-  }
-
-  async function fetchSecondaryTotal() {
-    console.log("Fetching secondary source total (Render API) in the background...");
-    try {
-      const apiUrl = "https://ai-newsletter-translated.onrender.com";
-      const email = "consultation%40internationalrelocationpartner.com";
-      const renderApiUrl = new URL(`${apiUrl}/articles?holder=${email}`);
-      renderApiUrl.searchParams.set("lang", "en");
-      renderApiUrl.searchParams.set("page_en", "0");
-      renderApiUrl.searchParams.set("size", "1");
-      const renderRes = await fetch(renderApiUrl.toString());
-      if (renderRes.ok) {
-        const renderData = await renderRes.json();
-        if (renderData.articles && renderData.articles["en"]) {
-          const { totalWithImages, totalWithoutImages } = renderData.articles["en"];
-          const actualRenderTotal = totalWithImages + totalWithoutImages;
-          renderTotal = Math.min(actualRenderTotal, LIMIT); // Only one page of render articles
-          total = cosmicTotal + renderTotal; // This will reactively update the UI
-          console.log("Secondary source (Render API) total loaded. Total updated to:", total);
-        }
-      }
-    } catch (e) {
-      console.error("Error fetching secondary total", e);
-    }
-  }
-
-  async function fetchPageData(pageToFetch: number): Promise<any[]> {
-    const cosmicPages = cosmicTotal > 0 ? Math.ceil(cosmicTotal / LIMIT) : 0;
-    // Fetch last page of CosmicJS and first page of Render API
-    const skip = LIMIT * pageToFetch;
-    const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-    const cosmicRes = await fetch(cosmicApiUrl);
-    const cosmicData = await cosmicRes.json();
-    const cosmicBlogs = cosmicData.objects || [];
-
-    const renderPageIndex = 0;
-    const apiUrl = "https://ai-newsletter-translated.onrender.com";
-    const email = "consultation@internationalrelocationpartner.com";
-    const localApiUrl = new URL(`${apiUrl}/articles/${email}`);
-    console.log("localApiUrl", localApiUrl)
-    localApiUrl.searchParams.set("email", email);
-    localApiUrl.searchParams.set("lang", "en");
-    localApiUrl.searchParams.set(`page_en`, renderPageIndex.toString());
-    localApiUrl.searchParams.set("size", (LIMIT - cosmicBlogs.length).toString());
-
-    const localRes = await fetch(localApiUrl.toString());
-    let renderBlogs: any[] = [];
-    if (localRes.ok) {
-      const localData = await localRes.json();
-      if (localData.articles && localData.articles["en"]) {
-        const { withImages, withoutImages } = localData.articles["en"];
-        renderBlogs = [...withImages, ...withoutImages].map(article => ({
-          slug: article.id,
-          title: article.title,
-          metadata: {
-            title: article.content,
-            poster: null // Or map some image if available
-          },
-          type: "blogs" // Assuming same type for consistency
-        }));
-      }
-    }
-    return [...cosmicBlogs, ...renderBlogs];
+    return {
+      slug: article.id,
+      title: title,
+      metadata: {
+        title: content,
+        poster: { imgix_url: imageUrl, url: imageUrl },
+      },
+      type: "blogs",
+      source: "render"
+    };
   }
 
   async function fetchAndCachePage(pageToFetch: number) {
     if (articlesCache.has(pageToFetch)) {
-      console.log(`Returning page ${pageToFetch} from cache.`);
       return articlesCache.get(pageToFetch);
     }
-
-    console.log(`Fetching page ${pageToFetch} from network.`);
-    const pageData = await fetchPageData(pageToFetch);
-    articlesCache.set(pageToFetch, pageData);
-    return pageData;
+    const pageParams = new URLSearchParams();
+    pageParams.set("page", (pageToFetch + 1).toString());
+    pageParams.set("lang", "en");
+    const url = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?${pageParams.toString()}&size=${LIMIT}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Fetch failed for page ${pageToFetch}`);
+    const data = await resp.json();
+    const articlesData = data.articles["en"] || { withImages: [], withoutImages: [], total: 0 };
+    articlesCache.set(pageToFetch, articlesData);
+    return articlesData;
   }
 
   async function loadAndDisplayPage(page: number) {
-    console.log(`Displaying page ${page}...`);
-    if (articlesCache.has(page)) {
-      blogs = articlesCache.get(page)!;
-      return;
-    }
-
+    if (isSearching) return;
     loading = true;
     try {
       const pageData = await fetchAndCachePage(page);
-      blogs = pageData || [];
+      const articles = [...pageData.withImages, ...pageData.withoutImages].map(processArticle);
+      blogs = articles;
+      total = pageData.total;
 
-      // Prefetch sibling pages
       const totalPages = Math.ceil(total / LIMIT);
-      if (page > 0) {
-        fetchAndCachePage(page - 1).catch(e => console.error("Prefetch previous failed:", e));
-      }
-      if (page < totalPages - 1) {
-        fetchAndCachePage(page + 1).catch(e => console.error("Prefetch next failed:", e));
-      }
+      if (page > 0) fetchAndCachePage(page - 1).catch(e => {});
+      if (page < totalPages - 1) fetchAndCachePage(page + 1).catch(e => {});
     } catch (err) {
       console.error("Error fetching article list.", err);
     } finally {
@@ -170,27 +86,70 @@
     }
   }
 
+  async function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      if (!search) {
+        noResults = false;
+        loadAndDisplayPage(pageIndex);
+        return;
+      }
+
+      isStreaming = true;
+      blogs = [];
+      total = 0;
+      noResults = false;
+
+      try {
+        const searchUrl = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?search=${search}`;
+        const resp = await fetch(searchUrl);
+        if (!resp.ok) throw new Error("Search fetch failed");
+        const reader = resp.body?.getReader();
+        if (!reader) throw new Error("Failed to get response reader");
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (line.trim() === "") continue;
+            const article = JSON.parse(line);
+            blogs = [...blogs, processArticle(article)];
+            total++;
+          }
+        }
+        if (total === 0) {
+          noResults = true;
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        isStreaming = false;
+      }
+    }, 500);
+  }
+
   onMount(() => {
-    initialLoad();
+    loadAndDisplayPage(pageIndex);
   });
 
-  $: if (browser && initialLoadComplete) {
+  $: if (browser) {
     loadAndDisplayPage(pageIndex);
   }
 
-  // Generate excerpt from HTML content
   function getExcerpt(html: string, maxLength = 180) {
     if (typeof document === "undefined" || !html) return "";
     const div = document.createElement("div");
     div.innerHTML = html;
     const text = div.textContent || div.innerText || "";
     if (text.length <= maxLength) return text;
-    // Try to cut at the last space before maxLength
     const cut = text.lastIndexOf(" ", maxLength);
     return text.slice(0, cut > 0 ? cut : maxLength) + "...";
   }
 
-  // Animation state for pagination
   let animating: "newer" | "older" | null = null;
   let pendingPage: number | null = null;
 
@@ -202,7 +161,6 @@
 
   function handlePaginate(direction: "newer" | "older") {
     if (animating) return;
-
     animating = direction;
     pendingPage = direction === "newer" ? pageIndex - 1 : pageIndex + 1;
     setTimeout(() => {
@@ -211,7 +169,7 @@
             goToPage(pendingPage);
             pendingPage = null;
         }
-    }, 420); // match animation duration
+    }, 420);
   }
 </script>
 
@@ -231,11 +189,12 @@
           bind:value={search}
           on:focus={() => { searchFocused = true; searchTouched = true; }}
           on:blur={() => { searchFocused = false; }}
+          on:keyup={handleSearch}
           class="search-input"
           autocomplete="off"
         />
         {#if search}
-          <button class="clear-btn" on:click={() => { search = ""; }} aria-label="Clear search">
+          <button class="clear-btn" on:click={() => { search = ""; handleSearch(); }} aria-label="Clear search">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <line x1="4" y1="4" x2="14" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
               <line x1="14" y1="4" x2="4" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
@@ -244,13 +203,11 @@
         {/if}
       </div>
     </div>
-    {#if loading}
-      <div class="loading">Loading...</div>
+    {#if loading || isStreaming}
+      <div class="loading">{#if isStreaming} Searching... {:else} Loading... {/if}</div>
     {:else}
-      {#if isSearching}
-       {#if filteredBlogs.length === 0}
-          <div class="no-results">No news found for "<span>{search}</span>"</div>
-        {/if}
+      {#if isSearching && noResults}
+        <div class="no-results">No news found for "<span>{search}</span>"</div>
       {/if}
       {#if showPagination}
         <div class="pagination">
@@ -261,7 +218,7 @@
           >
             &laquo; Newer Entries
           </button>
-          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT)}</span>
+          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT) || 1}</span>
           <button
             class="pagination-btn older {animating === "older" ? "animating" : ""}"
             on:click={() => handlePaginate("older")}
@@ -272,20 +229,20 @@
         </div>
       {/if}
       <div class="news-grid">
-        {#each filteredBlogs as blog (blog.slug)}
+        {#each blogs as blog (blog.slug)}
           <div class="news-card-anim">
             <NewsCard
               imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ""}
               imageAlt={blog.title}
               title={blog.title}
               excerpt={getExcerpt(blog.metadata?.title)}
-              link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}`}
+              link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}&type=render`}
               readMoreText="read more"
             />
           </div>
         {/each}
       </div>
-      {#if showPagination}
+      {#if showPagination && total > LIMIT}
         <div class="pagination">
           <button
             class="pagination-btn newer {animating === "newer" ? "animating" : ""}"
@@ -294,7 +251,7 @@
           >
             &laquo; Newer Entries
           </button>
-          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT)}</span>
+          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT) || 1}</span>
           <button
             class="pagination-btn older {animating === "older" ? "animating" : ""}"
             on:click={() => handlePaginate("older")}
