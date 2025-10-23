@@ -3,6 +3,7 @@
   import Footer from "../../components/Footer/Footer.svelte";
   import CountryLayout from "../../components/ui/CountryLayout.svelte";
   import NewsCard from "../../components/NewsCard.svelte";
+  import TextNewsCard from "../../components/TextNewsCard.svelte";
   import "./news-updates.scss";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
@@ -29,6 +30,7 @@
   let isStreaming = false;
   let noResults = false;
   let searchTimeout: ReturnType<typeof setTimeout>;
+  let pageIndexBeforeSearch = 0;
 
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
@@ -173,10 +175,16 @@
     searchTimeout = setTimeout(async () => {
       if (!search) {
         noResults = false;
-        loadAndDisplayPage(pageIndex);
+        loadAndDisplayPage(pageIndexBeforeSearch);
+        if (pageIndex !== pageIndexBeforeSearch) {
+            goToPage(pageIndexBeforeSearch);
+        }
         return;
       }
 
+      if (!isStreaming) {
+        pageIndexBeforeSearch = pageIndex;
+      }
       isStreaming = true;
       blogs = [];
       total = 0;
@@ -330,14 +338,23 @@
       <div class="news-grid">
         {#each blogs as blog (blog.slug)}
           <div class="news-card-anim">
-            <NewsCard
-              imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url || ""}
-              imageAlt={blog.title}
-              title={blog.title}
-              excerpt={getExcerpt(blog.metadata?.title)}
-              link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
-              readMoreText="read more"
-            />
+            {#if blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url}
+              <NewsCard
+                imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url}
+                imageAlt={blog.title}
+                title={blog.title}
+                excerpt={getExcerpt(blog.metadata?.title)}
+                link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
+                readMoreText="read more"
+              />
+            {:else}
+              <TextNewsCard
+                title={blog.title}
+                excerpt={getExcerpt(blog.metadata?.title)}
+                link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
+                readMoreText="read more"
+              />
+            {/if}
           </div>
         {/each}
       </div>
