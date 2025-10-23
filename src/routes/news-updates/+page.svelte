@@ -15,9 +15,13 @@
   const LIMIT = 9;
   let blogs: any[] = [];
   let total = 0;
+  let cosmicTotal = 0;
+  let renderTotal = 0;
   let loading = true;
+  let initialLoadComplete = false;
 
-  const articlesCache = new Map<number, any>();
+  const cosmicCache = new Map<number, any[]>();
+  const renderCache = new Map<number, any>();
 
   let search = "";
   let searchFocused = false;
@@ -32,7 +36,7 @@
   const RENDER_API_URL = "https://ai-newsletter-translated.onrender.com";
   const RENDER_API_HOLDER = "consultation%40internationalrelocationpartner.com";
 
-  function processArticle(article: any) {
+  function processRenderArticle(article: any) {
     const titleMatch = article.content ? article.content.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) : null;
     const title = titleMatch ? titleMatch[1] : "Article";
     const content = article.content ? article.content.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "") : "";
@@ -51,39 +55,117 @@
     };
   }
 
-  async function fetchAndCachePage(pageToFetch: number) {
-    if (articlesCache.has(pageToFetch)) {
-      return articlesCache.get(pageToFetch);
+  async function fetchCosmicPage(pageToFetch: number): Promise<any[]> {
+    if (cosmicCache.has(pageToFetch)) {
+      return cosmicCache.get(pageToFetch)!;
+    }
+    const skip = LIMIT * pageToFetch;
+    const query = encodeURIComponent(JSON.stringify({ type: "blogs" }));
+    const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${query}&limit=${LIMIT}&skip=${skip}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+    const cosmicRes = await fetch(cosmicApiUrl);
+    const cosmicData = await cosmicRes.json();
+    const cosmicBlogs = cosmicData.objects || [];
+    cosmicCache.set(pageToFetch, cosmicBlogs);
+    return cosmicBlogs;
+  }
+
+  async function fetchRenderPage(pageToFetch: number) {
+    if (renderCache.has(pageToFetch)) {
+      return renderCache.get(pageToFetch);
     }
     const pageParams = new URLSearchParams();
     pageParams.set("page", (pageToFetch + 1).toString());
     pageParams.set("lang", "en");
     const url = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?${pageParams.toString()}&size=${LIMIT}`;
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Fetch failed for page ${pageToFetch}`);
+    if (!resp.ok) throw new Error(`Fetch failed for Render page ${pageToFetch}`);
     const data = await resp.json();
     const articlesData = data.articles["en"] || { withImages: [], withoutImages: [], total: 0 };
-    articlesCache.set(pageToFetch, articlesData);
+    renderCache.set(pageToFetch, articlesData);
     return articlesData;
+  }
+
+  async function initialLoad() {
+    loading = true;
+    try {
+      const query = encodeURIComponent(JSON.stringify({ type: "blogs" }));
+      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${query}&limit=${LIMIT}&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const cosmicRes = await fetch(cosmicApiUrl);
+      const cosmicData = await cosmicRes.json();
+      cosmicTotal = cosmicData.total || 0;
+      const firstPageBlogs = cosmicData.objects || [];
+      blogs = firstPageBlogs;
+      cosmicCache.set(0, firstPageBlogs);
+    } catch (e) {
+      console.error("Error during initial load", e);
+    } finally {
+      loading = false;
+      initialLoadComplete = true;
+      fetchSecondaryTotal();
+    }
+  }
+
+  async function fetchSecondaryTotal() {
+    try {
+      const renderData = await fetchRenderPage(0);
+      renderTotal = renderData.total;
+      total = cosmicTotal + renderTotal;
+    } catch (e) {
+      console.error("Error fetching secondary total", e);
+    }
   }
 
   async function loadAndDisplayPage(page: number) {
     if (isSearching) return;
     loading = true;
     try {
-      const pageData = await fetchAndCachePage(page);
-      const articles = [...pageData.withImages, ...pageData.withoutImages].map(processArticle);
-      blogs = articles;
-      total = pageData.total;
+      const cosmicPages = Math.ceil(cosmicTotal / LIMIT);
+      let pageData = [];
 
+      if (page < cosmicPages - 1) {
+        pageData = await fetchCosmicPage(page);
+      } else if (page === cosmicPages - 1) {
+        const cosmicBlogs = await fetchCosmicPage(page);
+        const remainingSpace = LIMIT - cosmicBlogs.length;
+        if (remainingSpace > 0) {
+          const renderData = await fetchRenderPage(0);
+          const renderBlogs = [...renderData.withImages, ...renderData.withoutImages]
+            .map(processRenderArticle)
+            .slice(0, remainingSpace);
+          pageData = [...cosmicBlogs, ...renderBlogs];
+        } else {
+          pageData = cosmicBlogs;
+        }
+      } else {
+        const renderPageIndex = page - cosmicPages;
+        const renderData = await fetchRenderPage(renderPageIndex);
+        const renderBlogs = [...renderData.withImages, ...renderData.withoutImages].map(processRenderArticle);
+        pageData = renderBlogs;
+      }
+      blogs = pageData;
+
+      // Prefetching logic
       const totalPages = Math.ceil(total / LIMIT);
-      if (page > 0) fetchAndCachePage(page - 1).catch(e => {});
-      if (page < totalPages - 1) fetchAndCachePage(page + 1).catch(e => {});
+      if (page > 0) prefetchPage(page - 1);
+      if (page < totalPages - 1) prefetchPage(page + 1);
+
     } catch (err) {
       console.error("Error fetching article list.", err);
     } finally {
       loading = false;
     }
+  }
+
+  async function prefetchPage(page: number) {
+    try {
+        const cosmicPages = Math.ceil(cosmicTotal / LIMIT);
+        if (page < cosmicPages) {
+            fetchCosmicPage(page).catch(e => {});
+        } else {
+            const renderPageIndex = page - cosmicPages;
+            fetchRenderPage(renderPageIndex).catch(e => {});
+        }
+    } catch(e) {}
   }
 
   async function handleSearch() {
@@ -101,26 +183,43 @@
       noResults = false;
 
       try {
+        // Fetch from CosmicJS first to ensure it's at the top of the list
+        const cosmicQuery = encodeURIComponent(JSON.stringify({
+          type: "blogs",
+          title: { "$regex": search, "$options": "i" }
+        }));
+        const cosmicSearchPromise = fetch(`https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${cosmicQuery}&limit=${LIMIT}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`)
+          .then(res => res.json())
+          .then(data => (data.objects || []));
+
+        const cosmicResults = await cosmicSearchPromise;
+        blogs = cosmicResults;
+        total = cosmicResults.length;
+
+        // Now, stream results from the Render API and append them
         const searchUrl = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?search=${search}`;
         const resp = await fetch(searchUrl);
-        if (!resp.ok) throw new Error("Search fetch failed");
-        const reader = resp.body?.getReader();
-        if (!reader) throw new Error("Failed to get response reader");
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            if (line.trim() === "") continue;
-            const article = JSON.parse(line);
-            blogs = [...blogs, processArticle(article)];
-            total++;
-          }
+        if (resp.ok) {
+            const reader = resp.body?.getReader();
+            if (!reader) return;
+            
+            const decoder = new TextDecoder();
+            let buffer = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+                for (const line of lines) {
+                    if (line.trim() === "") continue;
+                    const article = JSON.parse(line);
+                    blogs = [...blogs, processRenderArticle(article)];
+                    total++;
+                }
+            }
         }
+
         if (total === 0) {
           noResults = true;
         }
@@ -133,10 +232,10 @@
   }
 
   onMount(() => {
-    loadAndDisplayPage(pageIndex);
+    initialLoad();
   });
 
-  $: if (browser) {
+  $: if (browser && initialLoadComplete) {
     loadAndDisplayPage(pageIndex);
   }
 
@@ -236,7 +335,7 @@
               imageAlt={blog.title}
               title={blog.title}
               excerpt={getExcerpt(blog.metadata?.title)}
-              link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}&type=render`}
+              link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
               readMoreText="read more"
             />
           </div>
