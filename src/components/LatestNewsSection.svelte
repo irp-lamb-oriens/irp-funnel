@@ -88,7 +88,11 @@
   color: var(--color-highlight-1);
   font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 5rem;
+  margin-bottom: 10rem;
+
+  @media (max-width: 1024px) {
+    margin-bottom: 5rem;
+  }
 }
 
 // Responsive grid container
