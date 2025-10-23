@@ -85,36 +85,6 @@
     return articlesData;
   }
 
-  async function initialLoad() {
-    loading = true;
-    try {
-      const query = encodeURIComponent(JSON.stringify({ type: "blogs" }));
-      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${query}&limit=${LIMIT}&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-      const cosmicRes = await fetch(cosmicApiUrl);
-      const cosmicData = await cosmicRes.json();
-      cosmicTotal = cosmicData.total || 0;
-      const firstPageBlogs = cosmicData.objects || [];
-      blogs = firstPageBlogs;
-      cosmicCache.set(0, firstPageBlogs);
-    } catch (e) {
-      console.error("Error during initial load", e);
-    } finally {
-      loading = false;
-      initialLoadComplete = true;
-      fetchSecondaryTotal();
-    }
-  }
-
-  async function fetchSecondaryTotal() {
-    try {
-      const renderData = await fetchRenderPage(0);
-      renderTotal = renderData.total;
-      total = cosmicTotal + renderTotal;
-    } catch (e) {
-      console.error("Error fetching secondary total", e);
-    }
-  }
-
   async function loadAndDisplayPage(page: number) {
     if (isSearching) return;
     loading = true;
@@ -153,6 +123,36 @@
       console.error("Error fetching article list.", err);
     } finally {
       loading = false;
+    }
+  }
+  
+  async function initialLoad() {
+    loading = true;
+    try {
+      const query = encodeURIComponent(JSON.stringify({ type: "blogs" }));
+      const cosmicApiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${query}&limit=${LIMIT}&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const cosmicRes = await fetch(cosmicApiUrl);
+      const cosmicData = await cosmicRes.json();
+      cosmicTotal = cosmicData.total || 0;
+      const firstPageBlogs = cosmicData.objects || [];
+      blogs = firstPageBlogs;
+      cosmicCache.set(0, firstPageBlogs);
+    } catch (e) {
+      console.error("Error during initial load", e);
+    } finally {
+      loading = false;
+      initialLoadComplete = true;
+      fetchSecondaryTotal();
+    }
+  }
+
+  async function fetchSecondaryTotal() {
+    try {
+      const renderData = await fetchRenderPage(0);
+      renderTotal = renderData.total;
+      total = cosmicTotal + renderTotal;
+    } catch (e) {
+      console.error("Error fetching secondary total", e);
     }
   }
 
