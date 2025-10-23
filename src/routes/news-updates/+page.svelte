@@ -175,6 +175,7 @@
     searchTimeout = setTimeout(async () => {
       if (!search) {
         noResults = false;
+        total = cosmicTotal + renderTotal; // Restore total for pagination
         loadAndDisplayPage(pageIndexBeforeSearch);
         if (pageIndex !== pageIndexBeforeSearch) {
             goToPage(pageIndexBeforeSearch);
