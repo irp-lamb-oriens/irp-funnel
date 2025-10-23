@@ -7,23 +7,53 @@
     import CountryContentWrapper from '../../../components/ui/CountryContentWrapper.svelte';
 
   let slug = '';
+  let type = '';
   let pageIndex = 0;
   let blog: any = null;
   let loading = true;
 
+  const RENDER_API_URL = "https://ai-newsletter-translated.onrender.com";
+
   $: {
     const url = $page.url;
     slug = url.searchParams.get('slug') || '';
+    type = url.searchParams.get('type') || '';
     pageIndex = parseInt(url.searchParams.get('page') || '0');
+  }
+
+  function transformRenderArticle(apiArticle: any) {
+    const imageMatch = apiArticle.content.match(/<img[^>]+src="([^">]+)"/);
+    const imageUrl = imageMatch ? imageMatch[1] : '';
+    const mainContent = apiArticle.content.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "");
+
+    return {
+      title: apiArticle.title,
+      metadata: {
+        title: mainContent,
+        poster: {
+          imgix_url: imageUrl,
+          url: imageUrl
+        }
+      }
+    };
   }
 
   async function fetchBlog() {
     if (!slug) return;
     loading = true;
-    const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22slug%22:%22${slug}%22%7D&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    blog = data.objects && data.objects.length > 0 ? data.objects[0] : null;
+
+    if (type === 'render') {
+      const apiUrl = `${RENDER_API_URL}/article/${slug}`;
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      blog = transformRenderArticle(data);
+    } else {
+      const apiUrl = `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22slug%22:%22${slug}%22%7D&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`;
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      blog = data.objects && data.objects.length > 0 ? data.objects[0] : null;
+    }
+    
     loading = false;
   }
 
@@ -39,7 +69,7 @@
         <div class="loading">Loading...</div>
       {:else if blog}
         <div class="blog-header">
-          <h1>{blog.title}</h1>
+          <h1>{@html blog.title}</h1>
         </div>
         <div class="blog-content">{@html blog.metadata?.title || ''}</div>
         <div style="margin-top:2rem;">
