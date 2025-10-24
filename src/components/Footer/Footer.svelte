@@ -28,31 +28,6 @@
           <li><a class="footer-link" href="/cookie-policy">Cookie Policy</a></li>
         </ul>
       </div>
-      <div class="footer-col">
-        <h5 class="footer-heading">Social</h5>
-        <div class="footer-social">
-          <a class="footer-social-link" href="https://www.facebook.com/IntRelocationPartner/" target="_blank" rel="noopener">
-            <img class="footer-social-img" src="/icons/facebook.png" alt="Facebook" width="40" height="40" />
-            Facebook
-          </a>
-          <a class="footer-social-link" href="https://www.instagram.com/int.relocation.partner" target="_blank" rel="noopener">
-            <img class="footer-social-img" src="/icons/instagram.png" alt="Instagram" width="40" height="40" />
-            Instagram
-          </a>
-          <a class="footer-social-link" href="https://www.linkedin.com/company/internationalrelocationpartner" target="_blank" rel="noopener">
-            <img class="footer-social-img" src="/icons/linkedin.png" alt="Linkedin" width="40" height="40" />
-            Linkedin
-          </a>
-          <a class="footer-social-link" href="https://g.page/internationalrelocationpartner?we" target="_blank" rel="noopener">
-            <img class="footer-social-img" src="/icons/google.png" alt="Google" width="40" height="40" />
-            Google
-          </a>
-          <a class="footer-social-link" href="https://www.youtube.com/channel/UCDXEdyNL5XnFg72n9XjOPvw" target="_blank" rel="noopener">
-            <img class="footer-social-img" src="/icons/youtube.png" alt="Youtube" width="40" height="40" />
-            Youtube
-          </a>
-        </div>
-      </div>
     </div>
     <div class="footer-row destinations-footer-row">
       <nav class="footer-destinations-menu">
