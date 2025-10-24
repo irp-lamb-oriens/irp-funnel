@@ -11,7 +11,7 @@
       <h2 class="relocation-philosophy__h2">Every successful project is a well-planned project</h2>
       <p class="relocation-philosophy__desc">We have developed a system to ensure our customers have a complete overview of their project journey, from our initial consultation to the final delivery of all required documentation.</p>
       <p class="relocation-philosophy__desc">Our goal is to make the journey of thousands of expatriates easier and enjoyable by providing useful information and specialized services, such as:</p>
-      <p class="relocation-philosophy__desc">Consulting tours</p>
+      <p class="relocation-philosophy__desc"></p>
       <ul class="relocation-philosophy__list">
         <li class="service">International Consulting Services</li>
         <li class="service">Documentation Assistance</li>
