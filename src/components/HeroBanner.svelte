@@ -15,7 +15,7 @@
   >
     <div class="banner-content">
       <h6 class="banner-subtitle">
-        <LetterByLetter text="Every move is led by professionals with more than 14 years of experience" initialOffset={0} />
+        <LetterByLetter text="Every project is led by professionals with more than 14 years of experience" initialOffset={0} />
       </h6>
       <h1 class="banner-title">
         <LetterByLetter text="Personalized international consultations delivered through well-planned, tracked, and executed projects!" initialOffset={47.9 / 100} />
