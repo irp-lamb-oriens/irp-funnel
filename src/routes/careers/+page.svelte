@@ -43,7 +43,7 @@
       <li>Excellent presentation and communication skills</li>
       <li>Ability to work remotely from home and travel as required</li>
     </ul>
-    <p>Send your CV to <a href="mailto:jobs@internationalrelocationpartner.net">jobs@internationalrelocationpartner.net</a></p>
+    <p>Send your CV to <a href="mailto:jobs@internationalrelocationpartner.com">jobs@internationalrelocationpartner.com</a></p>
     <hr />
     <h5>Regional Immigration Manager | Latinoamerica</h5>
     <p><b><u>Location:</u></b> Mexico City, Mexico</p>
@@ -81,7 +81,7 @@
       <li>Ability to maintain a clear overview of the key issues and prioritise effectively</li>
       <li>Ability to influence effectively and sensitively</li>
     </ul>
-    <p>Send your CV to <a href="mailto:jobs@internationalrelocationpartner.net">jobs@internationalrelocationpartner.net</a></p>
+    <p>Send your CV to <a href="mailto:jobs@internationalrelocationpartner.com">jobs@internationalrelocationpartner.com</a></p>
   </section>
 </CountryLayout>
 

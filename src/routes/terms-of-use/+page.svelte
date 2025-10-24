@@ -30,7 +30,7 @@
     </p>
     <h2>Contact</h2>
     <p>
-      For any questions regarding these Terms of Use, please contact us at <a href="mailto:info@internationalrelocationpartner.net">info@internationalrelocationpartner.net</a>.
+      For any questions regarding these Terms of Use, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
     </p>
   </section>
 </CountryLayout>

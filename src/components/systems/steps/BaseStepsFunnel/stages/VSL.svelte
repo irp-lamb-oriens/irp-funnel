@@ -144,6 +144,7 @@
 				<MarkdownText {canReveal}>
 					You can **only** schedule your **consultation** call from **three** to **five** days in advance.
 				</MarkdownText>
+				<br><br>
 			</div>
 		</div>
 	{:else}
