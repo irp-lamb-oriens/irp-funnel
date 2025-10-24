@@ -105,15 +105,15 @@
     <div class="contact-col contact-col--info">
       <h2 class="contact-title">Contact Us</h2>
       <p class="contact-description">
-        Moving abroad is a unique experience for everybody, with different motives, family sizes, and needs.
-        Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your relocation project.
+        Living abroad is a unique experience for everybody, with different motives, family sizes, and needs.
+        Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your international project.
       </p>
       <div class="contact-button-row">
         <div class="contact-btn contact-btn--primary">
           <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
         </div>
         <div class="contact-btn contact-btn--secondary">
-          <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />
+          <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />
         </div>
       </div>
     </div>

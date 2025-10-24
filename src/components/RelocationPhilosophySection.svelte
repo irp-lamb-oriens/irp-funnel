@@ -7,29 +7,29 @@
 <section class="relocation-philosophy">
   <div class="row">
     <div class="col col-left">
-      <h4 class="relocation-philosophy__h4">How Moving overseas should be!</h4>
-      <h2 class="relocation-philosophy__h2">Every successful relocation is a well planed project</h2>
-      <p class="relocation-philosophy__desc">We have developed a system to ensure our customers have a complete overview of their relocation journey, from our initial consultation to the delivery of the household goods to the final destination.</p>
+      <h4 class="relocation-philosophy__h4">How international consulting should be!</h4>
+      <h2 class="relocation-philosophy__h2">Every successful project is a well-planned project</h2>
+      <p class="relocation-philosophy__desc">We have developed a system to ensure our customers have a complete overview of their project journey, from our initial consultation to the final delivery of all required documentation.</p>
       <p class="relocation-philosophy__desc">Our goal is to make the journey of thousands of expatriates easier and enjoyable by providing useful information and specialized services, such as:</p>
-      <p class="relocation-philosophy__desc">Relocation tours</p>
+      <p class="relocation-philosophy__desc">Consulting tours</p>
       <ul class="relocation-philosophy__list">
-        <li class="service">International Moving Services</li>
-        <li class="service">Courier Assistance</li>
-        <li class="service">Automobile & Boat Shipping</li>
+        <li class="service">International Consulting Services</li>
+        <li class="service">Documentation Assistance</li>
+        <li class="service">International Advisory</li>
       </ul>
-      <p class="relocation-philosophy__desc">Our services are aimed at providing the highest quality with a software designed to show our clients the progress of their entire relocation in a visual timeline, enabling them to better prepare for their travel arrangements, the immigration process, and some other relevant processes.</p>
-      <p class="relocation-philosophy__desc">​Every day we strive to provide the best customer experience and first-class relocation services.</p>
+      <p class="relocation-philosophy__desc">Our services are aimed at providing the highest quality with a software designed to show our clients the progress of their entire project in a visual timeline, enabling them to better prepare for their travel arrangements, the immigration process, and some other relevant processes.</p>
+      <p class="relocation-philosophy__desc">​Every day we strive to provide the best customer experience and first-class consulting services.</p>
       <p class="relocation-philosophy__desc">Sincerely</p>
       <img class="relocation-philosophy__signature" src="/sign-itp.jpg" width="184" height="81" alt="Signature" />
       <p class="relocation-philosophy__desc">IRP, Chief Executive Officer</p>
       <div class="button-row">
         <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
-        <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
+        <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>
     <div class="col col-right">
       <blockquote class="relocation-philosophy__quote">
-        “Each and every international move should be efficient, secure, and memorable for you and your family. Your international relocation partner should be accountable for making your move easy and enjoyable.”
+        “Each and every international project should be efficient, secure, and memorable for you and your family. Your international consulting partner should be accountable for making your project easy and enjoyable.”
       </blockquote>
       <GroupImageMagnifier
         src="/1.png"

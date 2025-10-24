@@ -18,20 +18,20 @@
         <LetterByLetter text="Every move is led by professionals with more than 14 years of experience" initialOffset={0} />
       </h6>
       <h1 class="banner-title">
-        <LetterByLetter text="Personalized relocation assistance delivered through well planned, tracked and executed projects!" initialOffset={47.9 / 100} />
+        <LetterByLetter text="Personalized international consultations delivered through well-planned, tracked, and executed projects!" initialOffset={47.9 / 100} />
       </h1>
       <h4 class="banner-services-title">
-        <LetterByLetter text="Relocation services for expats, newcomers and retirees:" initialOffset={115.92 / 100} />
+        <LetterByLetter text="International consulting services for expats, newcomers, and retirees:" initialOffset={115.92 / 100} />
       </h4>
       <ul class="banner-services-list">
         <li class="banner-service">
-          <LetterByLetter text="International Moving Services" initialOffset={152.95 / 100} />
+          <LetterByLetter text="Project Management" initialOffset={152.95 / 100} />
         </li>
         <li class="banner-service">
-          <LetterByLetter text="Package Forwarding" initialOffset={167.89 / 90} />
+          <LetterByLetter text="Documentation Assistance" initialOffset={167.89 / 90} />
         </li>
         <li class="banner-service">
-          <LetterByLetter text="Automobile & Boat Shipping" initialOffset={175.90 / 80} />
+          <LetterByLetter text="International Advisory" initialOffset={175.90 / 80} />
         </li>
       </ul>
       <div class="button-row">

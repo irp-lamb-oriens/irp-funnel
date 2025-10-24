@@ -9,28 +9,28 @@
   const defaultSteps = [
     {
       icon: "/icons/phone-80-3.png",
-      title: "Relocation conference call",
-      rightTitle: "Relocation conference call",
+      title: "Consulting conference call",
+      rightTitle: "Consulting conference call",
       narrative: [
-        "We start with a personalized relocation conference call to understand your unique needs and answer your initial questions.",
+        "We start with a personalized consulting conference call to understand your unique needs and answer your initial questions.",
         "This is where we set the foundation for a smooth transition, ensuring you feel heard and supported from the very beginning."
       ],
       videoUrl: "https://storage.googleapis.com/videos-irp-funnels/1.mp4"
     },
     {
       icon: "/icons/support.png",
-      title: "Personalized Relocation Plan",
-      rightTitle: "Personalized Relocation Plan",
+      title: "Personalized Consulting Plan",
+      rightTitle: "Personalized Consulting Plan",
       narrative: [
-        "Based on your goals, we craft a detailed, step-by-step relocation plan tailored to your timeline, preferences, and requirements.",
+        "Based on your goals, we craft a detailed, step-by-step consulting plan tailored to your timeline, preferences, and requirements.",
         "Our team leverages years of experience and best practices to anticipate challenges and provide clear guidance."
       ],
       videoUrl: "https://storage.googleapis.com/videos-irp-funnels/2.mp4"
     },
     {
       icon: "/icons/location.png",
-      title: "Timeline Relocation tracking and follow up",
-      rightTitle: "Timeline Relocation tracking and follow up",
+      title: "Timeline Project tracking and follow up",
+      rightTitle: "Timeline Project tracking and follow up",
       narrative: [
         "We track every milestone and keep you updated on progress, so you always know what’s next and what’s needed.",
         "Our proactive follow-up ensures nothing falls through the cracks and you stay on schedule."
@@ -39,8 +39,8 @@
     },
     {
       icon: "/icons/followup.png",
-      title: "Continues support during your relocation",
-      rightTitle: "Continues support during your relocation",
+      title: "Continues support during your project",
+      rightTitle: "Continues support during your project",
       narrative: [
         "Even after arrival, our support continues. We’re here to answer questions, solve issues, and help you settle in.",
         "Your peace of mind is our priority, every step of the way."
@@ -249,7 +249,7 @@
       <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
     </div>
     <div class="moving-process-btn-wrapper">
-      <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />
+      <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />
     </div>
   </div>
 </section>

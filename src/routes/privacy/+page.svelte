@@ -41,7 +41,7 @@
             <td>Required to use the service. You can request a copy or deletion of this data.</td>
           </tr>
           <tr>
-            <td><strong>Project & Preference Data</strong> (e.g., budget, property type, square footage, reasons for moving)</td>
+            <td><strong>Project & Preference Data</strong> (e.g., budget, property type, square footage, reasons for the project)</td>
             <td>This is the core information we use to build your personalized results, plan, or quote.</td>
             <td>Required to generate results. You can choose not to provide this information, but we won't be able to provide a personalized outcome.</td>
           </tr>
