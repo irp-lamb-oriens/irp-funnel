@@ -8,7 +8,7 @@
   export let autoplay = true;        // continuous auto-scroll
   export let speed = 0.06;           // px per ms for autoplay (positive = scroll left)
   export let gap = 28;               // px gap between items
-  export let itemWidth = 'clamp(180px, 22vw, 260px)';
+  export let itemWidth = 'clamp(50px, 7.5vw, 70px)';
   export let throwFactor = 220;      // scales release momentum (ms-like feel)
   export let friction = 0.95;        // per-16ms decay factor for inertia
 
@@ -170,9 +170,9 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    margin: 5rem 0;
     touch-action: pan-y; // allow vertical page scroll while we handle horizontal drag
     cursor: grab;
+    background: blue;
     filter: grayscale(100%);
   }
   .carousel:active { cursor: grabbing; }
