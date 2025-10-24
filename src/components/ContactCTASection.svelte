@@ -7,7 +7,7 @@
   <div class="cta-bg-overlay"></div>
   <div class="row">
     <div class="col col-large">
-      <h6>Choose the best consulting firm for your international project</h6>
+      <h6>Choose the best consulting partner for your international project</h6>
       <h2>Contact us & Get a free project consultation</h2>
     </div>
     <div class="col col-buttons">
