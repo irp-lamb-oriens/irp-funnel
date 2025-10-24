@@ -27,7 +27,7 @@
         answer: "Absolutely, when your service is booked, we will create Timeline Relocation Systems for your project. This application will allow us to show you step by step all the process you relocation move will pass through, you will view dates, descriptions, comments, documents and tasks. We will send the instructions through email. <strong>(Available only for door to door relocation service)</strong>"
       },
       {
-        question: "How can I confirm my moving and relocation service with International Relocation Partner?",
+        question: "How can I confirm my Relocating and relocation service with International Relocation Partner?",
         answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international shipping cost, rules and regulations. This online document has the option to confirm and accept"
       },
       {
@@ -47,13 +47,13 @@
         answer: "We instruct our packing team to let you know if you have less than expected weight or have exceeded the estimated cubic meter reflected on the proposal, for you to decide whether or not you will be packing all, we will know the exact total of cubic meters after loading the container. The final bill will be adjusted to the real volume and weight shipped."
       },
       {
-        question: "Do you include packing materials in your international moving proposal?",
+        question: "Do you include packing materials in your international Relocating proposal?",
         answer: "We offer a variety of services that may include full packing and packing materials. This is an option and we ask our customers to confirm if this service is available in your local area and for your specific shipment."
       }
     ];
     const faqs = [
       {
-        question: "How can I confirm my moving and relocation service with International Relocation Partner?",
+        question: "How can I confirm my Relocating and relocation service with International Relocation Partner?",
         answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international shipping cost, rules and regulations. This online document has the option to confirm and accept"
       },
       {

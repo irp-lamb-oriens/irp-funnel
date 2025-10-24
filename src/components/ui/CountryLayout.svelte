@@ -2,7 +2,7 @@
   export let heroTitle: string;
   export let heroUrl: string | undefined = undefined;
   export let heroSubTitle: string | undefined = undefined;
-  export let ctaTitle: string = "Contact us & Get a free moving consultation";
+  export let ctaTitle: string = "Contact us & Get a free Relocating consultation";
   export let ctaSubtitle: string = "Choose the best consultation company for your relocation";
   export let ctaPrimary: { label: string; href: string } = { label: "Schedule Consultation", href: "/consultation" };
   export let ctaSecondary: { label: string; href: string } = { label: "Contact Us", href: "/contact-us" };

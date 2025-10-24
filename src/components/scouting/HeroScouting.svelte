@@ -1,7 +1,7 @@
 <section class="hero-section">
   <div class="row">
     <div class="col">
-      <h1 class="hero-headline">Thinking About Moving to Mexico?</h1>
+      <h1 class="hero-headline">Thinking About Relocating to Mexico?</h1>
       <h2 class="hero-subheadline">Discover Why the Riviera Maya is the #1 Expat Destination</h2>
     </div>
   </div>

@@ -39,14 +39,14 @@
 
     function handleNext() {
         if (isValid) {
-            // Filter out empty reasons before final save and moving next
+            // Filter out empty reasons before final save and Relocating next
             const finalReasons = reasons.filter((r: string) => r.trim() !== ''); // Added type string
             saveToStore({ reasonsForMoving: finalReasons });
             if (finalReasons.length > 0) { // Ensure at least one reason remains
                  incrementStepsIndex();
             } else {
                  // Maybe show a message that at least one reason is required?
-                 // For now, just prevents moving next if all are empty after filtering.
+                 // For now, just prevents Relocating next if all are empty after filtering.
                  console.warn("At least one reason is required.");
             }
         }

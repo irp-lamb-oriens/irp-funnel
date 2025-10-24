@@ -39,7 +39,7 @@
 <Page>
   <div class="stage-content">
     <MarkdownText {canReveal}>
-      ## What type of place are you moving from?
+      ## What type of place are you Relocating from?
     </MarkdownText>
 
     <IconGridSelector

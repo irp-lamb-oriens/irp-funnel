@@ -22,7 +22,7 @@
   <section class="free-resources-checklist free-resource-card">
     <div class="row free-resource-card__row">
       <div class="col col-content free-resource-card__content">
-        <h2 class="free-resource-card__title">DO IT YOURSELF Moving Checklist Guide</h2>
+        <h2 class="free-resource-card__title">DO IT YOURSELF Relocating Checklist Guide</h2>
         <h5 class="free-resource-card__subtitle">Moving abroad has a series of steps that we need to diligently follow to guarantee a successful and easy relocation journey, that is why we had made this helpful guide for you!</h5>
         <CTAButton
           label="Download DIY Relocation Checklist"
@@ -90,8 +90,8 @@
       <div class="col col-content free-resource-card__content">
         <h2 class="free-resource-card__title">Move Overseas with Ease</h2>
         <h5 class="free-resource-card__subtitle">by Deborah Dahab Free Ebook</h5>
-        <p class="free-resource-card__desc">We understand how stressful and complicated just thinking about moving abroad could be, we want to let our customers know, that there is nothing to be afraid of, as long as you have the information needed to make a well-informed decision.</p>
-        <p class="free-resource-card__desc">We want to help out not only to our ex-pat community but also whoever is thinking of moving abroad and starting a new adventure, so if you are looking for tips and ideas on how to live your best life abroad this free Ebook, by Deborah Dahab, Expat Coach, is for you.</p>
+        <p class="free-resource-card__desc">We understand how stressful and complicated just thinking about Relocating abroad could be, we want to let our customers know, that there is nothing to be afraid of, as long as you have the information needed to make a well-informed decision.</p>
+        <p class="free-resource-card__desc">We want to help out not only to our ex-pat community but also whoever is thinking of Relocating abroad and starting a new adventure, so if you are looking for tips and ideas on how to live your best life abroad this free Ebook, by Deborah Dahab, Expat Coach, is for you.</p>
         <p class="free-resource-card__desc">Check it out:<br /><span class="free-resource-card__author">By Sandra</span></p>
         <CTAButton
           label="Download Move overseas with ease ebook"
