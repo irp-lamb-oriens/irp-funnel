@@ -26,7 +26,7 @@
     </p>
     <h2>Contact</h2>
     <p>
-      For any questions regarding this Earnings Disclaimer, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
+      For any questions regarding this Earnings Disclaimer, please contact us at <a href="mailto:info@internationalrelocationpartner.net">info@internationalrelocationpartner.net</a>.
     </p>
   </section>
 </CountryLayout>

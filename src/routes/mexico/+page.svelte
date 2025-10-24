@@ -29,7 +29,7 @@
     <p>Mexico’s proximity to the U.S. is perhaps its greatest benefit, with much of the U.S. accessible in under two hours from major international airports. And for those so inclined, one can simply drive across the border. However, even your crazy uncle and cantankerous mother-in-law will want to visit you in this wonderful land of Aztec and Maya ruins, with bright sun, tropical beaches, ample tequila, warm water, and world-class food.</p>
     
     <h5>6. Professional Relocation Support</h5>
-    <p>While there may be challenges when it comes to doing business in Mexico, seeking professional assistance can help make the relocation process much more comfortable. International Relocation Partner LLC specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid surprises and hidden costs.</p>
+    <p>While there may be challenges when it comes to doing business in Mexico, seeking professional assistance can help make the relocation process much more comfortable. International Relocation Partner LLC specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid expensive surprises and hidden costs.</p>
   </CountryContentWrapper>
 </CountryLayout>
 

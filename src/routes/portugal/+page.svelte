@@ -26,7 +26,7 @@
     <p>Portugal has been named the third safest country in the world by the Global Peace Index. Gun ownership is permitted only for hunters and sportsmen, not for personal protection. Petty crimes of opportunity, mostly in large cities, exist everywhere.</p>
     
     <h5>5. Trusted Relocation Support</h5>
-    <p>To move to Portugal, it’s essential to work with a trusted partner who can guide you through the process. International Relocation Partner LLC is a company that specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid surprises and hidden costs.</p>
+    <p>To move to Portugal, it’s essential to work with a trusted partner who can guide you through the process. International Relocation Partner LLC is a company that specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid expensive surprises and hidden costs.</p>
     
     <p><b>Final Thoughts</b><br>
       In conclusion, Portugal is an excellent destination for those seeking an old-style, old-world life with modern amenities. With its beautiful natural scenery, Mediterranean climate, and affordable cost of living, Portugal is a dream destination for many.</p>

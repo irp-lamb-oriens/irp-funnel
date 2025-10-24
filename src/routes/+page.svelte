@@ -14,13 +14,13 @@
 
   // FAQ data
   const moreFaqs = [
-    {
-      question: "Does my project include insurance? Or am I protected against loss or damage during the project?",
-      answer: "Providing insurance for your project is an additional service we offer. Please contact one of our Consulting Specialists for information about the different policies available."
-    },
+    // {
+    //   question: "Does my project include insurance? Or am I protected against loss or damage during the project?",
+    //   answer: "Providing insurance for your project is an additional service we offer. Please contact one of our Consulting Specialists for information about the different policies available."
+    // },
     {
       question: "When do I have to confirm the service with IRP?",
-      answer: "We recommend confirming with 30 days in advance to ensure availability."
+      answer: "We recommend confirming with 6 months in advance to ensure availability."
     },
     {
       question: "How can I track my project?",
@@ -36,7 +36,7 @@
     },
     {
       question: "How long does it take for my project documentation to be delivered or to arrive at my destination?",
-      answer: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your documentation,<strong> please contact our Consulting Specialist.</strong>"
+      answer: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated time of project completion for your documentation,<strong> please contact our Consulting Specialist.</strong>"
     },
     {
       question: "How long does it take for customs to clear my documentation?",
@@ -46,10 +46,10 @@
       question: "What happens if the scope of my project changes from what was estimated in the proposal?",
       answer: "We will notify you if the scope of your project is smaller or larger than expected. You can then decide how to proceed. The final bill will be adjusted to the actual scope of the project."
     },
-    {
-      question: "Do you include materials in your international consulting proposal?",
-      answer: "We offer a variety of services that may include all necessary materials. This is an option, and we ask our customers to confirm if this service is available in your local area and for your specific project."
-    }
+    // {
+    //   question: "Do you include materials in your international consulting proposal?",
+    //   answer: "We offer a variety of services that may include all necessary materials. This is an option, and we ask our customers to confirm if this service is available in your local area and for your specific project."
+    // }
   ];
   const faqs = [
     {
@@ -62,7 +62,7 @@
     },
     {
       question: "How long does it take for my project documentation to be delivered or to arrive at my destination?",
-      answer: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your documentation,<strong> please contact our Consulting Specialist.</strong>"
+      answer: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated time of project completion for your documentation,<strong> please contact our Consulting Specialist.</strong>"
     }
   ];
 </script>
@@ -70,7 +70,7 @@
 <Header />
 
 <main id="main-content">
-  <HeroBanner />
+  <!-- <HeroBanner /> -->
 
   <SpecializationSection />
 
@@ -78,7 +78,7 @@
 
   <ContactCTASection />
 
-  <TestimonialsSection />
+  <!-- <TestimonialsSection /> -->
 
   <MovingProcessSection />
 

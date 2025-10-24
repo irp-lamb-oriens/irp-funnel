@@ -69,7 +69,7 @@
   
     <h2>4. Your Rights and How to Exercise Them</h2>
     <p>
-      You have rights over your personal data. Depending on your region, these may include the right to access, correct, or delete your information. To exercise these rights, please contact our Data Protection Officer at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
+      You have rights over your personal data. Depending on your region, these may include the right to access, correct, or delete your information. To exercise these rights, please contact our Data Protection Officer at <a href="mailto:info@internationalrelocationpartner.net">info@internationalrelocationpartner.net</a>.
     </p>
   
     <h2>5. Data Security & Retention</h2>
@@ -84,7 +84,7 @@
   
     <h2>7. Changes & Contact</h2>
     <p>
-      We may update this policy from time to time. If you have any questions, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
+      We may update this policy from time to time. If you have any questions, please contact us at <a href="mailto:info@internationalrelocationpartner.net">info@internationalrelocationpartner.net</a>.
     </p>
   </CountryContentWrapper>
 </CountryLayout>

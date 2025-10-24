@@ -24,7 +24,7 @@
     <p>But it’s not just the natural beauty that makes Costa Rica an attractive destination. The country is known for its stability, safety, and welcoming culture. Costa Ricans, or Ticos as they are affectionately known, are known for their friendliness and hospitality. They value community and family, making it easy for expats to feel at home here.</p>
     
     <h5>4. Trusted Relocation Support</h5>
-    <p>For those considering a move to Costa Rica, it’s important to work with a trusted partner who can guide you through the process. International Relocation Partner LLC specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid surprises and hidden costs.</p>
+    <p>For those considering a move to Costa Rica, it’s important to work with a trusted partner who can guide you through the process. International Relocation Partner LLC specializes in managing international Relocating projects and logistics, providing English-speaking customers with a clear understanding of the rules and regulations to avoid expensive surprises and hidden costs.</p>
     
     <p><b>Final Thoughts</b><br>
       In conclusion, Costa Rica’s location is just one of the many reasons why it’s such a great place to live, work, or retire. Whether you’re looking for adventure, relaxation, or a new community to call home, Costa Rica has something to offer everyone.</p>

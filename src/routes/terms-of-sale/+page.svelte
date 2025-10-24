@@ -28,10 +28,6 @@
     <p>
       We reserve the right to update or modify these Terms of Sale at any time. Continued use of our services constitutes acceptance of the revised terms.
     </p>
-    <h2>Contact</h2>
-    <p>
-      For questions regarding these Terms of Sale, please contact us at <a href="mailto:info@internationalrelocationpartner.com">info@internationalrelocationpartner.com</a>.
-    </p>
   </section>
 </CountryLayout>
 
