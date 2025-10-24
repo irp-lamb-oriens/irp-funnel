@@ -53,7 +53,7 @@
         <h4 class="free-resource-card__subtitle">We know you have several questions, so we prepare for you an initial consultation call with two main objectives:</h4>
         <ul class="free-resource-card__list">
           <li class="free-resource-card__list-item">Understanding your requirements. We like to know what your needs are and know what is important to you.</li>
-          <li class="free-resource-card__list-item">Explain to you the rules and regulations that may affect your shipment process, this quick call can help us review these rules and advice depending on your specific case.</li>
+          <li class="free-resource-card__list-item">Explain to you the rules and regulations that may affect your relocation process, this quick call can help us review these rules and advice depending on your specific case.</li>
         </ul>
         <CTAButton label="Schedule Consultation" href="/consultation" variant="primary" />
       </div>

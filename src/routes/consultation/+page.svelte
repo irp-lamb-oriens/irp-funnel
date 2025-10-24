@@ -12,7 +12,7 @@
     <h3>We know you have several questions, so we prepare for you an initial consultation call with two main objectives:</h3>
     <ul>
       <li>Understanding your requirements. We like to know what your needs are and know what is important to you.</li>
-      <li>Explain to you the rules and regulations that may affect your shipment process, this quick call can help us review these rules and advice depending on your specific case.</li>
+      <li>Explain to you the rules and regulations that may affect your relocation process, this quick call can help us review these rules and advice depending on your specific case.</li>
     </ul>
   </section>
   <section class="consultation-iframe-section">
