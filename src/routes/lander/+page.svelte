@@ -28,7 +28,7 @@
       },
       {
         question: "How can I confirm my Relocating and relocation service with International Relocation Partner?",
-        answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international shipping cost, rules and regulations. This online document has the option to confirm and accept"
+        answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international relocation cost, rules and regulations. This online document has the option to confirm and accept"
       },
       {
         question: "Does IRP require a deposit payment? What type of payment method do you accept?",
@@ -36,7 +36,7 @@
       },
       {
         question: "How long does it take for my shipment to be delivered or to arrive at my destination?",
-        answer: "The total time it takes for goods to get from point A to point B, transit time may vary depending on different factors such as the specific route and how many stops the shipping company will make, it can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your shipment,<strong> please contact our Relocation Specialist.</strong>"
+        answer: "The total time it takes for goods to get from point A to point B, transit time may vary depending on different factors such as the specific route and how many stops the relocation company will make, it can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your shipment,<strong> please contact our Relocation Specialist.</strong>"
       },
       {
         question: "How long does it take for customs to clear my shipment?",
@@ -54,7 +54,7 @@
     const faqs = [
       {
         question: "How can I confirm my Relocating and relocation service with International Relocation Partner?",
-        answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international shipping cost, rules and regulations. This online document has the option to confirm and accept"
+        answer: "You can sing and confirm your move in our online Relocation Planner.<br>We create a custom tailor Relocation Planner for each of our customers with a comprehensive estimate of the international relocation cost, rules and regulations. This online document has the option to confirm and accept"
       },
       {
         question: "Does IRP require a deposit payment? What type of payment method do you accept?",
@@ -62,7 +62,7 @@
       },
       {
         question: "How long does it take for my shipment to be delivered or to arrive at my destination?",
-        answer: "The total time it takes for goods to get from point A to point B, transit time may vary depending on different factors such as the specific route and how many stops the shipping company will make, it can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your shipment,<strong> please contact our Relocation Specialist.</strong>"
+        answer: "The total time it takes for goods to get from point A to point B, transit time may vary depending on different factors such as the specific route and how many stops the relocation company will make, it can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated transit time and customs clearance for your shipment,<strong> please contact our Relocation Specialist.</strong>"
       }
     ];
   </script>
