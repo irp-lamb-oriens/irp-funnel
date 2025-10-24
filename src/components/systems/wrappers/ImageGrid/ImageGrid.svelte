@@ -145,6 +145,8 @@
   on:lostpointercapture={onPointerUp}
   style="--gap: {gap}px; --item-w: {itemWidth};"
 >
+  <strong class="titles">Partners, Collaborations & Exceltent Reviews ⭐️⭐️⭐️⭐️⭐️</strong>
+
   <div
     class="track"
     bind:this={track}
@@ -163,6 +165,19 @@
 </div>
 
 <style lang="scss">
+  .titles {
+    display: block;
+    text-align: center;
+    z-index: 12;
+    position: absolute;
+    color: red;
+    font-size: 14px;
+    margin: clamp(2rem, 5vw, 4rem) auto;
+    top: 100px;
+    left: 0;
+    right: 0;
+  }
+
   .carousel {
     width: 100%;
     overflow: hidden;
@@ -174,6 +189,7 @@
     cursor: grab;
     background: blue;
     filter: grayscale(100%);
+    padding-bottom: 5rem;
   }
   .carousel:active { cursor: grabbing; }
 
@@ -208,6 +224,9 @@
   }
 
   @media (max-width: 1024px) {
-    .carousel { padding: 2rem 1rem; }
+    .carousel {
+      padding: 2rem 1rem;
+      padding-bottom: 5rem;
+    }
   }
 </style>
