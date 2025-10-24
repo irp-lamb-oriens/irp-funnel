@@ -15,7 +15,7 @@
         <li class="specialization-list-item specialization-list-item--audience">Returning citizens to their origin country</li>
       </ul>
       <h3 class="specialization-subtitle">Schedule your 60 minutes consultation call</h3>
-      <p class="specialization-description">Every relocation process is different, rules and regulations may vary depending on your immigration status, shipment description, location, and several factors. This quick call can help us review these rules and give you the proper advice depending on your specific case.</p>
+      <p class="specialization-description">Every relocation process is different, rules and regulations may vary depending on your immigration status, relocation description, location, and several factors. This quick call can help us review these rules and give you the proper advice depending on your specific case.</p>
     </div>
     <div class="col col-locations">
       <h2 class="specialization-title">Countries We Serve:</h2>
