@@ -6,10 +6,12 @@
   import './consultation.scss';
 
   onMount(() => {
-    const iframeWrapper = document.getElementById('iframe-wrapper');
-    if (iframeWrapper) {
-      iframeWrapper.scrollIntoView({ behavior: 'smooth' });
-    }
+    setTimeout(() => {
+      const iframeWrapper = document.getElementById('iframe-wrapper');
+      if (iframeWrapper) {
+        iframeWrapper.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 1000);
   });
 </script>
 
