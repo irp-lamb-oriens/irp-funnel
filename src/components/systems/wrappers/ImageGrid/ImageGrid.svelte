@@ -135,21 +135,21 @@
   });
 </script>
 
-<div
-  class="carousel"
-  bind:this={container}
-  on:pointerdown={onPointerDown}
-  on:pointermove={onPointerMove}
-  on:pointerup={onPointerUp}
-  on:pointercancel={onPointerUp}
-  on:lostpointercapture={onPointerUp}
-  style="--gap: {gap}px; --item-w: {itemWidth};"
->
+<div class="image-grid-container">
   <strong class="titles">Partners, Collaborations & Exceltent Reviews ⭐️⭐️⭐️⭐️⭐️</strong>
-
   <div
-    class="track"
-    bind:this={track}
+    class="carousel"
+    bind:this={container}
+    on:pointerdown={onPointerDown}
+    on:pointermove={onPointerMove}
+    on:pointerup={onPointerUp}
+    on:pointercancel={onPointerUp}
+    on:lostpointercapture={onPointerUp}
+    style="--gap: {gap}px; --item-w: {itemWidth};"
+  >
+    <div
+      class="track"
+      bind:this={track}
     style="transform: translate3d({$x}px, 0, 0);"
   >
     {#if tripled.length === 0}
@@ -162,26 +162,31 @@
       {/each}
     {/if}
   </div>
+  </div>
 </div>
 
 <style lang="scss">
+  .image-grid-container {
+    position: relative;
+  }
   .titles {
     display: block;
     text-align: center;
     z-index: 12;
     position: absolute;
-    color: red;
-    font-size: 14px;
+    color: white;
+    font-size: 16px;
     margin: clamp(2rem, 5vw, 4rem) auto;
-    top: 100px;
+    top: 0;
     left: 0;
     right: 0;
+    padding: 0 1rem;
   }
 
   .carousel {
     width: 100%;
     overflow: hidden;
-    padding: 3.5rem 1rem;
+    padding: 7.5rem 1rem;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -225,7 +230,7 @@
 
   @media (max-width: 1024px) {
     .carousel {
-      padding: 2rem 1rem;
+      padding: 5rem 1rem;
       padding-bottom: 5rem;
     }
   }

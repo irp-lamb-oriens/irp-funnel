@@ -71,8 +71,6 @@
 <Header />
 
 <main id="main-content">
-  <!-- <HeroBanner /> -->
-
   <ImageGrid images={[
 		"icons/partners/AAH.svg",
 		"icons/partners/AAE.webp",
@@ -87,13 +85,15 @@
 		"icons/partners/AAJ.png",
 	]}/>
 
+  <HeroBanner />
+
   <SpecializationSection />
 
   <RelocationPhilosophySection />
 
   <ContactCTASection />
 
-  <!-- <TestimonialsSection /> -->
+  <TestimonialsSection />
 
   <MovingProcessSection />
 
