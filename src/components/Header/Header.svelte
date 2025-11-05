@@ -71,10 +71,10 @@
     </div>
     <MainMenu {menuItems} {cta} />
   </div>
-  <div class="header-row destinations-row" class:hide={$doHide}>
+  <!-- <div class="header-row destinations-row" class:hide={$doHide}>
     <div class="destinations-label">
       <p><strong>Destinations:&nbsp;</strong></p>
     </div>
     <DestinationsMenu {destinations} />
-  </div>
+  </div> -->
 </header>

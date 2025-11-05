@@ -305,7 +305,7 @@
 
 .moving-process-intro-sticky {
   position: sticky;
-  top: 130px;
+  top: 82px;
   align-self: flex-start;
   z-index: 10;
   display: flex;

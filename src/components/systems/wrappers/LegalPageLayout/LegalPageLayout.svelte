@@ -97,7 +97,7 @@
   .main-content {
     flex-grow: 1;
     min-width: 0; /* Prevents flexbox overflow issues */
-    top: 130px;
+    top: 82px;
     position: relative;
   }
 
