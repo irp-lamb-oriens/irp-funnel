@@ -27,12 +27,14 @@
             const trafficSource = document.referrer;
             const geographicData = navigator.language;
             const deviceType = navigator.userAgent;
+            const completeUrl = window.location.href;
 
             const referralData = {
                 text: referer,
                 trafficSource,
                 geographicData,
                 deviceType,
+                completeUrl,
             };
             
             console.log(`Referer found: ${referer}. Sending to server.`);
