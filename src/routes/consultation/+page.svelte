@@ -1,18 +1,20 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import Header from '../../components/Header/Header.svelte';
-  import Footer from '../../components/Footer/Footer.svelte';
-  import CountryLayout from '../../components/ui/CountryLayout.svelte';
-  import './consultation.scss';
+	import { onMount } from 'svelte';
+	import Header from '../../components/Header/Header.svelte';
+	import Footer from '../../components/Footer/Footer.svelte';
+	import CountryLayout from '../../components/ui/CountryLayout.svelte';
+	import './consultation.scss';
+	const iframeUrl =
+		'https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/4742044000000055060';
 
-  onMount(() => {
-    setTimeout(() => {
-      const iframeWrapper = document.getElementById('iframe-wrapper');
-      if (iframeWrapper) {
-        iframeWrapper.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 1000);
-  });
+	onMount(() => {
+		setTimeout(() => {
+			const iframeWrapper = document.getElementById('iframe-wrapper');
+			if (iframeWrapper) {
+				iframeWrapper.scrollIntoView({ behavior: 'smooth' });
+			}
+		}, 1000);
+	});
 </script>
 
 <Header />
@@ -26,9 +28,19 @@
     </ul>
   </section>
   <section class="consultation-iframe-section" id="iframe-wrapper">
-    <iframe width="100%" height="750px"
-      src="https://zohodev-internationalrelocationpartner39.zohobooking.com/portal-embed#/4742044000000055060"
-      frameborder="0" allowfullscreen></iframe>
+    <iframe
+      width="100%"
+      height="750px"
+      src={iframeUrl}
+      frameborder="0"
+      allowfullscreen
+      data-testid="consultation-iframe"
+    ></iframe>
+    <p>
+      If you have trouble with the form, please
+      <a href={iframeUrl} target="_blank" rel="noopener noreferrer">click here</a>
+      to open it in a new tab.
+    </p>
   </section>
 </CountryLayout>
 

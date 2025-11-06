@@ -1,8 +1,10 @@
 <script lang="ts">
-  import Header from '../../components/Header/Header.svelte';
-  import Footer from '../../components/Footer/Footer.svelte';
-  import CountryLayout from '../../components/ui/CountryLayout.svelte';
-  import './contact-us.scss';
+	import Header from '../../components/Header/Header.svelte';
+	import Footer from '../../components/Footer/Footer.svelte';
+	import CountryLayout from '../../components/ui/CountryLayout.svelte';
+	import './contact-us.scss';
+	const iframeUrl =
+		'https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/4742044000000055060';
 </script>
 
 <Header />
@@ -69,9 +71,20 @@
     <h2>Request Your Free Relocation Consultation</h2>
     <p>Moving abroad is a unique experience for everybody, with different motives, family sizes, and needs. Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your relocation project.</p>
     <div class="consultation-iframe">
-      <iframe loading="lazy" width="100%" height="750px"
-        src="https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/4742044000000055060"
-        frameborder="0" allowfullscreen></iframe>
+      <iframe
+        loading="lazy"
+        width="100%"
+        height="750px"
+        src={iframeUrl}
+        frameborder="0"
+        allowfullscreen
+        data-testid="consultation-iframe"
+      ></iframe>
+      <p>
+        If you have trouble with the form, please
+        <a href={iframeUrl} target="_blank" rel="noopener noreferrer">click here</a>
+        to open it in a new tab.
+      </p>
     </div>
   </section>
 </CountryLayout>
