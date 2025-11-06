@@ -29,14 +29,14 @@
     // and we if all are present, submit, if one is not present, show it, and but capture the data as soon as it lands here
     // and then on capture the rest you save it on the server, and regardless of how much the user fills, you save the info at each stage
     // and then the server sends that data fo firestore
-    ...[
-      $store.propertyTypeFrom ? undefined : [[() => true, PropertyTypeFromInputStage]],
-      $store.propertyTypeTo ? undefined : [[isPropertyTypeFromValid, PropertyTypeToInputStage]],
-      $store.squareFeet ? undefined : [[isPropertyTypeToValid, SquareFeetInputStage]],
-      $store.budget ? undefined : [[isSquareFeetValid, BudgetInputStage]],
-      $store.age ? undefined : [[isBudgetValid, AgeInputStage]],
-      $store.reasons ? undefined : [[isBirthdayValid, ReasonInputStage]],
-    ].filter(Boolean).flat(),
+    // ...[
+    //   $store.propertyTypeFrom ? undefined : [[() => true, PropertyTypeFromInputStage]],
+    //   $store.propertyTypeTo ? undefined : [[isPropertyTypeFromValid, PropertyTypeToInputStage]],
+    //   $store.squareFeet ? undefined : [[isPropertyTypeToValid, SquareFeetInputStage]],
+    //   $store.budget ? undefined : [[isSquareFeetValid, BudgetInputStage]],
+    //   $store.age ? undefined : [[isBudgetValid, AgeInputStage]],
+    //   $store.reasons ? undefined : [[isBirthdayValid, ReasonInputStage]],
+    // ].filter(Boolean).flat(),
     [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
     // New Order:
     // TODO: Make the Thank You The Input and then redirect to IRP new web
