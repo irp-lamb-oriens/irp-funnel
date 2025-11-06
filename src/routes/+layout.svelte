@@ -3,6 +3,8 @@
     import { afterNavigate } from "$app/navigation";
     import ThemeChanger from "../components/ThemeChanger/ThemeChanger.svelte";
     import store from "../components/store.ts";
+    // check if need later
+    // import SmoothScrollWrapper from "../components/SmoothScrollWrapper/SmoothScrollWrapper.svelte";
     const MEASUREMENT_ID = "G-3X226YFLE6";
 
     onMount(() => {
@@ -56,7 +58,9 @@
 
 <ThemeChanger visible={false} />
 
-<slot />
+<!-- <SmoothScrollWrapper> -->
+    <slot />
+<!-- </SmoothScrollWrapper> -->
 
 <style lang="scss">
     @use "./styles/everything.scss";

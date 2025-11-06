@@ -79,6 +79,7 @@
     "gsap": "^3.12.7",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
+    "libphonenumber-js": "^1.12.25",
     "nearest-color": "^0.4.4",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",
@@ -91,6 +92,7 @@
     "svelte-calendar": "^3.1.6",
     "svelte-forms-lib": "^2.0.1",
     "svelte-material-ui": "^8.0.0-beta.3",
+    "svelte-virtual-list": "^3.0.1",
     "tailwindcss": "^4.0.3",
     "three": "^0.173.0",
     "victor": "^1.1.0"

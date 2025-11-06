@@ -261,7 +261,7 @@
       type="button"
       bind:this={buttonRef}
       on:click={toggleOpen}
-      class="w-full max-w-xs px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out flex items-center justify-between"
+      class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out flex items-center justify-between"
       aria-controls={open ? "language-listbox" : undefined}
       aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
       in:fade={{ duration: 200 }}
@@ -287,20 +287,6 @@
         <path d="M7 10l5 5 5-5z" />
       </svg>
     </button>
-  {/if}
-
-  {#if selectedCountry && !showInput}
-    <div
-      class="mt-2 text-sm flex items-center gap-2"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    >
-      Selected:
-      {#if selectedCountry.flag}
-        <span class="text-lg" aria-hidden="true">{selectedCountry.flag}</span>
-      {/if}
-      <span>{selectedCountry.name} ({selectedCountry.code})</span>
-    </div>
   {/if}
 
   {#if open}

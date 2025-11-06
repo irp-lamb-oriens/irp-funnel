@@ -24,6 +24,7 @@
 
 <style lang="scss">
   .icon-button {
+    --color-foreground: var(--color-background);
     border: none;
     transition: 0.15s;
     cursor: pointer;
@@ -40,7 +41,6 @@
       transition: .35s;
       background: var(--color-x-gradient);
       padding: 0.5rem;
-      margin-right: 1rem;
       border-radius: 50%;
       display: flex;
       place-items: center;

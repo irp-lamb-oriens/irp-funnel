@@ -9,7 +9,7 @@
   // Callback to be invoked when the input changes.
   export let onChange: (newValue: string) => void = () => {};
   // Callback to be invoked when Enter is pressed.
-  export let onEnter: (isValid: boolean) => void = () => {};
+  export let onEnter: () => void = () => {};
 
   // Create a writable store for the number input value.
   export const numberStore = writable(value);
@@ -53,7 +53,7 @@
     if (event.key === "Enter") {
       // Uncomment the following line to prevent default form submission if needed:
       // event.preventDefault();
-      onEnter(valid);
+      onEnter();
     }
   }
 </script>
@@ -94,11 +94,12 @@
   input {
     background: var(--color-background-very-opaque);
     backdrop-filter: blur(6px);
-    border: 1px solid var(--color-background);
+    border: none;
+    box-shadow: 0 0 10px -7.5px black;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    color: var(--color-background);
+    color: black;
     transition:
       border 0.3s ease,
       box-shadow 0.3s ease;

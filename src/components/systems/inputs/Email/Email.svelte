@@ -5,8 +5,9 @@
   // Props for the email input.
   export let value: string = "";
   export let placeholder: string = "Enter your email...";
+  export let inputElement: HTMLInputElement;
   export let label: string = "";
-  export let onEnter: (isValid: boolean) => void = () => {};
+  export let onEnter: () => void = () => {};
 
   // Callback to be invoked when the input changes.
   export let onChange: (newValue: string) => void = () => {};
@@ -32,7 +33,7 @@
     if (event.key === "Enter") {
       // If you want to prevent the default form submission (if inside a <form>), uncomment:
       // event.preventDefault();
-      onEnter(valid);
+      onEnter();
     }
   }
 
@@ -48,6 +49,7 @@
     >{value ? label || placeholder : label}</label
   >
   <input
+    bind:this={inputElement}
     type="email"
     bind:value
     {placeholder}
@@ -72,11 +74,12 @@
   input {
     background: var(--color-background-very-opaque);
     backdrop-filter: blur(6px);
-    border: 1px solid var(--color-background);
+    border: none;
+    box-shadow: 0 0 10px -7.5px black;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    color: var(--color-foreground);
+    color: black;
     transition:
       border 0.3s ease,
       box-shadow 0.3s ease;

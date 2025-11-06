@@ -4,11 +4,13 @@
   // Props for the plain text input.
   export let value: string = "";
   export let placeholder: string = "";
+  export let inputElement: HTMLInputElement;
   export let label: string = "";
   export let type: "text" | "password" | "email" | "number" | "tel" | "url" = "text"; // Add type prop
 
   // Callback to be invoked when the input changes.
   export let onChange: (newValue: string) => void = () => {};
+  export let onEnter: () => void = () => {};
 
   // Create a writable store for the plain text input value.
   export const textStore = writable(value);
@@ -20,15 +22,23 @@
     textStore.set(value);
     onChange(value);
   }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      onEnter();
+    }
+  }
 </script>
 
 <div class="text-input-wrapper">
   <label class="input-label">{value ? label || placeholder : label}</label>
   <input
+    bind:this={inputElement}
     {type}
     bind:value
     {placeholder}
     on:input={handleInput}
+    on:keydown={handleKeydown}
     aria-label={label}
     autocomplete={type === 'password' ? 'current-password' : undefined}
   />
@@ -50,11 +60,12 @@
   input {
     background: var(--color-background-very-opaque);
     backdrop-filter: blur(6px);
-    border: 1px solid var(--color-background);
+    border: none;
+    box-shadow: 0 0 10px -7.5px black;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    color: var(--color-background);
+    color: black;
     transition:
       border 0.3s ease,
       box-shadow 0.3s ease;

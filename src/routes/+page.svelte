@@ -12,6 +12,8 @@
   import ContactSection from '../components/ContactSection.svelte';
   import './+page.scss';
     import ImageGrid from '../components/systems/wrappers/ImageGrid/ImageGrid.svelte';
+    import SoftTitle from '../components/SoftTitle/SoftTitle.svelte';
+    import HeroForm from '../components/HeroForm.svelte';
 
   // FAQ data
   const moreFaqs = [
@@ -85,7 +87,9 @@
 		"icons/partners/AAJ.png",
 	]}/>
 
-  <HeroBanner />
+  <HeroForm />
+
+  <!-- <SoftTitle pushToRead={false} text="IRP" /> -->
 
   <SpecializationSection />
 
