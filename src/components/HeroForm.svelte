@@ -44,6 +44,8 @@
     const referrer = urlParams.get('refer');
     if (!referrer || referrer.trim() === '') {
       showReferrerStep = true;
+    } else {
+      formData.referrer = referrer.trim();
     }
   });
 
