@@ -261,7 +261,7 @@
       type="button"
       bind:this={buttonRef}
       on:click={toggleOpen}
-      class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out flex items-center justify-between"
+      class="country-select-button"
       aria-controls={open ? "language-listbox" : undefined}
       aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
       in:fade={{ duration: 200 }}
@@ -330,3 +330,26 @@
     </ul>
   {/if}
 </div>
+
+<style lang="scss">
+  .country-select-button {
+    width: 100%;
+    max-width: 20rem; /* max-w-xs */
+    padding: 0.5rem 1rem; /* px-4 py-2 */
+    font-size: 0.875rem; /* text-sm */
+    border: 1px solid #d1d5db; /* border border-gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    transition: all 200ms ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:focus {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      --tw-ring-color: #3b82f6; /* focus:ring-blue-500 */
+      box-shadow: 0 0 0 2px var(--tw-ring-color);
+      border-color: #3b82f6; /* focus:border-blue-500 */
+    }
+  }
+</style>
