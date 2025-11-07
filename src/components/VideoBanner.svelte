@@ -202,6 +202,8 @@
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;
       place-content: center;
+      display: flex;
+      flex-direction: column-reverse;
     }
   }
 </style>
