@@ -9,7 +9,8 @@
   import IconButton from './systems/buttons/IconButton/IconButton.svelte';
   import CTAButton from "./Header/CTAButton.svelte";
   import store from './store.ts';
-    import VideoBanner from './VideoBanner.svelte';
+  import VideoBanner from './VideoBanner.svelte';
+  import Loader from './Loader/Loader.svelte';
 
   let currentStep = 0;
   let formData = {
@@ -31,6 +32,7 @@
   let isEmailValid = false;
   let isPhoneValid = false;
   let showReferrerStep = false;
+  let isLoading = false;
   let timeoutId: ReturnType<typeof setTimeout>;
   let nameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
@@ -117,6 +119,8 @@
       return;
     }
 
+    isLoading = true;
+
     try {
       const response = await fetch(`${$store.apiURL()}/api/send-hero-consultation`, {
         method: 'POST',
@@ -134,6 +138,8 @@
       }
     } catch (error) {
       console.error('An error occurred during form submission:', error);
+    } finally {
+      isLoading = false;
     }
   }
 
@@ -167,6 +173,7 @@
 </script>
 
 <div class="hero-banner">
+  <Loader visible={isLoading} />
   <VideoBanner
   videoUrl={videoUrl}
   videoPoster={imageUrl}
