@@ -28,6 +28,8 @@
     phone: ''
   };
 
+  let isEmailValid = false;
+  let isPhoneValid = false;
   let showReferrerStep = false;
   let timeoutId: ReturnType<typeof setTimeout>;
   let nameInput: HTMLInputElement,
@@ -72,8 +74,8 @@
         }
         break;
       case 1:
-        if (!formData.email.trim()) {
-          errors.email = 'Fill this field before proceeding';
+        if (!formData.email.trim() || !isEmailValid) {
+          errors.email = 'Please enter a valid email';
           isValid = false;
         } else {
           errors.email = '';
@@ -96,8 +98,8 @@
         }
         break;
       case 4:
-        if (!formData.phone.trim()) {
-          errors.phone = 'Fill this field before proceeding';
+        if (!formData.phone.trim() || !isPhoneValid) {
+          errors.phone = 'Please enter a valid phone number';
           isValid = false;
         } else {
           errors.phone = '';
@@ -185,7 +187,7 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} />
+            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
             {#if errors.email}<span class="error">{errors.email}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -199,8 +201,7 @@
             <h2>Destination country: Where do you wanna move</h2>
             <Country onSelect={(code) => {
               formData.destinationCountry = code || '';
-              handleNextStep();
-            }} bind:buttonRef={destinationCountryInput} />
+            }} bind:buttonRef={destinationCountryInput} on:enter={handleNextStep} />
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -213,8 +214,7 @@
             <h2>Where are you from?</h2>
             <Country onSelect={(code) => {
               formData.originCountry = code || '';
-              handleNextStep();
-            }} bind:buttonRef={originCountryInput} />
+            }} bind:buttonRef={originCountryInput} on:enter={handleNextStep} />
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -226,7 +226,7 @@
           <div class="form-frame active">
             <h2>Your phone number</h2>
             <p class="sub-heading">(so we can contact you directly, in case you need it)</p>
-            <Phone bind:value={formData.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} />
+            <Phone bind:value={formData.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
             {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />

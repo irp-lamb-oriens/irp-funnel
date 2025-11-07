@@ -9,11 +9,11 @@
   export let onBlur: () => void = () => {};
   export let onCountryChange: (code: string | null) => void = () => {};
   export let inputElement: HTMLButtonElement;
+  export let isValid = true;
 
   let countryCode: string | null = 'US';
   let phoneNumber = '';
   let asYouType = new AsYouType(countryCode as any);
-  let isValid = true;
   let errorMessage = '';
 
   function handleCountrySelect(code: string | null) {
@@ -52,7 +52,7 @@
   <span id="phone-input-label" class="sr-only">Phone number</span>
   <div class="phone-inputs">
     <div class="country-selector">
-      <Country onSelect={handleCountrySelect} bind:inputElement />
+      <Country onSelect={handleCountrySelect} bind:inputElement={inputElement} />
     </div>
     <div class="number-input">
       <NumberInput

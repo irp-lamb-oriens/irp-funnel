@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from "svelte";
+  import { onMount, onDestroy, tick, createEventDispatcher } from "svelte";
   import { writable } from "svelte/store";
   import fuzzysort from "fuzzysort";
   import { fade, slide } from "svelte/transition";
@@ -37,6 +37,7 @@
   const SEARCH_DEBOUNCE_DELAY = 150;
   let highlightedIndex: number = -1;
   let lastValidHighlightedIndex: number = -1;
+  const dispatch = createEventDispatcher();
 
   // Lifecycle
   onMount(() => {
@@ -156,6 +157,7 @@
           if (highlightedIndex !== -1 && highlightedIndex < countries.length) {
             event.preventDefault();
             selectCountry(countries[highlightedIndex]);
+            dispatch("enter");
           }
           return;
 
