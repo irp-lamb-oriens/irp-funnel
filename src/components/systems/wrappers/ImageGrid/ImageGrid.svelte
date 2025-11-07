@@ -170,6 +170,8 @@
     position: relative;
   }
   .titles {
+    width: 100vw;
+    line-height: 2;
     display: block;
     text-align: center;
     z-index: 12;
