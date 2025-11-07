@@ -197,7 +197,7 @@
 		grid-gap: 25px;
 	}
 
-  .hero.center { max-width: 1024px; margin-top: 24px; gap: 14px; padding: 0 2rem; }
+  .hero.center { width: 100vw; max-width: 1024px; margin-top: 24px; gap: 14px; padding: 0 2rem; }
 
   .eyebrow {
     font-size: clamp(10px, 2vw, 16px);
