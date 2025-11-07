@@ -32,8 +32,8 @@
   let timeoutId: ReturnType<typeof setTimeout>;
   let nameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
-    destinationCountryInput: HTMLInputElement,
-    originCountryInput: HTMLInputElement,
+    destinationCountryInput: HTMLButtonElement,
+    originCountryInput: HTMLButtonElement,
     phoneInput: HTMLButtonElement,
     referrerInput: HTMLInputElement;
 
@@ -45,16 +45,19 @@
     }
   });
 
+  function handleNextStep() {
+    if (validateStep(currentStep)) {
+      nextStep();
+    }
+  }
+
   function nextStep() {
     if (timeoutId) clearTimeout(timeoutId);
-
-    if (validateStep(currentStep)) {
-      currentStep++;
-      if (currentStep === 5 && !showReferrerStep) {
-        submitForm();
-      }
-      focusInput(currentStep);
+    currentStep++;
+    if (currentStep === 5 && !showReferrerStep) {
+      submitForm();
     }
+    focusInput(currentStep);
   }
 
   function validateStep(step: number) {
@@ -171,10 +174,10 @@
             <h6><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
             <p class="sub-heading"><LetterByLetter text="Schedule a call with us on" /></p>
             <h2>Want a consultation call?</h2>
-            <PlainText label="Tell us your name so we can address you" placeholder="John Doe" bind:value={formData.name} onEnter={nextStep} bind:inputElement={nameInput} />
+            <PlainText label="Tell us your name so we can address you" placeholder="John Doe" bind:value={formData.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
             {#if errors.name}<span class="error">{errors.name}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
           </div>
         {/if}
@@ -182,10 +185,10 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={nextStep} bind:inputElement={emailInput} />
+            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} />
             {#if errors.email}<span class="error">{errors.email}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
           </div>
         {/if}
@@ -194,10 +197,13 @@
           <div class="form-frame active">
             <p class="sub-heading"><LetterByLetter text="Schedule a call with us on" /></p>
             <h2>Destination country: Where do you wanna move</h2>
-            <Country onSelect={(code) => formData.destinationCountry = code || ''} bind:inputElement={destinationCountryInput} />
+            <Country onSelect={(code) => {
+              formData.destinationCountry = code || '';
+              handleNextStep();
+            }} bind:buttonRef={destinationCountryInput} />
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
           </div>
         {/if}
@@ -205,10 +211,13 @@
         {#if currentStep === 3}
           <div class="form-frame active">
             <h2>Where are you from?</h2>
-            <Country onSelect={(code) => formData.originCountry = code || ''} bind:inputElement={originCountryInput} />
+            <Country onSelect={(code) => {
+              formData.originCountry = code || '';
+              handleNextStep();
+            }} bind:buttonRef={originCountryInput} />
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
           </div>
         {/if}
@@ -217,10 +226,10 @@
           <div class="form-frame active">
             <h2>Your phone number</h2>
             <p class="sub-heading">(so we can contact you directly, in case you need it)</p>
-            <Phone bind:value={formData.phone} onEnter={nextStep} bind:inputElement={phoneInput} />
+            <Phone bind:value={formData.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} />
             {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
           </div>
         {/if}
