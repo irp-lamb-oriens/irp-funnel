@@ -232,7 +232,7 @@
 
   @media (max-width: 1024px) {
     .carousel {
-      padding: 5rem 1rem;
+      padding: 7.5rem 1rem 5rem;
       padding-bottom: 5rem;
     }
   }
