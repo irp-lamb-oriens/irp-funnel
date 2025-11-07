@@ -15,6 +15,12 @@
     return left;
   }
 
+  function getImgWrapTop() {
+    const top = imgWrap.getBoundingClientRect().top + window.scrollY;
+
+    return top;
+  }
+
   function setVideoOpenSize() {
       const left = getImgWrapLeft();
 
@@ -38,6 +44,8 @@
     if (video ? video?.paused : true) {
       setVideoClosedSize();
     } else setVideoOpenSize();
+
+    video.style.top = `${getImgWrapTop()}px`;
     requestAnimationFrame(frame);
   }
   
@@ -85,7 +93,6 @@
   }
 
   .re-wrap {
-    position: relative;
     @media (max-width: 1024px) {
       padding: 0 1rem;
     }
