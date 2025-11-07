@@ -24,7 +24,7 @@
   function setVideoOpenSize() {
       const left = getImgWrapLeft();
 
-      video.style.width = `calc(100vw - ${left}px)`;
+      video.style.width = `calc(100vw - ${left * (3 / (window.innerWidth >= 1024 ? 3 : 1))}px)`;
       video.style.transform = `translateX(${left /  2}px)`;
   }
 
