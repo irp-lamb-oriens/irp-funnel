@@ -26,24 +26,22 @@
   function updateValue() {
     asYouType.reset();
     const formattedNumber = asYouType.input(phoneNumber);
-    value = formattedNumber;
-
+    
     if (phoneNumber) {
       const parsedNumber = parsePhoneNumberFromString(formattedNumber, countryCode as any);
-      if (parsedNumber) {
-        isValid = parsedNumber.isValid();
-        if (!isValid) {
-          errorMessage = 'Invalid phone number';
-        } else {
-          errorMessage = '';
-        }
+      if (parsedNumber && parsedNumber.isValid()) {
+        isValid = true;
+        errorMessage = '';
+        value = parsedNumber.format('E.164');
       } else {
         isValid = false;
         errorMessage = 'Invalid phone number';
+        value = formattedNumber;
       }
     } else {
       isValid = true;
       errorMessage = '';
+      value = '';
     }
   }
 </script>

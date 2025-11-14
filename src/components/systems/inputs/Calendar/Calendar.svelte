@@ -78,59 +78,30 @@
   }
 
   async function loadAvailableDates() {
-    console.log("Fetching available dates...");
+    console.log("Generating available dates...");
     try {
-      const response = await fetch(get(store).apiURL() + "/api/events");
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to load calendar events. Response:", errorText);
-        throw new Error("Failed to load calendar events");
-      }
-
-      const events = await response.json();
-      console.log("Successfully fetched events:", events);
       const datesWithHours: { [key: string]: string[] } = {};
       const startOfDay = getSkippedDateFromToday(1);
       const endOfYear = new Date(new Date().getFullYear() + 1, 11, 31);
 
       for (let d = new Date(startOfDay); d <= endOfYear; d.setDate(d.getDate() + 1)) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
-
         const dateKey = d.toISOString().split("T")[0];
         datesWithHours[dateKey] = [];
 
-        for (let hour = 10; hour <= 16; hour += 1.5) {
-          if (hour >= 13 && hour < 14.5) continue;
-          
+        for (let hour = 9; hour <= 16.5; hour += 0.5) {
           const availableTime = new Date(d);
           availableTime.setHours(hour, (hour % 1) * 60, 0, 0);
           const timeString = availableTime.toISOString();
-
-          const isBooked = events.some((event: { start: { dateTime?: string; date?: string }; end: { dateTime?: string; date?: string } }) => {
-            const eventStart = new Date(event.start?.dateTime || event.start?.date || 0).getTime();
-            const eventEnd = new Date(event.end?.dateTime || event.end?.date || 0).getTime();
-            const selectedTime = availableTime.getTime();
-            return selectedTime >= eventStart && selectedTime < eventEnd;
-          });
-
-          if (!isBooked) {
-            datesWithHours[dateKey].push(timeString);
-          }
-        }
-        if (datesWithHours[dateKey].length === 0) {
-          delete datesWithHours[dateKey];
+          datesWithHours[dateKey].push(timeString);
         }
       }
 
       const formattedDates = Object.entries(datesWithHours).map(([date, availableHours]) => ({ date, availableHours }));
       availableDatesStore.set(formattedDates);
       console.log("Formatted and stored available dates.");
-    } catch (err) {
-      console.error("Error loading Google Calendar events:", err);
-      if (err.response) {
-        console.error("API response status:", err.response.status);
-        console.error("API response data:", err.response.data);
-      }
+    } catch (err: any) {
+      console.error("Error generating dates:", err);
       errorLoading.set("Failed to load available dates. Please try again later.");
     }
   }

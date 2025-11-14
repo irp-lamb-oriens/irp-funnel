@@ -1,41 +1,43 @@
 import { get } from "svelte/store";
 import { formState, type FormState } from "./formStore.js";
+import store from "../../../store.js";
 
 export async function submitScheduling() {
-  const { scheduling } = get(formState) as FormState;
+  const formData = get(formState);
 
-  // Prepara los datos del evento
-  const schedulingData = scheduling.map((dateTime: string) => {
+  const schedulingData = formData.scheduling.map((dateTime: string) => {
     return {
-      summary: `Scheduled Consultation`,
-      description: `Desired moving date: ${scheduling.join(", ")}`,
+      summary: `Scheduled Consultation with ${formData.name}`,
+      description: `Consultation for ${formData.name} regarding moving from ${formData.originCountry} to ${formData.destinationCountry}. Budget: ${formData.budget}.`,
       start: {
         dateTime,
         timeZone: "America/Costa_Rica",
       },
       end: {
         dateTime: new Date(
-          new Date(dateTime).getTime() + 60 * 60 * 1000 * 1.5
+          new Date(dateTime).getTime() + 30 * 60 * 1000
         ).toISOString(),
         timeZone: "America/Costa_Rica",
       },
     };
   });
 
-  console.log("Scheduling data to be sent to backend:", schedulingData);
+  const submissionData = {
+    ...formData,
+    events: schedulingData,
+  };
+
+  console.log("Form data to be sent to backend:", submissionData);
 
   try {
-    // Envía los datos del evento al backend
     const response = await fetch(
-      "https://irp-funnel-server.onrender.com/api/submit-schedule",
+      `${get(store).apiURL()}/api/send-hero-consultation`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          events: schedulingData,
-        }),
+        body: JSON.stringify(submissionData),
       }
     );
 
@@ -47,16 +49,16 @@ export async function submitScheduling() {
 
     console.log(
       "Scheduling data successfully submitted to backend:",
-      schedulingData
+      submissionData
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error submitting scheduling data to backend:", error);
     if (error.response) {
       console.error("API response status:", error.response.status);
       console.error("API response data:", error.response.data);
     }
     alert(
-      "Error al enviar el horario. Por favor, comuníquese inmediatamente con consultation@internationalrelocationpartner.com para que podamos agendar la cita"
+      "Error submitting the schedule. Please contact consultation@internationalrelocationpartner.com immediately to schedule your appointment."
     );
   }
 }

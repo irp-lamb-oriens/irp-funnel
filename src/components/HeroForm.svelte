@@ -12,27 +12,18 @@
   import Calendar from './systems/inputs/Calendar/Calendar.svelte';
   import ImmigrationStatus from './systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte';
   import { immigrationStatusStore } from './systems/inputs/ImmigrationStatus/store.js';
-  import { formState as calendarFormState } from './systems/inputs/Calendar/formStore.js';
+  import Budget from './systems/inputs/Budget/Budget.svelte';
+  import { budgetStore } from './systems/inputs/Budget/store.js';
+  import MoveSize from './systems/inputs/MoveSize/MoveSize.svelte';
+  import { moveSizeStore } from './systems/inputs/MoveSize/store.js';
+  import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
+  import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
   import CTAButton from "./Header/CTAButton.svelte";
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
 
   let currentStep = 0;
-  let formData = {
-    name: '',
-    email: '',
-    destinationCountry: '',
-    originCountry: '',
-    phone: '',
-    referrer: '',
-    budget: '',
-    propertyTypeFrom: '',
-    propertyTypeTo: '',
-    size: '',
-    immigrationStatus: '',
-    movingDate: ''
-  };
   let errors = {
     name: '',
     email: '',
@@ -51,22 +42,28 @@
   let isPhoneValid = false;
 
   immigrationStatusStore.subscribe(value => {
-    formData.immigrationStatus = value || '';
+    updateField(value || '', 'immigrationStatus');
   });
 
-  calendarFormState.subscribe(value => {
-    formData.movingDate = value.scheduling.join(', ');
+  budgetStore.subscribe(value => {
+    updateField(value || '', 'budget');
   });
+
+  moveSizeStore.subscribe(value => {
+    updateField(value || '', 'size');
+  });
+
   let showReferrerStep = false;
   let isLoading = false;
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   let nameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
     destinationCountryInput: HTMLButtonElement,
     originCountryInput: HTMLButtonElement,
     phoneInput: HTMLButtonElement,
     referrerInput: HTMLInputElement,
-    sizeInput: HTMLInputElement,
+    sizeInput: HTMLButtonElement,
+    budgetInput: HTMLButtonElement,
     immigrationStatusInput: HTMLButtonElement;
 
   onMount(() => {
@@ -75,7 +72,7 @@
     if (!referrer || referrer.trim() === '') {
       showReferrerStep = true;
     } else {
-      formData.referrer = referrer.trim();
+      updateField(referrer.trim(), 'referredBy');
     }
   });
 
@@ -98,7 +95,7 @@
     let isValid = true;
     switch (step) {
       case 0:
-        if (!formData.email.trim() || !isEmailValid) {
+        if (!$formState.email.trim() || !isEmailValid) {
           errors.email = 'Please enter a valid email';
           isValid = false;
         } else {
@@ -106,7 +103,7 @@
         }
         break;
       case 1:
-        if (!formData.name.trim()) {
+        if (!$formState.name.trim()) {
           errors.name = 'Fill this field before proceeding';
           isValid = false;
         } else {
@@ -114,7 +111,7 @@
         }
         break;
       case 2:
-        if (!formData.destinationCountry.trim()) {
+        if (!$formState.destinationCountry.trim()) {
           errors.destinationCountry = 'Fill this field before proceeding';
           isValid = false;
         } else {
@@ -122,7 +119,7 @@
         }
         break;
       case 3:
-        if (!formData.originCountry.trim()) {
+        if (!$formState.originCountry.trim()) {
           errors.originCountry = 'Fill this field before proceeding';
           isValid = false;
         } else {
@@ -130,7 +127,7 @@
         }
         break;
       case 4:
-        if (!formData.phone.trim() || !isPhoneValid) {
+        if (!$formState.phone.trim() || !isPhoneValid) {
           errors.phone = 'Please enter a valid phone number';
           isValid = false;
         } else {
@@ -138,39 +135,15 @@
         }
         break;
       case 5:
-        if (!formData.budget.trim()) {
+        if (!$formState.budget.trim()) {
           errors.budget = 'Please enter your budget';
           isValid = false;
         } else {
           errors.budget = '';
         }
         break;
-      case 6:
-        if (!formData.propertyTypeFrom) {
-          errors.propertyTypeFrom = 'Please select a property type';
-          isValid = false;
-        } else {
-          errors.propertyTypeFrom = '';
-        }
-        break;
-      case 7:
-        if (!formData.propertyTypeTo) {
-          errors.propertyTypeTo = 'Please select a property type';
-          isValid = false;
-        } else {
-          errors.propertyTypeTo = '';
-        }
-        break;
-      case 8:
-        if (!formData.size.trim()) {
-          errors.size = 'Please enter the size';
-          isValid = false;
-        } else {
-          errors.size = '';
-        }
-        break;
       case 9:
-        if (!formData.immigrationStatus.trim()) {
+        if (!$formState.immigrationStatus.trim()) {
           errors.immigrationStatus = 'Please enter your immigration status';
           isValid = false;
         } else {
@@ -178,11 +151,35 @@
         }
         break;
       case 10:
-        if (!formData.movingDate) {
+        if ($formState.scheduling.length === 0) {
           errors.movingDate = 'Please select a moving date';
           isValid = false;
         } else {
           errors.movingDate = '';
+        }
+        break;
+      case 6:
+        if (!$formState.propertyTypeFrom) {
+          errors.propertyTypeFrom = 'Please select a property type';
+          isValid = false;
+        } else {
+          errors.propertyTypeFrom = '';
+        }
+        break;
+      case 7:
+        if (!$formState.propertyTypeTo) {
+          errors.propertyTypeTo = 'Please select a property type';
+          isValid = false;
+        } else {
+          errors.propertyTypeTo = '';
+        }
+        break;
+      case 8:
+        if (!$formState.size.trim()) {
+          errors.size = 'Please enter the size';
+          isValid = false;
+        } else {
+          errors.size = '';
         }
         break;
     }
@@ -198,20 +195,11 @@
     isLoading = true;
 
     try {
-      const response = await fetch(`${$store.apiURL()}/api/send-hero-consultation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        currentStep = 12; // Go to "Thank You"
-        timeoutId = setTimeout(() => {
-          currentStep = 13; // Go to final banner
-        }, 3000);
-      } else {
-        console.error('Form submission failed', await response.text());
-      }
+      await submitScheduling();
+      currentStep = 12; // Go to "Thank You"
+      timeoutId = setTimeout(() => {
+        currentStep = 13; // Go to final banner
+      }, 3000);
     } catch (error) {
       console.error('An error occurred during form submission:', error);
     } finally {
@@ -278,7 +266,7 @@
           <div class="form-frame active">
             <h6><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
             <h2>Book a consultation call</h2>
-            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
+            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
             {#if errors.email}<span class="error">{errors.email}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -289,7 +277,7 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <PlainText label="Tell us your name" placeholder="John Doe" bind:value={formData.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
+            <PlainText label="Tell us your name" placeholder="John Doe" bind:value={$formState.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
             {#if errors.name}<span class="error">{errors.name}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -301,7 +289,7 @@
           <div class="form-frame active">
             <h2>Destination country: Where do you wanna move</h2>
             <Country onSelect={(code) => {
-              formData.destinationCountry = code || '';
+              updateField(code || '', 'destinationCountry');
             }} bind:buttonRef={destinationCountryInput} on:enter={handleNextStep} />
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
             <div class="button-wrapper">
@@ -314,7 +302,7 @@
           <div class="form-frame active">
             <h2>Where are you from?</h2>
             <Country onSelect={(code) => {
-              formData.originCountry = code || '';
+              updateField(code || '', 'originCountry');
             }} bind:buttonRef={originCountryInput} on:enter={handleNextStep} />
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
             <div class="button-wrapper">
@@ -327,7 +315,7 @@
           <div class="form-frame active">
             <h2>Your phone number</h2>
             <p class="sub-heading">(so we can contact you directly, in case you need it)</p>
-            <Phone bind:value={formData.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
+            <Phone bind:value={$formState.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
             {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -338,7 +326,7 @@
         {#if currentStep === 5}
           <div class="form-frame active">
             <h2>What is your budget?</h2>
-            <Number label="Enter your budget in USD" placeholder="10000" bind:value={formData.budget} onEnter={handleNextStep} />
+            <Budget bind:buttonRef={budgetInput} />
             {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -356,7 +344,7 @@
                 { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]}
-              bind:selectedValue={formData.propertyTypeFrom}
+              bind:selectedValue={$formState.propertyTypeFrom}
             />
             {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
             <div class="button-wrapper">
@@ -375,7 +363,7 @@
                 { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]}
-              bind:selectedValue={formData.propertyTypeTo}
+              bind:selectedValue={$formState.propertyTypeTo}
             />
             {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
             <div class="button-wrapper">
@@ -386,8 +374,8 @@
 
         {#if currentStep === 8}
           <div class="form-frame active">
-            <h2>Size of your move?</h2>
-            <PlainText label="e.g., 2 bedroom apartment" placeholder="Size" bind:value={formData.size} onEnter={handleNextStep} bind:inputElement={sizeInput} />
+            <h2>Move size</h2>
+            <MoveSize bind:buttonRef={sizeInput} />
             {#if errors.size}<span class="error">{errors.size}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -420,7 +408,7 @@
         {#if currentStep === 11 && showReferrerStep}
           <div class="form-frame active">
             <h2>Who referred you to us?</h2>
-            <PlainText placeholder="The name here" bind:value={formData.referrer} onEnter={submitForm} bind:inputElement={referrerInput} />
+            <PlainText placeholder="The name here" bind:value={$formState.referredBy} onEnter={submitForm} bind:inputElement={referrerInput} />
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={submitForm} />
             </div>
