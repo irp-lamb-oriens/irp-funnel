@@ -1,4 +1,6 @@
 const countries = [
+  { "code": "US", "name": "United States of America", "flag": "🇺🇸" },
+  { "code": "CA", "name": "Canada", "flag": "🇨🇦" },
   { "code": "PA", "name": "Panama", "flag": "🇵🇦" },
   { "code": "PT", "name": "Portugal", "flag": "🇵🇹" },
   { "code": "CR", "name": "Costa Rica", "flag": "🇨🇷" },
@@ -47,7 +49,6 @@ const countries = [
   { "code": "BI", "name": "Burundi", "flag": "🇧🇮" },
   { "code": "KH", "name": "Cambodia", "flag": "🇰🇭" },
   { "code": "CM", "name": "Cameroon", "flag": "🇨🇲" },
-  { "code": "CA", "name": "Canada", "flag": "🇨🇦" },
   { "code": "CV", "name": "Cape Verde", "flag": "🇨🇻" },
   { "code": "KY", "name": "Cayman Islands", "flag": "🇰🇾" },
   { "code": "CF", "name": "Central African Republic", "flag": "🇨🇫" },
@@ -167,7 +168,6 @@ const countries = [
   { "code": "UA", "name": "Ukraine", "flag": "🇺🇦" },
   { "code": "AE", "name": "United Arab Emirates", "flag": "🇦🇪" },
   { "code": "GB", "name": "United Kingdom", "flag": "🇬🇧" },
-  { "code": "US", "name": "United States", "flag": "🇺🇸" },
   { "code": "UY", "name": "Uruguay", "flag": "🇺🇾" },
   { "code": "UZ", "name": "Uzbekistan", "flag": "🇺🇿" },
   { "code": "VE", "name": "Venezuela", "flag": "🇻🇪" },

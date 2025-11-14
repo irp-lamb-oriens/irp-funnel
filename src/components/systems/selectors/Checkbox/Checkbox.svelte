@@ -76,7 +76,7 @@
         border-color 0.3s ease;
 
       &:hover {
-        background: var(--color-background-very-opaque);
+        background: #f5f5f5;
       }
 
       .checkmark {

@@ -4,11 +4,17 @@
   import LetterByLetter from './LetterByLetter.svelte';
   import PlainText from './systems/inputs/PlainText/PlainText.svelte';
   import Email from './systems/inputs/Email/Email.svelte';
+  import Number from './systems/inputs/Number/Number.svelte';
   import Country from './systems/inputs/Country/Country.svelte';
   import Phone from './systems/inputs/Phone/Phone.svelte';
   import IconButton from './systems/buttons/IconButton/IconButton.svelte';
+  import IconGridSelector from './systems/selectors/IconGridSelector/IconGridSelector.svelte';
+  import Calendar from './systems/inputs/Calendar/Calendar.svelte';
+  import ImmigrationStatus from './systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte';
+  import { immigrationStatusStore } from './systems/inputs/ImmigrationStatus/store.js';
+  import { formState as calendarFormState } from './systems/inputs/Calendar/formStore.js';
   import CTAButton from "./Header/CTAButton.svelte";
-  import store from './store.ts';
+  import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
 
@@ -19,18 +25,38 @@
     destinationCountry: '',
     originCountry: '',
     phone: '',
-    referrer: ''
+    referrer: '',
+    budget: '',
+    propertyTypeFrom: '',
+    propertyTypeTo: '',
+    size: '',
+    immigrationStatus: '',
+    movingDate: ''
   };
   let errors = {
     name: '',
     email: '',
     destinationCountry: '',
     originCountry: '',
-    phone: ''
+    phone: '',
+    budget: '',
+    propertyTypeFrom: '',
+    propertyTypeTo: '',
+    size: '',
+    immigrationStatus: '',
+    movingDate: ''
   };
 
   let isEmailValid = false;
   let isPhoneValid = false;
+
+  immigrationStatusStore.subscribe(value => {
+    formData.immigrationStatus = value || '';
+  });
+
+  calendarFormState.subscribe(value => {
+    formData.movingDate = value.scheduling.join(', ');
+  });
   let showReferrerStep = false;
   let isLoading = false;
   let timeoutId: ReturnType<typeof setTimeout>;
@@ -39,7 +65,9 @@
     destinationCountryInput: HTMLButtonElement,
     originCountryInput: HTMLButtonElement,
     phoneInput: HTMLButtonElement,
-    referrerInput: HTMLInputElement;
+    referrerInput: HTMLInputElement,
+    sizeInput: HTMLInputElement,
+    immigrationStatusInput: HTMLButtonElement;
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -60,7 +88,7 @@
   function nextStep() {
     if (timeoutId) clearTimeout(timeoutId);
     currentStep++;
-    if (currentStep === 5 && !showReferrerStep) {
+    if (currentStep === 11 && !showReferrerStep) {
       submitForm();
     }
     focusInput(currentStep);
@@ -70,19 +98,19 @@
     let isValid = true;
     switch (step) {
       case 0:
-        if (!formData.name.trim()) {
-          errors.name = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.name = '';
-        }
-        break;
-      case 1:
         if (!formData.email.trim() || !isEmailValid) {
           errors.email = 'Please enter a valid email';
           isValid = false;
         } else {
           errors.email = '';
+        }
+        break;
+      case 1:
+        if (!formData.name.trim()) {
+          errors.name = 'Fill this field before proceeding';
+          isValid = false;
+        } else {
+          errors.name = '';
         }
         break;
       case 2:
@@ -109,13 +137,61 @@
           errors.phone = '';
         }
         break;
+      case 5:
+        if (!formData.budget.trim()) {
+          errors.budget = 'Please enter your budget';
+          isValid = false;
+        } else {
+          errors.budget = '';
+        }
+        break;
+      case 6:
+        if (!formData.propertyTypeFrom) {
+          errors.propertyTypeFrom = 'Please select a property type';
+          isValid = false;
+        } else {
+          errors.propertyTypeFrom = '';
+        }
+        break;
+      case 7:
+        if (!formData.propertyTypeTo) {
+          errors.propertyTypeTo = 'Please select a property type';
+          isValid = false;
+        } else {
+          errors.propertyTypeTo = '';
+        }
+        break;
+      case 8:
+        if (!formData.size.trim()) {
+          errors.size = 'Please enter the size';
+          isValid = false;
+        } else {
+          errors.size = '';
+        }
+        break;
+      case 9:
+        if (!formData.immigrationStatus.trim()) {
+          errors.immigrationStatus = 'Please enter your immigration status';
+          isValid = false;
+        } else {
+          errors.immigrationStatus = '';
+        }
+        break;
+      case 10:
+        if (!formData.movingDate) {
+          errors.movingDate = 'Please select a moving date';
+          isValid = false;
+        } else {
+          errors.movingDate = '';
+        }
+        break;
     }
     errors = { ...errors };
     return isValid;
   }
 
   async function submitForm() {
-    if (currentStep === 5 && !validateStep(currentStep)) {
+    if (currentStep === 11 && !validateStep(currentStep)) {
       return;
     }
 
@@ -129,9 +205,9 @@
       });
 
       if (response.ok) {
-        currentStep = 6; // Go to "Thank You"
+        currentStep = 12; // Go to "Thank You"
         timeoutId = setTimeout(() => {
-          currentStep = 7; // Go to final banner
+          currentStep = 13; // Go to final banner
         }, 3000);
       } else {
         console.error('Form submission failed', await response.text());
@@ -147,10 +223,10 @@
     await tick();
     switch (step) {
       case 0:
-        nameInput?.focus();
+        emailInput?.focus();
         break;
       case 1:
-        emailInput?.focus();
+        nameInput?.focus();
         break;
       case 2:
         destinationCountryInput?.focus();
@@ -162,6 +238,24 @@
         phoneInput?.focus();
         break;
       case 5:
+        // No specific input to focus for budget radio buttons
+        break;
+      case 6:
+        // No specific input to focus for IconGridSelector
+        break;
+      case 7:
+        // No specific input to focus for IconGridSelector
+        break;
+      case 8:
+        sizeInput?.focus();
+        break;
+      case 9:
+        immigrationStatusInput?.focus();
+        break;
+      case 10:
+        // No specific input to focus for Calendar
+        break;
+      case 11:
         referrerInput?.focus();
         break;
     }
@@ -183,10 +277,9 @@
         {#if currentStep === 0}
           <div class="form-frame active">
             <h6><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
-            <p class="sub-heading"><LetterByLetter text="Schedule a call with us on" /></p>
-            <h2>Want a consultation call?</h2>
-            <PlainText label="Tell us your name so we can address you" placeholder="John Doe" bind:value={formData.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
-            {#if errors.name}<span class="error">{errors.name}</span>{/if}
+            <h2>Book a consultation call</h2>
+            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
+            {#if errors.email}<span class="error">{errors.email}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
@@ -196,8 +289,8 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={formData.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
-            {#if errors.email}<span class="error">{errors.email}</span>{/if}
+            <PlainText label="Tell us your name" placeholder="John Doe" bind:value={formData.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
+            {#if errors.name}<span class="error">{errors.name}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
@@ -206,7 +299,6 @@
 
         {#if currentStep === 2}
           <div class="form-frame active">
-            <p class="sub-heading"><LetterByLetter text="Schedule a call with us on" /></p>
             <h2>Destination country: Where do you wanna move</h2>
             <Country onSelect={(code) => {
               formData.destinationCountry = code || '';
@@ -243,17 +335,99 @@
           </div>
         {/if}
 
-        {#if currentStep === 5 && showReferrerStep}
+        {#if currentStep === 5}
+          <div class="form-frame active">
+            <h2>What is your budget?</h2>
+            <Number label="Enter your budget in USD" placeholder="10000" bind:value={formData.budget} onEnter={handleNextStep} />
+            {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 6}
+          <div class="form-frame active">
+            <h2>What type of place are you relocating from?</h2>
+            <IconGridSelector
+              options={[
+                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
+              ]}
+              bind:selectedValue={formData.propertyTypeFrom}
+            />
+            {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 7}
+          <div class="form-frame active">
+            <h2>What type of place are you relocating to?</h2>
+            <IconGridSelector
+              options={[
+                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
+              ]}
+              bind:selectedValue={formData.propertyTypeTo}
+            />
+            {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 8}
+          <div class="form-frame active">
+            <h2>Size of your move?</h2>
+            <PlainText label="e.g., 2 bedroom apartment" placeholder="Size" bind:value={formData.size} onEnter={handleNextStep} bind:inputElement={sizeInput} />
+            {#if errors.size}<span class="error">{errors.size}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 9}
+          <div class="form-frame active">
+            <h2>Immigration Status</h2>
+            <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
+            {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 10}
+          <div class="form-frame active">
+            <h2>Desired moving date</h2>
+            <Calendar />
+            {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 11 && showReferrerStep}
           <div class="form-frame active">
             <h2>Who referred you to us?</h2>
-            <PlainText placeholder="Jane Smith" bind:value={formData.referrer} onEnter={submitForm} bind:inputElement={referrerInput} />
+            <PlainText placeholder="The name here" bind:value={formData.referrer} onEnter={submitForm} bind:inputElement={referrerInput} />
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={submitForm} />
             </div>
           </div>
         {/if}
 
-        {#if currentStep === 6}
+        {#if currentStep === 12}
           <div class="form-frame active">
             <p>Thank you for contacting us</p>
             <p>We will get in touch with you soon</p>
@@ -261,7 +435,7 @@
           </div>
         {/if}
 
-        {#if currentStep === 7}
+        {#if currentStep === 13}
           <div class="form-frame active">
             <div class="banner-content">
               <h6 class="banner-subtitle">
@@ -308,7 +482,7 @@
     max-width: 600px;
     margin: 2rem auto;
     padding: 2rem;
-    background: white;
+    background: #161616;
     border-radius: 1rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   }
@@ -325,14 +499,14 @@
   }
 
   h6 {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     font-weight: 400;
-    color: #666;
+    color: #f0f0f0;
   }
 
   .sub-heading {
     font-size: 1rem;
-    color: #333;
+    color: #f0f0f0;
   }
 
   .button-wrapper {

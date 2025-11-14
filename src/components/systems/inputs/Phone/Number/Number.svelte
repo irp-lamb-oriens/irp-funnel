@@ -100,7 +100,7 @@
   }
 
   input {
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(6px);
     border: none;
     box-shadow: 0 0 10px -7.5px black;

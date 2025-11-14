@@ -147,7 +147,7 @@
   }
 
   input {
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(6px);
     border: 1px solid var(--color-background);
     border-radius: 8px;

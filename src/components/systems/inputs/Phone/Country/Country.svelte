@@ -339,7 +339,7 @@
     width: 100%;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(6px);
     border: none;
     box-shadow: 0 0 10px -7.5px black;
@@ -407,6 +407,7 @@
     width: 100%;
     margin-top: 0.25rem;
     background-color: white;
+    background: #f5f5f5;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);

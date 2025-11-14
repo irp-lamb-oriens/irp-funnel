@@ -59,7 +59,7 @@
 
   button {
     position: absolute;
-    background: var(--color-background-very-opaque); // Glassmorphism effect
+    background: #f5f5f5; // Glassmorphism effect
     backdrop-filter: blur(6px);
     padding: 0.5rem 5rem;
     opacity: 0.75; // Base opacity

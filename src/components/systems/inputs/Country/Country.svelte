@@ -339,6 +339,7 @@
     max-width: 20rem; /* max-w-xs */
     padding: 0.5rem 1rem; /* px-4 py-2 */
     font-size: 0.875rem; /* text-sm */
+    background: #f5f5f5;
     border: 1px solid #d1d5db; /* border border-gray-300 */
     border-radius: 0.5rem; /* rounded-lg */
     transition: all 200ms ease-in-out;

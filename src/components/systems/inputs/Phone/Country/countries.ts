@@ -1,4 +1,6 @@
 const countries = [
+  { "code": "US", "name": "United States of America", "flag": "🇺🇸", "dialCode": "+1" },
+  { "code": "CA", "name": "Canada", "flag": "🇨🇦", "dialCode": "+1" },
   { "code": "PA", "name": "Panama", "flag": "🇵🇦", "dialCode": "+507" },
   { "code": "PT", "name": "Portugal", "flag": "🇵🇹", "dialCode": "+351" },
   { "code": "CR", "name": "Costa Rica", "flag": "🇨🇷", "dialCode": "+506" },
@@ -47,7 +49,6 @@ const countries = [
   { "code": "BI", "name": "Burundi", "flag": "🇧🇮", "dialCode": "+257" },
   { "code": "KH", "name": "Cambodia", "flag": "🇰🇭", "dialCode": "+855" },
   { "code": "CM", "name": "Cameroon", "flag": "🇨🇲", "dialCode": "+237" },
-  { "code": "CA", "name": "Canada", "flag": "🇨🇦", "dialCode": "+1" },
   { "code": "CV", "name": "Cape Verde", "flag": "🇨🇻", "dialCode": "+238" },
   { "code": "KY", "name": "Cayman Islands", "flag": "🇰🇾", "dialCode": "+1-345" },
   { "code": "CF", "name": "Central African Republic", "flag": "🇨🇫", "dialCode": "+236" },
@@ -159,7 +160,6 @@ const countries = [
   { "code": "UA", "name": "Ukraine", "flag": "🇺🇦", "dialCode": "+380" },
   { "code": "AE", "name": "United Arab Emirates", "flag": "🇦🇪", "dialCode": "+971" },
   { "code": "GB", "name": "United Kingdom", "flag": "🇬🇧", "dialCode": "+44" },
-  { "code": "US", "name": "United States", "flag": "🇺🇸", "dialCode": "+1" },
   { "code": "UY", "name": "Uruguay", "flag": "🇺🇾", "dialCode": "+598" },
   { "code": "UZ", "name": "Uzbekistan", "flag": "🇺🇿", "dialCode": "+998" },
   { "code": "VE", "name": "Venezuela", "flag": "🇻🇪", "dialCode": "+58" },

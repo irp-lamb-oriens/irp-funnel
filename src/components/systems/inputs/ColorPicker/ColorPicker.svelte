@@ -250,7 +250,7 @@
     top: calc(100% + 0.75rem);
     left: 0;
     right: 0;
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(8px);
     border: 1px solid var(--color-background);
     border-radius: 12px;
@@ -348,7 +348,7 @@
   .suggestion-item button:hover,
   .suggestion-item button:focus {
     transform: scale(1.05);
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     outline: none;
   }
 
@@ -364,7 +364,7 @@
   }
 
   .preview-panel {
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(8px);
     border-radius: 12px;
     padding: 0.75rem;

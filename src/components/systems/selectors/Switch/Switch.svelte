@@ -114,7 +114,7 @@
   .switch-track {
     width: 50px;
     height: 24px;
-    background: var(--color-background-very-opaque);
+    background: #f5f5f5;
     backdrop-filter: blur(6px);
     border-radius: 12px;
     position: relative;
