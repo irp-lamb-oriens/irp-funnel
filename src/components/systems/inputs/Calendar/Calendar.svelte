@@ -59,7 +59,7 @@
       if (index > -1) {
         return hours.filter(h => h !== hour);
       } else {
-        return [...hours, hour];
+        return [hour];
       }
     });
     updateField(get(selectedHours), "scheduling");
@@ -162,7 +162,7 @@
           disabled={!day.isAvailable}
           on:click={() => selectDate(day.date, day.isAvailable)}
         >
-          {new Date(day.date).getDate() + 1}
+          {parseInt(day.date.split("-")[2])}
         </button>
       {/each}
     </div>
