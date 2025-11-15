@@ -57,6 +57,7 @@
   let isLoading = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   let calendarLink = '';
+  let hangoutLink = '';
   let nameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
     destinationCountryInput: HTMLButtonElement,
@@ -200,6 +201,7 @@
       const response = await submitScheduling();
       if (response && response.calendarLink) {
         calendarLink = response.calendarLink;
+        hangoutLink = response.hangoutLink;
         window.open(calendarLink, '_blank');
       }
       currentStep = 12; // Go to "Thank You"
@@ -427,6 +429,8 @@
             <h4>An email has been sent to your inbox.</h4>
             <p>You can view your scheduled consultation here:</p>
             <a href={calendarLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">View Your Consultation on Google Calendar</a>
+            <p>Join the meeting here:</p>
+            <a href={hangoutLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">Join Hangouts Meeting</a>
             <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
           </div>
         {/if}
