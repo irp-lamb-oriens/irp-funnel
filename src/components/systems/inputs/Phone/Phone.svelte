@@ -32,7 +32,7 @@
       if (parsedNumber && parsedNumber.isValid()) {
         isValid = true;
         errorMessage = '';
-        value = parsedNumber.format('E.164');
+        value = parsedNumber.format('NATIONAL');
       } else {
         isValid = false;
         errorMessage = 'Invalid phone number';

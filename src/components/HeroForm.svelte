@@ -56,6 +56,7 @@
   let showReferrerStep = false;
   let isLoading = false;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let calendarLink = '';
   let nameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
     destinationCountryInput: HTMLButtonElement,
@@ -188,6 +189,7 @@
   }
 
   async function submitForm() {
+    console.log("submitForm called");
     if (currentStep === 11 && !validateStep(currentStep)) {
       return;
     }
@@ -195,7 +197,11 @@
     isLoading = true;
 
     try {
-      await submitScheduling();
+      const response = await submitScheduling();
+      if (response && response.calendarLink) {
+        calendarLink = response.calendarLink;
+        window.open(calendarLink, '_blank');
+      }
       currentStep = 12; // Go to "Thank You"
       timeoutId = setTimeout(() => {
         currentStep = 13; // Go to final banner
@@ -417,8 +423,10 @@
 
         {#if currentStep === 12}
           <div class="form-frame active">
-            <p>Thank you for contacting us</p>
-            <p>We will get in touch with you soon</p>
+            <h2>Thank You!</h2>
+            <h4>An email has been sent to your inbox.</h4>
+            <p>You can view your scheduled consultation here:</p>
+            <a href={calendarLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">View Your Consultation on Google Calendar</a>
             <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
           </div>
         {/if}

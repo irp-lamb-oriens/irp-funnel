@@ -210,7 +210,7 @@
       grid-template-columns: 1fr;
       place-content: center;
       display: flex;
-      flex-direction: column-reverse;
+      flex-direction: column;
     }
   }
 </style>

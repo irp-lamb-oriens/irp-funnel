@@ -2,14 +2,16 @@
   import { onMount } from "svelte";
   import { writable, get } from "svelte/store";
   import { formState, updateField } from "./formStore.js";
-    import store from "../../../store.ts";
+  import store from "../../../store.ts";
+  import TagNode from "./TagNode.svelte";
 
-  const availableDatesStore = writable<{ date: string; availableHours: string[] }[]>([]);
+  const availableDatesStore = writable<{ date: string; availableHours: { name: string; children: { name: string; value: string }[] }[] }[]>([]);
   const errorLoading = writable<string | null>(null);
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const selectedDate = writable<string | null>(null);
   const selectedHours = writable<string[]>([]);
+  let selectedSegment = writable<string | null>(null);
 
   let calendarDays: { date: string; isAvailable: boolean }[] = [];
   let currentMonth = new Date().getMonth();
@@ -45,11 +47,13 @@
     if (isAvailable) {
       selectedDate.set(get(selectedDate) === date ? null : date);
       selectedHours.set([]);
+      selectedSegment.set(null);
       updateField([], "scheduling");
     }
   }
 
   function toggleHour(hour: string) {
+    console.log("Toggling hour:", hour);
     selectedHours.update(hours => {
       const index = hours.indexOf(hour);
       if (index > -1) {
@@ -80,24 +84,39 @@
   async function loadAvailableDates() {
     console.log("Generating available dates...");
     try {
-      const datesWithHours: { [key: string]: string[] } = {};
+      const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string }[] }[] } = {};
       const startOfDay = getSkippedDateFromToday(1);
       const endOfYear = new Date(new Date().getFullYear() + 1, 11, 31);
 
       for (let d = new Date(startOfDay); d <= endOfYear; d.setDate(d.getDate() + 1)) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
         const dateKey = d.toISOString().split("T")[0];
-        datesWithHours[dateKey] = [];
+        datesWithHours[dateKey] = [
+          { name: "Morning", children: [] },
+          { name: "Afternoon", children: [] },
+          { name: "Evening", children: [] },
+        ];
 
         for (let hour = 9; hour <= 16.5; hour += 0.5) {
           const availableTime = new Date(d);
           availableTime.setHours(hour, (hour % 1) * 60, 0, 0);
-          const timeString = availableTime.toISOString();
-          datesWithHours[dateKey].push(timeString);
+          const timeString = availableTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const isoString = availableTime.toISOString();
+
+          if (hour < 12) {
+            datesWithHours[dateKey][0].children.push({ name: timeString, value: isoString });
+          } else if (hour < 17) {
+            datesWithHours[dateKey][1].children.push({ name: timeString, value: isoString });
+          } else {
+            datesWithHours[dateKey][2].children.push({ name: timeString, value: isoString });
+          }
         }
       }
 
-      const formattedDates = Object.entries(datesWithHours).map(([date, availableHours]) => ({ date, availableHours }));
+      const formattedDates = Object.entries(datesWithHours).map(([date, availableHours]) => ({
+        date,
+        availableHours: availableHours.filter(segment => segment.children.length > 0),
+      }));
       availableDatesStore.set(formattedDates);
       console.log("Formatted and stored available dates.");
     } catch (err: any) {
@@ -124,7 +143,7 @@
     <div class="calendar-header">
       <button on:click={previousMonth}>&lt;</button>
       <span>{new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-      <button on:click={nextMonth}>&mt;</button>
+      <button on:click={nextMonth}>&gt;</button>
     </div>
     <div class="calendar-weekdays">
       {#each weekDays as day}
@@ -151,17 +170,21 @@
       <div class="time-slot-sidebar">
         <p>Available hours for {$selectedDate}</p>
         <div class="time-slot-list">
-          {#each get(availableDatesStore).find(d => d.date === $selectedDate)?.availableHours || [] as hour}
-            <label class="time-slot-label" class:selected={$selectedHours.includes(hour)}>
-              <input
-                type="checkbox"
-                class="time-slot-checkbox"
-                checked={$selectedHours.includes(hour)}
-                on:change={() => toggleHour(hour)}
-              />
-              {new Date(hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </label>
-          {/each}
+          <div class="segment-buttons">
+            {#each get(availableDatesStore).find(d => d.date === $selectedDate)?.availableHours || [] as segment}
+              <button class="segment-button" class:selected={$selectedSegment === segment.name} on:click={() => selectedSegment.set(segment.name)}>
+                {segment.name}
+              </button>
+            {/each}
+          </div>
+
+          {#if $selectedSegment}
+            <div class="tags-container">
+              {#each get(availableDatesStore).find(d => d.date === $selectedDate)?.availableHours.find(s => s.name === $selectedSegment)?.children || [] as hour}
+                <TagNode node={hour} selectedTags={selectedHours} toggleTag={toggleHour} />
+              {/each}
+            </div>
+          {/if}
         </div>
       </div>
     {/if}
@@ -224,10 +247,48 @@
     border-top: 1px solid var(--color-outline);
   }
   .time-slot-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     margin-top: 0.5rem;
+  }
+
+  .segment-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .segment-button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #ccd0d5;
+    background-color: #ffffff;
+    color: #050505;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      background-color: #e4e6eb;
+    }
+
+    &.selected {
+      background-color: #1877f2;
+      color: #ffffff;
+      border-color: #1877f2;
+
+      &:hover {
+        background-color: #166fe5;
+      }
+    }
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .time-slot-checkbox {
     display: none;

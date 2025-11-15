@@ -4,19 +4,21 @@ import store from "../../../store.js";
 
 export async function submitScheduling() {
   const formData = get(formState);
+  console.log("Form data from store:", formData);
 
   const schedulingData = formData.scheduling.map((dateTime: string) => {
+    const startDate = new Date(dateTime);
+    const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
+
     return {
       summary: `Scheduled Consultation with ${formData.name}`,
       description: `Consultation for ${formData.name} regarding moving from ${formData.originCountry} to ${formData.destinationCountry}. Budget: ${formData.budget}.`,
       start: {
-        dateTime,
+        dateTime: startDate.toISOString(),
         timeZone: "America/Costa_Rica",
       },
       end: {
-        dateTime: new Date(
-          new Date(dateTime).getTime() + 30 * 60 * 1000
-        ).toISOString(),
+        dateTime: endDate.toISOString(),
         timeZone: "America/Costa_Rica",
       },
     };
@@ -51,6 +53,8 @@ export async function submitScheduling() {
       "Scheduling data successfully submitted to backend:",
       submissionData
     );
+
+    return await response.json();
   } catch (error: any) {
     console.error("Error submitting scheduling data to backend:", error);
     if (error.response) {
