@@ -25,15 +25,15 @@
   });
 
   function updateCalendar() {
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    emptyStartCells = firstDayOfMonth.getDay();
+    const firstDayOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+    const daysInMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+    emptyStartCells = firstDayOfMonth.getUTCDay();
     
     calendarDays = [];
     const availableDates = get(availableDatesStore);
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const currentDate = new Date(currentYear, currentMonth, day);
+      const currentDate = new Date(Date.UTC(currentYear, currentMonth, day));
       const formattedDate = currentDate.toISOString().split("T")[0];
       const availableDate = availableDates.find(d => d.date === formattedDate);
       calendarDays.push({
@@ -85,11 +85,11 @@
     console.log("Generating available dates...");
     try {
       const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string }[] }[] } = {};
-      const startOfDay = getSkippedDateFromToday(1);
-      const endOfYear = new Date(new Date().getFullYear() + 1, 11, 31);
+      const startOfDay = getStartDate();
+      const endOfYear = new Date(Date.UTC(startOfDay.getUTCFullYear() + 1, 11, 31));
 
-      for (let d = new Date(startOfDay); d <= endOfYear; d.setDate(d.getDate() + 1)) {
-        if (d.getDay() === 0 || d.getDay() === 6) continue;
+      for (let d = new Date(startOfDay); d <= endOfYear; d.setUTCDate(d.getUTCDate() + 1)) {
+        if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
         const dateKey = d.toISOString().split("T")[0];
         datesWithHours[dateKey] = [
           { name: "Morning", children: [] },
@@ -99,8 +99,12 @@
 
         for (let hour = 9; hour <= 16.5; hour += 0.5) {
           const availableTime = new Date(d);
-          availableTime.setHours(hour, (hour % 1) * 60, 0, 0);
-          const timeString = availableTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          availableTime.setUTCHours(hour, (hour % 1) * 60, 0, 0);
+          const timeString = availableTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/Costa_Rica'
+          });
           const isoString = availableTime.toISOString();
 
           if (hour < 12) {
@@ -127,10 +131,24 @@
 
   onMount(loadAvailableDates);
 
-  function getSkippedDateFromToday(daySkip: number = 2): Date {
-    const today = new Date();
-    today.setDate(today.getDate() + daySkip);
-    return today;
+  function convertToCST(date: Date): Date {
+    const offset = -6 * 60;
+    const localDate = new Date(date.getTime() + offset * 60 * 1000);
+    return localDate;
+  }
+
+  function getStartDate(): Date {
+    let date = convertToCST(new Date());
+    let workingDaysToAdd = 2;
+
+    while (workingDaysToAdd > 0) {
+      date.setUTCDate(date.getUTCDate() + 1);
+      const dayOfWeek = date.getUTCDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDaysToAdd--;
+      }
+    }
+    return date;
   }
 </script>
 
