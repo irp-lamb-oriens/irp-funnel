@@ -71,7 +71,7 @@
             submitSuccess = true;
 
             setTimeout(() => {
-                window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou"
+                window.location.href = "https://www.internationalrelocationpartner.com?refer=thankyou"
             }, 3000);
         } catch (error) {
             console.error('Submission failed:', error);

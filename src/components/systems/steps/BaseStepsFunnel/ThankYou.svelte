@@ -20,6 +20,7 @@
   import NameInputStage from "./stages/NameInputStage.svelte";
   import ThankYou from "./stages/ThankYou.svelte";
     import { isBirthdayValid, isBudgetValid, isPropertyTypeFromValid, isPropertyTypeToValid, isSquareFeetValid } from "../../helpers/validationRules.ts";
+    import ReasonInputSubmitStage from "./stages/ReasonInputSubmitStage.svelte";
 
   // Define the sequence of components and their conditions
   // Define the sequence of components and their conditions
@@ -35,7 +36,7 @@
       $store.squareFeet ? undefined : [[isPropertyTypeToValid, SquareFeetInputStage]],
       $store.budget ? undefined : [[isSquareFeetValid, BudgetInputStage]],
       $store.age ? undefined : [[isBudgetValid, AgeInputStage]],
-      $store.reasons ? undefined : [[isBirthdayValid, ReasonInputStage]],
+      $store.reasons ? undefined : [[isBirthdayValid, ReasonInputSubmitStage]],
     ].filter(Boolean).flat(),
     [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
     // New Order:

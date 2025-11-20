@@ -62,6 +62,14 @@
 		}
 	}
 
+	onMount(() => {
+		console.log("ThankYouStage: Display Data:", getDisplayData());
+		console.log("ThankYouStage: Funnel Copy for Display:", funnelCopyForDisplay);
+		const storeData = $store;
+		const apiUrl = storeData.apiURL ? storeData.apiURL() : window.location.origin;
+		console.log("ThankYouStage: API URL:", apiUrl);
+	});
+
 	async function handleSubmit() {
 		isLoading = true;
 		submitError = null;
@@ -91,6 +99,10 @@
 			}
 		}
 
+		function normalize(str: string) {
+			return str?.toLowerCase().replace(/-/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+		}
+
 		let funnelObjectParsed = null;
 		if (funnelObjectString) {
 			try {
@@ -100,10 +112,20 @@
 			}
 		}
 
+		const normalizedFunnelId = normalize(funnelId as string);
+		let countryCode = 'CR';
+		if (normalizedFunnelId?.includes('panama')) {
+			countryCode = 'PA';
+		} else if (normalizedFunnelId?.includes('mexico')) {
+			countryCode = 'MX';
+		}
+
 		const payload = {
 			...storeData,
 			funnelCopy: funnelCopyText === null ? undefined : funnelCopyText, 
 			utm: locallyStored,
+			isUpdate: false,
+			topCountries: [countryCode],
 			submit: {
 				...(storeData.submit || {}),
 				funnelId,
@@ -125,17 +147,16 @@
 				body: JSON.stringify(payload),
 			});
 
-			function normalize(str: string) {
-				return str?.toLowerCase().replace(/-/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-			}
-
 			let newsSourceId;
 			const normalizedFunnelId = normalize(funnelId as string);
-			if (normalizedFunnelId.includes('costa rica')) {
+			newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460';
+
+			if (normalizedFunnelId?.includes('costa rica')) {
 				newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460';
-			} else if (normalizedFunnelId.includes('panama')) {
+				// this condition is extra, is just here for clarity
+			} else if (normalizedFunnelId?.includes('panama')) {
 				newsSourceId = '9c67a6a84c4c05fb02ffd0ec620d7fa30804c3d84e2605046306a7a7f1bfded7';
-			} else if (normalizedFunnelId.includes('mexico')) {
+			} else if (normalizedFunnelId?.includes('mexico')) {
 				newsSourceId = '460b3b4148238d1ffa62fd36a3427aac493befb047d23ee24f7a215b5274c3c4';
 			}
 
@@ -173,13 +194,6 @@
 
 	// --- REDIRECT ON SUBMIT SUCCESS ---
 	let redirectTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	$: if (submitSuccess) {
-		if (redirectTimeout) clearTimeout(redirectTimeout);
-		redirectTimeout = setTimeout(() => {
-			window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou";
-		}, 3000);
-	}
 
 	import { onDestroy } from 'svelte';
 	onDestroy(() => {

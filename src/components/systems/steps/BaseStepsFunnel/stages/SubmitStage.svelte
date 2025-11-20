@@ -6,6 +6,7 @@
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
     import { browser } from '$app/environment';
     import { AGE_RANGES_BIDI } from '../../../helpers/constants.ts';
+    import { onMount } from 'svelte';
 
     let isLoading = false;
     let submitError: string | null = null;
@@ -41,6 +42,14 @@
     }
     // Removed the old error checking block based on stepsIndex and userData
 
+	onMount(() => {
+		console.log("ThankYouStage: Display Data:", getDisplayData());
+		console.log("ThankYouStage: Funnel Copy for Display:", funnelCopyForDisplay);
+		const storeData = $store;
+		const apiUrl = storeData.apiURL ? storeData.apiURL() : window.location.origin;
+		console.log("SubmitStage: API URL:", apiUrl);
+	});
+
     async function handleSubmit() {
         isLoading = true;
         submitError = null;
@@ -69,6 +78,7 @@
             // Ensure funnelCopy is undefined if funnelCopyText is null, otherwise use funnelCopyText
             funnelCopy: funnelCopyText === null ? undefined : funnelCopyText, 
             ...locallyStored,
+            isUpdate: true,
             submit: {
                 ...(storeData.submit || {}), // Ensure storeData.submit exists
                 funnelId,
@@ -96,13 +106,15 @@
             }
 
             // Determine the newsSourceId based on the funnelId
-            let newsSourceId;
+            let newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460';
             const normalizedFunnelId = normalize(funnelId as string);
-            if (normalizedFunnelId.includes('costa rica')) {
-                newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460';
-            } else if (normalizedFunnelId.includes('panama')) {
+
+            if (normalizedFunnelId?.includes('costa rica')) {
+                newsSourceId = 'b545170e1296ecbdc6f25f676114b279db7660cdd4d3025cc75f90e81007e460'; 
+                // this condition is extra, is just here for clarity
+            } else if (normalizedFunnelId?.includes('panama')) {
                 newsSourceId = '9c67a6a84c4c05fb02ffd0ec620d7fa30804c3d84e2605046306a7a7f1bfded7';
-            } else if (normalizedFunnelId.includes('mexico')) {
+            } else if (normalizedFunnelId?.includes('mexico')) {
                 newsSourceId = '460b3b4148238d1ffa62fd36a3427aac493befb047d23ee24f7a215b5274c3c4';
             }
 
@@ -133,7 +145,7 @@
             submitSuccess = true; // Set this after preparing 
 
             setTimeout(() => {
-                window.location.href = "https://www.internationalrelocationpartner.com?from=thankyou"
+                window.location.href = "https://www.internationalrelocationpartner.com?refer=thankyou"
             }, 3000);
             // Optionally clear store or redirect user here
             // saveToStore({ name: '', email: '', budget: null, countryFrom: null, countryTo: null, stepsIndex: 0 }); // Example reset
