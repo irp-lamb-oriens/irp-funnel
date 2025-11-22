@@ -3,18 +3,28 @@
     import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
     import Page from '../../../wrappers/Page/Page.svelte';
     import CountryInput from '../../../inputs/Country/Country.svelte'; // Use Country input
+    import PlainText from '../../../inputs/PlainText/PlainText.svelte';
     import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
 
     let currentCountryTo = get(store).countryTo || null; // Can be null initially
-    let isValid = currentCountryTo !== null && currentCountryTo.length === 2; // Valid if a 2-letter code is selected
+    let currentDestinationZip = get(store).destinationZip || '';
+    
+    let countryButtonRef: HTMLButtonElement;
+    let zipInputRef: HTMLInputElement;
+
+    $: isValid = currentCountryTo !== null && currentCountryTo.length === 2 && currentDestinationZip.trim().length > 0;
 
     export let canReveal = false;
 
     function handleSelect(selectedCode: string | null) {
         currentCountryTo = selectedCode;
-        isValid = currentCountryTo !== null && currentCountryTo.length === 2;
         saveToStore({ countryTo: currentCountryTo });
+    }
+
+    function handleZipChange(val: string) {
+        currentDestinationZip = val;
+        saveToStore({ destinationZip: currentDestinationZip });
     }
 
     function handleNext() {
@@ -37,6 +47,14 @@
             label="Destination Country"
             defaultCountryCode={currentCountryTo}
             onSelect={handleSelect}
+            bind:buttonRef={countryButtonRef}
+        />
+
+        <PlainText 
+            placeholder="Destination Zip Code" 
+            value={currentDestinationZip} 
+            onChange={handleZipChange} 
+            bind:inputElement={zipInputRef}
         />
 
         <SubmitButton

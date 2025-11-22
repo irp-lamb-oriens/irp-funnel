@@ -13,13 +13,14 @@
   import PropertyTypeToInputStage from "./stages/PropertyTypeToInputStage.svelte"; // Import new stage
   import CountryFromInputStage from "./stages/CountryFromInputStage.svelte";
   import CountryToInputStage from "./stages/CountryToInputStage.svelte";
+  import VehiclesInputStage from "./stages/VehiclesInputStage.svelte";
   import ReasonInputStage from "./stages/ReasonInputStage.svelte";
   import SubmitStage from "./stages/SubmitStage.svelte";
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import NameInputStage from "./stages/NameInputStage.svelte";
   import ThankYou from "./stages/ThankYou.svelte";
-    import { isBirthdayValid, isBudgetValid, isPropertyTypeFromValid, isPropertyTypeToValid, isSquareFeetValid } from "../../helpers/validationRules.ts";
+    import { isBirthdayValid, isBudgetValid, isPropertyTypeFromValid, isPropertyTypeToValid, isSquareFeetValid, isCountryFromValid, isCountryToValid, isVehiclesValid } from "../../helpers/validationRules.ts";
     import ReasonInputSubmitStage from "./stages/ReasonInputSubmitStage.svelte";
 
   // Define the sequence of components and their conditions
@@ -31,12 +32,15 @@
     // and then on capture the rest you save it on the server, and regardless of how much the user fills, you save the info at each stage
     // and then the server sends that data fo firestore
     ...[
-      $store.propertyTypeFrom ? undefined : [[() => true, PropertyTypeFromInputStage]],
+      $store.countryFrom && $store.originZip ? undefined : [[() => true, CountryFromInputStage]],
+      $store.countryTo && $store.destinationZip ? undefined : [[isCountryFromValid, CountryToInputStage]],
+      $store.propertyTypeFrom ? undefined : [[isCountryToValid, PropertyTypeFromInputStage]],
       $store.propertyTypeTo ? undefined : [[isPropertyTypeFromValid, PropertyTypeToInputStage]],
       $store.squareFeet ? undefined : [[isPropertyTypeToValid, SquareFeetInputStage]],
       $store.budget ? undefined : [[isSquareFeetValid, BudgetInputStage]],
       $store.age ? undefined : [[isBudgetValid, AgeInputStage]],
-      $store.reasons ? undefined : [[isBirthdayValid, ReasonInputSubmitStage]],
+      $store.vehicles && $store.vehicles.length > 0 ? undefined : [[isBirthdayValid, VehiclesInputStage]],
+      $store.reasons ? undefined : [[isVehiclesValid, ReasonInputSubmitStage]],
     ].filter(Boolean).flat(),
     [() => true, ThankYou], // VSL always shows first (assuming ThankYou here is the VSL component)
     // New Order:

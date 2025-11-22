@@ -148,7 +148,7 @@ currentFunnelId.subscribe(updateCurrentFunnel);
 currentFunnelVersion.subscribe(updateCurrentFunnel);
 
 const store = writable<Store>({
-  keysToSave: ["name", "email", "age", "budget", "reasonsForMoving", "squareFeet", "propertyTypeFrom", "propertyTypeTo"],
+  keysToSave: ["name", "email", "age", "budget", "reasonsForMoving", "squareFeet", "propertyTypeFrom", "propertyTypeTo", "originZip", "destinationZip", "vehicles"],
   name: "",
   email: "",
   age: null,
@@ -157,6 +157,9 @@ const store = writable<Store>({
   squareFeet: undefined, // Or null, consistent with other nullable fields like age/budget
   propertyTypeFrom: undefined,
   propertyTypeTo: undefined,
+  originZip: "",
+  destinationZip: "",
+  vehicles: [],
   reasonsForMoving: [],
   appLanguage: "en",
   apiURL: () => browser && window.location.origin.startsWith('http://localhost') ? "http://localhost:8000" : "https://irp-funnel-server.onrender.com",

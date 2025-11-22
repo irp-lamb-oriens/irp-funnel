@@ -13,6 +13,7 @@
   import PropertyTypeToInputStage from "./stages/PropertyTypeToInputStage.svelte"; // Import new stage
   import CountryFromInputStage from "./stages/CountryFromInputStage.svelte";
   import CountryToInputStage from "./stages/CountryToInputStage.svelte";
+  import VehiclesInputStage from "./stages/VehiclesInputStage.svelte";
   import ReasonInputStage from "./stages/ReasonInputStage.svelte";
   import SubmitStage from "./stages/SubmitStage.svelte";
   import { onMount } from "svelte";
@@ -25,18 +26,24 @@
     isSquareFeetValid,
     isPropertyTypeFromValid,
     isPropertyTypeToValid,
-    isReasonsValid
+    isReasonsValid,
+    isCountryFromValid,
+    isCountryToValid,
+    isVehiclesValid
   } from '../../helpers/validationRules.ts'; // Adjusted path
 
   // Define the sequence of components and their conditions
   const components = [
     [() => true, VSL], // VSL always shows first
-    [() => true, PropertyTypeFromInputStage], // Assuming this can start after VSL
+    [() => true, CountryFromInputStage],
+    [isCountryFromValid, CountryToInputStage],
+    [isCountryToValid, PropertyTypeFromInputStage],
     [isPropertyTypeFromValid, PropertyTypeToInputStage],
     [isPropertyTypeToValid, SquareFeetInputStage],
     [isSquareFeetValid, BudgetInputStage],
     [isBudgetValid, AgeInputStage],
-    [isBirthdayValid, ReasonInputStage], // Age input now depends on reasons being valid
+    [isBirthdayValid, VehiclesInputStage],
+    [isVehiclesValid, ReasonInputStage],
     [isReasonsValid, ZohoScheduling], // ZohoScheduling follows VSL
   ];
 </script>
