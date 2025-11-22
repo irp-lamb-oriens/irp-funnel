@@ -62,7 +62,13 @@
         const funnelObjectString = localStorage.getItem('currentFunnelObject');
         const funnelCopyText = localStorage.getItem('funnelCopyText');
         const locallyStored = Object.fromEntries(storeData.keysToSave.map((key: string) => {
-            return [key, localStorage.getItem(key)]
+            const rawValue = localStorage.getItem(key);
+            if (rawValue === null) return [key, null];
+            try {
+                return [key, JSON.parse(rawValue)];
+            } catch {
+                return [key, rawValue];
+            }
         }));
 
         let funnelObjectParsed = null;
