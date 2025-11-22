@@ -1,7 +1,6 @@
 export const moveSizes = [
-  { code: '1-bedroom-apartment', name: '1 bedroom apartment (from 30 to 80 boxes/items)' },
-  { code: '2-bedroom-apartment', name: '2 bedroom apartment (from 75 to 110 boxes/items)' },
-  { code: '2-bedroom-house', name: '2 bedroom house (from 100 to 150 boxes/items)' },
-  { code: '3-bedroom-house', name: '3 bedroom house (from 150 or more boxes/items)' },
-  { code: 'larger', name: 'Larger than a 3-bedroom house' },
+  { code: 'less-than-container', name: 'Less that a container (Studio)' },
+  { code: '20ft-container', name: '20 ft container (2 bedroom home)' },
+  { code: '40ft-container', name: '40ft container (3 bedroom home)' },
+  { code: '40ft-container-hc', name: '40ft container HC (3 to 4 bedroom home)' },
 ];

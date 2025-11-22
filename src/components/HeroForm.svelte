@@ -16,6 +16,7 @@
   import { budgetStore } from './systems/inputs/Budget/store.js';
   import MoveSize from './systems/inputs/MoveSize/MoveSize.svelte';
   import { moveSizeStore } from './systems/inputs/MoveSize/store.js';
+  import Vehicles from './systems/inputs/Vehicles/Vehicles.svelte';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
   import CTAButton from "./Header/CTAButton.svelte";
@@ -34,6 +35,7 @@
     propertyTypeFrom: '',
     propertyTypeTo: '',
     size: '',
+    vehicles: '',
     immigrationStatus: '',
     movingDate: ''
   };
@@ -66,7 +68,9 @@
     referrerInput: HTMLInputElement,
     sizeInput: HTMLButtonElement,
     budgetInput: HTMLButtonElement,
-    immigrationStatusInput: HTMLButtonElement;
+    immigrationStatusInput: HTMLButtonElement,
+    originZipInput: HTMLInputElement,
+    destinationZipInput: HTMLInputElement;
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -87,7 +91,7 @@
   function nextStep() {
     if (timeoutId) clearTimeout(timeoutId);
     currentStep++;
-    if (currentStep === 11 && !showReferrerStep) {
+    if (currentStep === 12 && !showReferrerStep) {
       submitForm();
     }
     focusInput(currentStep);
@@ -144,7 +148,7 @@
           errors.budget = '';
         }
         break;
-      case 9:
+      case 10:
         if (!$formState.immigrationStatus.trim()) {
           errors.immigrationStatus = 'Please enter your immigration status';
           isValid = false;
@@ -152,7 +156,7 @@
           errors.immigrationStatus = '';
         }
         break;
-      case 10:
+      case 11:
         if ($formState.scheduling.length === 0) {
           errors.movingDate = 'Please select a moving date';
           isValid = false;
@@ -184,6 +188,34 @@
           errors.size = '';
         }
         break;
+      case 9:
+        // Vehicles validation - check if at least one vehicle has year, make, model if required?
+        // Or strictly if array is not empty and full.
+        // User requirement: "all three inputs are required" for the vehicle being added.
+        // We will assume at least one complete vehicle is required if they have vehicles.
+        // But wait, is vehicle mandatory? The task says "+ 1 vehicle...".
+        // I'll enforce at least one vehicle must be fully filled if there are any, or just proceed.
+        // Given "all three inputs are required", I'll check the last one or all.
+        // Actually, let's just check if any vehicle is incomplete.
+        const incompleteVehicle = $formState.vehicles.some(v => !v.year || !v.make || !v.model);
+        if (incompleteVehicle || $formState.vehicles.length === 0) {
+             // If they have 0 vehicles, maybe they don't have one? 
+             // But the component initializes with 1 empty one.
+             // So if they haven't filled it, it's incomplete.
+             // Unless they remove it? The component allows removing if > 1.
+             // If the list is empty (impossible via UI currently), pass.
+             // If the list has 1 empty vehicle, fail?
+             // I'll fail if there is an incomplete vehicle.
+             const hasEmpty = $formState.vehicles.some(v => !v.year || !v.make || !v.model);
+             if (hasEmpty) {
+                 // We can't easily set a specific error message on the component from here without a store,
+                 // but we can prevent next step.
+                 // The component handles its own internal validation display somewhat.
+                 // I'll prevent next step if any field is missing.
+                 isValid = false;
+             }
+        }
+        break;
     }
     errors = { ...errors };
     return isValid;
@@ -191,7 +223,7 @@
 
   async function submitForm() {
     console.log("submitForm called");
-    if (currentStep === 11 && !validateStep(currentStep)) {
+    if (currentStep === 12 && !validateStep(currentStep)) {
       return;
     }
 
@@ -204,9 +236,9 @@
         hangoutLink = response.hangoutLink;
         window.open(calendarLink, '_blank');
       }
-      currentStep = 12; // Go to "Thank You"
+      currentStep = 13; // Go to "Thank You"
       timeoutId = setTimeout(() => {
-        currentStep = 13; // Go to final banner
+        currentStep = 14; // Go to final banner
       }, 3000);
     } catch (error) {
       console.error('An error occurred during form submission:', error);
@@ -246,12 +278,15 @@
         sizeInput?.focus();
         break;
       case 9:
-        immigrationStatusInput?.focus();
+        // Vehicles
         break;
       case 10:
-        // No specific input to focus for Calendar
+        immigrationStatusInput?.focus();
         break;
       case 11:
+        // Calendar
+        break;
+      case 12:
         referrerInput?.focus();
         break;
     }
@@ -298,8 +333,12 @@
             <h2>Destination country: Where do you wanna move</h2>
             <Country onSelect={(code) => {
               updateField(code || '', 'destinationCountry');
-            }} bind:buttonRef={destinationCountryInput} on:enter={handleNextStep} />
+            }} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+            
+            <h2>Destination Zip Code</h2>
+            <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
+
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
@@ -311,8 +350,12 @@
             <h2>Where are you from?</h2>
             <Country onSelect={(code) => {
               updateField(code || '', 'originCountry');
-            }} bind:buttonRef={originCountryInput} on:enter={handleNextStep} />
+            }} bind:buttonRef={originCountryInput} on:enter={() => {}} />
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
+
+            <h2>Origin Zip Code</h2>
+            <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onEnter={handleNextStep} bind:inputElement={originZipInput} />
+
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
@@ -393,6 +436,20 @@
 
         {#if currentStep === 9}
           <div class="form-frame active">
+            <h2>Vehicles</h2>
+            <p class="sub-heading">Tell us about the vehicles you are shipping (Year, Make, Model)</p>
+            <Vehicles 
+                bind:vehicles={$formState.vehicles} 
+                onUpdate={(v) => updateField(v, 'vehicles')}
+            />
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+            </div>
+          </div>
+        {/if}
+
+        {#if currentStep === 10}
+          <div class="form-frame active">
             <h2>Immigration Status</h2>
             <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
             {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
@@ -402,7 +459,7 @@
           </div>
         {/if}
 
-        {#if currentStep === 10}
+        {#if currentStep === 11}
           <div class="form-frame active">
             <h2>Desired moving date</h2>
             <Calendar />
@@ -413,7 +470,7 @@
           </div>
         {/if}
 
-        {#if currentStep === 11 && showReferrerStep}
+        {#if currentStep === 12 && showReferrerStep}
           <div class="form-frame active">
             <h2>Who referred you to us?</h2>
             <PlainText placeholder="The name here" bind:value={$formState.referredBy} onEnter={submitForm} bind:inputElement={referrerInput} />
@@ -423,7 +480,7 @@
           </div>
         {/if}
 
-        {#if currentStep === 12}
+        {#if currentStep === 13}
           <div class="form-frame active">
             <h2>Thank You!</h2>
             <h4>An email has been sent to your inbox.</h4>
@@ -435,7 +492,7 @@
           </div>
         {/if}
 
-        {#if currentStep === 13}
+        {#if currentStep === 14}
           <div class="form-frame active">
             <div class="banner-content">
               <h6 class="banner-subtitle">

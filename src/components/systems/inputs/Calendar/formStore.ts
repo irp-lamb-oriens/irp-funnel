@@ -1,5 +1,11 @@
 import { writable } from "svelte/store";
 
+export type Vehicle = {
+  year: string;
+  make: string;
+  model: string;
+};
+
 export type FormState = {
   name: string;
   email: string;
@@ -13,6 +19,9 @@ export type FormState = {
   size: string;
   immigrationStatus: string;
   scheduling: string[];
+  originZip: string;
+  destinationZip: string;
+  vehicles: Vehicle[];
 };
 
 // Define a store for the form state
@@ -29,11 +38,14 @@ export const formState = writable<FormState>({
   size: "",
   immigrationStatus: "",
   scheduling: [],
+  originZip: "",
+  destinationZip: "",
+  vehicles: [],
 });
 
 // Update the form state on input change
 export function updateField(
-  value: string | string[],
+  value: string | string[] | Vehicle[],
   field: keyof FormState
 ) {
   // Update form state
