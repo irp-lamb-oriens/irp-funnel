@@ -1,4 +1,4 @@
-<script lang="ts">
+o<script lang="ts">
   import { get } from 'svelte/store';
   import store, { saveToStore, incrementStepsIndex } from '../../../../store.ts';
   import Page from '../../../wrappers/Page/Page.svelte';
@@ -6,6 +6,7 @@
   import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
   import IconGridSelector from '../../../selectors/IconGridSelector/IconGridSelector.svelte';
   import { isPropertyTypeToValid } from '../../../helpers/validationRules.ts';
+  import countries from '../../../inputs/Country/countries.ts';
 
   export let canReveal: boolean;
 
@@ -17,6 +18,9 @@
   ];
 
   let selectedPropertyTypeTo: string | undefined = get(store).propertyTypeTo;
+
+  $: countryToCode = $store.countryTo;
+  $: countryToName = countries.find(c => c.code === countryToCode)?.name || countryToCode;
 
   $: isValid = ($store.propertyTypeTo, isPropertyTypeToValid());
 
@@ -35,7 +39,7 @@
 <Page>
   <div class="stage-content">
     <MarkdownText {canReveal}>
-      ## What type of place are you Relocating to?
+      ## What type of place are you Relocating to in **{countryToName}**?
     </MarkdownText>
 
     <IconGridSelector

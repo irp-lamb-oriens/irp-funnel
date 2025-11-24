@@ -6,6 +6,7 @@
   import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
   import IconGridSelector from '../../../selectors/IconGridSelector/IconGridSelector.svelte';
   import { isPropertyTypeFromValid } from '../../../helpers/validationRules.ts';
+  import countries from '../../../inputs/Country/countries.ts';
 
   export let canReveal: boolean;
 
@@ -17,6 +18,9 @@
   ];
 
   let selectedPropertyTypeFrom: string | undefined = get(store).propertyTypeFrom;
+
+  $: countryFromCode = $store.countryFrom;
+  $: countryFromName = countries.find(c => c.code === countryFromCode)?.name || countryFromCode;
 
   $: isValid = ($store.propertyTypeFrom, isPropertyTypeFromValid());
 
@@ -39,7 +43,7 @@
 <Page>
   <div class="stage-content">
     <MarkdownText {canReveal}>
-      ## What type of place are you Relocating from?
+      ## What type of place are you Relocating from in **{countryFromName}**?
     </MarkdownText>
 
     <IconGridSelector

@@ -31,6 +31,12 @@
             incrementStepsIndex();
         }
     }
+
+    function handleSkip() {
+        vehicles = [];
+        saveToStore({ vehicles });
+        incrementStepsIndex();
+    }
 </script>
 
 <Page>
@@ -46,11 +52,17 @@
             onUpdate={handleUpdate}
         />
 
-        <SubmitButton
-            label="Next"
-            callback={handleNext}
-            disabled={!isValid}
-        />
+        <div class="buttons-row">
+            <SubmitButton
+                label="Next"
+                callback={handleNext}
+                disabled={!isValid}
+            />
+            
+            <button class="skip-btn" on:click={handleSkip}>
+                I don't have vehicles to ship
+            </button>
+        </div>
     </div>
 </Page>
 
@@ -68,5 +80,25 @@
         color: #f0f0f0;
         font-size: 1rem;
         margin-bottom: 1rem;
+    }
+
+    .buttons-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .skip-btn {
+        background: none;
+        border: none;
+        color: #6b7280;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0;
+    }
+
+    .skip-btn:hover {
+        color: #374151;
     }
 </style>

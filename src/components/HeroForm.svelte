@@ -23,6 +23,7 @@
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
+  import countries from './systems/inputs/Country/countries.js';
 
   let currentStep = 0;
   let errors = {
@@ -37,11 +38,16 @@
     size: '',
     vehicles: '',
     immigrationStatus: '',
-    movingDate: ''
+    movingDate: '',
+    originZip: '',
+    destinationZip: ''
   };
 
   let isEmailValid = false;
   let isPhoneValid = false;
+
+  $: originCountryName = countries.find(c => c.code === $formState.originCountry)?.name || $formState.originCountry;
+  $: destinationCountryName = countries.find(c => c.code === $formState.destinationCountry)?.name || $formState.destinationCountry;
 
   immigrationStatusStore.subscribe(value => {
     updateField(value || '', 'immigrationStatus');
@@ -88,6 +94,11 @@
     }
   }
 
+  function handleSkipVehicles() {
+    updateField([], 'vehicles');
+    nextStep();
+  }
+
   function nextStep() {
     if (timeoutId) clearTimeout(timeoutId);
     currentStep++;
@@ -99,6 +110,8 @@
 
   function validateStep(step: number) {
     let isValid = true;
+    const zipRegex = /^[a-zA-Z0-9\s-]{3,10}$/;
+
     switch (step) {
       case 0:
         if (!$formState.email.trim() || !isEmailValid) {
@@ -123,6 +136,12 @@
         } else {
           errors.destinationCountry = '';
         }
+        if (!$formState.destinationZip || !zipRegex.test($formState.destinationZip.trim())) {
+          errors.destinationZip = 'Please enter a valid zip code';
+          isValid = false;
+        } else {
+          errors.destinationZip = '';
+        }
         break;
       case 3:
         if (!$formState.originCountry.trim()) {
@@ -130,6 +149,12 @@
           isValid = false;
         } else {
           errors.originCountry = '';
+        }
+        if (!$formState.originZip || !zipRegex.test($formState.originZip.trim())) {
+          errors.originZip = 'Please enter a valid zip code';
+          isValid = false;
+        } else {
+          errors.originZip = '';
         }
         break;
       case 4:
@@ -338,6 +363,7 @@
             
             <h2>Destination Zip Code</h2>
             <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
+            {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
 
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -355,6 +381,7 @@
 
             <h2>Origin Zip Code</h2>
             <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onEnter={handleNextStep} bind:inputElement={originZipInput} />
+            {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
 
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
@@ -387,7 +414,7 @@
 
         {#if currentStep === 6}
           <div class="form-frame active">
-            <h2>What type of place are you relocating from?</h2>
+            <h2>What type of place are you relocating from in {originCountryName}?</h2>
             <IconGridSelector
               options={[
                 { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
@@ -406,7 +433,7 @@
 
         {#if currentStep === 7}
           <div class="form-frame active">
-            <h2>What type of place are you relocating to?</h2>
+            <h2>What type of place are you relocating to in {destinationCountryName}?</h2>
             <IconGridSelector
               options={[
                 { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
@@ -442,8 +469,11 @@
                 bind:vehicles={$formState.vehicles} 
                 onUpdate={(v) => updateField(v, 'vehicles')}
             />
-            <div class="button-wrapper">
+            <div class="button-wrapper buttons-row">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <button class="skip-btn" on:click={handleSkipVehicles}>
+                  I don't have vehicles to ship
+              </button>
             </div>
           </div>
         {/if}
@@ -570,6 +600,28 @@
     display: flex;
     justify-content: flex-end;
     margin-top: 1rem;
+  }
+
+  .buttons-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-direction: row-reverse;
+      justify-content: space-between !important;
+  }
+
+  .skip-btn {
+      background: none;
+      border: none;
+      color: #6b7280;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0;
+  }
+
+  .skip-btn:hover {
+      color: #f0f0f0;
   }
 
   .form-steps {

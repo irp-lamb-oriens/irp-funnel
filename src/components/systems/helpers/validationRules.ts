@@ -36,20 +36,10 @@ export const isReasonsValid = (): boolean => {
 
 export const isVehiclesValid = (): boolean => {
   const vehicles = get(store).vehicles;
-  // If vehicles array is empty, is it valid? Maybe they have no vehicles.
-  // But if they added one, it must be complete.
-  // Given the user requirement "all three inputs are required", and the component initializes with 1,
-  // we can assume at least one valid vehicle is needed if the stage is shown?
-  // Or we can allow skipping if empty? 
-  // But the prompt "add 1 vehicle... + 2..." implies collecting vehicle info.
-  // I'll stick to: if present, must be valid. If empty, valid (maybe they have none).
-  // BUT, `VehiclesInputStage` initializes with one empty vehicle.
-  // So the user MUST fill it or delete it (if > 1).
-  // If they have 1 empty vehicle, `every` returns false?
-  // No, if `vehicles` has `{year:"", ...}`, `v.year` is falsy.
-  if (!vehicles || vehicles.length === 0) return true; // Allow no vehicles? Or force 1? "this all need to add... + 1 vehicle". I'll force 1 valid vehicle.
-  // Actually, let's enforce that all vehicles in the list are valid.
-  return vehicles.length > 0 && vehicles.every((v: any) => v.year && v.make && v.model);
+  // Allow empty vehicles array (user skipped or has no vehicles)
+  if (!vehicles || vehicles.length === 0) return true;
+  // If vehicles are present, all must be complete
+  return vehicles.every((v: any) => v.year && v.make && v.model);
 };
 
 export const isCountryFromValid = (): boolean => {
