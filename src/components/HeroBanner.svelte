@@ -35,7 +35,7 @@
         </li>
       </ul>
       <div class="button-row">
-        <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
+        <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
         <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>

@@ -73,7 +73,7 @@
 
     {#if cta}
       <li role="none">
-        <CTAButton label={cta.label} href={cta.href} variant="primary" />
+        <CTAButton trigger={true} label={cta.label} href={cta.href} variant="primary" />
       </li>
     {/if}
   </ul>

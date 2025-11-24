@@ -55,7 +55,7 @@
           <li class="free-resource-card__list-item">Understanding your requirements. We like to know what your needs are and know what is important to you.</li>
           <li class="free-resource-card__list-item">Explain to you the rules and regulations that may affect your relocation process, this quick call can help us review these rules and advice depending on your specific case.</li>
         </ul>
-        <CTAButton label="Schedule Consultation" href="/consultation" variant="primary" />
+        <CTAButton trigger={true} label="Schedule Consultation" href="/consultation" variant="primary" />
       </div>
     </div>
   </section>

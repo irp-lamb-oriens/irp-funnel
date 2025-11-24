@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     export let label: string;
     export let href: string | null = null;
     export let ariaLabel: string = "";
@@ -18,6 +19,7 @@
     export let fullWidth: boolean = false;
     export let target: "_blank" | "_self" | "_parent" | "_top" = "_self";
     export let rel: string = "";
+    export let trigger: boolean = false;
   
     $: isLink = !!href && !disabled && !loading;
   
@@ -26,6 +28,11 @@
     $: variantClass = `cta-${variant}`;
   
     function onClick(e: MouseEvent) {
+      if (trigger) {
+        e.preventDefault();
+        const search = window.location.search;
+        goto(`/${search}#hero-form`);
+      }
       callback?.();
       if (!isLink) e.preventDefault();
     }
@@ -46,6 +53,7 @@
       target={target}
       rel={target === "_blank" ? (rel ? rel : "noopener noreferrer") : rel}
       on:keydown={onKeydown}
+      on:click={onClick}
     >
       <span class="cta-btn__inner">
         <slot name="icon-left" />
@@ -191,4 +199,3 @@
     }
     .cta-link:hover { opacity: 0.85; }
   </style>
-  

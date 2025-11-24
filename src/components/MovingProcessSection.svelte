@@ -246,7 +246,7 @@
 
   <div class="moving-process-actions">
     <div class="moving-process-btn-wrapper">
-      <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
+      <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
     </div>
     <div class="moving-process-btn-wrapper">
       <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />

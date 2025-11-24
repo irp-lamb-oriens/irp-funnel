@@ -322,7 +322,7 @@
   export let imageAlt: string = "video-lightbox1b";
 </script>
 
-<div class="hero-banner">
+<div class="hero-banner" id="hero-form">
   <Loader visible={isLoading} />
   <VideoBanner
   videoUrl={videoUrl}
@@ -546,7 +546,7 @@
                 </li>
               </ul>
               <div class="button-row">
-                <CTAButton label="Schedule Consultation" href="/consultation/" variant="primary" />
+                <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
                 <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
               </div>
             </div>
@@ -582,7 +582,9 @@
 
   h2 {
     font-size: 1.5rem;
-    font-weight: 600;
+    font-family: var(--font-title);
+    font-weight: 700;
+    color: var(--color-highlight-2);
   }
 
   h6 {
