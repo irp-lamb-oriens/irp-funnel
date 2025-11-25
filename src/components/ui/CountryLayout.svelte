@@ -20,7 +20,7 @@
   <div class="cta-content">
     <h2>{ctaTitle}</h2>
     <div class="button-row">
-      <CTAButton label={ctaPrimary.label} href={ctaPrimary.href} variant="primary" />
+      <CTAButton trigger={true} label={ctaPrimary.label} href={ctaPrimary.href} variant="primary" />
       <CTAButton label={ctaSecondary.label} href={ctaSecondary.href} variant="secondary-inverted" />
     </div>
     <h6>{ctaSubtitle}</h6>
