@@ -4,15 +4,19 @@
 	import Footer from '../../components/Footer/Footer.svelte';
 	import CountryLayout from '../../components/ui/CountryLayout.svelte';
 	import './consultation.scss';
+    import { goto } from '$app/navigation';
 	const iframeUrl =
 		'https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/4742044000000055060';
 
 	onMount(() => {
 		setTimeout(() => {
-			const iframeWrapper = document.getElementById('iframe-wrapper');
-			if (iframeWrapper) {
-				iframeWrapper.scrollIntoView({ behavior: 'smooth' });
-			}
+
+      const search = window.location.search;
+        goto(`/${search}#hero-form`);
+			// const iframeWrapper = document.getElementById('iframe-wrapper');
+			// if (iframeWrapper) {
+			// 	iframeWrapper.scrollIntoView({ behavior: 'smooth' });
+			// }
 		}, 1000);
 	});
 </script>
