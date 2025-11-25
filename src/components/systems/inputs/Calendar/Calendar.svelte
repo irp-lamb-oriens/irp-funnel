@@ -99,7 +99,7 @@
 
         for (let hour = 9; hour <= 16.5; hour += 0.5) {
           const availableTime = new Date(d);
-          availableTime.setUTCHours(hour, (hour % 1) * 60, 0, 0);
+          availableTime.setUTCHours(hour + 6, (hour % 1) * 60, 0, 0);
           const timeString = availableTime.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
