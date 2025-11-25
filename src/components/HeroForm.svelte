@@ -262,9 +262,6 @@
         window.open(calendarLink, '_blank');
       }
       currentStep = 13; // Go to "Thank You"
-      timeoutId = setTimeout(() => {
-        currentStep = 14; // Go to final banner
-      }, 3000);
     } catch (error) {
       console.error('An error occurred during form submission:', error);
     } finally {
