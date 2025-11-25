@@ -136,7 +136,8 @@
         } else {
           errors.destinationCountry = '';
         }
-        if (!$formState.destinationZip || !zipRegex.test($formState.destinationZip.trim())) {
+        // Destination zip is optional
+        if ($formState.destinationZip && !zipRegex.test($formState.destinationZip.trim())) {
           errors.destinationZip = 'Please enter a valid zip code';
           isValid = false;
         } else {

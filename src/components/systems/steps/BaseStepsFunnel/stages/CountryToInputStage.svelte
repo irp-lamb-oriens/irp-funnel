@@ -13,7 +13,7 @@
     let countryButtonRef: HTMLButtonElement;
     let zipInputRef: HTMLInputElement;
 
-    $: isValid = currentCountryTo !== null && currentCountryTo.length === 2 && currentDestinationZip.trim().length > 0;
+    $: isValid = currentCountryTo !== null && currentCountryTo.length === 2;
 
     export let canReveal = false;
 
