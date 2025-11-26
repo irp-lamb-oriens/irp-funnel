@@ -219,7 +219,7 @@
       </div>
 
       <!-- Make Input -->
-      {#if vehicle.year.length === 4}
+      {#if vehicle.year.trim() !== ""}
         <div class="input-group make-group" in:fade>
              <div class="custom-select">
                 <input 
@@ -257,7 +257,7 @@
       {/if}
 
       <!-- Model Input -->
-      {#if vehicle.make && vehicleStates[i].models.length > 0 || (vehicle.make && vehicleStates[i].error)}
+      {#if vehicle.make.trim() !== ""}
          <div class="input-group model-group" in:fade>
              <div class="custom-select">
                 <input 
