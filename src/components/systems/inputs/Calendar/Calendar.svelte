@@ -104,9 +104,9 @@
           { name: "Evening", children: [] },
         ];
 
-        for (let hour = 9; hour <= 16.5; hour += 0.5) {
+        for (let hour = 9; hour <= 16; hour += 1) {
           const availableTime = new Date(d);
-          availableTime.setUTCHours(hour + 6, (hour % 1) * 60, 0, 0);
+          availableTime.setUTCHours(hour + 6, 0, 0, 0);
 
           const slotTime = availableTime.getTime();
           // Check for conflicts: 60 minutes buffer (30 min call + 30 min notes)
