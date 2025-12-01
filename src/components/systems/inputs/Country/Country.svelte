@@ -250,7 +250,7 @@
       bind:this={inputRef}
       value={typeahead}
       on:input={handleInput}
-      placeholder="Type to search language..."
+      placeholder="Type to search country..."
       class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out"
       aria-autocomplete="list"
       aria-controls={open ? "language-listbox" : undefined}

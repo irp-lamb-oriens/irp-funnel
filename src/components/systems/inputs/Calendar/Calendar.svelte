@@ -5,7 +5,7 @@
   import store from "../../../store.ts";
   import TagNode from "./TagNode.svelte";
 
-  const availableDatesStore = writable<{ date: string; availableHours: { name: string; children: { name: string; value: string }[] }[] }[]>([]);
+  const availableDatesStore = writable<{ date: string; availableHours: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] }[]>([]);
   const errorLoading = writable<string | null>(null);
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -84,11 +84,18 @@
   async function loadAvailableDates() {
     console.log("Generating available dates...");
     try {
-      const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string }[] }[] } = {};
-      const startOfDay = getStartDate();
-      const endOfYear = new Date(Date.UTC(startOfDay.getUTCFullYear() + 1, 11, 31));
+      const apiUrl = get(store).apiURL();
+      const response = await fetch(`${apiUrl}/api/events`);
+      if (!response.ok) throw new Error("Failed to fetch events");
+      const events = await response.json();
+      const busyTimes = events.map((e: any) => new Date(e.start.dateTime).getTime());
 
-      for (let d = new Date(startOfDay); d <= endOfYear; d.setUTCDate(d.getUTCDate() + 1)) {
+      const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] } = {};
+      const startOfDay = getStartDate();
+      const maxDate = convertToCST(new Date());
+      maxDate.setUTCDate(maxDate.getUTCDate() + 14);
+
+      for (let d = new Date(startOfDay); d <= maxDate; d.setUTCDate(d.getUTCDate() + 1)) {
         if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
         const dateKey = d.toISOString().split("T")[0];
         datesWithHours[dateKey] = [
@@ -100,19 +107,26 @@
         for (let hour = 9; hour <= 16.5; hour += 0.5) {
           const availableTime = new Date(d);
           availableTime.setUTCHours(hour + 6, (hour % 1) * 60, 0, 0);
+
+          const slotTime = availableTime.getTime();
+          // Check for conflicts: 60 minutes buffer (30 min call + 30 min notes)
+          // A slot is unavailable if there exists an event such that abs(slotTime - eventTime) < 60 mins
+          const isBusy = busyTimes.some((eventTime: number) => Math.abs(slotTime - eventTime) < 60 * 60 * 1000);
+
           const timeString = availableTime.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             timeZone: 'America/Costa_Rica'
           });
           const isoString = availableTime.toISOString();
+          const slot = { name: timeString, value: isoString, disabled: isBusy };
 
           if (hour < 12) {
-            datesWithHours[dateKey][0].children.push({ name: timeString, value: isoString });
+            datesWithHours[dateKey][0].children.push(slot);
           } else if (hour < 17) {
-            datesWithHours[dateKey][1].children.push({ name: timeString, value: isoString });
+            datesWithHours[dateKey][1].children.push(slot);
           } else {
-            datesWithHours[dateKey][2].children.push({ name: timeString, value: isoString });
+            datesWithHours[dateKey][2].children.push(slot);
           }
         }
       }

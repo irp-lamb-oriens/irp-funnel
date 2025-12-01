@@ -1,7 +1,7 @@
 <script lang="ts">
   import { writable, type Writable } from 'svelte/store';
 
-  export let node: { name: string; value: string };
+  export let node: { name: string; value: string; disabled: boolean };
   export let selectedTags: Writable<string[]>;
   export let toggleTag: (tag: string) => void;
 
@@ -14,7 +14,8 @@
 <button
   class="tag-button"
   class:selected={isSelected}
-  on:click={() => toggleTag(node.value)}
+  disabled={node.disabled}
+  on:click={() => !node.disabled && toggleTag(node.value)}
 >
   {node.name}
 </button>
@@ -43,6 +44,14 @@
       &:hover {
         background-color: #166fe5;
       }
+    }
+
+    &:disabled {
+      background-color: #f0f2f5;
+      color: #bcc0c4;
+      border-color: #e4e6eb;
+      cursor: not-allowed;
+      pointer-events: none;
     }
   }
 </style>
