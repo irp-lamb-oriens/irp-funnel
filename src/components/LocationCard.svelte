@@ -49,7 +49,7 @@
     {#if open}
       {#each details as detail}
         <div class="location-card__detail">
-          <img class="location-card__img" src="/icons/map.png" alt={detail.imgAlt} />
+          <img class="location-card__img" src="./icons/map.png" alt={detail.imgAlt} />
           <div class="location-card__info">
             {#if detail.label}
               <h5 class="location-card__label">

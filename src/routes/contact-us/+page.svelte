@@ -17,7 +17,7 @@
       <div class="location-col">
         <h3>United States</h3>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <h5>International Relocation Partner LLC</h5>
             <p>175 SW 7th Street STE 1517 – 559<br />MIAMI FLORIDA 33130</p>
@@ -25,14 +25,14 @@
         </div>
         <h3>Panamá</h3>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <h5>Panama City</h5>
             <p>PH Grupo Pistar, Vía Simón Bolivar Oficina 239</p>
           </div>
         </div>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <h5>Boquete</h5>
             <p>Coming soom to Boquete, Chiriqui,<br />Panama</p>
@@ -42,14 +42,14 @@
       <div class="location-col">
         <h3>Costa Rica</h3>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <h5>Alajuela</h5>
             <p>700 metros al este del cruce del aeropuerto Juan SantaMaria, Carretera a Heredia, WF Office Building, Alajuela Province, Río Segundo, 20109</p>
           </div>
         </div>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <h5>Guanacaste</h5>
             <p>A 1.5kms norte de la plaza de futbol de Villarreal. Camino a Huacas, 500 metros después de la gasolinera. Tamarindo, Guanacaste</p>
@@ -59,7 +59,7 @@
       <div class="location-col">
         <h3>Spain</h3>
         <div class="location-blurb">
-          <img src="/icons/map.png" alt="Map" width="60" height="60" />
+          <img src="./icons/map.png" alt="Map" width="60" height="60" />
           <div>
             <p>Calle Bolivia 17, 11ºB, 28016, Madrid, Spain.</p>
           </div>
