@@ -11,8 +11,8 @@ export async function submitScheduling() {
     const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
 
     return {
-      summary: `Scheduled Consultation with ${formData.name}`,
-      description: `Consultation for ${formData.name} regarding moving from ${formData.originCountry} to ${formData.destinationCountry}. Budget: ${formData.budget}.`,
+      summary: `Scheduled Consultation with ${formData.name} ${formData.surname}`,
+      description: `Consultation for ${formData.name} ${formData.surname} regarding moving from ${formData.originCity ? formData.originCity + ', ' : ''}${formData.originCountry} to ${formData.destinationCity ? formData.destinationCity + ', ' : ''}${formData.destinationCountry}. Budget: ${formData.budget}.`,
       start: {
         dateTime: startDate.toISOString(),
         timeZone: "America/Costa_Rica",

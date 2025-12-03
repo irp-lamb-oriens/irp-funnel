@@ -28,6 +28,7 @@
   let currentStep = 0;
   let errors = {
     name: '',
+    surname: '',
     email: '',
     destinationCountry: '',
     originCountry: '',
@@ -40,7 +41,9 @@
     immigrationStatus: '',
     movingDate: '',
     originZip: '',
-    destinationZip: ''
+    destinationZip: '',
+    originCity: '',
+    destinationCity: ''
   };
 
   let isEmailValid = false;
@@ -67,9 +70,12 @@
   let calendarLink = '';
   let hangoutLink = '';
   let nameInput: HTMLInputElement,
+    surnameInput: HTMLInputElement,
     emailInput: HTMLInputElement,
     destinationCountryInput: HTMLButtonElement,
+    destinationCityInput: HTMLInputElement,
     originCountryInput: HTMLButtonElement,
+    originCityInput: HTMLInputElement,
     phoneInput: HTMLButtonElement,
     referrerInput: HTMLInputElement,
     sizeInput: HTMLButtonElement,
@@ -128,13 +134,26 @@
         } else {
           errors.name = '';
         }
+        if (!$formState.surname.trim()) {
+          errors.surname = 'Fill this field before proceeding';
+          isValid = false;
+        } else {
+          errors.surname = '';
+        }
         break;
+      case 2:
       case 2:
         if (!$formState.destinationCountry.trim()) {
           errors.destinationCountry = 'Fill this field before proceeding';
           isValid = false;
         } else {
           errors.destinationCountry = '';
+        }
+        if (!$formState.destinationCity.trim()) {
+          errors.destinationCity = 'Fill this field before proceeding';
+          isValid = false;
+        } else {
+          errors.destinationCity = '';
         }
         // Destination zip is optional
         if ($formState.destinationZip && !zipRegex.test($formState.destinationZip.trim())) {
@@ -343,8 +362,12 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <PlainText label="Tell us your name" placeholder="John Doe" bind:value={$formState.name} onEnter={handleNextStep} bind:inputElement={nameInput} />
+            <PlainText label="Tell us your first name" placeholder="John" bind:value={$formState.name} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
             {#if errors.name}<span class="error">{errors.name}</span>{/if}
+            
+            <PlainText label="Tell us your last name" placeholder="Doe" bind:value={$formState.surname} onEnter={handleNextStep} bind:inputElement={surnameInput} />
+            {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
+
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
             </div>
@@ -359,6 +382,10 @@
             }} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
             
+            <h2>Destination City</h2>
+            <PlainText placeholder="City" bind:value={$formState.destinationCity} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
+            {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
+
             <h2>Destination Zip Code</h2>
             <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
             {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
@@ -376,6 +403,10 @@
               updateField(code || '', 'originCountry');
             }} bind:buttonRef={originCountryInput} on:enter={() => {}} />
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
+
+            <h2>Origin City</h2>
+            <PlainText placeholder="City" bind:value={$formState.originCity} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
+            {#if errors.originCity}<span class="error">{errors.originCity}</span>{/if}
 
             <h2>Origin Zip Code</h2>
             <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onEnter={handleNextStep} bind:inputElement={originZipInput} />

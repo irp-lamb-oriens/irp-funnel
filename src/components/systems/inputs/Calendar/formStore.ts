@@ -8,9 +8,12 @@ export type Vehicle = {
 
 export type FormState = {
   name: string;
+  surname: string;
   email: string;
   destinationCountry: string;
+  destinationCity: string;
   originCountry: string;
+  originCity: string;
   phone: string;
   referredBy: string;
   budget: string;
@@ -27,9 +30,12 @@ export type FormState = {
 // Define a store for the form state
 export const formState = writable<FormState>({
   name: "",
+  surname: "",
   email: "",
   destinationCountry: "",
+  destinationCity: "",
   originCountry: "",
+  originCity: "",
   phone: "",
   referredBy: "",
   budget: "",
