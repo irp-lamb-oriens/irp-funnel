@@ -346,7 +346,7 @@
     loop
     playsinline
     class="bg-video"
-    src="https://www.pexels.com/download/video/7855443/"
+    src="https://www.pexels.com/download/video/7855756/"
   ></video>
   <Loader visible={isLoading} />
   <VideoBanner
@@ -607,22 +607,24 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      background: radial-gradient(
+        circle,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 100%
+      );
       z-index: 1;
       pointer-events: none;
     }
 
     .bg-video {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      min-width: 100%;
-      min-height: 100%;
-      width: auto;
-      height: auto;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 0;
-      transform: translate(-50%, -50%);
       object-fit: cover;
+      filter: brightness(0.9);
     }
 
     & > :global(*) {
@@ -634,29 +636,44 @@
   .form-container {
     position: relative;
     width: 100%;
-    max-width: 650px;
+    max-width: 680px;
     margin: 2rem auto;
-    padding: 2.5rem;
-    background: rgba(22, 22, 22, 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3.5rem;
+    background: rgba(15, 15, 15, 0.35);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border-radius: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 
-      0 25px 50px -12px rgba(0, 0, 0, 0.5),
-      0 0 20px 0 rgba(var(--color-highlight-2-rgb), 0.1);
+      0 40px 100px -20px rgba(0, 0, 0, 0.7),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 
     &::before {
       content: '';
       position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.05) 0%, transparent 70%);
+      top: -20%;
+      right: -20%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.15) 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
+      filter: blur(40px);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      left: -20%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(var(--color-highlight-1-rgb), 0.1) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(40px);
     }
   }
 
@@ -756,16 +773,36 @@
   }
 
   .banner-content {
-  max-width: 700px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
-  background: rgba(255,255,255,0.92);
-  border-radius: 1.5rem;
-  box-shadow: 0 6px 32px 0 rgba(60, 80, 120, 0.10);
+  padding: 3.5rem;
+  background: rgba(15, 15, 15, 0.35);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border-radius: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 40px 100px -20px rgba(0, 0, 0, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -20%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(28, 207, 201, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(40px);
+  }
 }
 
 .banner-subtitle,
@@ -775,56 +812,70 @@
 }
 
 .banner-subtitle {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #2a4d7a;
-  margin-bottom: 1.2rem;
-  letter-spacing: 0.03em;
+  position: relative;
+  z-index: 1;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #1ccfc9;
+  margin-bottom: 1.5rem;
 }
 
 .banner-title {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #1a2a3a;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  position: relative;
+  z-index: 1;
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 2rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .banner-services-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #3a5a8a;
-  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 1.5rem;
 }
 
 .banner-services-list {
+  position: relative;
+  z-index: 1;
   list-style: none;
   padding: 0;
-  margin: 0 0 2rem 0;
+  margin: 0 0 2.5rem 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 1.2rem;
+  gap: 1rem;
   justify-content: flex-start;
 }
 
 .banner-service {
-  background: #e6f0fa;
-  color: #1a2a3a;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 0.9rem;
   font-weight: 500;
-  padding: 0.7rem 1.4rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 2rem;
-  box-shadow: 0 2px 8px 0 rgba(60, 80, 120, 0.07);
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.3s ease;
   white-space: nowrap;
   text-align: center;
-}
 
-.banner-service:hover,
-.banner-service:focus-visible {
-  background: #d0e4fa;
-  color: #17406a;
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: rgba(28, 207, 201, 0.5);
+  }
 }
 
 .button-row {

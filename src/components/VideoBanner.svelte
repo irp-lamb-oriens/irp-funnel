@@ -16,8 +16,7 @@
   }
 
   function getImgWrapTop() {
-    const top = imgWrap.getBoundingClientRect().top + window.scrollY;
-
+    const top = 0;
     return top;
   }
 
@@ -45,7 +44,6 @@
       setVideoClosedSize();
     } else setVideoOpenSize();
 
-    video.style.top = `${getImgWrapTop()}px`;
     requestAnimationFrame(frame);
   }
   
@@ -66,7 +64,17 @@
   });
 </script>
 <div class="re-wrap">
-  <video class="video" class:show={video ? !video?.paused : false} {onclick} bind:this={video} src={videoUrl}></video>
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    class="video"
+    class:show={video ? !video?.paused : false}
+    {onclick}
+    bind:this={video}
+    src="https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4"
+  ></video>
   <div class="wrapper">
     <div class="img-wrap" class:show={video ? !video?.paused : false} bind:this={imgWrap}>
       <img class="img" bind:this={img} src={videoPoster} alt={videoAlt}>
@@ -105,21 +113,18 @@
     position: absolute;
     opacity: 0;
     z-index: 1;
+    border-radius: 2rem;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: opacity 0.5s ease-in-out .5s, width 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
     cursor: pointer;
+    top: 0;
     
     &.show {
       transition: opacity 0.5s ease-in-out 0s, width 0.5s ease-in-out 0s, transform 0.5s ease-in-out 0s; /* Shorthand */
       opacity: 1;
     }
   }
-  
-  .img-wrap, .video {
-    &:hover {
-    }
-  }
-
-
 
   .video:hover + .wrapper .img-wrap {
       &::before {
@@ -146,35 +151,40 @@
     }
 
     &::before {
-      transition: .5s width, .5s height, .5s top, .5s left, 1s box-shadow, opacity .5s;
+      transition: 0.5s width, 0.5s height, 0.5s top, 0.5s left, 1s box-shadow,
+        opacity 0.5s;
       transition-timing-function: cubic-bezier(0.39, -0.575, 0.565, 1);
-      box-shadow: 0 0 5px -2.5px var(--color-background-inversion);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
       content: "";
-      --size: 75px;
+      --size: 85px;
       border-radius: 50%;
       width: var(--size);
       height: var(--size);
-      background: var(--color-background-inversion);
+      background: rgba(var(--color-highlight-2-rgb), 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       position: absolute;
       top: calc(50% - var(--size) / 2);
       left: calc(50% - var(--size) / 2);
       z-index: 1;
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
     &::after {
       transition-timing-function: cubic-bezier(0.39, -0.575, 0.565, 1);
-      transition: .75s width, .75s height, .75s top, .75s left, transform .75s, opacity .35s;
+      transition: 0.75s width, 0.75s height, 0.75s top, 0.75s left,
+        transform 0.75s, opacity 0.35s;
       content: "";
-      --size: 25px;
+      --size: 30px;
       transform: rotate(0deg);
       width: var(--size);
       height: var(--size);
-      background: var(--color-background);
+      background: #ffffff;
       position: absolute;
       top: calc(50% - var(--size) / 2);
       left: calc(50% - var(--size) / 2);
       z-index: 1;
-      clip-path: polygon(100% 50%, 10% 0, 10% 100%);
+      clip-path: polygon(100% 50%, 15% 0, 15% 100%);
     }
 
     &.show {
@@ -193,14 +203,33 @@
     }
   }
   
-  .img, .video {
-    border-radius: 15px;
-    box-shadow: 0 0 5px -.5px var(--color-background-inversion);
+  .video {
+    width: 0px;
+    object-fit: cover;
+    position: absolute;
+    opacity: 0;
+    z-index: 10;
+    transition: opacity 0.5s ease-in-out 0.5s, width 0.5s ease-in-out 0s,
+      transform 0.5s ease-in-out 0s;
+    cursor: pointer;
+
+    &.show {
+      transition: opacity 0.5s ease-in-out 0s, width 0.5s ease-in-out 0s,
+        transform 0.5s ease-in-out 0s;
+      opacity: 1;
+    }
   }
 
   .img {
     width: 100%;
-    
+    border-radius: 2rem;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .img-wrap:hover .img {
+    transform: scale(1.02);
   }
 
   .wrapper {
