@@ -362,7 +362,7 @@
             <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
             {#if errors.email}<span class="error">{errors.email}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -377,7 +377,7 @@
             {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
 
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -399,7 +399,7 @@
             {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
 
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -421,7 +421,7 @@
             {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
 
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -433,7 +433,7 @@
             <Phone bind:value={$formState.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
             {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -444,7 +444,7 @@
             <Budget bind:buttonRef={budgetInput} />
             {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -463,7 +463,7 @@
             />
             {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -482,7 +482,7 @@
             />
             {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -493,7 +493,7 @@
             <MoveSize bind:buttonRef={sizeInput} />
             {#if errors.size}<span class="error">{errors.size}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -507,7 +507,7 @@
                 onUpdate={(v) => updateField(v, 'vehicles')}
             />
             <div class="button-wrapper buttons-row">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
               <button class="skip-btn" on:click={handleSkipVehicles}>
                   I don't have vehicles to ship
               </button>
@@ -521,7 +521,7 @@
             <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
             {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -532,7 +532,7 @@
             <Calendar />
             {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} />
+              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -542,7 +542,7 @@
             <h2>Who referred you to us?</h2>
             <PlainText placeholder="The name here" bind:value={$formState.referredBy} onEnter={submitForm} bind:inputElement={referrerInput} />
             <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={submitForm} />
+              <IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={isLoading} />
             </div>
           </div>
         {/if}
@@ -555,7 +555,7 @@
             <a href={calendarLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">View Your Consultation on Google Calendar</a>
             <p>Join the meeting here:</p>
             <a href={hangoutLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">Join Hangouts Meeting</a>
-            <IconButton src="./icons/right-arrow.svg" callback={nextStep} />
+            <IconButton src="./icons/right-arrow.svg" callback={nextStep} loading={isLoading} />
           </div>
         {/if}
 
@@ -719,6 +719,20 @@
     display: flex;
     justify-content: flex-end;
     margin-top: 2rem;
+    position: relative;
+    z-index: 10;
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 150px;
+      height: 60px;
+      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.15) 0%, transparent 70%);
+      filter: blur(20px);
+      z-index: -1;
+      pointer-events: none;
+    }
   }
 
   .buttons-row {

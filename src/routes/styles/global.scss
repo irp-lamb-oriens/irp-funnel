@@ -73,11 +73,6 @@
   scroll-behavior: smooth;
 }
 
-:global(.loading)::after {
-  content: "...";
-  animation: loading 1.75s infinite;
-}
-
 :global(.error) {
   color: red;
 }
@@ -93,14 +88,3 @@
   user-select: none;
 }
 
-@keyframes loading {
-  0% {
-    content: ".";
-  }
-  33% {
-    content: "..";
-  }
-  66% {
-    content: "...";
-  }
-}

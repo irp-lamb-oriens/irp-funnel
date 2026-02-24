@@ -65,8 +65,6 @@
 </script>
 <div class="re-wrap">
   <video
-    autoplay
-    muted
     loop
     playsinline
     class="video"

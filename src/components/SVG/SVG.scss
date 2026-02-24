@@ -13,12 +13,11 @@
     font-family: var(--font-paragraph);
     font-size: 16px;
     color: var(--color-foreground);
-
-    &--dots::after {
-      content: '.';
-      display: inline-block;
-      animation: dots 1.5s infinite steps(1, end);
-    }
+    opacity: 0.5;
+    /* Ultra modern alternative for standalone SVG loader: a simple shimmer */
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    background-size: 200% 100%;
+    animation: svg-shimmer 2s infinite linear;
   }
 }
 
@@ -26,17 +25,7 @@
   fill: var(--color-foreground);
 }
 
-@keyframes dots {
-  0% {
-    content: '.';
-  }
-  33% {
-    content: '..';
-  }
-  66% {
-    content: '...';
-  }
-  100% {
-    content: '.';
-  }
+@keyframes svg-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
