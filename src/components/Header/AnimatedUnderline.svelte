@@ -20,7 +20,7 @@
   position: absolute;
   left: 50%;
   bottom: -4px;
-  height: 2px;
+  height: 1px;
   width: 0;
   background: linear-gradient(90deg, transparent, #fff, transparent);
   border-radius: 9999px;
