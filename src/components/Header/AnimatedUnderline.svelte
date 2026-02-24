@@ -19,11 +19,11 @@
   content: "";
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: -4px;
   height: 2px;
   width: 0;
-  background: currentColor;
-  border-radius: 1px;
+  background: #fff;
+  border-radius: 9999px;
   pointer-events: none;
   opacity: 0;
   transition:

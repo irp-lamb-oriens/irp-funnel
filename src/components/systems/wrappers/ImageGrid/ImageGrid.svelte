@@ -179,7 +179,7 @@
     color: white;
     font-size: 16px;
     margin: clamp(2rem, 5vw, 4rem) auto;
-    top: 0;
+    bottom: -50px;
     left: 0;
     right: 0;
     padding: 0 1rem;

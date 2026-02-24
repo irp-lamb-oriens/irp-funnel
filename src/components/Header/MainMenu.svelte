@@ -55,15 +55,20 @@
           rel={isExternal(item.href) ? "noopener noreferrer" : undefined}
           target={isExternal(item.href) ? "_blank" : undefined}
           style="position:relative;"
-          on:mouseenter={() => hoveredHref = item.href}
-          on:mouseleave={() => hoveredHref = null}
+          on:mouseenter={() => (hoveredHref = item.href)}
+          on:mouseleave={() => (hoveredHref = null)}
         >
           <AnimatedUnderline
             selected={$page.url.pathname === item.href}
             hovered={hoveredHref === item.href}
           >
             {#if item.icon}
-              <img src={item.icon} alt={item.label + ' icon'} width="30" height="30" />
+              <img
+                src={item.icon}
+                alt={item.label + " icon"}
+                width="30"
+                height="30"
+              />
             {/if}
             {item.label}
           </AnimatedUnderline>
@@ -120,17 +125,19 @@
   align-items: center;
 }
 .main-menu a {
-  color: #222;
+  color: #fff;
   text-decoration: none;
   font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background 0.15s;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 1;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
 }
-.main-menu a:hover,
-.cta-btn:hover {
-  background: #f2f2f2;
+.main-menu a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 .item-cta {
   background: var(--color-highlight-1);

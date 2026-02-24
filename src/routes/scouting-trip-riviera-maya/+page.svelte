@@ -106,6 +106,7 @@
     --radius-md: 9999px; /* si ya tienes otra var de radios, cámbiala aquí */
     --transition-fast: 150ms;
 
+    overflow: hidden;
     display: inline-block;
     font-weight: 600;
     border-radius: var(--radius-md);

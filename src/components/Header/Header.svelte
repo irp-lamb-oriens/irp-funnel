@@ -13,7 +13,6 @@
     { label: "Free Resources", href: "/free-resources" },
     { label: "News", href: "/news-updates" },
     { label: "Contact Us", href: "/contact-us" },
-    { label: "", href: "#", icon: "/icons/phone.svg" }
   ];
   const cta = { label: "Schedule Consultation", href: "/consultation" };
   // Destinations

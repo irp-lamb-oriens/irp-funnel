@@ -104,8 +104,10 @@
       --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
       --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
       --glow-color: rgba(255, 255, 255, 0);
   
+      overflow: hidden;
       display: inline-block;
       font-weight: 600;
       border-radius: var(--radius-full);
@@ -210,6 +212,7 @@
       position: relative;
       z-index: 2;
       pointer-events: none;
+      overflow: hidden;
     }
   
     .ultra-modern-loader {
@@ -281,6 +284,7 @@
       background-color: var(--color-highlight-1);
       color: var(--color-background);
       box-shadow: inset 0 0 0 100px var(--color-highlight-1), var(--shadow-sm);
+      overflow: hidden;
       --glow-color: rgba(var(--color-highlight-1-rgb), 0.5);
     }
     .cta-primary:hover {
@@ -294,6 +298,7 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      overflow: hidden;
       --glow-color: rgba(255, 255, 255, 0.2);
     }
     .cta-primary-inverted:hover {
@@ -307,6 +312,7 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      overflow: hidden;
       --glow-color: rgba(255, 255, 255, 0.3);
     }
     .cta-primary-scaled:hover {
@@ -319,6 +325,7 @@
       background-color: var(--color-highlight-2);
       color: var(--color-background);
       border-color: var(--color-highlight-2);
+      overflow: hidden;
       --glow-color: rgba(var(--color-highlight-2-rgb), 0.5);
     }
     .cta-secondary:hover {
@@ -332,6 +339,7 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      overflow: hidden;
       --glow-color: rgba(255, 255, 255, 0.2);
     }
     .cta-secondary-inverted:hover {
