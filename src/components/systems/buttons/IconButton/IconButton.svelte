@@ -19,8 +19,16 @@
   <div class="content-wrapper {loading ? 'is-loading' : ''}">
     {#if loading}
       <div class="ultra-modern-loader">
-        <div class="magnetic-orb"></div>
+        <div class="magnetic-orb">
+          <div class="inner-core"></div>
+          <div class="pulse-ring"></div>
+        </div>
         <div class="neon-trail"></div>
+        <div class="particle-field">
+          {#each Array(6) as _, i}
+            <div class="particle p-{i}"></div>
+          {/each}
+        </div>
       </div>
     {:else}
       <span class="icon">
@@ -190,50 +198,94 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.5rem;
+    height: 2.5rem;
 
     .magnetic-orb {
-      width: 10px;
-      height: 10px;
+      position: relative;
+      width: 12px;
+      height: 12px;
       background: #ffffff;
-      border-radius: 500px;
-      box-shadow: 
-        0 0 15px #ffffff,
-        0 0 30px var(--btn-color),
-        0 0 45px var(--btn-color);
-      animation: magneticPulse 1.2s ease-in-out infinite;
+      border-radius: 50%;
       z-index: 2;
+      box-shadow: 
+        0 0 20px #ffffff,
+        0 0 40px var(--btn-color);
+      
+      .inner-core {
+        position: absolute;
+        inset: 2px;
+        background: var(--btn-color);
+        border-radius: 50%;
+        filter: brightness(1.5);
+        animation: corePulse 0.8s ease-in-out infinite alternate;
+      }
+
+      .pulse-ring {
+        position: absolute;
+        inset: -10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        animation: ringPulse 1.5s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+      }
     }
 
     .neon-trail {
       position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 500px;
+      inset: 0;
+      border-radius: 50%;
       border: 2px solid transparent;
       border-top: 2px solid #ffffff;
       border-right: 2px solid var(--btn-color);
-      filter: blur(1px);
-      animation: neonSpin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      border-bottom: 2px solid rgba(var(--color-highlight-2-rgb), 0.3);
+      filter: drop-shadow(0 0 5px var(--btn-color));
+      animation: ultraSpin 0.6s linear infinite;
+    }
+
+    .particle-field {
+      position: absolute;
+      inset: -5px;
+      
+      .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: #ffffff;
+        border-radius: 50%;
+        opacity: 0;
+
+        @for $i from 0 through 5 {
+          &.p-#{$i} {
+            --rot: #{$i * 60}deg;
+            left: 50%;
+            top: 50%;
+            animation: particleFly 1s ease-out infinite;
+            animation-delay: #{$i * 0.15}s;
+          }
+        }
+      }
     }
   }
 
-  @keyframes neonSpin {
-    0% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(180deg) scale(1.1); }
-    100% { transform: rotate(360deg) scale(1); }
+  @keyframes ultraSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
-  @keyframes magneticPulse {
-    0%, 100% { 
-      transform: scale(1);
-      filter: brightness(1) blur(0px);
-    }
-    50% { 
-      transform: scale(1.3);
-      filter: brightness(1.5) blur(1px);
-    }
+  @keyframes corePulse {
+    from { transform: scale(0.8); opacity: 0.5; }
+    to { transform: scale(1.1); opacity: 1; }
+  }
+
+  @keyframes ringPulse {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  @keyframes particleFly {
+    0% { transform: rotate(var(--rot)) translateY(0); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: rotate(var(--rot)) translateY(-20px); opacity: 0; }
   }
 
   @keyframes spin {

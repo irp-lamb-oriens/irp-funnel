@@ -24,7 +24,6 @@
     $: isLink = !!href && !disabled && !loading;
   
     // Mapeo de variantes a clases utilzando SOLO las variables disponibles
-    // --color-background, --color-outline, --color-background, --color-background, --color-background-inversion
     $: variantClass = `cta-${variant}`;
   
     function onClick(e: MouseEvent) {
@@ -59,7 +58,15 @@
         <slot name="icon-left" />
         <span class="cta-btn__label">{label}</span>
         <slot name="icon-right" />
-        {#if loading}<span class="cta-btn__spinner" aria-hidden="true" />{/if}
+        {#if loading}
+          <div class="ultra-modern-loader">
+            <div class="magnetic-orb">
+              <div class="inner-core"></div>
+              <div class="pulse-ring"></div>
+            </div>
+            <div class="neon-trail"></div>
+          </div>
+        {/if}
       </span>
     </a>
   {:else}
@@ -76,19 +83,28 @@
         <slot name="icon-left" />
         <span class="cta-btn__label">{label}</span>
         <slot name="icon-right" />
-        {#if loading}<span class="cta-btn__spinner" aria-hidden="true" />{/if}
+        {#if loading}
+          <div class="ultra-modern-loader">
+            <div class="magnetic-orb">
+              <div class="inner-core"></div>
+              <div class="pulse-ring"></div>
+            </div>
+            <div class="neon-trail"></div>
+          </div>
+        {/if}
       </span>
     </button>
   {/if}
   
-  <style>
+  <style lang="scss">
     /* Base */
     .cta-btn {
       --radius-full: 9999px;
-      --transition-modern: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      --transition-modern: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
       --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
       --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --glow-color: rgba(255, 255, 255, 0);
   
       display: inline-block;
       font-weight: 600;
@@ -96,20 +112,35 @@
       padding: 0.85rem 1.75rem;
       text-align: center;
       transition: var(--transition-modern);
-      border: 2px solid transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
       line-height: 1.2;
       user-select: none;
       position: relative;
-      overflow: hidden;
+      overflow: visible; // Allow glow to spill out
       letter-spacing: 0.02em;
       box-shadow: var(--shadow-sm);
-      transform: translateZ(0); /* Hardware acceleration */
+      transform: translateZ(0);
       text-decoration: none;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: var(--radius-full);
+        padding: 2px;
+        background: conic-gradient(from 0deg, var(--color-highlight-2, #fff), transparent, var(--color-highlight-2, #fff));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
     }
   
     /* Modern Glint Effect */
-    .cta-btn::before {
+    .cta-btn::after {
       content: '';
       position: absolute;
       top: 0;
@@ -126,13 +157,26 @@
       z-index: 1;
     }
   
-    .cta-btn:hover::before {
+    .cta-btn:hover::after {
       left: 100%;
     }
   
     .cta-btn:hover {
-      transform: translateY(-2px) scale(1.01);
-      box-shadow: var(--shadow-md);
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        var(--shadow-lg),
+        0 0 30px var(--glow-color);
+      border-color: rgba(255, 255, 255, 0.3);
+
+      &::before {
+        opacity: 1;
+        animation: borderRotate 2s linear infinite;
+      }
+    }
+
+    @keyframes borderRotate {
+      from { filter: hue-rotate(0deg); }
+      to { filter: hue-rotate(360deg); }
     }
   
     .cta-btn:active {
@@ -168,16 +212,65 @@
       pointer-events: none;
     }
   
-    .cta-btn__spinner {
-      inline-size: 1.1em;
-      block-size: 1.1em;
-      border-radius: 50%;
-      border: 2px solid currentColor;
-      border-right-color: transparent;
-      animation: spin 0.6s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+    .ultra-modern-loader {
+      display: inline-flex;
+      position: relative;
+      align-items: center;
+      justify-content: center;
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-left: 0.2rem;
+
+      .magnetic-orb {
+        position: relative;
+        width: 6px;
+        height: 6px;
+        background: currentColor;
+        border-radius: 50%;
+        z-index: 2;
+        
+        .inner-core {
+          position: absolute;
+          inset: 1px;
+          background: var(--color-background);
+          border-radius: 50%;
+          animation: corePulse 0.8s ease-in-out infinite alternate;
+        }
+
+        .pulse-ring {
+          position: absolute;
+          inset: -6px;
+          border: 1px solid currentColor;
+          opacity: 0.3;
+          border-radius: 50%;
+          animation: ringPulse 1.5s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+        }
+      }
+
+      .neon-trail {
+        position: absolute;
+        inset: -2px;
+        border-radius: 50%;
+        border: 1.5px solid transparent;
+        border-top: 1.5px solid currentColor;
+        animation: ultraSpin 0.6s linear infinite;
+      }
     }
-  
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes ultraSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes corePulse {
+      from { transform: scale(0.7); opacity: 0.5; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes ringPulse {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
   
     .is-block { display: flex; width: 100%; justify-content: center; }
   
@@ -188,11 +281,12 @@
       background-color: var(--color-highlight-1);
       color: var(--color-background);
       box-shadow: inset 0 0 0 100px var(--color-highlight-1), var(--shadow-sm);
+      --glow-color: rgba(var(--color-highlight-1-rgb), 0.5);
     }
     .cta-primary:hover {
       background-color: transparent;
       color: var(--color-highlight-2);
-      box-shadow: inset 0 0 0 2px var(--color-highlight-2), var(--shadow-md);
+      box-shadow: inset 0 0 0 2px var(--color-highlight-2), var(--shadow-md), 0 0 30px rgba(var(--color-highlight-2-rgb), 0.6);
     }
   
     /* PRIMARY INVERTED */
@@ -200,19 +294,12 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      --glow-color: rgba(255, 255, 255, 0.2);
     }
     .cta-primary-inverted:hover {
       background-color: transparent;
       color: var(--color-background);
-      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md);
-    }
-    .cta-primary-inverted::before {
-      background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent
-      );
+      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md), 0 0 30px rgba(255, 255, 255, 0.4);
     }
   
     /* PRIMARY SCALED */
@@ -220,13 +307,11 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      --glow-color: rgba(255, 255, 255, 0.3);
     }
     .cta-primary-scaled:hover {
       transform: translateY(-3px) scale(1.035);
-      box-shadow: var(--shadow-lg);
-    }
-    .cta-primary-scaled:hover::before {
-      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: var(--shadow-lg), 0 0 40px var(--glow-color);
     }
   
     /* SECONDARY */
@@ -234,18 +319,12 @@
       background-color: var(--color-highlight-2);
       color: var(--color-background);
       border-color: var(--color-highlight-2);
+      --glow-color: rgba(var(--color-highlight-2-rgb), 0.5);
     }
     .cta-secondary:hover {
       color: var(--color-highlight-2);
       background-color: transparent;
-    }
-    .cta-secondary::before {
-      background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(255, 255, 255, 0.25),
-        transparent
-      );
+      box-shadow: var(--shadow-md), 0 0 30px rgba(var(--color-highlight-2-rgb), 0.6);
     }
   
     /* SECONDARY INVERTED */
@@ -253,19 +332,12 @@
       background-color: var(--color-background);
       color: var(--color-background-inversion);
       box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
+      --glow-color: rgba(255, 255, 255, 0.2);
     }
     .cta-secondary-inverted:hover {
       background-color: transparent;
       color: var(--color-background);
-      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md);
-    }
-    .cta-secondary-inverted::before {
-      background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent
-      );
+      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md), 0 0 30px rgba(255, 255, 255, 0.4);
     }
   
     /* LINK */
@@ -278,27 +350,10 @@
       font-weight: 500;
       overflow: visible;
     }
-    .cta-link::before { display: none; }
-    .cta-link::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      background-color: currentColor;
-      transform: scaleX(0.3);
-      transform-origin: left;
-      transition: var(--transition-modern);
-      opacity: 0.7;
-    }
+    .cta-link::before, .cta-link::after { display: none; }
     .cta-link:hover {
       transform: translateX(4px);
       box-shadow: none;
-      opacity: 1;
-    }
-    .cta-link:hover::after {
-      transform: scaleX(1);
       opacity: 1;
     }
     .cta-link:active {
