@@ -190,7 +190,7 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.05);
     border-color: rgba(28, 207, 201, 0.5);
   }
 }

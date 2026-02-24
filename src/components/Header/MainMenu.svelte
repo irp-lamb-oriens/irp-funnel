@@ -19,7 +19,20 @@
   export let cta: { label: string; href: string } | null = null;
 
   let mobileMenuOpen = false;
-  let hoveredHref: string | null = null;
+  let hoveredIndex = -1;
+  let menuItemsRefs: HTMLElement[] = [];
+  let pillStyle = { left: 0, width: 0, opacity: 0 };
+
+  $: if (hoveredIndex !== -1 && menuItemsRefs[hoveredIndex]) {
+    const el = menuItemsRefs[hoveredIndex];
+    pillStyle = {
+      left: el.offsetLeft,
+      width: el.offsetWidth,
+      opacity: 1
+    };
+  } else {
+    pillStyle = { ...pillStyle, opacity: 0 };
+  }
 
   // Cierra el menú cuando cambie de ruta
   afterNavigate(() => { mobileMenuOpen = false; });
@@ -43,9 +56,13 @@
   on:mousedown|stopPropagation|capture
   on:click|stopPropagation
 >
-  <ul class="main-menu" role="menubar">
-    {#each menuItems as item (item.href)}
-      <li role="none">
+  <ul class="main-menu" role="menubar" on:mouseleave={() => (hoveredIndex = -1)}>
+    <div
+      class="hover-pill"
+      style="left: {pillStyle.left}px; width: {pillStyle.width}px; opacity: {pillStyle.opacity};"
+    ></div>
+    {#each menuItems as item, i (item.href)}
+      <li role="none" bind:this={menuItemsRefs[i]} on:mouseenter={() => (hoveredIndex = i)}>
         <a
           href={item.href}
           role="menuitem"
@@ -55,12 +72,10 @@
           rel={isExternal(item.href) ? "noopener noreferrer" : undefined}
           target={isExternal(item.href) ? "_blank" : undefined}
           style="position:relative;"
-          on:mouseenter={() => (hoveredHref = item.href)}
-          on:mouseleave={() => (hoveredHref = null)}
         >
           <AnimatedUnderline
             selected={$page.url.pathname === item.href}
-            hovered={hoveredHref === item.href}
+            hovered={hoveredIndex === i}
           >
             {#if item.icon}
               <img
@@ -77,7 +92,7 @@
     {/each}
 
     {#if cta}
-      <li role="none">
+      <li role="none" on:mouseenter={() => (hoveredIndex = -1)}>
         <CTAButton trigger={true} label={cta.label} href={cta.href} variant="primary" />
       </li>
     {/if}
@@ -111,6 +126,7 @@
   margin: 0;
   padding: 0;
   align-items: center;
+  position: relative;
 
   @media (max-width: 1140px) {
     gap: .5rem;
@@ -120,24 +136,47 @@
     gap: .25rem;
   }
 }
+
+.hover-pill {
+  position: absolute;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 9999px;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+  z-index: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .main-menu li {
   display: flex;
+  mix-blend-mode: exclusion;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
+
 .main-menu a {
-  color: #fff;
+  color: #888;
   text-decoration: none;
   font-weight: 500;
   padding: 0.6rem 1.2rem;
   border-radius: 9999px;
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 1;
   font-size: 0.95rem;
   letter-spacing: 0.01em;
-}
-.main-menu a:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
 }
 .item-cta {
   background: var(--color-highlight-1);

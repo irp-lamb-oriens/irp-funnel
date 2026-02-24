@@ -66,7 +66,7 @@
     outline: none;
 
     &:hover {
-      transform: translateY(-2px);
+      transform: translateY(-2px) scale(1.05);
     }
 
     &.selected {

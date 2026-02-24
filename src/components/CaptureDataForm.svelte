@@ -151,7 +151,7 @@
 
     &:hover:not(:disabled) {
       background: #0056b3;
-      transform: translateY(-2px);
+      transform: translateY(-2px) scale(1.05);
       box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
     }
 

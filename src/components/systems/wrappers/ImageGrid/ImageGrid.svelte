@@ -5,24 +5,21 @@
 
   // Public props
   export let images: string[] = [];
-  export let autoplay = true;        // continuous auto-scroll
-  export let speed = 0.06;           // px per ms for autoplay (positive = scroll left)
-  export let gap = 28;               // px gap between items
-  export let itemWidth = 'clamp(50px, 7.5vw, 70px)';
-  export let throwFactor = 220;      // scales release momentum (ms-like feel)
-  export let friction = 0.95;        // per-16ms decay factor for inertia
+  export let autoplay = true;
+  export let speed = 0.05;
+  export let gap = 60;
+  export let itemWidth = 'clamp(100px, 12vw, 150px)';
+  export let throwFactor = 220;
+  export let friction = 0.95;
 
   let container: HTMLDivElement;
   let track: HTMLDivElement;
 
-  // translation store
   const x = writable(0);
 
-  // 3x list for seamless wrap
   const COPIES = 3;
   $: tripled = images.length ? Array(COPIES).fill(0).flatMap(() => images) : [];
 
-  // width of a single set of images (first copy), including gaps
   let segment = 0;
   let rAF: number | null = null;
   let ro: ResizeObserver | null = null;
@@ -32,7 +29,6 @@
     const children = Array.from(track.children) as HTMLElement[];
     if (!children.length) { segment = 0; return; }
 
-    // sum widths of the first images.length items + gaps between them
     let w = 0;
     const styles = getComputedStyle(track);
     const gapPx = parseFloat(styles.gap || '0') || gap;
@@ -46,19 +42,17 @@
 
   function wrapX(v: number) {
     if (segment <= 0) return v;
-    // keep x in [-segment, 0)
     while (v <= -segment) v += segment;
     while (v > 0) v -= segment;
     return v;
   }
 
-  // drag state
   const drag = {
     active: false,
     id: -1,
     lastX: 0,
     lastT: 0,
-    v: 0 // px/ms
+    v: 0
   };
 
   function onPointerDown(e: PointerEvent) {
@@ -77,7 +71,7 @@
     const dx = e.clientX - drag.lastX;
     const dt = Math.max(1, now - drag.lastT);
 
-    drag.v = dx / dt; // px/ms
+    drag.v = dx / dt;
     drag.lastX = e.clientX;
     drag.lastT = now;
 
@@ -87,7 +81,6 @@
   function onPointerUp(e: PointerEvent) {
     if (!drag.active || e.pointerId !== drag.id) return;
     container.releasePointerCapture(e.pointerId);
-    // carry some momentum after release; scale to feel like milliseconds of travel
     drag.v *= (throwFactor / 1000);
     drag.active = false;
     drag.id = -1;
@@ -95,16 +88,13 @@
 
   function loop(prev = performance.now()) {
     const now = performance.now();
-    const dt = now - prev; // ms
+    const dt = now - prev;
     let delta = 0;
 
-    // autoplay contribution (scrolls left by default)
-    if (autoplay && speed !== 0) delta += -speed * dt;
+    if (autoplay && !drag.active && speed !== 0) delta += -speed * dt;
 
-    // inertia contribution when not dragging
-    if (!drag.active && Math.abs(drag.v) > 0.02) {
+    if (!drag.active && Math.abs(drag.v) > 0.01) {
       delta += drag.v * dt;
-      // exponential decay based on friction per ~16ms frame
       const decay = Math.pow(friction, dt / 16);
       drag.v *= decay;
     }
@@ -114,18 +104,13 @@
     rAF = requestAnimationFrame(() => loop(now));
   }
 
-  // re-measure when images or layout change
-  $: (async () => {
-    // wait for DOM to reflect images/tripled
-    await tick();
-    measureSegment();
-  })();
+  $: if (tripled.length) {
+    tick().then(measureSegment);
+  }
 
   onMount(() => {
-    // observe layout changes affecting widths/gaps
     ro = new ResizeObserver(() => measureSegment());
     if (track) ro.observe(track);
-
     rAF = requestAnimationFrame(() => loop());
   });
 
@@ -135,70 +120,118 @@
   });
 </script>
 
-<div class="image-grid-container">
-  <strong class="titles">Partners, Collaborations & Exceltent Reviews ⭐️⭐️⭐️⭐️⭐️</strong>
-  <div
-    class="carousel"
-    bind:this={container}
-    on:pointerdown={onPointerDown}
-    on:pointermove={onPointerMove}
-    on:pointerup={onPointerUp}
-    on:pointercancel={onPointerUp}
-    on:lostpointercapture={onPointerUp}
-    style="--gap: {gap}px; --item-w: {itemWidth};"
-  >
+<div class="image-grid-outer">
+  <div class="glass-container">
+    <div class="header">
+      <span class="stars">⭐️⭐️⭐️⭐️⭐️</span>
+      <h3 class="titles">Partners, Collaborations & Excellent Reviews</h3>
+    </div>
+
     <div
-      class="track"
-      bind:this={track}
-    style="transform: translate3d({$x}px, 0, 0);"
-  >
-    {#if tripled.length === 0}
-      <div class="placeholder">No images</div>
-    {:else}
-      {#each tripled as url, i (i + '-' + url)}
-        <div class="item">
-          <RevealingImage url={url} />
-        </div>
-      {/each}
-    {/if}
-  </div>
+      class="carousel"
+      bind:this={container}
+      on:pointerdown={onPointerDown}
+      on:pointermove={onPointerMove}
+      on:pointerup={onPointerUp}
+      on:pointercancel={onPointerUp}
+      on:lostpointercapture={onPointerUp}
+      style="--gap: {gap}px; --item-w: {itemWidth};"
+    >
+      <div class="mask-overlay left"></div>
+      <div class="mask-overlay right"></div>
+      
+      <div
+        class="track"
+        bind:this={track}
+        style="transform: translate3d({$x}px, 0, 0);"
+      >
+        {#each tripled as url, i (i + '-' + url)}
+          <div class="item">
+            <RevealingImage {url} />
+          </div>
+        {/each}
+      </div>
+    </div>
   </div>
 </div>
 
 <style lang="scss">
-  .image-grid-container {
+  .image-grid-outer {
     position: relative;
+    width: 100%;
+    padding: 6rem 0;
+    background: linear-gradient(to bottom, #000, #111, #000);
+    overflow: hidden;
   }
-  .titles {
-    width: 100vw;
-    line-height: 2;
-    display: block;
+
+  .glass-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 4rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .header {
     text-align: center;
-    z-index: 12;
-    position: absolute;
-    color: white;
-    font-size: 16px;
-    margin: clamp(2rem, 5vw, 4rem) auto;
-    bottom: -50px;
-    left: 0;
-    right: 0;
-    padding: 0 1rem;
+    
+    .stars {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+      letter-spacing: 6px;
+      opacity: 0.9;
+    }
+
+    .titles {
+      font-family: var(--font-title, serif);
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin: 0;
+      font-weight: 300;
+    }
   }
 
   .carousel {
     width: 100%;
-    overflow: hidden;
-    padding: 7.5rem 1rem;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    touch-action: pan-y; // allow vertical page scroll while we handle horizontal drag
+    height: 150px; // Explicit height to ensure visibility
+    position: relative;
     cursor: grab;
-    background: blue;
-    filter: grayscale(100%);
-    padding-bottom: 5rem;
+    touch-action: pan-y;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    
+    &:active { cursor: grabbing; }
+
+    .mask-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 20%;
+      z-index: 10;
+      pointer-events: none;
+      
+      &.left {
+        left: 0;
+        background: linear-gradient(to right, #080808 0%, transparent 100%);
+      }
+      &.right {
+        right: 0;
+        background: linear-gradient(to left, #080808 0%, transparent 100%);
+      }
+    }
   }
-  .carousel:active { cursor: grabbing; }
 
   .track {
     display: flex;
@@ -206,34 +239,28 @@
     will-change: transform;
     user-select: none;
     gap: var(--gap, 0);
+    position: absolute;
+    left: 0;
+    height: 100%;
   }
 
   .item {
     flex: 0 0 auto;
     width: var(--item-w);
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
   }
 
-  .item :global(img) {
-    display: block;
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-  }
-
-  .placeholder {
-    opacity: 0.6;
-    font-size: 0.9rem;
-    padding: 1rem 0.5rem;
-  }
-
-  @media (max-width: 1024px) {
+  @media (max-width: 768px) {
+    .glass-container {
+      padding: 3rem 0;
+      background: transparent;
+      backdrop-filter: none;
+    }
     .carousel {
-      padding: 7.5rem 1rem 5rem;
-      padding-bottom: 5rem;
+      height: 100px;
     }
   }
 </style>

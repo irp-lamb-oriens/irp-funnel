@@ -164,7 +164,7 @@
     }
   
     .cta-btn:hover {
-      transform: translateY(-5px) scale(1.02);
+      transform: scale(1.02);
       box-shadow: 
         var(--shadow-lg),
         0 0 30px var(--glow-color);

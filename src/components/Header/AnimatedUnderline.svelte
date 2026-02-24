@@ -18,26 +18,24 @@
 .animated-underline-content::after {
   content: "";
   position: absolute;
-  left: 0;
+  left: 50%;
   bottom: -4px;
   height: 2px;
   width: 0;
-  background: #fff;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
   border-radius: 9999px;
   pointer-events: none;
   opacity: 0;
+  transform: translateX(-50%);
   transition:
-    width 0.32s cubic-bezier(0.7,0,0.3,1),
-    opacity 0.18s cubic-bezier(0.7,0,0.3,1);
+    width 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 1;
 }
 
 .animated-underline-content.is-active::after {
   width: 100%;
   opacity: 1;
-  transition:
-    width 0.32s cubic-bezier(0.7,0,0.3,1),
-    opacity 0.18s cubic-bezier(0.7,0,0.3,1);
 }
 </style>
 
