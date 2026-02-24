@@ -647,8 +647,15 @@
     box-shadow: 
       0 40px 100px -20px rgba(0, 0, 0, 0.7),
       inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    overflow: hidden;
+    overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
 
     &::before {
       content: '';
