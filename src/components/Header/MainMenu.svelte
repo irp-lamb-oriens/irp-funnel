@@ -140,7 +140,7 @@
 .hover-pill {
   position: absolute;
   height: 40px;
-  background: rgba(255, 255, 255, 0.1);
+  background: black;
   backdrop-filter: blur(8px);
   border-radius: 9999px;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
