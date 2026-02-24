@@ -225,12 +225,8 @@
   }
 </script>
 
-<svelte:head>
-  <script src="https://cdn.tailwindcss.com"></script>
-</svelte:head>
-
 <div
-  class="relative font-sans z-10"
+  class="country-dropdown-container"
   bind:this={dropdownRef}
   on:keydown={handleKeydown}
   role="combobox"
@@ -239,74 +235,77 @@
   aria-owns={open ? "language-listbox" : undefined}
 >
   {#if label}
-    <span class="block mb-2 text-sm font-medium" id="language-select-label">
+    <span class="input-label" id="language-select-label">
       {label}
     </span>
   {/if}
 
-  {#if showInput}
-    <input
-      type="text"
-      bind:this={inputRef}
-      value={typeahead}
-      on:input={handleInput}
-      placeholder="Type to search country..."
-      class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out"
-      aria-autocomplete="list"
-      aria-controls={open ? "language-listbox" : undefined}
-      aria-labelledby="language-select-label"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    />
-  {:else}
-    <button
-      type="button"
-      bind:this={buttonRef}
-      on:click={toggleOpen}
-      class="country-select-button"
-      aria-controls={open ? "language-listbox" : undefined}
-      aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    >
-      {#if selectedCountry}
-        <span class="flex items-center gap-2 truncate">
-          {#if selectedCountry.flag}
-            <span class="text-lg" aria-hidden="true">{selectedCountry.flag}</span>
-          {/if}
-          <span class="truncate">{selectedCountry.name}</span>
-          <span class="text-xs">({selectedCountry.code})</span>
-        </span>
-      {:else}
-        <span class="text-gray-500">Select a country</span>
-      {/if}
-      <svg
-        class="w-4 h-4 transform transition-transform duration-200 {open ? 'rotate-180' : ''}"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+  <div class="input-wrapper">
+    {#if showInput}
+      <input
+        type="text"
+        bind:this={inputRef}
+        value={typeahead}
+        on:input={handleInput}
+        placeholder="Type to search country..."
+        class="search-input"
+        aria-autocomplete="list"
+        aria-controls={open ? "language-listbox" : undefined}
+        aria-labelledby="language-select-label"
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      />
+    {:else}
+      <button
+        type="button"
+        bind:this={buttonRef}
+        on:click={toggleOpen}
+        class="country-select-button"
+        aria-controls={open ? "language-listbox" : undefined}
+        aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
       >
-        <path d="M7 10l5 5 5-5z" />
-      </svg>
-    </button>
-  {/if}
+        {#if selectedCountry}
+          <span class="selected-value">
+            {#if selectedCountry.flag}
+              <span class="flag" aria-hidden="true">{selectedCountry.flag}</span>
+            {/if}
+            <span class="name">{selectedCountry.name}</span>
+            <span class="code">({selectedCountry.code})</span>
+          </span>
+        {:else}
+          <span class="placeholder">Select a country</span>
+        {/if}
+        <svg
+          class="chevron {open ? 'open' : ''}"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    {/if}
+  </div>
 
   {#if open}
     <ul
       bind:this={listRef}
       role="listbox"
       id="language-listbox"
-      class="absolute w-full max-w-xs mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
+      class="dropdown-list"
       tabindex="-1"
       aria-labelledby="language-select-label"
-      in:slide={{ duration: 200 }}
-      out:slide={{ duration: 200 }}
+      in:slide={{ duration: 300, axis: 'y' }}
+      out:fade={{ duration: 150 }}
     >
       {#each countries as language, index (language.code)}
         <li
           bind:this={listItems[index]}
           id={`language-option-${language.code}`}
-          class="px-4 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors duration-150 ease-in-out {highlightedIndex === index ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}"
+          class="dropdown-item"
+          class:highlighted={highlightedIndex === index}
           class:selected={selectedCountry?.code === language.code}
           role="option"
           aria-selected={selectedCountry?.code === language.code}
@@ -317,15 +316,13 @@
           }}
         >
           {#if language.flag}
-            <span class="text-lg" aria-hidden="true">{language.flag}</span>
+            <span class="flag" aria-hidden="true">{language.flag}</span>
           {/if}
-          <span class="truncate">{language.name}</span>
-          <span class="{highlightedIndex === index ? 'text-white' : 'text-gray-500'} text-xs">
-            ({language.code})
-          </span>
+          <span class="name">{language.name}</span>
+          <span class="code">({language.code})</span>
         </li>
       {:else}
-        <li class="px-4 py-2 text-sm text-gray-500" role="option" aria-disabled="true">
+        <li class="no-results" role="option" aria-disabled="true">
           No countries available.
         </li>
       {/each}
@@ -334,25 +331,158 @@
 </div>
 
 <style lang="scss">
-  .country-select-button {
+  .country-dropdown-container {
+    position: relative;
     width: 100%;
-    max-width: 20rem; /* max-w-xs */
-    padding: 0.5rem 1rem; /* px-4 py-2 */
-    font-size: 0.875rem; /* text-sm */
-    background: #f5f5f5;
-    border: 1px solid #d1d5db; /* border border-gray-300 */
-    border-radius: 0.5rem; /* rounded-lg */
-    transition: all 200ms ease-in-out;
+    z-index: 100;
+  }
+
+  .input-label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .search-input, .country-select-button {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-align: left;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
 
     &:focus {
-      outline: 2px solid transparent;
-      outline-offset: 2px;
-      --tw-ring-color: #3b82f6; /* focus:ring-blue-500 */
-      box-shadow: 0 0 0 2px var(--tw-ring-color);
-      border-color: #3b82f6; /* focus:border-blue-500 */
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 0 4px rgba(var(--color-highlight-2-rgb), 0.15);
     }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .selected-value {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    overflow: hidden;
+
+    .flag {
+      font-size: 1.4rem;
+    }
+
+    .name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .code {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.85rem;
+    }
+  }
+
+  .chevron {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+
+  .dropdown-list {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 100%;
+    background: rgba(25, 25, 25, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 0.5rem;
+    list-style: none;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .flag {
+      font-size: 1.25rem;
+    }
+
+    .code {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;
+      margin-left: auto;
+    }
+
+    &.highlighted, &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    &.selected {
+      background: var(--color-highlight-2);
+      color: #000;
+      font-weight: 600;
+
+      .code {
+        color: rgba(0, 0, 0, 0.6);
+      }
+    }
+  }
+
+  .no-results {
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
   }
 </style>

@@ -25,13 +25,13 @@
       left: 0;
       width: 100%;
       height: 100vh;
-      background-color: linear-gradient(
-        90deg,
-        rgba(0, 20, 18, 0.5) 0%,
-        rgba(3, 9, 27, 0.5) 50%,
-        rgba(22, 16, 69, 0.5) 100%
+      background: radial-gradient(
+        circle at center,
+        rgba(22, 22, 22, 0.8) 0%,
+        rgba(10, 10, 10, 0.95) 100%
       );
-      backdrop-filter: blur(2.5px);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       display: grid;
       place-items: center;
       z-index: 9999;

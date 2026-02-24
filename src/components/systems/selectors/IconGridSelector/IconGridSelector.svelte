@@ -47,37 +47,43 @@
 <style lang="scss">
   .icon-grid-selector {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2x2 grid */
-    gap: 1rem; /* Adjust gap as needed */
-    max-width: 400px; /* Or adjust as needed */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    max-width: 500px;
     margin: auto;
+    width: 100%;
   }
 
   .grid-item-wrapper {
-    display: flex; /* To help center IconButton if its own width is less than grid cell */
+    display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.5rem; /* Padding around the button for click area and visual spacing */
-    border: 2px solid transparent; /* Default border */
-    border-radius: 8px; /* Match IconButton or define new */
+    padding: 4px;
+    border: 2px solid transparent;
+    border-radius: 2.25rem;
     cursor: pointer;
-    transition: border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    outline: none;
 
-    &:focus, &:focus-within {
-      outline: 2px solid var(--color-focus, blue); /* Basic focus indicator */
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    &.selected {
+      border-color: var(--color-highlight-2);
+      background: rgba(var(--color-highlight-2-rgb), 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+
+      :global(.icon-button) {
+        background: rgba(var(--color-highlight-2-rgb), 0.15);
+        border-color: rgba(var(--color-highlight-2-rgb), 0.3);
+      }
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 4px rgba(var(--color-highlight-2-rgb), 0.2);
     }
   }
-
-  /* Placeholder for selected styling - you can customize this */
-  .grid-item-wrapper.selected {
-    border-color: var(--color-primary, #007bff); /* Example: Blue border when selected */
-    background-color: rgba(0, 123, 255, 0.1); /* Example: Light blue background */
-    
-    /* You might want to style the IconButton itself when selected, e.g.: */
-    /* :global(.icon-button) { ... } */
-  }
-
-  /* Ensure IconButton itself doesn't have pointer-events: none if it's inside a clickable wrapper */
   /* IconButton's 'active' prop is true by default, so it should be clickable. */
   /* The callback on IconButton is redundant if the wrapper handles click, but harmless. */
 </style>

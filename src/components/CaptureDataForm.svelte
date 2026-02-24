@@ -78,36 +78,112 @@
   </form>
 </div>
 
-<style>
+<style lang="scss">
   .form-container {
-    max-width: 400px;
-    margin: auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
+    max-width: 500px;
+    margin: 3rem auto;
+    padding: 3rem;
+    background: rgba(22, 22, 22, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
   }
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    text-align: center;
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
   label {
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
+
   input {
     width: 100%;
-    padding: 8px;
-    margin-top: 4px;
-    margin-bottom: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-top: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    color: #ffffff;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    &:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #007bff;
+      box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
+    }
   }
+
   button {
-    padding: 10px 20px;
-    background-color: #007bff;
+    width: 100%;
+    padding: 1.25rem;
+    margin-top: 1rem;
+    background: #007bff;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 1rem;
+    font-size: 1.1rem;
+    font-weight: 700;
     cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+
+    &:hover:not(:disabled) {
+      background: #0056b3;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.3);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
   }
-  button:disabled {
-    background-color: #ccc;
+
+  p {
+    padding: 1rem;
+    border-radius: 1rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+
+    &[style*="color: red"] {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444 !important;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    &:not([style*="color: red"]) {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
   }
 </style>

@@ -22,34 +22,39 @@
 
 <style lang="scss">
   .tag-button {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid #ccd0d5;
-    background-color: #ffffff;
-    color: #050505;
-    font-size: 14px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(5px);
 
-    &:hover {
-      background-color: #e4e6eb;
+    &:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
     }
 
     &.selected {
-      background-color: #1877f2;
-      color: #ffffff;
-      border-color: #1877f2;
+      background-color: var(--color-highlight-2);
+      color: #000;
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 15px rgba(var(--color-highlight-2-rgb), 0.3);
 
       &:hover {
-        background-color: #166fe5;
+        background-color: var(--color-highlight-2);
+        opacity: 0.9;
       }
     }
 
     &:disabled {
-      background-color: #f0f2f5;
-      color: #bcc0c4;
-      border-color: #e4e6eb;
+      background-color: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.05);
       cursor: not-allowed;
       pointer-events: none;
     }

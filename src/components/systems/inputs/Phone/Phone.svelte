@@ -68,26 +68,28 @@
   {/if}
 </div>
 
-<style>
+<style lang="scss">
   .phone-input-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    width: 100%;
   }
   .phone-inputs {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    gap: 0.75rem;
+    align-items: flex-end;
   }
   .country-selector {
-    flex: 1;
+    flex: 0 0 120px;
   }
   .number-input {
-    flex: 2;
+    flex: 1;
   }
   .error-message {
-    color: red;
-    font-size: 0.875rem;
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 500;
   }
   .sr-only {
     position: absolute;

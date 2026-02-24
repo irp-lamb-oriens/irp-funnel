@@ -72,38 +72,45 @@
   }
 
   input {
-    background: #f5f5f5;
-    backdrop-filter: blur(6px);
-    border: none;
-    box-shadow: 0 0 10px -7.5px black;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    color: black;
-    transition:
-      border 0.3s ease,
-      box-shadow 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     text-align: center;
-  }
+    width: 100%;
 
-  input::placeholder {
-    color: var(--color-foreground-opaque);
-  }
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
 
-  input:focus {
-    border-color: var(--color-foreground);
-    box-shadow: 0 0 10px -2px var(--color-foreground);
-  }
+    &:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 0 4px rgba(var(--color-highlight-2-rgb), 0.15);
+      transform: translateY(-1px);
+    }
 
-  input.invalid {
-    border-color: red;
-    box-shadow: 0 0 10px -2px red;
+    &:hover:not(:focus) {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    &.invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+    }
   }
 
   .error-message {
     margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: red;
+    font-size: 0.85rem;
+    color: #ef4444;
+    font-weight: 500;
   }
 </style>

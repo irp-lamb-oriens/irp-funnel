@@ -8,6 +8,14 @@
   export let imageAlt: string = "video-lightbox1b";
 </script>
 <div class="hero-banner">
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    class="bg-video"
+    src="https://www.pexels.com/download/video/7855443/"
+  ></video>
   <VideoBanner
     videoUrl={videoUrl}
     videoPoster={imageUrl}
@@ -44,8 +52,39 @@
 
 <style lang="scss">
 .hero-banner {
-  background: var(--color-background);
+  position: relative;
   padding: 3rem 0;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .bg-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+  }
+
+  & > :global(*) {
+    position: relative;
+    z-index: 2;
+  }
 }
 
 .banner-content {

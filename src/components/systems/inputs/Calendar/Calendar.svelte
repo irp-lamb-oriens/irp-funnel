@@ -228,115 +228,163 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 350px;
+    max-width: 400px;
     margin: auto;
-    padding: 1rem;
-    border: 1px solid var(--color-outline);
-    border-radius: 8px;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(10px);
+    color: #ffffff;
   }
   .calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    
+    span {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+
     button {
-      background: transparent;
-      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #ffffff;
       cursor: pointer;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+      }
     }
   }
-  .calendar-weekdays, .calendar-grid {
+  .calendar-weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     text-align: center;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.75rem;
   }
   .calendar-grid {
-    gap: 5px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    gap: 8px;
   }
   .calendar-day {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
     background: transparent;
+    color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     &.available {
-      &:hover { background-color: #f0f0f0; }
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+        color: #fff;
+      }
     }
+
     &.selected {
-      background-color: var(--color-highlight-1);
-      color: white;
+      background: var(--color-highlight-2);
+      color: #000;
+      border-color: var(--color-highlight-2);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(var(--color-highlight-2-rgb), 0.3);
     }
+
     &:disabled {
-      color: #ccc;
+      color: rgba(255, 255, 255, 0.15);
       cursor: not-allowed;
     }
   }
   .time-slot-sidebar {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-outline);
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+    p {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 1rem;
+    }
   }
   .time-slot-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-top: 0.5rem;
+    gap: 1.25rem;
   }
 
   .segment-buttons {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    padding: 0.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 1rem;
   }
 
   .segment-button {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid #ccd0d5;
-    background-color: #ffffff;
-    color: #050505;
-    font-size: 14px;
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s ease;
 
     &:hover {
-      background-color: #e4e6eb;
+      color: #ffffff;
     }
 
     &.selected {
-      background-color: #1877f2;
+      background-color: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.1);
       color: #ffffff;
-      border-color: #1877f2;
-
-      &:hover {
-        background-color: #166fe5;
-      }
     }
   }
 
   .tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 0.75rem;
   }
-  .time-slot-checkbox {
-    display: none;
-  }
-  .time-slot-label {
-    padding: 8px;
-    border: 1px solid var(--color-outline);
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    &.selected {
-      background-color: var(--color-highlight-1);
-      color: white;
-    }
-  }
+
   .error-message {
-    color: red;
+    color: #ef4444;
+    font-weight: 500;
+    text-align: center;
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 1rem;
   }
 </style>

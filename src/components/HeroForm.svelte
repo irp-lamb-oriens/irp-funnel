@@ -340,9 +340,17 @@
 </script>
 
 <div class="hero-banner" id="hero-form">
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    class="bg-video"
+    src="https://www.pexels.com/download/video/7855443/"
+  ></video>
   <Loader visible={isLoading} />
   <VideoBanner
-  videoUrl={videoUrl}
+    videoUrl={videoUrl}
   videoPoster={imageUrl}
   videoAlt={imageAlt}>
     <div class="form-container">
@@ -588,49 +596,112 @@
 
 <style lang="scss">
   .hero-banner {
-    background: var(--color-background);
+    position: relative;
     padding: 3rem 0;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .bg-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      z-index: 0;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+    }
+
+    & > :global(*) {
+      position: relative;
+      z-index: 2;
+    }
   }
 
   .form-container {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 650px;
     margin: 2rem auto;
-    padding: 2rem;
-    background: #161616;
-    border-radius: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem;
+    background: rgba(22, 22, 22, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 20px 0 rgba(var(--color-highlight-2-rgb), 0.1);
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+  }
+
+  .form-steps {
+    position: relative;
+    z-index: 1;
   }
 
   .form-frame {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-family: var(--font-title);
-    font-weight: 700;
-    color: var(--color-highlight-2);
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   h6 {
-    font-size: 1.2rem;
-    font-weight: 400;
-    color: #f0f0f0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-highlight-2);
+    margin-bottom: -0.5rem;
   }
 
   .sub-heading {
     font-size: 1rem;
-    color: #f0f0f0;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.5;
   }
 
   .button-wrapper {
     display: flex;
     justify-content: flex-end;
-    margin-top: 1rem;
+    margin-top: 2rem;
   }
 
   .buttons-row {
@@ -642,28 +713,30 @@
   }
 
   .skip-btn {
-      background: none;
-      border: none;
-      color: #6b7280;
-      text-decoration: underline;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      padding: 0.5rem 1rem;
+      border-radius: 1rem;
       cursor: pointer;
-      font-size: 0.9rem;
-      padding: 0;
-  }
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
 
-  .skip-btn:hover {
-      color: #f0f0f0;
-  }
-
-  .form-steps {
-    position: relative;
+      &:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+          transform: translateY(-1px);
+      }
   }
 
   .form-frame {
     opacity: 0;
     pointer-events: none;
-    transform: translate(50px, 0);
-    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(30px);
+    transition: 
+      opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1), 
+      transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .form-frame.active {
@@ -673,10 +746,13 @@
   }
 
   .error {
-    color: red;
-    font-size: 0.9rem;
-    margin-top: -0.5rem;
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: -0.75rem;
     margin-bottom: 1rem;
+    padding-left: 0.5rem;
+    border-left: 2px solid #ef4444;
   }
 
   .banner-content {

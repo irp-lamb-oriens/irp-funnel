@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { fade, slide } from 'svelte/transition';
   import { immigrationStatuses } from './immigrationStatuses.js';
   import { immigrationStatusStore } from './store.js';
 
@@ -34,28 +35,29 @@
   });
 </script>
 
-<div class="relative font-sans z-10" bind:this={dropdownRef}>
+<div class="immigration-dropdown-container" bind:this={dropdownRef}>
   <button
     type="button"
     bind:this={buttonRef}
     on:click={toggleDropdown}
-    class="country-select-button"
+    class="immigration-select-button"
   >
-    <span class="truncate">{selectedStatus ? selectedStatus.name : 'Select Immigration Status'}</span>
+    <span class="selected-value">{selectedStatus ? selectedStatus.name : 'Select Immigration Status'}</span>
     <svg
-      class="w-4 h-4 transform transition-transform duration-200 {isOpen ? 'rotate-180' : ''}"
-      fill="currentColor"
+      class="chevron {isOpen ? 'open' : ''}"
+      fill="none"
+      stroke="currentColor"
       viewBox="0 0 24 24"
-      aria-hidden="true"
     >
-      <path d="M7 10l5 5 5-5z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
     </svg>
   </button>
   {#if isOpen}
-    <ul class="absolute w-full max-w-xs mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20">
+    <ul class="dropdown-list" in:slide={{ duration: 300, axis: 'y' }} out:fade={{ duration: 150 }}>
       {#each immigrationStatuses as status}
         <li
-          class="px-4 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-100"
+          class="dropdown-item"
+          class:selected={selectedStatus?.code === status.code}
           on:click={() => selectStatus(status)}
         >
           <span class="truncate">{status.name}</span>
@@ -66,25 +68,98 @@
 </div>
 
 <style lang="scss">
-  .country-select-button {
+  .immigration-dropdown-container {
+    position: relative;
     width: 100%;
-    max-width: 20rem; /* max-w-xs */
-    padding: 0.5rem 1rem; /* px-4 py-2 */
-    font-size: 0.875rem; /* text-sm */
-    background: #f5f5f5;
-    border: 1px solid #d1d5db; /* border border-gray-300 */
-    border-radius: 0.5rem; /* rounded-lg */
-    transition: all 200ms ease-in-out;
+    z-index: 100;
+  }
+
+  .immigration-select-button {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-align: left;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
 
     &:focus {
-      outline: 2px solid transparent;
-      outline-offset: 2px;
-      --tw-ring-color: #3b82f6; /* focus:ring-blue-500 */
-      box-shadow: 0 0 0 2px var(--tw-ring-color);
-      border-color: #3b82f6; /* focus:border-blue-500 */
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 0 4px rgba(var(--color-highlight-2-rgb), 0.15);
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .chevron {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+
+  .dropdown-list {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 100%;
+    background: rgba(25, 25, 25, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 0.5rem;
+    list-style: none;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    &.selected {
+      background: var(--color-highlight-2);
+      color: #000;
+      font-weight: 600;
     }
   }
 </style>

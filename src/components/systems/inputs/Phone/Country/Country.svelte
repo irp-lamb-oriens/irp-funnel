@@ -225,7 +225,7 @@
 </script>
 
 <div
-  class="country-input-wrapper"
+  class="country-dropdown-container"
   bind:this={dropdownRef}
   on:keydown={handleKeydown}
   role="combobox"
@@ -233,54 +233,52 @@
   aria-expanded={open}
   aria-owns={open ? "language-listbox" : undefined}
 >
-  {#if showInput}
-    <input
-      type="text"
-      bind:this={inputRef}
-      value={typeahead}
-      on:input={handleInput}
-      placeholder="Type to search country..."
-      class="control-input"
-      aria-autocomplete="list"
-      aria-controls={open ? "language-listbox" : undefined}
-      aria-labelledby="language-select-label"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    />
-  {:else}
-    <button
-      type="button"
-      bind:this={inputElement}
-      bind:this={buttonRef}
-      on:click={toggleOpen}
-      class="control-button"
-      aria-controls={open ? "language-listbox" : undefined}
-      aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    >
-      {#if selectedCountry}
-        <span class="selected-country">
-          {#if selectedCountry.flag}
-            <span class="flag" aria-hidden="true">{selectedCountry.flag}</span>
-          {/if}
-          <span class="name">{selectedCountry.name}</span>
-          <span class="dial-code">({selectedCountry.dialCode})</span>
-        </span>
-      {:else}
-        <span class="placeholder">Select a country</span>
-      {/if}
-      <svg
-        class="chevron"
-        class:open
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+  <div class="input-wrapper">
+    {#if showInput}
+      <input
+        type="text"
+        bind:this={inputRef}
+        value={typeahead}
+        on:input={handleInput}
+        placeholder="Search..."
+        class="search-input"
+        aria-autocomplete="list"
+        aria-controls={open ? "language-listbox" : undefined}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      />
+    {:else}
+      <button
+        type="button"
+        bind:this={inputElement}
+        bind:this={buttonRef}
+        on:click={toggleOpen}
+        class="country-select-button"
+        aria-controls={open ? "language-listbox" : undefined}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
       >
-        <path d="M7 10l5 5 5-5z" />
-      </svg>
-    </button>
-  {/if}
+        {#if selectedCountry}
+          <span class="selected-value">
+            {#if selectedCountry.flag}
+              <span class="flag" aria-hidden="true">{selectedCountry.flag}</span>
+            {/if}
+            <span class="dial-code">{selectedCountry.dialCode}</span>
+          </span>
+        {:else}
+          <span class="placeholder">Select</span>
+        {/if}
+        <svg
+          class="chevron {open ? 'open' : ''}"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    {/if}
+  </div>
 
   {#if open}
     <ul
@@ -289,9 +287,8 @@
       id="language-listbox"
       class="dropdown-list"
       tabindex="-1"
-      aria-labelledby="language-select-label"
-      in:slide={{ duration: 200 }}
-      out:slide={{ duration: 200 }}
+      in:slide={{ duration: 300, axis: 'y' }}
+      out:fade={{ duration: 150 }}
     >
       {#each countries as language, index (language.code)}
         <li
@@ -326,77 +323,74 @@
 </div>
 
 <style lang="scss">
-  .country-input-wrapper {
+  .country-dropdown-container {
     position: relative;
-    font-family: var(--font-paragraph);
     width: 100%;
-    max-width: 20rem;
-    z-index: 10;
+    z-index: 100;
   }
 
-  .control-input,
-  .control-button {
+  .input-wrapper {
+    position: relative;
     width: 100%;
-    padding: 0.75rem 1rem;
+  }
+
+  .search-input, .country-select-button {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem 0.75rem;
     font-size: 1rem;
-    background: #f5f5f5;
-    backdrop-filter: blur(6px);
-    border: none;
-    box-shadow: 0 0 10px -7.5px black;
-    border-radius: 8px;
-    color: black;
-    transition:
-      border 0.3s ease,
-      box-shadow 0.3s ease;
+    color: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
     text-align: left;
-  }
-
-  .control-button {
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
+
+    &:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 0 4px rgba(var(--color-highlight-2-rgb), 0.15);
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
   }
 
-  .control-input:focus,
-  .control-button:focus {
-    border-color: var(--color-foreground);
-    box-shadow: 0 0 10px -2px var(--color-foreground);
+  .placeholder {
+    color: rgba(255, 255, 255, 0.3);
   }
 
-  .selected-country {
+  .selected-value {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
 
-  .flag {
-    font-size: 1.25rem;
-  }
+    .flag {
+      font-size: 1.25rem;
+    }
 
-  .name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .dial-code {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .placeholder {
-    color: #6b7280;
+    .dial-code {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
   }
 
   .chevron {
     width: 1rem;
     height: 1rem;
-    transition: transform 0.2s;
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+
     &.open {
       transform: rotate(180deg);
     }
@@ -404,49 +398,69 @@
 
   .dropdown-list {
     position: absolute;
-    width: 100%;
-    margin-top: 0.25rem;
-    background-color: white;
-    background: #f5f5f5;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    max-height: 16rem;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 250px;
+    background: rgba(25, 25, 25, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    max-height: 300px;
     overflow-y: auto;
-    z-index: 20;
+    z-index: 1000;
+    padding: 0.5rem;
     list-style: none;
-    padding: 0;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
   }
 
   .dropdown-item {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
-    transition: background-color 0.15s ease-in-out;
+    transition: all 0.2s ease;
 
-    &:hover {
-      background-color: #f3f4f6;
+    .flag {
+      font-size: 1.25rem;
     }
 
-    &.highlighted {
-      background-color: var(--color-outline);
-      color: white;
-      .dial-code {
-        color: white;
-      }
+    .code {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;
+      margin-left: auto;
+    }
+
+    &.highlighted, &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
     }
 
     &.selected {
-      font-weight: bold;
+      background: var(--color-highlight-2);
+      color: #000;
+      font-weight: 600;
+
+      .code {
+        color: rgba(0, 0, 0, 0.6);
+      }
     }
   }
 
-  .no-countries {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    color: #6b7280;
+  .no-results {
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
   }
 </style>
