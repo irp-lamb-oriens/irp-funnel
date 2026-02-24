@@ -84,118 +84,224 @@
   <style>
     /* Base */
     .cta-btn {
-      --radius-md: 9999px; /* si ya tienes otra var de radios, cámbiala aquí */
-      --transition-fast: 150ms;
+      --radius-full: 9999px;
+      --transition-modern: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   
       display: inline-block;
       font-weight: 600;
-      border-radius: var(--radius-md);
-      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-full);
+      padding: 0.85rem 1.75rem;
       text-align: center;
-      transition: all var(--transition-fast);
+      transition: var(--transition-modern);
       border: 2px solid transparent;
       cursor: pointer;
-      line-height: 1;
+      line-height: 1.2;
       user-select: none;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.02em;
+      box-shadow: var(--shadow-sm);
+      transform: translateZ(0); /* Hardware acceleration */
+      text-decoration: none;
     }
+  
+    /* Modern Glint Effect */
+    .cta-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.15),
+        transparent
+      );
+      transition: all 0.6s;
+      z-index: 1;
+    }
+  
+    .cta-btn:hover::before {
+      left: 100%;
+    }
+  
+    .cta-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: var(--shadow-md);
+    }
+  
+    .cta-btn:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.1s ease;
+    }
+  
     .cta-btn:focus-visible {
-      outline: 2px solid transparent;
-      outline-offset: 2px;
+      outline: none;
       box-shadow:
-        0 0 0 3px var(--color-background),
-        0 0 0 5px var(--color-highlight-2);
+        0 0 0 2px var(--color-background),
+        0 0 0 4px var(--color-highlight-2),
+        var(--shadow-md);
     }
+  
     .cta-btn[data-disabled="true"] {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+      filter: grayscale(0.5);
+      transform: none !important;
+      box-shadow: none !important;
     }
+  
     .cta-btn__inner {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.6rem;
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
     }
+  
     .cta-btn__spinner {
-      inline-size: 1em;
-      block-size: 1em;
+      inline-size: 1.1em;
+      block-size: 1.1em;
       border-radius: 50%;
       border: 2px solid currentColor;
       border-right-color: transparent;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.6s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
     }
+  
     @keyframes spin { to { transform: rotate(360deg); } }
   
-    .is-block { display: block; width: 100%; }
+    .is-block { display: flex; width: 100%; justify-content: center; }
   
-    /* Variantes (solo con vars disponibles) */
+    /* Variantes */
   
-    /* PRIMARY (usa bac--color-background como color principal) */
+    /* PRIMARY */
     .cta-primary {
-      /* texto inicialmente en background para el truco de "tinta" */
       background-color: var(--color-highlight-1);
       color: var(--color-background);
-      /* relleno por sombra interna del color principal */
-      box-shadow: inset 0 0 0 100px var(--color-highlight-1);
-      transition: box-shadow .5s, color .2s, background-color .4s;
+      box-shadow: inset 0 0 0 100px var(--color-highlight-1), var(--shadow-sm);
     }
     .cta-primary:hover {
       background-color: transparent;
       color: var(--color-highlight-2);
-      box-shadow: inset 0 0 0 2px var(--color-highlight-2);
+      box-shadow: inset 0 0 0 2px var(--color-highlight-2), var(--shadow-md);
     }
   
-    /* PRIMARY INVERTED (botón sobre fondo oscuro o secciones hero) */
+    /* PRIMARY INVERTED */
     .cta-primary-inverted {
       background-color: var(--color-background);
       color: var(--color-background-inversion);
-      box-shadow: inset 0 0 0 100px var(--color-background);
-      transition: box-shadow .5s, color .2s, background-color .4s;
+      box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
     }
     .cta-primary-inverted:hover {
       background-color: transparent;
       color: var(--color-background);
-      box-shadow: inset 0 0 0 2px var(--color-background);
+      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md);
+    }
+    .cta-primary-inverted::before {
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
     }
   
-    /* PRIMARY SCALED (mismo esquema que inverted pero con scale en hover) */
+    /* PRIMARY SCALED */
     .cta-primary-scaled {
       background-color: var(--color-background);
       color: var(--color-background-inversion);
-      box-shadow: inset 0 0 0 100px var(--color-background);
-      transition: box-shadow .5s, color .2s, background-color .4s, transform .75s;
-      transition-timing-function: cubic-bezier(0.5, 0, 0.5, 1);
-      transform: scale(1);
+      box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
     }
-    .cta-primary-scaled:hover { transform: scale(1.025); }
+    .cta-primary-scaled:hover {
+      transform: translateY(-3px) scale(1.035);
+      box-shadow: var(--shadow-lg);
+    }
+    .cta-primary-scaled:hover::before {
+      transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
   
-    /* SECONDARY (borde con bac--color-background para contraste; hover eleva a bac--color-background) */
+    /* SECONDARY */
     .cta-secondary {
       background-color: var(--color-highlight-2);
       color: var(--color-background);
       border-color: var(--color-highlight-2);
     }
-    .cta-secondary:hover { color: var(--color-background-inversion); background-color: transparent; }
+    .cta-secondary:hover {
+      color: var(--color-highlight-2);
+      background-color: transparent;
+    }
+    .cta-secondary::before {
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.25),
+        transparent
+      );
+    }
   
-    /* SECONDARY INVERTED (pensado para fondos con bac--color-background/2 oscuros o imágenes) */
+    /* SECONDARY INVERTED */
     .cta-secondary-inverted {
       background-color: var(--color-background);
       color: var(--color-background-inversion);
-      box-shadow: inset 0 0 0 100px var(--color-background);
-      transition: box-shadow .5s, color .2s, background-color .4s;
+      box-shadow: inset 0 0 0 100px var(--color-background), var(--shadow-sm);
     }
     .cta-secondary-inverted:hover {
       background-color: transparent;
       color: var(--color-background);
-      box-shadow: inset 0 0 0 2px var(--color-background);
+      box-shadow: inset 0 0 0 2px var(--color-background), var(--shadow-md);
+    }
+    .cta-secondary-inverted::before {
+      background: linear-gradient(
+        120deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
     }
   
-    /* LINK (tono minimal; usa bac--color-background-inversion para diferenciar del primary) */
+    /* LINK */
     .cta-link {
       background: none;
       border: none;
       color: var(--color-background-inversion);
-      text-decoration: underline;
-      padding: 0;
+      padding: 0.2rem 0;
+      box-shadow: none;
+      font-weight: 500;
+      overflow: visible;
     }
-    .cta-link:hover { opacity: 0.85; }
+    .cta-link::before { display: none; }
+    .cta-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background-color: currentColor;
+      transform: scaleX(0.3);
+      transform-origin: left;
+      transition: var(--transition-modern);
+      opacity: 0.7;
+    }
+    .cta-link:hover {
+      transform: translateX(4px);
+      box-shadow: none;
+      opacity: 1;
+    }
+    .cta-link:hover::after {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+    .cta-link:active {
+      transform: translateX(2px) scale(0.98);
+    }
   </style>
