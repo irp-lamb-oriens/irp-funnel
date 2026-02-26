@@ -50,20 +50,37 @@
   ];
   
   let lastScrollY = 0;
-  let doHide = writable(!!lastScrollY);
+  let scrolled = false;
+  let hidden = false;
 
   onMount(() => {
-    window.addEventListener("scroll", event => {
-      doHide.set(lastScrollY < window.scrollY);
-      lastScrollY = window.scrollY;
-    });
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      scrolled = currentScrollY > 20;
+      
+      // Hide header when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        hidden = true;
+      } else {
+        hidden = false;
+      }
+      
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   });
 </script>
 
 <style lang="scss" src="./Header.scss"></style>
 
 <div class="header-space"></div>
-<header class="header-section" class:turnNeomorphicPlasticGlass={$doHide}>
+<header 
+  class="header-section" 
+  class:is-scrolled={scrolled} 
+  class:is-hidden={hidden}
+>
   <div class="header-row main-row">
     <div class="logo-col">
       <Logo />

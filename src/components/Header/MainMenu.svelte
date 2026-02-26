@@ -139,45 +139,47 @@
 
 .hover-pill {
   position: absolute;
-  height: 40px;
-  background: black;
-  backdrop-filter: blur(8px);
-  border-radius: 9999px;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  height: 38px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   z-index: 0;
   top: 50%;
   transform: translateY(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .main-menu li {
   display: flex;
-  mix-blend-mode: exclusion;
   align-items: center;
   position: relative;
   z-index: 1;
 }
 
 .main-menu a {
-  color: #888;
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   font-weight: 500;
-  padding: 0.6rem 1.2rem;
-  border-radius: 9999px;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 
   &:hover {
     color: #fff;
-    transform: translateY(-1px);
+    // transform: translateY(-1px);
   }
 }
+>>>>+++ REPLACE
+
 .item-cta {
   background: var(--color-highlight-1);
   color: #fff !important;

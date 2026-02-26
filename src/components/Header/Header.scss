@@ -1,41 +1,48 @@
 .header-space {
-
+  height: 0; // Space is handled by fixed header top margin or padding in layout
 }
 
 .header-section {
-  overflow: hidden;
   position: fixed;
-  top: 20px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 40px);
-  max-width: 1400px;
-  height: 70px;
+  width: calc(100% - 48px);
+  max-width: 1200px;
+  height: 72px;
   z-index: 10010;
   
-  // Glassmorphism
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 9999px; // Pill shape
+  // Advanced Glassmorphism
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
   
   box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.08),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 4px 24px -1px rgba(0, 0, 0, 0.1),
+    0 0 1px 0 rgba(255, 255, 255, 0.1) inset;
     
   margin: 0;
-  padding: 0 30px;
+  padding: 0 24px;
   font-family: inherit;
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, top, height, background, box-shadow;
 
-  &.turnNeomorphicPlasticGlass {
-    top: 10px;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px) saturate(200%);
+  &.is-scrolled {
+    top: 12px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(200%);
+    border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 
-      0 12px 40px 0 rgba(0, 0, 0, 0.12),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+      0 12px 40px -12px rgba(0, 0, 0, 0.25),
+      0 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    border-radius: 20px;
+  }
+
+  &.is-hidden {
+    transform: translate(-50%, -120%);
   }
 }
 
@@ -46,17 +53,16 @@
   width: 100%;
   height: 100%;
   margin: 0 auto;
-  overflow: hidden;
 }
 
 .logo-col {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  transition: transform 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &:hover {
-    transform: scale(1.05);
+    transform: scale(1.08);
   }
 }
 
@@ -69,18 +75,24 @@
 
 @media (max-width: 1024px) {
   .header-section {
-    width: calc(100% - 20px);
-    top: 10px;
-    padding: 0 20px;
+    width: calc(100% - 24px);
+    top: 12px;
+    padding: 0 16px;
+    height: 64px;
+    border-radius: 18px;
   }
 }
 
 // Ensure children inherit white font color where appropriate
 .header-section {
-  color: #888;
+  color: #fff;
   
   a, p, span, li {
-    color: #999;
-    mix-blend-mode: exclusion;
+    color: rgba(255, 255, 255, 0.85);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      color: #fff;
+    }
   }
 }

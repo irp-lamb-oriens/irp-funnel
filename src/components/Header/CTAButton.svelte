@@ -281,18 +281,24 @@
   
     /* PRIMARY */
     .cta-primary {
-      background-color: var(--color-highlight-1);
-      color: var(--color-background);
-      box-shadow: inset 0 0 0 100px var(--color-highlight-1), var(--shadow-sm);
+      background: linear-gradient(135deg, var(--color-highlight-1) 0%, #1e90ff 100%);
+      color: #fff;
+      box-shadow: 
+        0 4px 14px 0 rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
       overflow: hidden;
-      --glow-color: rgba(var(--color-highlight-1-rgb), 0.5);
+      --glow-color: rgba(30, 144, 255, 0.4);
+      border: none;
     }
     .cta-primary:hover {
-      background-color: transparent;
-      color: var(--color-highlight-2);
-      box-shadow: inset 0 0 0 2px var(--color-highlight-2), var(--shadow-md), 0 0 30px rgba(var(--color-highlight-2-rgb), 0.6);
+      transform: translateY(-2px);
+      box-shadow: 
+        0 8px 25px 0 rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+        0 0 20px var(--glow-color);
+      background: linear-gradient(135deg, #1e90ff 0%, var(--color-highlight-1) 100%);
     }
-  
+
     /* PRIMARY INVERTED */
     .cta-primary-inverted {
       background-color: var(--color-background);
