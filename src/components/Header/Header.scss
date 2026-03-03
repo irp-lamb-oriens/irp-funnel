@@ -5,12 +5,13 @@
 .header-section {
   position: fixed;
   top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   width: calc(100% - 48px);
   max-width: 1200px;
   height: 72px;
   z-index: 10010;
+  margin: 0 auto;
   
   // Advanced Glassmorphism
   background: rgba(255, 255, 255, 0.03);
@@ -42,7 +43,7 @@
   }
 
   &.is-hidden {
-    transform: translate(-50%, -120%);
+    transform: translateY(-120%);
   }
 }
 
