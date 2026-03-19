@@ -10,6 +10,7 @@
   export let onCountryChange: (code: string | null) => void = () => {};
   export let inputElement: HTMLButtonElement;
   export let isValid = true;
+  export let onUpdate: (val: string) => void = () => {};
 
   let countryCode: string | null = 'US';
   let phoneNumber = '';
@@ -33,15 +34,18 @@
         isValid = true;
         errorMessage = '';
         value = parsedNumber.format('NATIONAL');
+        onUpdate(value);
       } else {
         isValid = false;
         errorMessage = 'Invalid phone number';
         value = formattedNumber;
+        onUpdate(value);
       }
     } else {
       isValid = true;
       errorMessage = '';
       value = '';
+      onUpdate(value);
     }
   }
 </script>

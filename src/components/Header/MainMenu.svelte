@@ -178,7 +178,6 @@
     // transform: translateY(-1px);
   }
 }
->>>>+++ REPLACE
 
 .item-cta {
   background: var(--color-highlight-1);

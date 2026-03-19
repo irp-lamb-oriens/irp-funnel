@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { writable } from 'svelte/store';
   import LetterByLetter from './LetterByLetter.svelte';
   import PlainText from './systems/inputs/PlainText/PlainText.svelte';
@@ -52,16 +52,22 @@
   $: originCountryName = countries.find(c => c.code === $formState.originCountry)?.name || $formState.originCountry;
   $: destinationCountryName = countries.find(c => c.code === $formState.destinationCountry)?.name || $formState.destinationCountry;
 
-  immigrationStatusStore.subscribe(value => {
+  const unsubImmigration = immigrationStatusStore.subscribe(value => {
     updateField(value || '', 'immigrationStatus');
   });
 
-  budgetStore.subscribe(value => {
+  const unsubBudget = budgetStore.subscribe(value => {
     updateField(value || '', 'budget');
   });
 
-  moveSizeStore.subscribe(value => {
+  const unsubMoveSize = moveSizeStore.subscribe(value => {
     updateField(value || '', 'size');
+  });
+
+  onDestroy(() => {
+    unsubImmigration();
+    unsubBudget();
+    unsubMoveSize();
   });
 
   let showReferrerStep = false;
@@ -370,10 +376,10 @@
         {#if currentStep === 1}
           <div class="form-frame active">
             <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <PlainText label="Tell us your first name" placeholder="John" bind:value={$formState.name} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
+            <PlainText label="Tell us your first name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
             {#if errors.name}<span class="error">{errors.name}</span>{/if}
             
-            <PlainText label="Tell us your last name" placeholder="Doe" bind:value={$formState.surname} onEnter={handleNextStep} bind:inputElement={surnameInput} />
+            <PlainText label="Tell us your last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={handleNextStep} bind:inputElement={surnameInput} />
             {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
 
             <div class="button-wrapper">
@@ -391,11 +397,11 @@
             {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
             
             <h2>Destination City</h2>
-            <PlainText placeholder="City" bind:value={$formState.destinationCity} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
+            <PlainText placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
             {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
 
             <h2>Destination Zip Code</h2>
-            <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
+            <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
             {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
 
             <div class="button-wrapper">
@@ -413,11 +419,11 @@
             {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
 
             <h2>Origin City</h2>
-            <PlainText placeholder="City" bind:value={$formState.originCity} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
+            <PlainText placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
             {#if errors.originCity}<span class="error">{errors.originCity}</span>{/if}
 
             <h2>Origin Zip Code</h2>
-            <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onEnter={handleNextStep} bind:inputElement={originZipInput} />
+            <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onChange={(val) => updateField(val, 'originZip')} onEnter={handleNextStep} bind:inputElement={originZipInput} />
             {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
 
             <div class="button-wrapper">
@@ -430,7 +436,7 @@
           <div class="form-frame active">
             <h2>Your phone number</h2>
             <p class="sub-heading">(so we can contact you directly, in case you need it)</p>
-            <Phone bind:value={$formState.phone} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
+            <Phone bind:value={$formState.phone} onUpdate={(val) => updateField(val, 'phone')} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
             {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
@@ -460,6 +466,7 @@
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]}
               bind:selectedValue={$formState.propertyTypeFrom}
+              on:update={(e) => updateField(e.detail, 'propertyTypeFrom')}
             />
             {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
             <div class="button-wrapper">
@@ -479,6 +486,7 @@
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]}
               bind:selectedValue={$formState.propertyTypeTo}
+              on:update={(e) => updateField(e.detail, 'propertyTypeTo')}
             />
             {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
             <div class="button-wrapper">
@@ -540,7 +548,7 @@
         {#if currentStep === 12 && showReferrerStep}
           <div class="form-frame active">
             <h2>Who referred you to us?</h2>
-            <PlainText placeholder="The name here" bind:value={$formState.referredBy} onEnter={submitForm} bind:inputElement={referrerInput} />
+            <PlainText placeholder="The name here" bind:value={$formState.referredBy} onChange={(val) => updateField(val, 'referredBy')} onEnter={submitForm} bind:inputElement={referrerInput} />
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={isLoading} />
             </div>
