@@ -470,7 +470,7 @@
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 2.2rem 1.5rem;
   margin-bottom: 2.5rem;
-  margin-top: 0.5rem;
+  margin-top: 10rem;
 }
 .news-card-anim {
   animation: fadeInCard 0.5s cubic-bezier(0.4,0,0.2,1);
