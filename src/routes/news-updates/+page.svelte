@@ -28,9 +28,11 @@
   let searchFocused = false;
   let searchTouched = false;
   let isStreaming = false;
+  let streamingCount = 0;  // live hit count shown during streaming
   let noResults = false;
   let searchTimeout: ReturnType<typeof setTimeout>;
   let pageIndexBeforeSearch = 0;
+  let currentSearchAbort: AbortController | null = null;
 
   $: isSearching = search.length > 0;
   $: showPagination = !isSearching;
@@ -39,18 +41,18 @@
   const RENDER_API_HOLDER = "consultation%40internationalrelocationpartner.com";
 
   function processRenderArticle(article: any) {
-    // The server already extracts the title (from h1) and strips h1 from the content
-    // before sending, so we use the pre-processed fields directly.
+    // Handles both "full" paginated format (has `content`) and
+    // "slim" search format (has `imageUrl` + `excerpt` instead of full HTML).
     const title = article.title || "Article";
-    const content = article.content || "";
-    const imageMatch = content.match(/<img[^>]+src="([^">]+)"/);
-    const imageUrl = imageMatch ? imageMatch[1] : "";
+    const imageUrl = article.imageUrl ||
+      (article.content ? (article.content.match(/<img[^>]+src="([^">]+)"/) ?? [])[1] ?? "" : "");
+    const excerpt = article.excerpt || article.content || "";
 
     return {
       slug: article.id,
       title: title,
       metadata: {
-        title: content,
+        title: excerpt,
         poster: { imgix_url: imageUrl, url: imageUrl },
       },
       type: "blogs",
@@ -173,72 +175,84 @@
 
   async function handleSearch() {
     clearTimeout(searchTimeout);
+    // 2 seconds debounce — prevents expensive searches on every keystroke
     searchTimeout = setTimeout(async () => {
       if (!search) {
+        // Cancel any in-flight search
+        if (currentSearchAbort) { currentSearchAbort.abort(); currentSearchAbort = null; }
+        isStreaming = false;
+        streamingCount = 0;
         noResults = false;
-        total = cosmicTotal + renderTotal; // Restore total for pagination
+        total = cosmicTotal + renderTotal;
         loadAndDisplayPage(pageIndexBeforeSearch);
-        if (pageIndex !== pageIndexBeforeSearch) {
-            goToPage(pageIndexBeforeSearch);
-        }
+        if (pageIndex !== pageIndexBeforeSearch) goToPage(pageIndexBeforeSearch);
         return;
       }
 
-      if (!isStreaming) {
-        pageIndexBeforeSearch = pageIndex;
-      }
+      // Cancel any previous in-flight search immediately
+      if (currentSearchAbort) currentSearchAbort.abort();
+      const abortCtrl = new AbortController();
+      currentSearchAbort = abortCtrl;
+
+      if (!isStreaming) pageIndexBeforeSearch = pageIndex;
       isStreaming = true;
+      streamingCount = 0;
       blogs = [];
       total = 0;
       noResults = false;
 
       try {
-        // Fetch from CosmicJS first to ensure it's at the top of the list
+        // CosmicJS — fast title regex search
         const cosmicQuery = encodeURIComponent(JSON.stringify({
           type: "blogs",
           title: { "$regex": search, "$options": "i" }
         }));
-        const cosmicSearchPromise = fetch(`https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${cosmicQuery}&limit=${LIMIT}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`)
-          .then(res => res.json())
-          .then(data => (data.objects || []));
+        const cosmicResults = await fetch(
+          `https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=${cosmicQuery}&limit=${LIMIT}&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type`,
+          { signal: abortCtrl.signal }
+        ).then(r => r.json()).then(d => d.objects || []);
 
-        const cosmicResults = await cosmicSearchPromise;
+        // Show cosmic results immediately (they arrive before streaming kicks in)
         blogs = cosmicResults;
         total = cosmicResults.length;
+        streamingCount = total;
 
-        // Now, stream results from the Render API and append them
-        const searchUrl = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?search=${search}`;
-        const resp = await fetch(searchUrl);
-        if (resp.ok) {
-            const reader = resp.body?.getReader();
-            if (!reader) return;
-            
-            const decoder = new TextDecoder();
-            let buffer = "";
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                buffer = lines.pop() || "";
-                for (const line of lines) {
-                    if (line.trim() === "") continue;
-                    const article = JSON.parse(line);
-                    blogs = [...blogs, processRenderArticle(article)];
-                    total++;
-                }
+        // Stream Render API results — slim payloads, maxHits=50 to stop early
+        const searchUrl = `${RENDER_API_URL}/articles/${RENDER_API_HOLDER}?search=${encodeURIComponent(search)}&lang=en&maxHits=50`;
+        const resp = await fetch(searchUrl, { signal: abortCtrl.signal });
+        if (resp.ok && resp.body) {
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const article = JSON.parse(line);
+                // Append each article immediately so the grid updates in real time
+                blogs = [...blogs, processRenderArticle(article)];
+                total++;
+                streamingCount++;
+              } catch { /* skip malformed line */ }
             }
+          }
         }
 
-        if (total === 0) {
-          noResults = true;
-        }
-      } catch (err) {
-        console.error("Search error:", err);
+        if (total === 0) noResults = true;
+      } catch (err: any) {
+        if (err?.name !== "AbortError") console.error("Search error:", err);
       } finally {
-        isStreaming = false;
+        if (currentSearchAbort === abortCtrl) {
+          isStreaming = false;
+          currentSearchAbort = null;
+        }
       }
-    }, 500);
+    }, 2000); // 2 second debounce
   }
 
   onMount(() => {
@@ -312,10 +326,16 @@
         {/if}
       </div>
     </div>
-    {#if loading || isStreaming}
-      <div class="loading">{#if isStreaming} Searching... {:else} Loading... {/if}</div>
+    {#if loading}
+      <div class="loading">Loading...</div>
     {:else}
-      {#if isSearching && noResults}
+      {#if isStreaming}
+        <div class="streaming-banner">
+          Searching<span class="dots">…</span>
+          {#if streamingCount > 0}<span class="stream-count">{streamingCount} found so far</span>{/if}
+        </div>
+      {/if}
+      {#if isSearching && noResults && !isStreaming}
         <div class="no-results">No news found for "<span>{search}</span>"</div>
       {/if}
       {#if showPagination}
@@ -528,5 +548,36 @@
   0% { transform: translateX(0); opacity: 1; }
   60% { transform: translateX(16px); opacity: 0.7; }
   100% { transform: translateX(32px); opacity: 0; }
+}
+/* Streaming search banner */
+.streaming-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  color: #0077cc;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.dots {
+  display: inline-block;
+  animation: blink 1.2s steps(3, end) infinite;
+  letter-spacing: 2px;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  33% { opacity: 0.3; }
+  66% { opacity: 0.6; }
+}
+.stream-count {
+  background: #e8f4ff;
+  color: #0077cc;
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 </style>
