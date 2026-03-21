@@ -39,9 +39,10 @@
   const RENDER_API_HOLDER = "consultation%40internationalrelocationpartner.com";
 
   function processRenderArticle(article: any) {
-    const titleMatch = article.content ? article.content.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) : null;
-    const title = titleMatch ? titleMatch[1] : "Article";
-    const content = article.content ? article.content.replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "") : "";
+    // The server already extracts the title (from h1) and strips h1 from the content
+    // before sending, so we use the pre-processed fields directly.
+    const title = article.title || "Article";
+    const content = article.content || "";
     const imageMatch = content.match(/<img[^>]+src="([^">]+)"/);
     const imageUrl = imageMatch ? imageMatch[1] : "";
 
