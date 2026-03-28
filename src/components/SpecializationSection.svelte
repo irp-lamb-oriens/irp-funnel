@@ -168,19 +168,6 @@
   &:hover {
     color: var(--color-highlight-2);
   }
-  a.specialization-link {
-    color: #fff;
-    text-decoration: underline;
-    font-weight: 600;
-    position: relative;
-    z-index: 3;
-    transition: color 0.18s;
-    text-align: left;
-    &:hover {
-      color: var(--color-highlight-2);
-      text-decoration: underline wavy 1.5px;
-    }
-  }
 }
 
 /* Audience list: solid red circle with white checkmark */
@@ -214,58 +201,6 @@
   &::before, &::after {
     display: none !important;
     content: none !important;
-  }
-  a.specialization-link {
-    display: block;
-    width: 100%;
-    height: 100%;
-    padding: 1.1em 0.5em;
-    background: transparent;
-    border-radius: 0;
-    color: #fff;
-    text-align: center;
-    font-weight: 700;
-    font-size: clamp(1rem, 1vw + 0.8rem, 1.18rem);
-    letter-spacing: 0.01em;
-    border: none;
-    cursor: pointer;
-    transition: color 0.18s;
-    box-shadow: none;
-    outline: none;
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-  }
-  a.specialization-link::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 0;
-    height: 100%;
-    background: var(--color-highlight-2);
-    z-index: -1;
-    transition: width 0.32s cubic-bezier(.4,1.6,.6,.9);
-    border-radius: 0;
-    box-shadow:
-      0 0 0 0px rgba(229,57,53,0.18),
-      0 0 0 8px rgba(229,57,53,0.12),
-      0 0 0 16px rgba(229,57,53,0.08),
-      0 0 0 24px rgba(229,57,53,0.05);
-  }
-  a.specialization-link:hover::before,
-  a.specialization-link:focus::before {
-    transition: width 1s ease-in-out;
-    width: 100%;
-  }
-  a.specialization-link:hover,
-  a.specialization-link:focus {
-    color: #fff;
-    text-decoration: none;
-  }
-  a.specialization-link span {
-    position: relative;
-    z-index: 1;
   }
 }
 

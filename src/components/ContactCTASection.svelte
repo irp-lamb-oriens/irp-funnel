@@ -58,10 +58,6 @@
     flex-direction: column;
     gap: 1rem;
     align-items: flex-end;
-    a {
-      min-width: 180px;
-      text-align: center;
-    }
   }
 }
 @media (max-width: 1200px) {

@@ -33,6 +33,7 @@
 <div
   class="location-card {open ? 'location-card--open' : ''}"
   tabindex={tabIndex}
+  role="button"
   aria-expanded={open}
   on:click={onToggle}
   on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
@@ -141,9 +142,6 @@ $shadow-min-duration: 0s;
     .location-card__extra {
       color: #fff !important;
     }
-    a {
-      color: #fff !important;
-    }
   }
 
   .location-card__header {
@@ -186,6 +184,7 @@ $shadow-min-duration: 0s;
     align-items: flex-start;
     gap: 1rem;
     margin-bottom: 0.7rem;
+
     .location-card__img {
       width: 48px;
       height: 48px;
@@ -216,12 +215,6 @@ $shadow-min-duration: 0s;
     font-size: 0.98rem;
     color: #fff;
     margin-bottom: 0.2rem;
-    position: relative;
-    z-index: 2;
-  }
-  a {
-    color: #fff;
-    text-decoration: underline;
     position: relative;
     z-index: 2;
   }

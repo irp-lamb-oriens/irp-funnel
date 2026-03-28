@@ -122,14 +122,14 @@
             transition:faqCardTransition={{ delay: i * 60, direction: faqOpen[faq.idx] ? 1 : -1 }}
             on:click={() => toggleFaq(faq.idx)}
           >
-            <h5
+            <button
               class="faq-question"
               class:active={faqOpen[faq.idx]}
-              tabindex="0"
+              type="button"
               on:keydown={(e) => e.key === 'Enter' && toggleFaq(faq.idx)}
             >
               {faq.question}
-            </h5>
+            </button>
             {#if faqOpen[faq.idx]}
               <div class="faq-answer" transition:faqAnswerTransition={{}}>
                 <LetterByLetter text={allFaqs[faq.idx].answer} />
@@ -231,6 +231,11 @@
         border: 1.5px solid var(--color-highlight-1);
       }
       .faq-question {
+        background: none;
+        border: none;
+        padding: 0;
+        text-align: left;
+        width: 100%;
         font-size: 1.08rem;
         font-weight: 700;
         color: var(--color-highlight-1);
@@ -274,23 +279,6 @@
       flex-wrap: wrap;
     }
   }
-}
-.cta-btn {
-  background: var(--color-highlight-1);
-  color: #fff !important;
-  padding: 0.5rem 1.2rem;
-  border-radius: 4px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background 0.15s;
-  margin-left: 0.5rem;
-  display: inline-block;
-  cursor: pointer;
-}
-.cta-btn:hover,
-.cta-btn:focus {
-  background: #156dc1;
-  outline: none;
 }
 @media (max-width: 1200px) {
   .faq-row {

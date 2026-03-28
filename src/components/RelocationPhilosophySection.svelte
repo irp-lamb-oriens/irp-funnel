@@ -169,12 +169,6 @@
   box-sizing: border-box;
 }
 
-.relocation-philosophy__group-img {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  max-width: 100%;
-  height: auto;
-}
 
 .service {
   text-align: left;
@@ -206,9 +200,6 @@
   .row {
     gap: 1.2rem;
     text-align: left;
-  }
-  .card {
-    padding: 2rem;
   }
 }
 </style>

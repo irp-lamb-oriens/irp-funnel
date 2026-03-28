@@ -551,8 +551,6 @@
 }
 
 @media (max-width: 600px) {
-  .moving-process-section {
-  }
   .moving-process-title {
     font-size: 1.3rem;
   }
