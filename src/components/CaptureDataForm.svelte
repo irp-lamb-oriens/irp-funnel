@@ -99,7 +99,6 @@
     text-align: center;
     background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
   }
 
   label {
