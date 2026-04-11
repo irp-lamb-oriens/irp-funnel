@@ -108,7 +108,7 @@
       }
     }
 
-    &:not(&:disabled):hover {
+    &:not(&:disabled):hover, &:not(&:disabled):focus {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.3);
       transform: translateY(-5px) scale(1.05);
@@ -116,6 +116,7 @@
         0 30px 60px -12px rgba(0, 0, 0, 0.5),
         0 0 30px var(--glow-color);
       padding: 0.75rem 1.5rem 0.75rem 0.75rem;
+      outline: none;
 
       &::before {
         opacity: 1;

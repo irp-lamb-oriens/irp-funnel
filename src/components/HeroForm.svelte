@@ -1,10 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
-  import { writable } from 'svelte/store';
   import LetterByLetter from './LetterByLetter.svelte';
   import PlainText from './systems/inputs/PlainText/PlainText.svelte';
   import Email from './systems/inputs/Email/Email.svelte';
-  import Number from './systems/inputs/Number/Number.svelte';
   import Country from './systems/inputs/Country/Country.svelte';
   import Phone from './systems/inputs/Phone/Phone.svelte';
   import IconButton from './systems/buttons/IconButton/IconButton.svelte';
@@ -19,77 +17,73 @@
   import Vehicles from './systems/inputs/Vehicles/Vehicles.svelte';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
-  import CTAButton from "./Header/CTAButton.svelte";
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
+  import Chatbot from './Chatbot.svelte';
   import countries from './systems/inputs/Country/countries.js';
 
-  let currentStep = 0;
-  let errors = {
-    name: '',
-    surname: '',
-    email: '',
-    destinationCountry: '',
-    originCountry: '',
-    phone: '',
-    budget: '',
-    propertyTypeFrom: '',
-    propertyTypeTo: '',
-    size: '',
-    vehicles: '',
-    immigrationStatus: '',
-    movingDate: '',
-    originZip: '',
-    destinationZip: '',
-    originCity: '',
-    destinationCity: ''
-  };
+  // ─── Views ────────────────────────────────────────────────────────────────
+  // 'cta'     = initial CTA button
+  // 'email'   = email capture
+  // 'choice'  = channel picker (Lili / WhatsApp / Form)
+  // 'chatbot' = inline chatbot
+  // 'form'    = multi-step consultation form
+  type ViewState = 'cta' | 'email' | 'choice' | 'chatbot' | 'form';
+  let view: ViewState = 'cta';
+  let formStep = 0; // which step within the multi-step form (0-12)
 
+  let isLoading = false;
+  let emailError = '';
   let isEmailValid = false;
   let isPhoneValid = false;
+  let emailInput: HTMLInputElement;
+  let showReferrerStep = false;
+  let showYoutubeVideoStep = false;
+  let calendarLink = '';
+  let hangoutLink = '';
 
+  let errors: Record<string, string> = {};
+
+  // ─── Props ────────────────────────────────────────────────────────────────
+  export let videoUrl: string = "https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4";
+  export let imageUrl: string = "/video-lightbox1b-480x590.jpg";
+  export let imageAlt: string = "video-lightbox1b";
+
+  // ─── Derived ──────────────────────────────────────────────────────────────
   $: originCountryName = countries.find(c => c.code === $formState.originCountry)?.name || $formState.originCountry;
   $: destinationCountryName = countries.find(c => c.code === $formState.destinationCountry)?.name || $formState.destinationCountry;
 
-  const unsubImmigration = immigrationStatusStore.subscribe(value => {
-    updateField(value || '', 'immigrationStatus');
-  });
+  // ─── Store subscriptions ──────────────────────────────────────────────────
+  const unsubImmigration = immigrationStatusStore.subscribe(v => updateField(v || '', 'immigrationStatus'));
+  const unsubBudget = budgetStore.subscribe(v => updateField(v || '', 'budget'));
+  const unsubMoveSize = moveSizeStore.subscribe(v => updateField(v || '', 'size'));
+  onDestroy(() => { unsubImmigration(); unsubBudget(); unsubMoveSize(); });
 
-  const unsubBudget = budgetStore.subscribe(value => {
-    updateField(value || '', 'budget');
-  });
+  // ─── WhatsApp ─────────────────────────────────────────────────────────────
+  const WHATSAPP_PHONE = "50689662552";
+  function getWhatsAppUrl(): string {
+    const email = $formState.email || '';
+    const text = encodeURIComponent(`Hi Lili! I'm interested in international relocation. My email is ${email}.`);
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${text}`;
+  }
 
-  const unsubMoveSize = moveSizeStore.subscribe(value => {
-    updateField(value || '', 'size');
-  });
+  // ─── Input refs ───────────────────────────────────────────────────────────
+  let nameInput: HTMLInputElement, surnameInput: HTMLInputElement;
+  let destinationCountryInput: HTMLButtonElement, destinationCityInput: HTMLInputElement, destinationZipInput: HTMLInputElement;
+  let originCountryInput: HTMLButtonElement, originCityInput: HTMLInputElement, originZipInput: HTMLInputElement;
+  let phoneInput: HTMLButtonElement, budgetInput: HTMLButtonElement;
+  let sizeInput: HTMLButtonElement, immigrationStatusInput: HTMLButtonElement;
+  let referrerInput: HTMLInputElement;
+  let youtubeVideoInput: HTMLInputElement;
 
-  onDestroy(() => {
-    unsubImmigration();
-    unsubBudget();
-    unsubMoveSize();
-  });
+  // ─── YouTube referral detection ─────────────────────────────────────────
+  function isYouTubeReferral(val: string): boolean {
+    const normalized = val.toLowerCase().trim().replace(/\s+/g, '');
+    return normalized === 'youtube' || normalized === 'yt' || normalized.includes('youtube');
+  }
 
-  let showReferrerStep = false;
-  let isLoading = false;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  let calendarLink = '';
-  let hangoutLink = '';
-  let nameInput: HTMLInputElement,
-    surnameInput: HTMLInputElement,
-    emailInput: HTMLInputElement,
-    destinationCountryInput: HTMLButtonElement,
-    destinationCityInput: HTMLInputElement,
-    originCountryInput: HTMLButtonElement,
-    originCityInput: HTMLInputElement,
-    phoneInput: HTMLButtonElement,
-    referrerInput: HTMLInputElement,
-    sizeInput: HTMLButtonElement,
-    budgetInput: HTMLButtonElement,
-    immigrationStatusInput: HTMLButtonElement,
-    originZipInput: HTMLInputElement,
-    destinationZipInput: HTMLInputElement;
-
+  // ─── OnMount ──────────────────────────────────────────────────────────────
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const referrer = urlParams.get('refer');
@@ -100,503 +94,393 @@
     }
   });
 
-  function handleNextStep() {
-    if (validateStep(currentStep)) {
-      nextStep();
+  // ─── Navigation ───────────────────────────────────────────────────────────
+  async function handleStart() {
+    view = 'email';
+    await tick();
+    emailInput?.focus();
+  }
+
+  async function handleEmailSubmit() {
+    if (!$formState.email.trim() || !isEmailValid) {
+      emailError = 'Please enter a valid email';
+      return;
+    }
+    emailError = '';
+    isLoading = true;
+    try {
+      const apiURL = $store.apiURL();
+      await fetch(`${apiURL}/api/capture-data`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: $formState.email.trim(),
+          name: '', surname: '',
+          source: 'hero-form-email-capture',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+    } catch (err) { console.error('Email capture failed:', err); }
+    finally { isLoading = false; view = 'choice'; }
+  }
+
+  function openChatbot() { view = 'chatbot'; }
+
+  function openForm() {
+    view = 'form';
+    // Auto-skip to first unfilled step
+    if (showYoutubeVideoStep) formStep = 12;
+    else if (!$formState.name || !$formState.surname) formStep = 0;
+    else if (!$formState.destinationCountry || !$formState.destinationCity) formStep = 1;
+    else if (!$formState.originCountry || !$formState.originCity) formStep = 2;
+    else if (!$formState.phone) formStep = 3;
+    else if (!$formState.budget) formStep = 4;
+    else if (!$formState.propertyTypeFrom) formStep = 5;
+    else if (!$formState.propertyTypeTo) formStep = 6;
+    else if (!$formState.size) formStep = 7;
+    else if ($formState.vehicles.length === 0 || !$formState.vehicles[0]?.year) formStep = 8;
+    else if (!$formState.immigrationStatus) formStep = 9;
+    else formStep = 10;
+  }
+
+  function backToChoice() { view = 'choice'; }
+
+  // ─── Chatbot callbacks ────────────────────────────────────────────────────
+  const FORM_KEYS = new Set([
+    'name', 'surname', 'email', 'destinationCountry', 'destinationCity',
+    'originCountry', 'originCity', 'phone', 'referredBy', 'youtubeVideo',
+    'budget', 'propertyTypeFrom', 'propertyTypeTo', 'size', 'immigrationStatus',
+    'scheduling', 'originZip', 'destinationZip', 'vehicles'
+  ]);
+
+  function handleExtractedFields(fields: any) {
+    if (!fields) return;
+    for (const [key, value] of Object.entries(fields)) {
+      if (!FORM_KEYS.has(key)) continue; // Skip fields not in formStore
+      if (value === null || value === undefined) continue;
+      
+      // Handle strings
+      if (typeof value === 'string' && value.trim() !== '') {
+        updateField(value, key as any);
+      }
+      // Handle arrays (vehicles, scheduling, etc.)
+      else if (Array.isArray(value) && value.length > 0) {
+        updateField(value as any, key as any);
+      }
+    }
+  }
+  function handleChannelSelect(channel: string) {
+    if (channel === 'whatsapp') window.open(getWhatsAppUrl(), '_blank');
+  }
+
+  // ─── Form navigation ─────────────────────────────────────────────────────
+  function formNext() {
+    if (validateFormStep(formStep)) {
+      formStep++;
+      if (formStep === 11 && !showReferrerStep) {
+        // No referrer step needed — check if URL param referral is YouTube
+        if (isYouTubeReferral($formState.referredBy)) {
+          showYoutubeVideoStep = true;
+          formStep = 12; // go to YouTube video step
+        } else {
+          submitForm();
+        }
+      }
+      focusFormInput(formStep);
     }
   }
 
-  function handleSkipVehicles() {
-    updateField([], 'vehicles');
-    nextStep();
-  }
+  function handleSkipVehicles() { updateField([], 'vehicles'); formStep++; }
 
-  function nextStep() {
-    if (timeoutId) clearTimeout(timeoutId);
-    currentStep++;
-    if (currentStep === 12 && !showReferrerStep) {
-      submitForm();
-    }
-    focusInput(currentStep);
-  }
-
-  function validateStep(step: number) {
-    let isValid = true;
+  function validateFormStep(step: number): boolean {
+    let valid = true;
     const zipRegex = /^[a-zA-Z0-9\s-]{3,10}$/;
+    errors = {};
 
     switch (step) {
       case 0:
-        if (!$formState.email.trim() || !isEmailValid) {
-          errors.email = 'Please enter a valid email';
-          isValid = false;
-        } else {
-          errors.email = '';
-        }
+        if (!$formState.name.trim()) { errors.name = 'Required'; valid = false; }
+        if (!$formState.surname.trim()) { errors.surname = 'Required'; valid = false; }
         break;
       case 1:
-        if (!$formState.name.trim()) {
-          errors.name = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.name = '';
-        }
-        if (!$formState.surname.trim()) {
-          errors.surname = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.surname = '';
-        }
+        if (!$formState.destinationCountry.trim()) { errors.destinationCountry = 'Required'; valid = false; }
+        if (!$formState.destinationCity.trim()) { errors.destinationCity = 'Required'; valid = false; }
+        if ($formState.destinationZip && !zipRegex.test($formState.destinationZip.trim())) { errors.destinationZip = 'Invalid zip'; valid = false; }
         break;
       case 2:
-      case 2:
-        if (!$formState.destinationCountry.trim()) {
-          errors.destinationCountry = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.destinationCountry = '';
-        }
-        if (!$formState.destinationCity.trim()) {
-          errors.destinationCity = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.destinationCity = '';
-        }
-        // Destination zip is optional
-        if ($formState.destinationZip && !zipRegex.test($formState.destinationZip.trim())) {
-          errors.destinationZip = 'Please enter a valid zip code';
-          isValid = false;
-        } else {
-          errors.destinationZip = '';
-        }
+        if (!$formState.originCountry.trim()) { errors.originCountry = 'Required'; valid = false; }
+        if (!$formState.originZip || !zipRegex.test($formState.originZip.trim())) { errors.originZip = 'Invalid zip'; valid = false; }
         break;
       case 3:
-        if (!$formState.originCountry.trim()) {
-          errors.originCountry = 'Fill this field before proceeding';
-          isValid = false;
-        } else {
-          errors.originCountry = '';
-        }
-        if (!$formState.originZip || !zipRegex.test($formState.originZip.trim())) {
-          errors.originZip = 'Please enter a valid zip code';
-          isValid = false;
-        } else {
-          errors.originZip = '';
-        }
+        if (!$formState.phone.trim() || !isPhoneValid) { errors.phone = 'Valid phone required'; valid = false; }
         break;
       case 4:
-        if (!$formState.phone.trim() || !isPhoneValid) {
-          errors.phone = 'Please enter a valid phone number';
-          isValid = false;
-        } else {
-          errors.phone = '';
-        }
+        if (!$formState.budget.trim()) { errors.budget = 'Required'; valid = false; }
         break;
-      case 5:
-        if (!$formState.budget.trim()) {
-          errors.budget = 'Please enter your budget';
-          isValid = false;
-        } else {
-          errors.budget = '';
-        }
-        break;
-      case 10:
-        if (!$formState.immigrationStatus.trim()) {
-          errors.immigrationStatus = 'Please enter your immigration status';
-          isValid = false;
-        } else {
-          errors.immigrationStatus = '';
-        }
-        break;
-      case 11:
-        if ($formState.scheduling.length === 0) {
-          errors.movingDate = 'Please select a moving date';
-          isValid = false;
-        } else {
-          errors.movingDate = '';
-        }
-        break;
-      case 6:
-        if (!$formState.propertyTypeFrom) {
-          errors.propertyTypeFrom = 'Please select a property type';
-          isValid = false;
-        } else {
-          errors.propertyTypeFrom = '';
-        }
-        break;
-      case 7:
-        if (!$formState.propertyTypeTo) {
-          errors.propertyTypeTo = 'Please select a property type';
-          isValid = false;
-        } else {
-          errors.propertyTypeTo = '';
-        }
-        break;
+      case 5: if (!$formState.propertyTypeFrom) { errors.propertyTypeFrom = 'Required'; valid = false; } break;
+      case 6: if (!$formState.propertyTypeTo) { errors.propertyTypeTo = 'Required'; valid = false; } break;
+      case 7: if (!$formState.size.trim()) { errors.size = 'Required'; valid = false; } break;
       case 8:
-        if (!$formState.size.trim()) {
-          errors.size = 'Please enter the size';
-          isValid = false;
-        } else {
-          errors.size = '';
-        }
+        if ($formState.vehicles.some(v => !v.year || !v.make || !v.model)) valid = false;
         break;
       case 9:
-        // Vehicles validation - check if at least one vehicle has year, make, model if required?
-        // Or strictly if array is not empty and full.
-        // User requirement: "all three inputs are required" for the vehicle being added.
-        // We will assume at least one complete vehicle is required if they have vehicles.
-        // But wait, is vehicle mandatory? The task says "+ 1 vehicle...".
-        // I'll enforce at least one vehicle must be fully filled if there are any, or just proceed.
-        // Given "all three inputs are required", I'll check the last one or all.
-        // Actually, let's just check if any vehicle is incomplete.
-        const incompleteVehicle = $formState.vehicles.some(v => !v.year || !v.make || !v.model);
-        if (incompleteVehicle || $formState.vehicles.length === 0) {
-             // If they have 0 vehicles, maybe they don't have one? 
-             // But the component initializes with 1 empty one.
-             // So if they haven't filled it, it's incomplete.
-             // Unless they remove it? The component allows removing if > 1.
-             // If the list is empty (impossible via UI currently), pass.
-             // If the list has 1 empty vehicle, fail?
-             // I'll fail if there is an incomplete vehicle.
-             const hasEmpty = $formState.vehicles.some(v => !v.year || !v.make || !v.model);
-             if (hasEmpty) {
-                 // We can't easily set a specific error message on the component from here without a store,
-                 // but we can prevent next step.
-                 // The component handles its own internal validation display somewhat.
-                 // I'll prevent next step if any field is missing.
-                 isValid = false;
-             }
-        }
+        if (!$formState.immigrationStatus.trim()) { errors.immigrationStatus = 'Required'; valid = false; }
+        break;
+      case 10:
+        if ($formState.scheduling.length === 0) { errors.movingDate = 'Select a date'; valid = false; }
         break;
     }
-    errors = { ...errors };
-    return isValid;
+    return valid;
   }
 
   async function submitForm() {
-    console.log("submitForm called");
-    if (currentStep === 12 && !validateStep(currentStep)) {
-      return;
-    }
-
     isLoading = true;
-
     try {
       const response = await submitScheduling();
-      if (response && response.calendarLink) {
+      if (response?.calendarLink) {
         calendarLink = response.calendarLink;
         hangoutLink = response.hangoutLink;
         window.open(calendarLink, '_blank');
       }
-      currentStep = 13; // Go to "Thank You"
-    } catch (error) {
-      console.error('An error occurred during form submission:', error);
-    } finally {
-      isLoading = false;
-    }
+      formStep = showYoutubeVideoStep ? 13 : 12; // thank you
+    } catch (error) { console.error('Form submission error:', error); }
+    finally { isLoading = false; }
   }
 
-  async function focusInput(step: number) {
+  async function focusFormInput(step: number) {
     await tick();
-    switch (step) {
-      case 0:
-        emailInput?.focus();
-        break;
-      case 1:
-        nameInput?.focus();
-        break;
-      case 2:
-        destinationCountryInput?.focus();
-        break;
-      case 3:
-        originCountryInput?.focus();
-        break;
-      case 4:
-        phoneInput?.focus();
-        break;
-      case 5:
-        // No specific input to focus for budget radio buttons
-        break;
-      case 6:
-        // No specific input to focus for IconGridSelector
-        break;
-      case 7:
-        // No specific input to focus for IconGridSelector
-        break;
-      case 8:
-        sizeInput?.focus();
-        break;
-      case 9:
-        // Vehicles
-        break;
-      case 10:
-        immigrationStatusInput?.focus();
-        break;
-      case 11:
-        // Calendar
-        break;
-      case 12:
-        referrerInput?.focus();
-        break;
-    }
+    const map: Record<number, any> = {
+      0: nameInput, 1: destinationCountryInput, 2: originCountryInput,
+      3: phoneInput, 4: budgetInput, 7: sizeInput, 9: immigrationStatusInput, 11: referrerInput, 12: youtubeVideoInput,
+    };
+    map[step]?.focus?.();
   }
 
-  export let videoUrl: string = "https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4";
-  export let imageUrl: string = "/video-lightbox1b-480x590.jpg";
-  export let imageAlt: string = "video-lightbox1b";
+  // ─── Pre-fill indicator ───────────────────────────────────────────────────
+  function isPreFilled(field: string): boolean {
+    const val = ($formState as any)[field];
+    return val !== undefined && val !== '' && val !== null;
+  }
 </script>
 
 <div class="hero-banner" id="hero-form">
-  <video
-    autoplay
-    muted
-    loop
-    playsinline
-    class="bg-video"
-    src="https://www.pexels.com/download/video/7855756/"
-  ></video>
+  <video autoplay muted loop playsinline class="bg-video" src="https://www.pexels.com/download/video/7855756/"></video>
   <Loader visible={isLoading} />
-  <VideoBanner
-    videoUrl={videoUrl}
-  videoPoster={imageUrl}
-  videoAlt={imageAlt}>
+  <VideoBanner videoUrl={videoUrl} videoPoster={imageUrl} videoAlt={imageAlt}>
     <div class="form-container">
       <div class="form-steps">
-        {#if currentStep === 0}
+
+        <!-- ═══════════ CTA ═══════════ -->
+        {#if view === 'cta'}
           <div class="form-frame active">
-            <h6><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
-            <h2>Book a consultation call</h2>
-            <Email label="Place your email so we can contact you" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleNextStep} bind:inputElement={emailInput} bind:valid={isEmailValid} />
-            {#if errors.email}<span class="error">{errors.email}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 1}
-          <div class="form-frame active">
-            <h6><LetterByLetter text="International consulting services for expats, newcomers, and retirees:" /></h6>
-            <PlainText label="Tell us your first name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
-            {#if errors.name}<span class="error">{errors.name}</span>{/if}
-            
-            <PlainText label="Tell us your last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={handleNextStep} bind:inputElement={surnameInput} />
-            {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
-
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 2}
-          <div class="form-frame active">
-            <h2>Destination country: Where do you wanna move</h2>
-            <Country onSelect={(code) => {
-              updateField(code || '', 'destinationCountry');
-            }} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
-            {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
-            
-            <h2>Destination City</h2>
-            <PlainText placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
-            {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
-
-            <h2>Destination Zip Code</h2>
-            <PlainText placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={handleNextStep} bind:inputElement={destinationZipInput} />
-            {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
-
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 3}
-          <div class="form-frame active">
-            <h2>Where are you from?</h2>
-            <Country onSelect={(code) => {
-              updateField(code || '', 'originCountry');
-            }} bind:buttonRef={originCountryInput} on:enter={() => {}} />
-            {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
-
-            <h2>Origin City</h2>
-            <PlainText placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
-            {#if errors.originCity}<span class="error">{errors.originCity}</span>{/if}
-
-            <h2>Origin Zip Code</h2>
-            <PlainText placeholder="Zip Code" bind:value={$formState.originZip} onChange={(val) => updateField(val, 'originZip')} onEnter={handleNextStep} bind:inputElement={originZipInput} />
-            {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
-
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 4}
-          <div class="form-frame active">
-            <h2>Your phone number</h2>
-            <p class="sub-heading">(so we can contact you directly, in case you need it)</p>
-            <Phone bind:value={$formState.phone} onUpdate={(val) => updateField(val, 'phone')} onEnter={handleNextStep} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
-            {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 5}
-          <div class="form-frame active">
-            <h2>What is your budget?</h2>
-            <Budget bind:buttonRef={budgetInput} />
-            {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 6}
-          <div class="form-frame active">
-            <h2>What type of place are you relocating from in {originCountryName}?</h2>
-            <IconGridSelector
-              options={[
-                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
-                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
-                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
-                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
-              ]}
-              bind:selectedValue={$formState.propertyTypeFrom}
-              on:update={(e) => updateField(e.detail, 'propertyTypeFrom')}
-            />
-            {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 7}
-          <div class="form-frame active">
-            <h2>What type of place are you relocating to in {destinationCountryName}?</h2>
-            <IconGridSelector
-              options={[
-                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
-                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
-                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
-                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
-              ]}
-              bind:selectedValue={$formState.propertyTypeTo}
-              on:update={(e) => updateField(e.detail, 'propertyTypeTo')}
-            />
-            {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 8}
-          <div class="form-frame active">
-            <h2>Move size</h2>
-            <MoveSize bind:buttonRef={sizeInput} />
-            {#if errors.size}<span class="error">{errors.size}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 9}
-          <div class="form-frame active">
-            <h2>Vehicles</h2>
-            <p class="sub-heading">Tell us about the vehicles you are shipping (Year, Make, Model)</p>
-            <Vehicles 
-                bind:vehicles={$formState.vehicles} 
-                onUpdate={(v) => updateField(v, 'vehicles')}
-            />
-            <div class="button-wrapper buttons-row">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-              <button class="skip-btn" on:click={handleSkipVehicles}>
-                  I don't have vehicles to ship
+            <div class="cta-hero">
+              <h6 class="cta-hero__eyebrow"><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
+              <h1 class="cta-hero__title">Ready to start your<br/>international journey?</h1>
+              <p class="cta-hero__sub">Get personalized relocation guidance — speak with our virtual assistant, fill out a quick form, or connect with us on WhatsApp.</p>
+              <button class="cta-hero__btn" on:click={handleStart}>
+                <span class="cta-hero__btn-icon">🌍</span>
+                <span class="cta-hero__btn-text">Get Started</span>
+                <span class="cta-hero__btn-arrow">→</span>
               </button>
             </div>
           </div>
         {/if}
 
-        {#if currentStep === 10}
+        <!-- ═══════════ EMAIL ═══════════ -->
+        {#if view === 'email'}
           <div class="form-frame active">
-            <h2>Immigration Status</h2>
-            <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
-            {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
+            <h6><LetterByLetter text="International consulting for expats, newcomers, and retirees" /></h6>
+            <h2>Enter your email to get started</h2>
+            <p class="sub-heading">We'll use this to send you personalized relocation insights.</p>
+            <Email label="Your email address" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleEmailSubmit} bind:inputElement={emailInput} bind:valid={isEmailValid} />
+            {#if emailError}<span class="error">{emailError}</span>{/if}
+            <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={handleEmailSubmit} loading={isLoading} /></div>
           </div>
         {/if}
 
-        {#if currentStep === 11}
+        <!-- ═══════════ CHOICE ═══════════ -->
+        {#if view === 'choice'}
           <div class="form-frame active">
-            <h2>Desired call date</h2>
-            <Calendar />
-            {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={handleNextStep} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 12 && showReferrerStep}
-          <div class="form-frame active">
-            <h2>Who referred you to us?</h2>
-            <PlainText placeholder="The name here" bind:value={$formState.referredBy} onChange={(val) => updateField(val, 'referredBy')} onEnter={submitForm} bind:inputElement={referrerInput} />
-            <div class="button-wrapper">
-              <IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={isLoading} />
-            </div>
-          </div>
-        {/if}
-
-        {#if currentStep === 13}
-          <div class="form-frame active">
-            <h2>Thank You!</h2>
-            <h4>An email has been sent to your inbox.</h4>
-            <p>You can view your scheduled consultation here:</p>
-            <a href={calendarLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">View Your Consultation on Google Calendar</a>
-            <p>Join the meeting here:</p>
-            <a href={hangoutLink} target="_blank" rel="noopener noreferrer" style="cursor: pointer; text-decoration: underline;">Join Hangouts Meeting</a>
-            <IconButton src="./icons/right-arrow.svg" callback={nextStep} loading={isLoading} />
-          </div>
-        {/if}
-
-        {#if currentStep === 14}
-          <div class="form-frame active">
-            <div class="banner-content">
-              <h6 class="banner-subtitle">
-                <LetterByLetter text="Every project is led by professionals with more than 14 years of experience" initialOffset={0} />
-              </h6>
-              <h1 class="banner-title">
-                <LetterByLetter text="Personalized international consultations delivered through well-planned, tracked, and executed projects!" initialOffset={47.9 / 100} />
-              </h1>
-              <h4 class="banner-services-title">
-                <LetterByLetter text="International consulting services for expats, newcomers, and retirees:" initialOffset={115.92 / 100} />
-              </h4>
-              <ul class="banner-services-list">
-                <li class="banner-service">
-                  <LetterByLetter text="Project Management" initialOffset={152.95 / 100} />
-                </li>
-                <li class="banner-service">
-                  <LetterByLetter text="Documentation Assistance" initialOffset={167.89 / 90} />
-                </li>
-                <li class="banner-service">
-                  <LetterByLetter text="International Advisory" initialOffset={175.90 / 80} />
-                </li>
-              </ul>
-              <div class="button-row">
-                <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
-                <CTAButton label="Download Relocation Checklist" href="/free-resources/" variant="secondary" target="_blank" />
+            <div class="choice-screen">
+              <div class="choice-screen__check">✓</div>
+              <h2 class="choice-screen__title">You're all set!</h2>
+              <p class="choice-screen__desc">Choose how you'd like to continue:</p>
+              <div class="choice-buttons">
+                <button class="choice-btn choice-btn--primary" on:click={openChatbot}>
+                  <span class="choice-btn__icon choice-btn__icon--avatar">
+                    <img src="/lili.png" alt="Relocation team" class="lili-avatar" />
+                    <span class="online-pulse"></span>
+                  </span>
+                  <div class="choice-btn__content">
+                    <span class="choice-btn__label">Chat with our relocation team</span>
+                    <span class="choice-btn__hint"><span class="online-indicator"></span>Someone's online</span>
+                  </div>
+                  <span class="choice-btn__arrow">→</span>
+                </button>
+                <button class="choice-btn choice-btn--form" on:click={openForm}>
+                  <span class="choice-btn__icon">📅</span>
+                  <div class="choice-btn__content">
+                    <span class="choice-btn__label">Book a call</span>
+                    <span class="choice-btn__hint">Schedule a consultation with the team</span>
+                  </div>
+                  <span class="choice-btn__arrow">→</span>
+                </button>
               </div>
             </div>
           </div>
         {/if}
+
+        <!-- ═══════════ CHATBOT ═══════════ -->
+        {#if view === 'chatbot'}
+          <div class="form-frame active">
+            <div class="back-bar">
+              <button class="back-btn" on:click={backToChoice}>← Back</button>
+              <button class="switch-btn" on:click={openForm}>Switch to Form →</button>
+            </div>
+            <Chatbot initialContext={$formState} onBackToForm={openForm} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} />
+          </div>
+        {/if}
+
+        <!-- ═══════════ MULTI-STEP FORM ═══════════ -->
+        {#if view === 'form'}
+          <div class="form-frame active">
+            <div class="back-bar">
+              <button class="back-btn" on:click={backToChoice}>← Back</button>
+              {#if formStep < 12}
+                <button class="switch-btn" on:click={openChatbot}>Chat with the team →</button>
+              {/if}
+            </div>
+
+            {#if formStep === 0}
+              <h2>What's your name?</h2>
+              <PlainText label="First name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
+              {#if isPreFilled('name')}<span class="prefilled-tag">✨ Pre-filled from team chat</span>{/if}
+              {#if errors.name}<span class="error">{errors.name}</span>{/if}
+              <PlainText label="Last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={formNext} bind:inputElement={surnameInput} />
+              {#if isPreFilled('surname')}<span class="prefilled-tag">✨ Pre-filled from team chat</span>{/if}
+              {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 1}
+              <h2>Where are you moving to?</h2>
+              <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
+              {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+              <PlainText label="Destination City" placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
+              {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
+              <PlainText label="Zip Code (optional)" placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={formNext} bind:inputElement={destinationZipInput} />
+              {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 2}
+              <h2>Where are you moving from?</h2>
+              <Country onSelect={(code) => updateField(code || '', 'originCountry')} bind:buttonRef={originCountryInput} on:enter={() => {}} />
+              {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
+              <PlainText label="Origin City" placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
+              <PlainText label="Origin Zip Code" placeholder="Zip Code" bind:value={$formState.originZip} onChange={(val) => updateField(val, 'originZip')} onEnter={formNext} bind:inputElement={originZipInput} />
+              {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 3}
+              <h2>Your phone number</h2>
+              <p class="sub-heading">So we can contact you directly</p>
+              <Phone bind:value={$formState.phone} onUpdate={(val) => updateField(val, 'phone')} onEnter={formNext} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
+              {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 4}
+              <h2>What is your budget?</h2>
+              <Budget bind:buttonRef={budgetInput} />
+              {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 5}
+              <h2>Relocating from what type of place in {originCountryName}?</h2>
+              <IconGridSelector options={[
+                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
+              ]} bind:selectedValue={$formState.propertyTypeFrom} on:update={(e) => updateField(e.detail, 'propertyTypeFrom')} />
+              {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 6}
+              <h2>Relocating to what type of place in {destinationCountryName}?</h2>
+              <IconGridSelector options={[
+                { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+                { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+                { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+                { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
+              ]} bind:selectedValue={$formState.propertyTypeTo} on:update={(e) => updateField(e.detail, 'propertyTypeTo')} />
+              {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 7}
+              <h2>Move size</h2>
+              <MoveSize bind:buttonRef={sizeInput} />
+              {#if errors.size}<span class="error">{errors.size}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 8}
+              <h2>Vehicles</h2>
+              <p class="sub-heading">Tell us about the vehicles you are shipping</p>
+              <Vehicles bind:vehicles={$formState.vehicles} onUpdate={(v) => updateField(v, 'vehicles')} />
+              <div class="button-wrapper buttons-row">
+                <IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} />
+                <button class="skip-btn" on:click={handleSkipVehicles}>I don't have vehicles to ship</button>
+              </div>
+
+            {:else if formStep === 9}
+              <h2>Immigration Status</h2>
+              <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
+              {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 10}
+              <h2>Desired call date</h2>
+              <Calendar />
+              {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 11 && showReferrerStep}
+              <h2>Who referred you to us?</h2>
+              <PlainText placeholder="The name here" bind:value={$formState.referredBy} onChange={(val) => updateField(val, 'referredBy')} onEnter={() => {
+                if (isYouTubeReferral($formState.referredBy)) {
+                  showYoutubeVideoStep = true;
+                  formStep = 12;
+                  focusFormInput(12);
+                } else {
+                  submitForm();
+                }
+              }} bind:inputElement={referrerInput} />
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={() => {
+                if (isYouTubeReferral($formState.referredBy)) {
+                  showYoutubeVideoStep = true;
+                  formStep = 12;
+                  focusFormInput(12);
+                } else {
+                  submitForm();
+                }
+              }} loading={isLoading} /></div>
+
+            {:else if formStep === 12 && showYoutubeVideoStep}
+              <h2>Which YouTube video did you find us from?</h2>
+              <p class="sub-heading">We'd love to know — it helps us understand what resonates!</p>
+              <PlainText placeholder="e.g. Moving to Costa Rica tips" bind:value={$formState.youtubeVideo} onChange={(val) => updateField(val, 'youtubeVideo')} onEnter={submitForm} bind:inputElement={youtubeVideoInput} />
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={isLoading} /></div>
+
+            {:else if formStep === 12 || formStep === 13}
+              <div class="thank-you">
+                <div class="thank-you__icon">🎉</div>
+                <h2>Thank You!</h2>
+                <p>An email has been sent to your inbox.</p>
+                {#if calendarLink}<a href={calendarLink} target="_blank" rel="noopener noreferrer" class="thank-you__link">📅 View on Google Calendar</a>{/if}
+                {#if hangoutLink}<a href={hangoutLink} target="_blank" rel="noopener noreferrer" class="thank-you__link">🎥 Join Meeting</a>{/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+
       </div>
     </div>
   </VideoBanner>
@@ -607,347 +491,183 @@
     position: relative;
     padding: 3rem 0;
     overflow: hidden;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(
-        circle,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 100%
-      );
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    .bg-video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      object-fit: cover;
-      filter: brightness(0.9);
-    }
-
-    & > :global(*) {
-      position: relative;
-      z-index: 2;
-    }
+    &::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%); z-index: 1; pointer-events: none; }
+    .bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; object-fit: cover; filter: brightness(0.9); }
+    & > :global(*) { position: relative; z-index: 2; }
   }
 
   .form-container {
-    position: relative;
-    width: 100%;
-    max-width: 680px;
-    margin: 2rem auto;
-    padding: 3.5rem;
-    background: rgba(15, 15, 15, 0.35);
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    border-radius: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 
-      0 40px 100px -20px rgba(0, 0, 0, 0.7),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    overflow: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    position: relative; width: 100%; max-width: 680px; margin: 2rem auto; padding: 3.5rem;
+    background: rgba(15, 15, 15, 0.35); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border-radius: 2.5rem; border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 40px 100px -20px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
+    overflow: auto; scrollbar-width: none; -ms-overflow-style: none;
     transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-
-    &::-webkit-scrollbar {
-      width: 0;
-      height: 0;
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      right: -20%;
-      width: 60%;
-      height: 60%;
-      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.15) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-      filter: blur(40px);
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -20%;
-      left: -20%;
-      width: 60%;
-      height: 60%;
-      background: radial-gradient(circle, rgba(var(--color-highlight-1-rgb), 0.1) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-      filter: blur(40px);
-    }
+    &::-webkit-scrollbar { width: 0; height: 0; }
+    &::before { content: ''; position: absolute; top: -20%; right: -20%; width: 60%; height: 60%; background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; filter: blur(40px); }
+    &::after { content: ''; position: absolute; bottom: -20%; left: -20%; width: 60%; height: 60%; background: radial-gradient(circle, rgba(var(--color-highlight-1-rgb), 0.1) 0%, transparent 70%); pointer-events: none; z-index: 0; filter: blur(40px); }
   }
 
-  .form-steps {
-    position: relative;
-    z-index: 1;
-  }
+  .form-steps { position: relative; z-index: 1; }
+  .form-frame { display: flex; flex-direction: column; gap: 1.5rem; opacity: 0; pointer-events: none; transform: translateY(16px); transition: opacity 0.5s cubic-bezier(0.23,1,0.32,1), transform 0.5s cubic-bezier(0.23,1,0.32,1); }
+  .form-frame.active { opacity: 1; pointer-events: all; transform: translate(0,0); }
 
-  .form-frame {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
+  h2 { font-size: 1.75rem; font-family: var(--font-title); font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -0.02em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.7)); -webkit-background-clip: text; }
+  h6 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-highlight-2); margin-bottom: -0.5rem; }
+  .sub-heading { font-size: 1rem; color: rgba(255,255,255,0.6); line-height: 1.5; margin-top: -0.5rem; }
 
-  h2 {
-    font-size: 1.75rem;
-    font-family: var(--font-title);
-    font-weight: 800;
-    color: #ffffff;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
-    -webkit-background-clip: text;
-  }
+  .button-wrapper { display: flex; justify-content: flex-end; margin-top: 1.5rem; position: relative; z-index: 10; }
+  .buttons-row { display: flex; align-items: center; gap: 20px; flex-direction: row-reverse; justify-content: space-between !important; }
 
-  h6 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-highlight-2);
-    margin-bottom: -0.5rem;
-  }
+  .error { color: #ef4444; font-size: 0.85rem; font-weight: 500; margin-top: -0.75rem; padding-left: 0.5rem; border-left: 2px solid #ef4444; }
 
-  .sub-heading {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.5;
-  }
-
-  .button-wrapper {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    position: relative;
-    z-index: 10;
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 150px;
-      height: 60px;
-      background: radial-gradient(circle, rgba(var(--color-highlight-2-rgb), 0.15) 0%, transparent 70%);
-      filter: blur(20px);
-      z-index: -1;
-      pointer-events: none;
-    }
-  }
-
-  .buttons-row {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-direction: row-reverse;
-      justify-content: space-between !important;
-  }
+  .prefilled-tag { font-size: 0.75rem; color: var(--color-highlight-2, #1ccfc9); font-weight: 600; margin-top: -1rem; display: flex; align-items: center; gap: 4px; opacity: 0.8; }
 
   .skip-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #9ca3af;
-      padding: 0.5rem 1rem;
-      border-radius: 1rem;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.3s ease;
-      text-decoration: none;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af;
+    padding: 0.5rem 1rem; border-radius: 1rem; cursor: pointer; font-size: 0.85rem; transition: all 0.3s ease; text-decoration: none;
+    &:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateY(-1px); }
+  }
 
+  .back-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .back-btn, .switch-btn {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+    padding: 0.4rem 0.9rem; border-radius: 0.75rem; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.25s ease;
+    &:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  }
+  .switch-btn { color: var(--color-highlight-2, #1ccfc9); border-color: rgba(28,207,201,0.2); &:hover { border-color: rgba(28,207,201,0.5); } }
+
+  /* ═══ CTA Hero ═══ */
+  .cta-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem;
+    &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-highlight-2); }
+    &__title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
+    &__sub { font-size: 1.05rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 440px; }
+    &__btn {
+      display: flex; align-items: center; gap: 1rem; padding: 1.1rem 2.2rem; margin-top: 0.75rem;
+      background: transparent; color: #fff; border: 3px solid #fff; border-radius: 100px;
+      font-size: 1.15rem; font-weight: 800; font-family: var(--font-title, inherit); cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      box-shadow:
+        0 4px 16px rgba(255, 255, 255, 0.1),
+        0 8px 32px rgba(255, 255, 255, 0.06),
+        0 12px 48px rgba(255, 255, 255, 0.03);
+      animation: btnPulse 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+      &::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 60%); border-radius: inherit; }
       &:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: #ffffff;
-          transform: translateY(-1px);
+        transform: translateY(-3px) scale(1.02);
+        border-color: #fff;
+        box-shadow:
+          0 6px 20px rgba(255, 255, 255, 0.2),
+          0 12px 40px rgba(255, 255, 255, 0.12),
+          0 20px 60px rgba(255, 255, 255, 0.06);
+        animation: none;
       }
+      &:active { transform: translateY(-1px); }
+    }
+    &__btn-icon { font-size: 1.4rem; color: #fff; }
+    &__btn-text { position: relative; z-index: 1; color: #fff; }
+    &__btn-arrow { font-size: 1.3rem; font-weight: 700; color: #fff; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    &__btn:hover &__btn-arrow { transform: translateX(4px); }
   }
 
-  .form-frame {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(30px);
-    transition: 
-      opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1), 
-      transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  /* ═══ Choice Screen ═══ */
+  .choice-screen { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem;
+    &__check { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.08)); border: 2px solid rgba(16,185,129,0.4); color: #10b981; font-size: 1.6rem; font-weight: 700; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    &__title { font-size: 1.8rem; font-weight: 800; background: linear-gradient(to right, #fff, rgba(255,255,255,0.75)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    &__desc { font-size: 1rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 460px; }
+  }
+  @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+
+  @keyframes btnPulse {
+    0%, 100% {
+      box-shadow:
+        0 4px 16px rgba(255, 255, 255, 0.1),
+        0 8px 32px rgba(255, 255, 255, 0.06),
+        0 12px 48px rgba(255, 255, 255, 0.03);
+    }
+    50% {
+      box-shadow:
+        0 6px 24px rgba(255, 255, 255, 0.22),
+        0 12px 44px rgba(255, 255, 255, 0.14),
+        0 20px 64px rgba(255, 255, 255, 0.08);
+    }
   }
 
-  .form-frame.active {
-    opacity: 1;
-    pointer-events: all;
-    transform: translate(0, 0);
+  .choice-buttons { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 420px; margin-top: 0.5rem; }
+  .choice-btn {
+    display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.5rem; border-radius: 1.25rem; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.23,1,0.32,1); text-decoration: none; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;
+    &:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+    &:active { transform: translateY(0); }
+    &__icon { font-size: 1.5rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; position: relative; }
+    &__icon--avatar { border-radius: 50%; overflow: hidden; padding: 0; }
+    &__icon--wa { border-radius: 50%; overflow: visible; padding: 0; }
+    &__content { flex: 1; text-align: left; }
+    &__label { display: block; font-size: 1.05rem; font-weight: 700; color: #fff; }
+    &__hint { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    &__arrow { font-size: 1.3rem; font-weight: 700; color: rgba(255,255,255,0.4); transition: all 0.3s ease; flex-shrink: 0; }
+    &:hover &__arrow { color: #fff; transform: translateX(3px); }
+
+    &--primary { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
+      .choice-btn__icon { background: rgba(99,102,241,0.2); color: #818cf8; }
+      &:hover { background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(99,102,241,0.1)); border-color: rgba(99,102,241,0.4); box-shadow: 0 8px 32px rgba(99,102,241,0.15); }
+    }
+    &--form { background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04));
+      .choice-btn__icon { background: rgba(251,191,36,0.2); color: #fbbf24; }
+      &:hover { background: linear-gradient(135deg, rgba(251,191,36,0.22), rgba(251,191,36,0.08)); border-color: rgba(251,191,36,0.4); box-shadow: 0 8px 32px rgba(251,191,36,0.12); }
+    }
+    &--whatsapp { background: linear-gradient(135deg, rgba(37,211,102,0.12), rgba(37,211,102,0.04));
+      .choice-btn__icon {
+        background: transparent; color: #fff;
+        svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      }
+      &:hover { background: linear-gradient(135deg, rgba(37,211,102,0.22), rgba(37,211,102,0.08)); border-color: rgba(37,211,102,0.4); box-shadow: 0 8px 32px rgba(37,211,102,0.12); }
+    }
   }
 
-  .error {
-    color: #ef4444;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-top: -0.75rem;
-    margin-bottom: 1rem;
-    padding-left: 0.5rem;
-    border-left: 2px solid #ef4444;
+  /* ═══ Lili Avatar & Online Indicators ═══ */
+  .lili-avatar {
+    width: 44px; height: 44px; object-fit: cover; border-radius: 50%; display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
 
-  .banner-content {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 3.5rem;
-  background: rgba(15, 15, 15, 0.35);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border-radius: 2.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 
-    0 40px 100px -20px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -20%;
-    right: -20%;
-    width: 60%;
-    height: 60%;
-    background: radial-gradient(circle, rgba(28, 207, 201, 0.15) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    filter: blur(40px);
+  .online-pulse {
+    position: absolute; bottom: 0; right: 0; width: 12px; height: 12px;
+    background: #25d366; border-radius: 50%; border: 2px solid rgba(0,0,0,0.4);
+    animation: greenPulse 2s ease-in-out infinite;
   }
-}
 
-.banner-subtitle,
-.banner-title,
-.banner-services-title {
-  text-align: inherit;
-}
-
-.banner-subtitle {
-  position: relative;
-  z-index: 1;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: #1ccfc9;
-  margin-bottom: 1.5rem;
-}
-
-.banner-title {
-  position: relative;
-  z-index: 1;
-  font-size: 3rem;
-  font-weight: 900;
-  color: #ffffff;
-  margin-bottom: 2rem;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0.8));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.banner-services-title {
-  position: relative;
-  z-index: 1;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 1.5rem;
-}
-
-.banner-services-list {
-  position: relative;
-  z-index: 1;
-  list-style: none;
-  padding: 0;
-  margin: 0 0 2.5rem 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: flex-start;
-}
-
-.banner-service {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 500;
-  padding: 0.75rem 1.5rem;
-  border-radius: 2rem;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  text-align: center;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px) scale(1.05);
-    border-color: rgba(28, 207, 201, 0.5);
+  .online-indicator {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: #25d366; margin-right: 8px;
+    animation: greenPulse 2s ease-in-out infinite;
   }
-}
 
-.button-row {
-  display: flex;
-  gap: 1.2rem;
-  margin-top: 1.2rem;
-  justify-content: flex-start;
-  width: 100%;
-}
+  @keyframes greenPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(37, 211, 102, 0); }
+  }
 
-@media (max-width: 1024px) {
-  .banner-content {
-    align-items: center;
-    text-align: center;
-    padding: 1.5rem 0.5rem;
+  /* ═══ Thank You ═══ */
+  .thank-you { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem;
+    &__icon { font-size: 3rem; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    &__link { color: var(--color-highlight-2, #1ccfc9); text-decoration: underline; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s; &:hover { opacity: 0.8; } }
   }
-  .banner-title {
-    font-size: 2rem;
-  }
-  .banner-services-list {
-    justify-content: center;
-  }
-  .button-row {
-    justify-content: center;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
-}
 
-@media (max-width: 600px) {
-  .banner-content {
-    padding: 1rem 0.2rem;
-    border-radius: 1rem;
+  /* ═══ Responsive ═══ */
+  @media (max-width: 768px) {
+    .form-container { padding: 2rem 1.5rem; margin: 1rem; border-radius: 1.5rem; }
+    .cta-hero__title { font-size: 1.7rem; }
+    .cta-hero__btn { padding: 1rem 1.8rem; font-size: 1.05rem; }
+    .choice-screen__title { font-size: 1.5rem; }
+    h2 { font-size: 1.4rem; }
   }
-  .banner-title {
-    font-size: 1.3rem;
+  @media (max-width: 480px) {
+    .form-container { padding: 1.5rem 1rem; margin: 0.5rem; border-radius: 1.25rem; }
+    .cta-hero__title { font-size: 1.4rem; }
+    .cta-hero__btn { width: 100%; justify-content: center; padding: 1rem 1.5rem; }
+    .choice-btn { padding: 1rem 1.1rem; }
   }
-  .banner-services-list {
-    gap: 0.5rem;
-  }
-  .banner-service {
-    font-size: 0.95rem;
-    padding: 0.5rem 1rem;
-  }
-}
 </style>

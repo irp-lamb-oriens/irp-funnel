@@ -16,6 +16,7 @@ export type FormState = {
   originCity: string;
   phone: string;
   referredBy: string;
+  youtubeVideo: string;
   budget: string;
   propertyTypeFrom: string;
   propertyTypeTo: string;
@@ -38,6 +39,7 @@ export const formState = writable<FormState>({
   originCity: "",
   phone: "",
   referredBy: "",
+  youtubeVideo: "",
   budget: "",
   propertyTypeFrom: "",
   propertyTypeTo: "",
