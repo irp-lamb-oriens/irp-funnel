@@ -167,7 +167,8 @@
       }
     } catch (err) {
       console.error(err);
-      onErrorFallback();
+      // Show error message in chat instead of kicking back to choice screen
+      messages.update(m => [...m, { role: "assistant", content: "Sorry, I'm having trouble connecting right now. Please try again in a moment, or use the form instead." }]);
     } finally {
       isTyping = false;
       await tick();

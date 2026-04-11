@@ -363,10 +363,8 @@
             {#if formStep === 0}
               <h2>What's your name?</h2>
               <PlainText label="First name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
-              {#if isPreFilled('name')}<span class="prefilled-tag">✨ Pre-filled from team chat</span>{/if}
               {#if errors.name}<span class="error">{errors.name}</span>{/if}
               <PlainText label="Last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={formNext} bind:inputElement={surnameInput} />
-              {#if isPreFilled('surname')}<span class="prefilled-tag">✨ Pre-filled from team chat</span>{/if}
               {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
@@ -530,7 +528,6 @@
 
   .error { color: #ef4444; font-size: 0.85rem; font-weight: 500; margin-top: -0.75rem; padding-left: 0.5rem; border-left: 2px solid #ef4444; }
 
-  .prefilled-tag { font-size: 0.75rem; color: var(--color-highlight-2, #1ccfc9); font-weight: 600; margin-top: -1rem; display: flex; align-items: center; gap: 4px; opacity: 0.8; }
 
   .skip-btn {
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af;

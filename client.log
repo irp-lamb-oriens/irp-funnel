@@ -2764,3 +2764,7 @@ https://svelte.dev/e/export_let_unused
 11:27:19 AM [vite] (ssr) page reload src/components/HeroForm.svelte
 11:27:39 AM [vite] (client) hmr update /src/components/HeroForm.svelte
 11:27:39 AM [vite] (ssr) page reload src/components/HeroForm.svelte
+11:36:51 AM [vite] (client) hmr update /src/components/Chatbot.svelte
+11:36:51 AM [vite] (ssr) page reload src/components/Chatbot.svelte
+11:37:29 AM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/HeroForm.svelte?svelte&type=style&lang.css
+11:37:29 AM [vite] (ssr) page reload src/components/HeroForm.svelte
