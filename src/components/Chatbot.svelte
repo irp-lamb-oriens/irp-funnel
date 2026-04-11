@@ -96,6 +96,7 @@
   let messages = writable<Array<{ role: "user" | "assistant"; content: string; meetingCard?: { calendarLink: string; hangoutLink: string; } }>>([]);
   let userInput = "";
   let isTyping = false;
+  let isBooked = false;
   let chatContainer: HTMLElement;
   let sessionId = crypto.randomUUID();
 
@@ -162,6 +163,9 @@
         : undefined;
       
       messages.update(m => [...m, { role: "assistant", content: data.response, meetingCard }]);
+      if (meetingCard) {
+        isBooked = true;
+      }
       if (data.extractedFields) {
         onExtractedFields(data.extractedFields);
       }
@@ -298,20 +302,26 @@
     {/if}
   </div>
 
-  <div class="chat-input-area">
-    <input
-      type="text"
-      placeholder="Type your message..."
-      bind:value={userInput}
-      on:keydown={(e) => e.key === "Enter" && sendMessage()}
-    />
-    <button class="send-btn" on:click={sendMessage} disabled={!userInput.trim() || isTyping}>
-      <svg viewBox="0 0 24 24">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-    </button>
-  </div>
+  {#if isBooked}
+    <div class="chat-input-area booked">
+      <div class="booked-message">✅ Consultation booked! Check your email for confirmation.</div>
+    </div>
+  {:else}
+    <div class="chat-input-area">
+      <input
+        type="text"
+        placeholder="Type your message..."
+        bind:value={userInput}
+        on:keydown={(e) => e.key === "Enter" && sendMessage()}
+      />
+      <button class="send-btn" on:click={sendMessage} disabled={!userInput.trim() || isTyping}>
+        <svg viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">
@@ -490,6 +500,17 @@
       &:hover:not(:disabled) { transform: scale(1.05); filter: brightness(1.1); }
       &:disabled { opacity: 0.5; cursor: not-allowed; }
       svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    }
+
+    &.booked {
+      justify-content: center;
+      padding: 0.85rem 1rem;
+      .booked-message {
+        font-size: 0.85rem;
+        color: #10b981;
+        font-weight: 600;
+        text-align: center;
+      }
     }
   }
 
