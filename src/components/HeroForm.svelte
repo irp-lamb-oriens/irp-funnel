@@ -144,6 +144,15 @@
   }
 
   function backToChoice() { view = 'choice'; }
+  
+  function formBack() {
+    if (formStep <= 0) { backToChoice(); return; }
+    formStep--;
+    // Skip optional steps when going back
+    if (formStep === 12 && !showYoutubeVideoStep) formStep--;
+    if (formStep === 11 && !showReferrerStep) formStep--;
+    focusFormInput(formStep);
+  }
 
   // ─── Chatbot callbacks ────────────────────────────────────────────────────
   const FORM_KEYS = new Set([
@@ -337,7 +346,7 @@
               <button class="back-btn" on:click={backToChoice}>← Back</button>
               <button class="switch-btn" on:click={openForm}>Switch to Form →</button>
             </div>
-            <Chatbot initialContext={$formState} onBackToForm={openForm} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} />
+            <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} />
           </div>
         {/if}
 
@@ -345,7 +354,7 @@
         {#if view === 'form'}
           <div class="form-frame active">
             <div class="back-bar">
-              <button class="back-btn" on:click={backToChoice}>← Back</button>
+              <button class="back-btn" on:click={formBack}>← Back</button>
               {#if formStep < 12}
                 <button class="switch-btn" on:click={openChatbot}>Chat with the team →</button>
               {/if}

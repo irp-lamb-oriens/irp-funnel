@@ -2758,3 +2758,9 @@ https://svelte.dev/e/a11y_consider_explicit_label
 https://svelte.dev/e/a11y_consider_explicit_label
 2:10:31 AM [vite-plugin-svelte] src/components/Chatbot.svelte:10:11 Component has unused export property 'onChannelSelect'. If it is for external reference only, please consider using `export const onChannelSelect`
 https://svelte.dev/e/export_let_unused
+11:27:04 AM [vite] (client) hmr update /src/components/HeroForm.svelte
+11:27:04 AM [vite] (ssr) page reload src/components/HeroForm.svelte
+11:27:19 AM [vite] (client) hmr update /src/components/HeroForm.svelte
+11:27:19 AM [vite] (ssr) page reload src/components/HeroForm.svelte
+11:27:39 AM [vite] (client) hmr update /src/components/HeroForm.svelte
+11:27:39 AM [vite] (ssr) page reload src/components/HeroForm.svelte
