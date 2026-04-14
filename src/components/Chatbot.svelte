@@ -10,6 +10,8 @@
   export let onExtractedFields: (fields: any) => void;
   export let onErrorFallback: () => void;
   export let onChannelSelect: (channel: string) => void;
+  
+  import { updateField } from "./systems/inputs/Calendar/formStore.js";
 
   let isDropdownOpen = false;
 
@@ -94,6 +96,12 @@
   }
 
   let messages = writable<Array<{ role: "user" | "assistant"; content: string; meetingCard?: { calendarLink: string; hangoutLink: string; } }>>([]);
+  
+  // Sync chat history to global formStore so it persists into CRM upon scheduling
+  messages.subscribe(m => {
+    updateField(m, 'chatHistory');
+  });
+
   let userInput = "";
   let isTyping = false;
   let isBooked = false;

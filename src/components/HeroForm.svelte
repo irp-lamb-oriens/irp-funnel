@@ -76,6 +76,7 @@
   let sizeInput: HTMLButtonElement, immigrationStatusInput: HTMLButtonElement;
   let referrerInput: HTMLInputElement;
   let youtubeVideoInput: HTMLInputElement;
+  let notesInput: HTMLInputElement;
 
   // ─── YouTube referral detection ─────────────────────────────────────────
   function isYouTubeReferral(val: string): boolean {
@@ -129,7 +130,7 @@
   function openForm() {
     view = 'form';
     // Auto-skip to first unfilled step
-    if (showYoutubeVideoStep) formStep = 12;
+    if (showYoutubeVideoStep) formStep = 13;
     else if (!$formState.name || !$formState.surname) formStep = 0;
     else if (!$formState.destinationCountry || !$formState.destinationCity) formStep = 1;
     else if (!$formState.originCountry || !$formState.originCity) formStep = 2;
@@ -140,7 +141,7 @@
     else if (!$formState.size) formStep = 7;
     else if ($formState.vehicles.length === 0 || !$formState.vehicles[0]?.year) formStep = 8;
     else if (!$formState.immigrationStatus) formStep = 9;
-    else formStep = 10;
+    else formStep = 10; // We show notes as step 10 now
   }
 
   function backToChoice() { view = 'choice'; }
@@ -149,8 +150,8 @@
     if (formStep <= 0) { backToChoice(); return; }
     formStep--;
     // Skip optional steps when going back
-    if (formStep === 12 && !showYoutubeVideoStep) formStep--;
-    if (formStep === 11 && !showReferrerStep) formStep--;
+    if (formStep === 13 && !showYoutubeVideoStep) formStep--;
+    if (formStep === 12 && !showReferrerStep) formStep--;
     focusFormInput(formStep);
   }
 
@@ -159,7 +160,7 @@
     'name', 'surname', 'email', 'destinationCountry', 'destinationCity',
     'originCountry', 'originCity', 'phone', 'referredBy', 'youtubeVideo',
     'budget', 'propertyTypeFrom', 'propertyTypeTo', 'size', 'immigrationStatus',
-    'scheduling', 'originZip', 'destinationZip', 'vehicles'
+    'scheduling', 'originZip', 'destinationZip', 'vehicles', 'notes'
   ]);
 
   function handleExtractedFields(fields: any) {
@@ -174,7 +175,12 @@
       }
       // Handle arrays (vehicles, scheduling, etc.)
       else if (Array.isArray(value) && value.length > 0) {
-        updateField(value as any, key as any);
+        if (key === 'notes') {
+          // If notes is an array of strings, join it into a single string for editing
+          updateField(value.join('\n'), 'notes');
+        } else {
+          updateField(value as any, key as any);
+        }
       }
     }
   }
@@ -186,11 +192,11 @@
   function formNext() {
     if (validateFormStep(formStep)) {
       formStep++;
-      if (formStep === 11 && !showReferrerStep) {
+      if (formStep === 12 && !showReferrerStep) {
         // No referrer step needed — check if URL param referral is YouTube
         if (isYouTubeReferral($formState.referredBy)) {
           showYoutubeVideoStep = true;
-          formStep = 12; // go to YouTube video step
+          formStep = 13; // go to YouTube video step
         } else {
           submitForm();
         }
@@ -236,6 +242,9 @@
         if (!$formState.immigrationStatus.trim()) { errors.immigrationStatus = 'Required'; valid = false; }
         break;
       case 10:
+        // Notes is optional
+        break;
+      case 11:
         if ($formState.scheduling.length === 0) { errors.movingDate = 'Select a date'; valid = false; }
         break;
     }
@@ -251,7 +260,7 @@
         hangoutLink = response.hangoutLink;
         window.open(calendarLink, '_blank');
       }
-      formStep = showYoutubeVideoStep ? 13 : 12; // thank you
+      formStep = showYoutubeVideoStep ? 14 : 13; // thank you
     } catch (error) { console.error('Form submission error:', error); }
     finally { isLoading = false; }
   }
@@ -260,7 +269,7 @@
     await tick();
     const map: Record<number, any> = {
       0: nameInput, 1: destinationCountryInput, 2: originCountryInput,
-      3: phoneInput, 4: budgetInput, 7: sizeInput, 9: immigrationStatusInput, 11: referrerInput, 12: youtubeVideoInput,
+      3: phoneInput, 4: budgetInput, 7: sizeInput, 9: immigrationStatusInput, 10: notesInput, 12: referrerInput, 13: youtubeVideoInput,
     };
     map[step]?.focus?.();
   }
@@ -286,11 +295,14 @@
               <h6 class="cta-hero__eyebrow"><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
               <h1 class="cta-hero__title">Ready to start your<br/>international journey?</h1>
               <p class="cta-hero__sub">Get personalized relocation guidance — speak with our virtual assistant, fill out a quick form, or connect with us on WhatsApp.</p>
-              <button class="cta-hero__btn" on:click={handleStart}>
-                <span class="cta-hero__btn-icon">🌍</span>
-                <span class="cta-hero__btn-text">Get Started</span>
-                <span class="cta-hero__btn-arrow">→</span>
-              </button>
+              <div class="cta-hero__btn-wrap">
+                <button class="cta-hero__btn" on:click={handleStart}>
+                  <span class="cta-hero__btn-shimmer"></span>
+                  <span class="cta-hero__btn-icon">🌍</span>
+                  <span class="cta-hero__btn-text">Get Started</span>
+                  <span class="cta-hero__btn-arrow">→</span>
+                </button>
+              </div>
             </div>
           </div>
         {/if}
@@ -444,18 +456,24 @@
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 10}
+              <h2>Any additional notes?</h2>
+              <p class="sub-heading">You can edit the notes gathered during our chat, or add more details.</p>
+              <textarea class="notes-textarea" placeholder="Add any details about your move..." bind:value={$formState.notes} bind:this={notesInput}></textarea>
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+            {:else if formStep === 11}
               <h2>Desired call date</h2>
               <Calendar />
               {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
-            {:else if formStep === 11 && showReferrerStep}
+            {:else if formStep === 12 && showReferrerStep}
               <h2>Who referred you to us?</h2>
               <PlainText placeholder="The name here" bind:value={$formState.referredBy} onChange={(val) => updateField(val, 'referredBy')} onEnter={() => {
                 if (isYouTubeReferral($formState.referredBy)) {
                   showYoutubeVideoStep = true;
-                  formStep = 12;
-                  focusFormInput(12);
+                  formStep = 13;
+                  focusFormInput(13);
                 } else {
                   submitForm();
                 }
@@ -463,20 +481,20 @@
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={() => {
                 if (isYouTubeReferral($formState.referredBy)) {
                   showYoutubeVideoStep = true;
-                  formStep = 12;
-                  focusFormInput(12);
+                  formStep = 13;
+                  focusFormInput(13);
                 } else {
                   submitForm();
                 }
               }} loading={isLoading} /></div>
 
-            {:else if formStep === 12 && showYoutubeVideoStep}
+            {:else if formStep === 13 && showYoutubeVideoStep}
               <h2>Which YouTube video did you find us from?</h2>
               <p class="sub-heading">We'd love to know — it helps us understand what resonates!</p>
               <PlainText placeholder="e.g. Moving to Costa Rica tips" bind:value={$formState.youtubeVideo} onChange={(val) => updateField(val, 'youtubeVideo')} onEnter={submitForm} bind:inputElement={youtubeVideoInput} />
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={isLoading} /></div>
 
-            {:else if formStep === 12 || formStep === 13}
+            {:else if formStep === 13 || formStep === 14}
               <div class="thank-you">
                 <div class="thank-you__icon">🎉</div>
                 <h2>Thank You!</h2>
@@ -528,6 +546,27 @@
 
   .error { color: #ef4444; font-size: 0.85rem; font-weight: 500; margin-top: -0.75rem; padding-left: 0.5rem; border-left: 2px solid #ef4444; }
 
+  .notes-textarea {
+    width: 100%;
+    min-height: 120px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1rem;
+    color: #fff;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: all 0.3s ease;
+    &:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+  }
 
   .skip-btn {
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af;
@@ -548,34 +587,69 @@
     &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-highlight-2); }
     &__title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
     &__sub { font-size: 1.05rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 440px; }
+    &__btn-wrap { display: flex; justify-content: center; width: 100%; margin-top: 1rem; }
     &__btn {
-      display: flex; align-items: center; gap: 1rem; padding: 1.1rem 2.2rem; margin-top: 0.75rem;
-      background: transparent; color: #fff; border: 3px solid #fff; border-radius: 100px;
-      font-size: 1.15rem; font-weight: 800; font-family: var(--font-title, inherit); cursor: pointer;
-      position: relative; overflow: hidden;
-      transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      display: flex; align-items: center; justify-content: center; gap: 0.85rem;
+      padding: 1.25rem 3rem; min-width: 280px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #a855f7 100%);
+      color: #fff; border: none; border-radius: 100px;
+      font-size: 1.25rem; font-weight: 800; font-family: var(--font-title, inherit);
+      letter-spacing: 0.02em; cursor: pointer;
+      position: relative; overflow: hidden; z-index: 1;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       box-shadow:
-        0 4px 16px rgba(255, 255, 255, 0.1),
-        0 8px 32px rgba(255, 255, 255, 0.06),
-        0 12px 48px rgba(255, 255, 255, 0.03);
-      animation: btnPulse 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        0 8px 28px rgba(99, 102, 241, 0.45),
+        0 16px 48px rgba(139, 92, 246, 0.25),
+        0 0 0 0 rgba(99, 102, 241, 0);
+      animation: ctaPulseGlow 2.5s ease-in-out infinite;
 
-      &::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 60%); border-radius: inherit; }
-      &:hover {
-        transform: translateY(-3px) scale(1.02);
-        border-color: #fff;
-        box-shadow:
-          0 6px 20px rgba(255, 255, 255, 0.2),
-          0 12px 40px rgba(255, 255, 255, 0.12),
-          0 20px 60px rgba(255, 255, 255, 0.06);
-        animation: none;
+      &::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 50%, rgba(255,255,255,0.06) 100%);
+        border-radius: inherit; pointer-events: none;
       }
-      &:active { transform: translateY(-1px); }
+      &:hover {
+        transform: translateY(-4px) scale(1.04);
+        box-shadow:
+          0 12px 36px rgba(99, 102, 241, 0.55),
+          0 24px 60px rgba(139, 92, 246, 0.3),
+          0 0 60px rgba(168, 85, 247, 0.2);
+        animation: none;
+        background: linear-gradient(135deg, #7c7cf7 0%, #9b6ff8 40%, #b86eff 100%);
+      }
+      &:active { transform: translateY(-1px) scale(1.01); }
     }
-    &__btn-icon { font-size: 1.4rem; color: #fff; }
-    &__btn-text { position: relative; z-index: 1; color: #fff; }
-    &__btn-arrow { font-size: 1.3rem; font-weight: 700; color: #fff; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-    &__btn:hover &__btn-arrow { transform: translateX(4px); }
+    &__btn-shimmer {
+      position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      animation: shimmerSweep 3s ease-in-out infinite;
+      pointer-events: none; z-index: 2;
+    }
+    &__btn-icon { font-size: 1.5rem; position: relative; z-index: 3; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+    &__btn-text { position: relative; z-index: 3; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    &__btn-arrow { font-size: 1.4rem; font-weight: 700; color: #fff; position: relative; z-index: 3; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    &__btn:hover &__btn-arrow { transform: translateX(6px); }
+  }
+
+  @keyframes shimmerSweep {
+    0%, 100% { left: -100%; }
+    50% { left: 150%; }
+  }
+
+  @keyframes ctaPulseGlow {
+    0%, 100% {
+      box-shadow:
+        0 8px 28px rgba(99, 102, 241, 0.45),
+        0 16px 48px rgba(139, 92, 246, 0.25),
+        0 0 0 0 rgba(99, 102, 241, 0);
+    }
+    50% {
+      box-shadow:
+        0 10px 36px rgba(99, 102, 241, 0.55),
+        0 20px 56px rgba(139, 92, 246, 0.35),
+        0 0 80px rgba(168, 85, 247, 0.12);
+    }
   }
 
   /* ═══ Choice Screen ═══ */

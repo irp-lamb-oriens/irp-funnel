@@ -10,9 +10,11 @@ export async function submitScheduling() {
     const startDate = new Date(dateTime);
     const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
 
+    const notesStr = Array.isArray(formData.notes) ? formData.notes.join('\n- ') : (formData.notes || 'None');
+
     return {
       summary: `Scheduled Consultation with ${formData.name} ${formData.surname}`,
-      description: `Consultation for ${formData.name} ${formData.surname} regarding moving from ${formData.originCity ? formData.originCity + ', ' : ''}${formData.originCountry} to ${formData.destinationCity ? formData.destinationCity + ', ' : ''}${formData.destinationCountry}. Budget: ${formData.budget}.`,
+      description: `Consultation for ${formData.name} ${formData.surname} regarding moving from ${formData.originCity ? formData.originCity + ', ' : ''}${formData.originCountry} to ${formData.destinationCity ? formData.destinationCity + ', ' : ''}${formData.destinationCountry}. Budget: ${formData.budget}.\n\nNotes: ${notesStr}.`,
       start: {
         dateTime: startDate.toISOString(),
         timeZone: "America/Costa_Rica",

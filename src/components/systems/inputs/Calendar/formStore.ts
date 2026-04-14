@@ -26,6 +26,8 @@ export type FormState = {
   originZip: string;
   destinationZip: string;
   vehicles: Vehicle[];
+  notes: string | string[];
+  chatHistory: { role: string; content: string }[];
 };
 
 // Define a store for the form state
@@ -49,11 +51,13 @@ export const formState = writable<FormState>({
   originZip: "",
   destinationZip: "",
   vehicles: [],
+  notes: "",
+  chatHistory: [],
 });
 
 // Update the form state on input change
 export function updateField(
-  value: string | string[] | Vehicle[],
+  value: string | string[] | Vehicle[] | { role: string; content: string }[],
   field: keyof FormState
 ) {
   // Update form state

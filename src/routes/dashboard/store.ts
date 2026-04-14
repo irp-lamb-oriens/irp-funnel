@@ -55,6 +55,17 @@ export interface LLMServiceBreakdown {
   outputTokens: number;
 }
 
+export interface WeeklySnapshot {
+  weekKey: string;
+  weekStart: string;
+  weekEnd: string;
+  totalCost: number;
+  callCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  snapshotAt: string;
+}
+
 export interface Metrics {
   pipeline: {
     stageCounts: Record<string, number>;
@@ -72,6 +83,12 @@ export interface Metrics {
     byProvider: Record<string, LLMServiceBreakdown>;
     byModel: Record<string, LLMServiceBreakdown>;
     dailyCosts: Record<string, number>;
+    periodSpend: {
+      thisWeek: number;
+      thisMonth: number;
+      thisYear: number;
+    };
+    weeklySnapshots: WeeklySnapshot[];
   };
   monthlyLeads: Record<string, number>;
   sourceBreakdown: Record<string, number>;

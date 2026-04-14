@@ -319,8 +319,8 @@
       </div>
       <div class="topbar__right">
         {#if $metrics}
-          <span class="topbar__spend" title="Total AI token spend">
-            🤖 ${$metrics.llmCosts.totalCost.toFixed(2)}
+          <span class="topbar__spend" title="Week / Month / All-Time AI spend">
+            🤖 W:${$metrics.llmCosts.periodSpend?.thisWeek?.toFixed(2) || '0'} · M:${$metrics.llmCosts.periodSpend?.thisMonth?.toFixed(2) || '0'} · ∑${$metrics.llmCosts.totalCost.toFixed(2)}
           </span>
         {/if}
         <div class="topbar__search">
@@ -488,14 +488,28 @@
             </div>
           </div>
 
-          <!-- LLM Costs — Global -->
+          <!-- LLM Costs — Period Spend Breakdown -->
           <div class="metrics-section">
-            <h2>🤖 AI / LLM Token Spend</h2>
+            <h2>🤖 AI Spend — Period Breakdown</h2>
             <div class="metrics-grid metrics-grid--small">
+              <div class="metric-card" style="border-left: 4px solid #22c55e">
+                <div class="metric-card__value">${$metrics.llmCosts.periodSpend?.thisWeek?.toFixed(4) || '0.0000'}</div>
+                <div class="metric-card__label">This Week</div>
+              </div>
+              <div class="metric-card" style="border-left: 4px solid #3b82f6">
+                <div class="metric-card__value">${$metrics.llmCosts.periodSpend?.thisMonth?.toFixed(4) || '0.0000'}</div>
+                <div class="metric-card__label">This Month</div>
+              </div>
+              <div class="metric-card" style="border-left: 4px solid #f59e0b">
+                <div class="metric-card__value">${$metrics.llmCosts.periodSpend?.thisYear?.toFixed(4) || '0.0000'}</div>
+                <div class="metric-card__label">This Year</div>
+              </div>
               <div class="metric-card" style="border-left: 4px solid #6366f1">
                 <div class="metric-card__value">${$metrics.llmCosts.totalCost.toFixed(4)}</div>
-                <div class="metric-card__label">Total Cost (USD)</div>
+                <div class="metric-card__label">All Time</div>
               </div>
+            </div>
+            <div class="metrics-grid metrics-grid--small" style="margin-top: 12px;">
               <div class="metric-card">
                 <div class="metric-card__value">{$metrics.llmCosts.callCount}</div>
                 <div class="metric-card__label">Total API Calls</div>
@@ -510,6 +524,36 @@
               </div>
             </div>
           </div>
+
+          <!-- LLM Costs — Weekly Spend History -->
+          {#if $metrics.llmCosts.weeklySnapshots && $metrics.llmCosts.weeklySnapshots.length > 0}
+            <div class="metrics-section">
+              <h2>📅 Weekly AI Spend History</h2>
+              <div class="monthly-chart">
+                {#each $metrics.llmCosts.weeklySnapshots as snap}
+                  <div class="monthly-bar">
+                    <div class="monthly-bar__fill" style="height: {Math.min(100, (snap.totalCost / Math.max(...$metrics.llmCosts.weeklySnapshots.map(s => s.totalCost), 0.001)) * 100)}%; background: #6366f1;"></div>
+                    <span class="monthly-bar__count">${snap.totalCost.toFixed(2)}</span>
+                    <span class="monthly-bar__label">{snap.weekKey}</span>
+                  </div>
+                {/each}
+              </div>
+              <div class="breakdown-table" style="margin-top: 16px;">
+                <div class="breakdown-header">
+                  <span>Week</span><span>Period</span><span>Calls</span><span>Tokens</span><span>Cost</span>
+                </div>
+                {#each [...$metrics.llmCosts.weeklySnapshots].reverse() as snap}
+                  <div class="breakdown-row">
+                    <span class="breakdown-row__model">{snap.weekKey}</span>
+                    <span>{snap.weekStart} → {snap.weekEnd}</span>
+                    <span>{snap.callCount}</span>
+                    <span>{((snap.inputTokens + snap.outputTokens) / 1000).toFixed(1)}K</span>
+                    <span class="breakdown-row__cost">${snap.totalCost.toFixed(4)}</span>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
 
           <!-- LLM Costs — By Provider -->
           {#if $metrics.llmCosts.byProvider && Object.keys($metrics.llmCosts.byProvider).length > 0}

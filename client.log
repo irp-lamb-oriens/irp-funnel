@@ -2849,3 +2849,62 @@ https://svelte.dev/e/export_let_unused
 1:33:11 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
 1:33:11 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
 1:33:11 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/8.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/13.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/19.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+5:59:51 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+5:59:51 PM [vite] (client) page reload .svelte-kit/generated/root.js
+5:59:51 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+6:10:31 PM [vite] (ssr) page reload src/routes/dashboard/store.ts
+6:11:08 PM [vite] (ssr) page reload src/routes/dashboard/+page.svelte
+6:11:29 PM [vite] (ssr) page reload src/routes/dashboard/+page.svelte
+6:13:39 PM [vite] (client) hmr update /src/components/HeroForm.svelte
+6:13:39 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+6:14:11 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1009:0 Unused CSS selector ".choice-btn__icon--wa"
+https://svelte.dev/e/css_unused_selector
+6:14:11 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1077:0 Unused CSS selector ".choice-btn--whatsapp"
+https://svelte.dev/e/css_unused_selector
+6:14:11 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1081:0 Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon"
+https://svelte.dev/e/css_unused_selector
+6:14:11 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1086:0 Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon svg"
+https://svelte.dev/e/css_unused_selector
+6:14:11 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1096:0 Unused CSS selector ".choice-btn--whatsapp:hover"
+https://svelte.dev/e/css_unused_selector
+6:14:11 PM [vite] (client) hmr update /src/components/HeroForm.svelte?svelte&type=style&lang.css
+6:14:11 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+8:12:34 PM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/systems/inputs/Calendar/Calendar.svelte, /src/components/Chatbot.svelte
+8:12:34 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/formStore.ts
+8:13:05 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1009:0 Unused CSS selector ".choice-btn__icon--wa"
+https://svelte.dev/e/css_unused_selector
+8:13:05 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1077:0 Unused CSS selector ".choice-btn--whatsapp"
+https://svelte.dev/e/css_unused_selector
+8:13:05 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1081:0 Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon"
+https://svelte.dev/e/css_unused_selector
+8:13:05 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1086:0 Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon svg"
+https://svelte.dev/e/css_unused_selector
+8:13:05 PM [vite-plugin-svelte] src/components/HeroForm.svelte:1096:0 Unused CSS selector ".choice-btn--whatsapp:hover"
+https://svelte.dev/e/css_unused_selector
+8:13:05 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+8:13:34 PM [vite] (client) hmr update /src/components/HeroForm.svelte
+8:13:34 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+8:14:14 PM [vite] (client) hmr update /src/components/HeroForm.svelte
+8:14:14 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/submitSchedule.ts
+8:16:24 PM [vite] (client) hmr update /src/components/HeroForm.svelte
+8:16:24 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+8:17:06 PM [vite] (client) hmr update /src/components/HeroForm.svelte
+8:17:06 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/submitSchedule.ts
+8:17:17 PM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/systems/inputs/Calendar/Calendar.svelte, /src/components/Chatbot.svelte
+8:17:17 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/formStore.ts
+11:05:46 PM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/HeroForm.svelte?svelte&type=style&lang.css
+11:05:46 PM [vite] (ssr) page reload src/components/HeroForm.svelte
+11:06:47 PM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/systems/inputs/Calendar/Calendar.svelte, /src/components/Chatbot.svelte
+11:06:47 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/formStore.ts
+11:06:57 PM [vite] (client) hmr update /src/components/HeroForm.svelte, /src/components/systems/inputs/Calendar/Calendar.svelte, /src/components/Chatbot.svelte
+11:06:57 PM [vite] (ssr) page reload src/components/systems/inputs/Calendar/formStore.ts
+11:07:10 PM [vite] (client) hmr update /src/components/Chatbot.svelte
+11:07:10 PM [vite] (ssr) page reload src/components/Chatbot.svelte
