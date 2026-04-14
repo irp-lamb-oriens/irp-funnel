@@ -309,6 +309,55 @@ $t-slow: 400ms $ease-out;
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.filters-bar {
+  display: flex;
+  gap: $sp-3;
+  padding: $sp-3 $sp-5;
+  background: $surface-2;
+  border-bottom: 1px solid $border;
+  overflow-x: auto;
+  align-items: center;
+  white-space: nowrap;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.filter-select {
+  background: $surface;
+  border: 1px solid $border;
+  color: $text;
+  padding: $sp-2 $sp-3;
+  border-radius: $r-full;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all $t-fast;
+  appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23495057'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  &:focus, &:hover { 
+    border-color: $accent; 
+    box-shadow: 0 0 0 2px $accent-glow;
+  }
+}
+
+.filter-clear {
+  background: transparent;
+  border: none;
+  color: $danger;
+  font-size: 13px;
+  cursor: pointer;
+  padding: $sp-2;
+  font-weight: 600;
+  opacity: 0.8;
+  transition: all $t-fast;
+  &:hover { opacity: 1; text-decoration: underline; }
 
   &__left, &__right {
     display: flex;

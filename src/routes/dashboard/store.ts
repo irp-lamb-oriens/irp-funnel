@@ -239,6 +239,25 @@ export const metrics = writable<Metrics | null>(null);
 export const loading = writable<boolean>(false);
 export const error = writable<string | null>(null);
 export const searchQuery = writable<string>('');
+
+export interface Filters {
+  stage: string;
+  originCountry: string;
+  destinationCountry: string;
+  budget: string;
+  size: string;
+  callOutcome: string;
+}
+
+export const filters = writable<Filters>({
+  stage: '',
+  originCountry: '',
+  destinationCountry: '',
+  budget: '',
+  size: '',
+  callOutcome: ''
+});
+
 export const activeView = writable<'board' | 'list' | 'metrics'>('board');
 export const detailPanelOpen = writable<boolean>(false);
 
@@ -254,19 +273,43 @@ if (browser) {
   });
 }
 
+// ─── Derived: filtered clients ──────────────────────────────────────────────
+export const filteredClients = derived([clients, searchQuery, filters], ([$clients, $search, $filters]) => {
+  const q = $search.toLowerCase().trim();
+
+  return $clients.filter(c => {
+    // 1. Text search
+    if (q) {
+      const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    // 2. Field filters
+    if ($filters.stage && c.stage !== $filters.stage) return false;
+    if ($filters.originCountry && c.originCountry !== $filters.originCountry) return false;
+    if ($filters.destinationCountry && c.destinationCountry !== $filters.destinationCountry) return false;
+    if ($filters.budget && c.budget !== $filters.budget) return false;
+    if ($filters.size && c.size !== $filters.size) return false;
+    
+    if ($filters.callOutcome) {
+      if ($filters.callOutcome === 'none') {
+        if (c.callOutcome) return false;
+      } else {
+        if (c.callOutcome !== $filters.callOutcome) return false;
+      }
+    }
+
+    return true;
+  });
+});
+
 // ─── Derived: clients grouped by stage ──────────────────────────────────────
-export const clientsByStage = derived([clients, searchQuery], ([$clients, $search]) => {
+export const clientsByStage = derived(filteredClients, ($filtered) => {
   const stages = Object.keys(STAGE_LABELS);
   const grouped: Record<string, Client[]> = {};
   for (const s of stages) grouped[s] = [];
 
-  const q = $search.toLowerCase().trim();
-
-  for (const c of $clients) {
-    if (q) {
-      const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity}`.toLowerCase();
-      if (!haystack.includes(q)) continue;
-    }
+  for (const c of $filtered) {
     const stage = c.stage || 'sales_opt_in_email';
     if (grouped[stage]) grouped[stage].push(c);
     else grouped['sales_opt_in_email'].push(c);

@@ -5,7 +5,7 @@
   import {
     isAuthenticated, authEmail, authToken,
     clients, selectedClient, metrics, loading, error,
-    searchQuery, activeView, detailPanelOpen, clientsByStage,
+    searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES,
     requestOTP, verifyOTP, checkAuth, logout,
     fetchClients, fetchClientDetail, updateClientStage,
@@ -331,6 +331,50 @@
       </div>
     </header>
 
+    <!-- ── Filters ───────────────────────────────────────────── -->
+    {#if $activeView === 'board' || $activeView === 'list'}
+      <div class="filters-bar">
+        <select bind:value={$filters.stage} class="filter-select">
+          <option value="">All Stages</option>
+          {#each Object.entries(STAGE_LABELS) as [key, label]}
+            <option value={key}>{label}</option>
+          {/each}
+        </select>
+        <select bind:value={$filters.callOutcome} class="filter-select">
+          <option value="">All Outcomes</option>
+          <option value="none">No Outcome Yet</option>
+          <option value="qualified">Qualified</option>
+          <option value="nurture">Nurture</option>
+          <option value="no_show">No Show</option>
+        </select>
+        <select bind:value={$filters.originCountry} class="filter-select">
+          <option value="">Any Origin</option>
+          {#each [...new Set($clients.map(c => c.originCountry).filter(Boolean))].sort() as country}
+            <option value={country}>{country}</option>
+          {/each}
+        </select>
+        <select bind:value={$filters.destinationCountry} class="filter-select">
+          <option value="">Any Destination</option>
+          {#each [...new Set($clients.map(c => c.destinationCountry).filter(Boolean))].sort() as country}
+            <option value={country}>{country}</option>
+          {/each}
+        </select>
+        <select bind:value={$filters.budget} class="filter-select">
+          <option value="">Any Budget</option>
+          {#each [...new Set($clients.map(c => c.budget).filter(Boolean))].sort() as budget}
+            <option value={budget}>{budget}</option>
+          {/each}
+        </select>
+        <select bind:value={$filters.size} class="filter-select">
+          <option value="">Any Move Size</option>
+          {#each [...new Set($clients.map(c => c.size).filter(Boolean))].sort() as size}
+            <option value={size}>{size}</option>
+          {/each}
+        </select>
+        <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: ''}}>Clear</button>
+      </div>
+    {/if}
+
     <!-- ── Loading / Error ───────────────────────────────────── -->
     {#if $loading && $clients.length === 0}
       <div class="dashboard__loading">
@@ -408,7 +452,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each $clients as client (client.id)}
+            {#each $filteredClients as client (client.id)}
               <tr on:click={() => openClientDetail(client)} class="list-row">
                 <td>
                   <div class="list-row__name">{client.name} {client.surname}</div>
