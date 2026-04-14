@@ -358,7 +358,9 @@ $t-slow: 400ms $ease-out;
   opacity: 0.8;
   transition: all $t-fast;
   &:hover { opacity: 1; text-decoration: underline; }
+}
 
+.topbar {
   &__left, &__right {
     display: flex;
     align-items: center;
