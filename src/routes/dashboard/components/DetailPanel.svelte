@@ -46,11 +46,13 @@
 
   async function loadConversations() {
     if (!$selectedClient) return;
+    const clientId = $selectedClient.id;
     conversationsLoading = true;
+    // Set immediately to prevent re-triggering on failure
+    lastLoadedClientId = clientId;
     try {
-      const result = await fetchConversations($selectedClient.id);
+      const result = await fetchConversations(clientId, $selectedClient?.email);
       conversations = result;
-      lastLoadedClientId = $selectedClient.id;
     } catch (err) {
       console.error('Failed to load conversations:', err);
       conversations = [];

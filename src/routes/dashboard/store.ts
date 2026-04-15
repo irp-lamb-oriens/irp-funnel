@@ -443,8 +443,9 @@ export async function addNote(id: string, text: string): Promise<Note> {
   return note;
 }
 
-export async function fetchConversations(id: string): Promise<any[]> {
-  const data = await apiFetch(`/api/dashboard/clients/${id}/conversations`);
+export async function fetchConversations(id: string, email?: string): Promise<any[]> {
+  const params = email ? `?email=${encodeURIComponent(email)}` : '';
+  const data = await apiFetch(`/api/dashboard/clients/${id}/conversations${params}`);
   return data.conversations || [];
 }
 
