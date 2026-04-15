@@ -3398,3 +3398,17 @@ https://svelte.dev/e/a11y_label_has_associated_control
 https://svelte.dev/e/a11y_label_has_associated_control
 4:55:10 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:298:14 A form label must be associated with a control
 https://svelte.dev/e/a11y_label_has_associated_control
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+4:59:20 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+4:59:20 PM [vite] (client) page reload .svelte-kit/generated/root.js
+4:59:20 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+5:00:47 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
+5:00:47 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+5:00:47 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+5:01:10 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
+5:01:10 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss

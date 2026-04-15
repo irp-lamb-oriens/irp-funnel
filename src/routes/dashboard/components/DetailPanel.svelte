@@ -247,16 +247,24 @@
           {:else}
             {#each conversations as thread, i}
               <div class="detail-thread">
-                <h3 class="detail-thread__title">
-                  Session {thread.sessionId} 
-                  <span class="detail-thread__date">({formatDateTime(thread.updatedAt || thread.createdAt)})</span>
-                </h3>
-                <div class="chat-history">
+                <div class="detail-thread__header">
+                  <div class="detail-thread__info">
+                    <h3 class="detail-thread__title">Session</h3>
+                    <span class="detail-thread__id">{thread.sessionId}</span>
+                  </div>
+                  <span class="detail-thread__date">{formatDateTime(thread.updatedAt || thread.createdAt)}</span>
+                </div>
+                <div class="chat-history modern-chat">
                   {#each thread.messages || [] as msg}
                     {#if msg.role !== 'system'}
-                      <div class="chat-msg chat-msg--{msg.role}">
-                        <span class="chat-msg__role">{msg.role === 'assistant' ? '🤖 Lili' : '👤 Client'}:</span>
-                        <span class="chat-msg__content">{msg.content}</span>
+                      <div class="chat-bubble-wrapper {msg.role === 'assistant' ? 'chat-bubble-wrapper--left' : 'chat-bubble-wrapper--right'}">
+                        <div class="chat-bubble__avatar">
+                          {msg.role === 'assistant' ? '🤖' : '👤'}
+                        </div>
+                        <div class="chat-bubble {msg.role === 'assistant' ? 'chat-bubble--assistant' : 'chat-bubble--user'}">
+                          <span class="chat-bubble__role">{msg.role === 'assistant' ? 'Lili' : 'Client'}</span>
+                          <p class="chat-bubble__text">{msg.content}</p>
+                        </div>
                       </div>
                     {/if}
                   {/each}
