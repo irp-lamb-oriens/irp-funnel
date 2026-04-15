@@ -3297,3 +3297,5 @@ https://svelte.dev/e/css_unused_selector
 https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
 3:20:04 PM [vite] (client) hmr update /src/routes/dashboard/components/MetricsView.svelte
 3:20:04 PM [vite] (ssr) page reload src/routes/dashboard/components/MetricsView.svelte
+3:42:30 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
+3:42:30 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
