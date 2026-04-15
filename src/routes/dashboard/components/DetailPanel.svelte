@@ -28,34 +28,39 @@
 
   let conversations: any[] = [];
   let conversationsLoading = false;
-  let lastLoadedClientId = '';
+  let currentSessionId = ''; // Track the actual ID tied to the currently loaded conversations array
 
-  // Reset conversations when client changes
-  $: if ($selectedClient && $selectedClient.id !== lastLoadedClientId) {
-    conversations = [];
-    conversationsLoading = false;
-    lastLoadedClientId = '';
-  }
-
-  // Load conversations when tab is selected
   $: {
-    if (detailTab === 'conversations' && $selectedClient && lastLoadedClientId !== $selectedClient.id && !conversationsLoading) {
-      loadConversations();
+    if ($selectedClient) {
+      // If the client changes entirely, wipe the old conversations so they don't leak
+      if (currentSessionId && currentSessionId !== $selectedClient.id) {
+        conversations = [];
+        currentSessionId = '';
+      }
+
+      // If we switch to the conversations tab, AND we haven't loaded THIS client's conversations yet
+      if (detailTab === 'conversations' && currentSessionId !== $selectedClient.id && !conversationsLoading) {
+        loadConversations($selectedClient.id, $selectedClient.email);
+      }
     }
   }
 
-  async function loadConversations() {
-    if (!$selectedClient) return;
-    const clientId = $selectedClient.id;
+  async function loadConversations(targetId: string, targetEmail?: string) {
     conversationsLoading = true;
-    // Set immediately to prevent re-triggering on failure
-    lastLoadedClientId = clientId;
+    currentSessionId = targetId; // Lock this client immediately to prevent duplicate triggers
+    
     try {
-      const result = await fetchConversations(clientId, $selectedClient?.email);
-      conversations = result;
-    } catch (err) {
+      // Force trigger Svelte reactivity explicitly
+      const result = await fetchConversations(targetId, targetEmail);
+      conversations = [...result]; 
+    } catch (err: any) {
       console.error('Failed to load conversations:', err);
       conversations = [];
+      
+      // If unauthorized, explicitly force close the panel
+      if (err.message && (err.message.includes('Session expired') || err.message.includes('Authentication'))) {
+        closeDetail();
+      }
     } finally {
       conversationsLoading = false;
     }
