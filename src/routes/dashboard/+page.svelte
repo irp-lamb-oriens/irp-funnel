@@ -442,39 +442,46 @@
     <!-- ══════════════ LIST VIEW ══════════════ -->
     {:else if $activeView === 'list'}
       <div class="list-view">
-        <table class="list-table">
-          <thead>
-            <tr>
-              <th>Client</th>
-              <th>Route</th>
-              <th>Stage</th>
-              <th>Budget</th>
-              <th>Consultation</th>
-              <th>Last Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each $filteredClients as client (client.id)}
-              <tr on:click={() => openClientDetail(client)} class="list-row">
-                <td>
-                  <div class="list-row__name">{client.name} {client.surname}</div>
-                  <div class="list-row__email">{client.email}</div>
-                </td>
-                <td>
-                  {client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}
-                </td>
-                <td>
-                  <span class="stage-badge" style="background: {STAGE_COLORS[client.stage]}">
-                    {STAGE_ICONS[client.stage]} {STAGE_LABELS[client.stage]}
-                  </span>
-                </td>
-                <td>{client.budget || '—'}</td>
-                <td>{client.scheduling?.length ? formatDate(client.scheduling[0]) : '—'}</td>
-                <td>{timeAgo(client.lastUpdated)}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+        <!-- Sticky External Header (Decoupled from native table) -->
+        <div class="list-header-sticky">
+          <div class="list-grid-layout">
+            <div class="list-col-header">Client</div>
+            <div class="list-col-header">Route</div>
+            <div class="list-col-header">Stage</div>
+            <div class="list-col-header">Budget</div>
+            <div class="list-col-header">Consultation</div>
+            <div class="list-col-header">Last Updated</div>
+          </div>
+        </div>
+
+        <div class="list-body">
+          {#each $filteredClients as client (client.id)}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div on:click={() => openClientDetail(client)} class="list-row list-grid-layout">
+              <div class="list-cell">
+                <div class="list-row__name" title="{client.name} {client.surname}">{client.name} {client.surname}</div>
+                <div class="list-row__email" title={client.email}>{client.email}</div>
+              </div>
+              <div class="list-cell" title="{client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}">
+                {client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}
+              </div>
+              <div class="list-cell" title="{STAGE_LABELS[client.stage]}">
+                <span class="stage-badge" style="background: {STAGE_COLORS[client.stage]}">
+                  {STAGE_ICONS[client.stage]} {STAGE_LABELS[client.stage]}
+                </span>
+              </div>
+              <div class="list-cell" title={client.budget || '—'}>{client.budget || '—'}</div>
+              <div class="list-cell" title={client.scheduling?.length ? formatDate(client.scheduling[0]) : '—'}>
+                {client.scheduling?.length ? formatDate(client.scheduling[0]) : '—'}
+              </div>
+              <div class="list-cell" title={timeAgo(client.lastUpdated)}>{timeAgo(client.lastUpdated)}</div>
+            </div>
+          {/each}
+          {#if $filteredClients.length === 0}
+            <div class="list-empty">No clients found matching filters.</div>
+          {/if}
+        </div>
       </div>
 
     <!-- ══════════════ METRICS VIEW ══════════════ -->

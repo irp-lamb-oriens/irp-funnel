@@ -3301,3 +3301,11 @@ https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
 3:42:30 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
 3:48:00 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
 3:48:00 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
+3:52:23 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte
+3:52:23 PM [vite] (ssr) page reload src/routes/dashboard/+page.svelte
+3:52:43 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
+3:52:43 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
+3:54:41 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
+3:54:41 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
+3:56:53 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte
+3:56:53 PM [vite] (ssr) page reload src/routes/dashboard/+page.svelte

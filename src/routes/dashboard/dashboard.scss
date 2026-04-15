@@ -658,45 +658,87 @@ $t-slow: 400ms $ease-out;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LIST VIEW
+   LIST VIEW (CSS Grid implementation to fix sticky headers)
    ═══════════════════════════════════════════════════════════════════════════ */
 .list-view {
   padding: $sp-5;
   overflow-x: auto;
 }
 
-.list-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  
-  thead {
-    position: sticky;
-    top: 60px;
-    z-index: 10;
-    background: $bg;
-  }
+.list-header-sticky {
+  position: sticky;
+  top: 60px; /* Offset for the main navigation topbar */
+  z-index: 10;
+  background: $bg;
+  border-bottom: 1px solid $border;
+}
 
-  th, td { padding: $sp-3 $sp-4; text-align: left; font-size: 13px; }
-  
-  th {
-    color: $text-dim;
-    font-weight: 700;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid $border;
-  }
-  
-  td { border-bottom: 1px solid rgba($border, 0.5); }
+.list-grid-layout {
+  display: grid;
+  /* Using minmax(0, Xfr) prevents long unbroken text (like emails) from expanding the grid cell beyond its fractional share */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  min-width: 850px; /* Prevent squeezing too much on mobile/small screens */
+}
+
+.list-col-header {
+  padding: $sp-3 $sp-4;
+  color: $text-dim;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-cell {
+  padding: $sp-3 $sp-4;
+  font-size: 13px;
+  text-align: left;
+  /* Prevent cell content from overflowing its grid fraction */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .list-row {
   cursor: pointer;
   transition: background $t-fast;
+  border-bottom: 1px solid rgba($border, 0.5);
+  
   &:hover { background: $surface; }
-  &__name { font-weight: 700; color: $text; font-size: 14px; }
-  &__email { font-size: 12px; color: $text-dim; margin-top: 1px; }
+  
+  &__name { 
+    font-weight: 700; 
+    color: $text; 
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  &__email { 
+    font-size: 12px; 
+    color: $text-dim; 
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.list-empty {
+  text-align: center;
+  padding: $sp-7 $sp-4;
+  color: $text-dim;
+  font-size: 13px;
 }
 
 .stage-badge {
@@ -1395,7 +1437,7 @@ $t-slow: 400ms $ease-out;
   .detail-stage { padding: $sp-3 $sp-4; }
 
   .list-view { padding: $sp-3; }
-  .list-table th, .list-table td { padding: $sp-2 $sp-3; font-size: 12px; }
+  .list-col-header, .list-cell { padding: $sp-2 $sp-3; font-size: 12px; }
 
   .metrics-view { padding: $sp-4; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
