@@ -669,7 +669,16 @@ $t-slow: 400ms $ease-out;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  
+  thead {
+    position: sticky;
+    top: 60px;
+    z-index: 10;
+    background: $bg;
+  }
+
   th, td { padding: $sp-3 $sp-4; text-align: left; font-size: 13px; }
+  
   th {
     color: $text-dim;
     font-weight: 700;
@@ -677,11 +686,8 @@ $t-slow: 400ms $ease-out;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid $border;
-    position: sticky;
-    top: 0;
-    background: $bg;
-    z-index: 10;
   }
+  
   td { border-bottom: 1px solid rgba($border, 0.5); }
 }
 
