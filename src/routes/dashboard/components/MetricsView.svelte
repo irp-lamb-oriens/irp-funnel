@@ -65,13 +65,21 @@
     selectedGroupBy = '';
     
     try {
+      let rawData = [];
       if (collection === 'clients') {
         // Use the already-loaded clients store
-        biDataset = $clients;
+        rawData = $clients;
       } else {
         // Fetch from the generic BI endpoint
-        biDataset = await fetchCollectionData(collection === 'irp_chatbot_threads' ? 'irp_chatbot_threads' : collection);
+        rawData = await fetchCollectionData(collection === 'irp_chatbot_threads' ? 'irp_chatbot_threads' : collection);
       }
+
+      // Filter out internal system documents
+      biDataset = rawData.filter(doc => {
+        const id = doc.id || doc._docId || '';
+        const email = doc.email || doc.dripEmail || '';
+        return !id.includes('system') && !email.includes('system');
+      });
     } catch (err: any) {
       biError = err.message || 'Failed to load collection';
       biDataset = [];
@@ -89,7 +97,7 @@
 
   // Also update when clients store changes (for the default 'clients' collection)
   $: if (selectedCollection === 'clients' && $clients) {
-    biDataset = $clients;
+    biDataset = $clients.filter(doc => !doc.id.includes('system') && !(doc.email || '').includes('system'));
   }
 
   // Compute schema from the active dataset recursively

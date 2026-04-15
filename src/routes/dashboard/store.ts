@@ -235,6 +235,7 @@ export const authEmail = writable<string | null>(
   browser ? localStorage.getItem('dashboard_email') : null
 );
 export const isAuthenticated = writable<boolean>(false);
+export const isCheckingAuth = writable<boolean>(true); // Start in loading state
 export const clients = writable<Client[]>([]);
 export const selectedClient = writable<Client | null>(null);
 export const metrics = writable<Metrics | null>(null);
@@ -378,6 +379,8 @@ export async function checkAuth(): Promise<boolean> {
   } catch {
     isAuthenticated.set(false);
     return false;
+  } finally {
+    isCheckingAuth.set(false);
   }
 }
 
@@ -444,9 +447,28 @@ export async function addNote(id: string, text: string): Promise<Note> {
 }
 
 export async function fetchConversations(id: string, email?: string): Promise<any[]> {
+  console.log(`[CLIENT FETCH] Starting fetchConversations for client ID: ${id}`);
+  console.log(`[CLIENT FETCH] Provided email param: ${email}`);
   const params = email ? `?email=${encodeURIComponent(email)}` : '';
-  const data = await apiFetch(`/api/dashboard/clients/${id}/conversations${params}`);
-  return data.conversations || [];
+  const endpoint = `/api/dashboard/clients/${id}/conversations${params}`;
+  console.log(`[CLIENT FETCH] Full relative endpoint: ${endpoint}`);
+  
+  try {
+    const data = await apiFetch(endpoint);
+    console.log(`[CLIENT FETCH] Response SUCCESS from server!`);
+    console.log(`[CLIENT FETCH] Raw data parsed from JSON:`, data);
+    
+    if (data && data.conversations) {
+      console.log(`[CLIENT FETCH] Returning array of length ${data.conversations.length}`);
+      return data.conversations;
+    } else {
+      console.warn(`[CLIENT FETCH] data.conversations is missing or undefined! Returned data:`, data);
+      return [];
+    }
+  } catch (error) {
+    console.error(`[CLIENT FETCH] ERROR fetching conversations for ${id}:`, error);
+    throw error;
+  }
 }
 
 export async function fetchCollectionData(collection: string): Promise<any[]> {

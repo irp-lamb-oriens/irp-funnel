@@ -38,6 +38,8 @@
   let stageChanging = false;
 
   // ─── Init ───────────────────────────────────────────────────────────────
+  import { isCheckingAuth } from './store.ts';
+
   onMount(async () => {
     const token = $authToken;
     if (token) {
@@ -45,6 +47,8 @@
       if (valid) {
         await loadData();
       }
+    } else {
+      isCheckingAuth.set(false);
     }
   });
 
@@ -239,7 +243,14 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-{#if !$isAuthenticated}
+{#if $isCheckingAuth}
+  <!-- ═══════════════════════ INITIAL LOADING STATE ═══════════════════════ -->
+  <div class="dashboard__loading" style="min-height: 100dvh;">
+    <div class="spinner"></div>
+    <p>Authenticating session...</p>
+  </div>
+
+{:else if !$isAuthenticated}
   <!-- ═══════════════════════ LOGIN GATE ═══════════════════════ -->
   <div class="login-gate">
     <div class="login-card">

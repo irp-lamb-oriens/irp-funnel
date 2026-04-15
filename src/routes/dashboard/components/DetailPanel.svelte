@@ -28,17 +28,15 @@
 
   let conversations: any[] = [];
   let conversationsLoading = false;
-  let currentSessionId = ''; // Track the actual ID tied to the currently loaded conversations array
+  let currentSessionId = '';
 
   $: {
     if ($selectedClient) {
-      // If the client changes entirely, wipe the old conversations so they don't leak
       if (currentSessionId && currentSessionId !== $selectedClient.id) {
         conversations = [];
         currentSessionId = '';
       }
 
-      // If we switch to the conversations tab, AND we haven't loaded THIS client's conversations yet
       if (detailTab === 'conversations' && currentSessionId !== $selectedClient.id && !conversationsLoading) {
         loadConversations($selectedClient.id, $selectedClient.email);
       }
@@ -47,22 +45,28 @@
 
   async function loadConversations(targetId: string, targetEmail?: string) {
     conversationsLoading = true;
-    currentSessionId = targetId; // Lock this client immediately to prevent duplicate triggers
+    currentSessionId = targetId; 
     
+    console.log(`[DEBUG UI] Attempting to load conversations for ${targetEmail || targetId}`);
     try {
-      // Force trigger Svelte reactivity explicitly
       const result = await fetchConversations(targetId, targetEmail);
+      console.log(`[DEBUG UI] Fetched successfully:`, result);
       conversations = [...result]; 
     } catch (err: any) {
-      console.error('Failed to load conversations:', err);
+      console.error('[DEBUG UI] Failed to load conversations:', err);
       conversations = [];
-      
-      // If unauthorized, explicitly force close the panel
       if (err.message && (err.message.includes('Session expired') || err.message.includes('Authentication'))) {
         closeDetail();
       }
     } finally {
       conversationsLoading = false;
+    }
+  }
+
+  function forceManualLoad() {
+    if ($selectedClient) {
+      conversations = []; // Clear current DOM fully
+      loadConversations($selectedClient.id, $selectedClient.email);
     }
   }
 
@@ -223,8 +227,21 @@
       <!-- ── Conversations Tab ─────────────────────────── -->
       {:else if detailTab === 'conversations'}
         <div class="detail-conversations">
+          <div style="margin-bottom: 16px; padding: 12px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <p style="margin: 0 0 4px 0; font-weight: bold; color: #3730a3; font-size: 13px;">Debug Logs Active (F12)</p>
+              <p style="margin: 0; font-size: 12px; color: #4f46e5;">Array Length: {conversations.length}</p>
+            </div>
+            <button on:click={forceManualLoad} disabled={conversationsLoading} style="padding: 6px 12px; background: #4f46e5; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">
+              {conversationsLoading ? 'Fetching...' : 'Force Manual Fetch'}
+            </button>
+          </div>
+
           {#if conversationsLoading}
-            <p>Loading conversations...</p>
+            <div class="dashboard__loading">
+              <div class="spinner" style="width: 24px; height: 24px; border-width: 2px;"></div>
+              <p style="margin-top: 8px;">Loading conversations...</p>
+            </div>
           {:else if conversations.length === 0}
             <p class="detail-empty">No conversations found.</p>
           {:else}

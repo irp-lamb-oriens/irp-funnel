@@ -3313,3 +3313,74 @@ https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
 4:18:02 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
 4:21:12 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
 4:21:12 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+4:24:17 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
+4:24:17 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+4:24:49 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+4:24:49 PM [vite] (client) page reload .svelte-kit/generated/root.js
+4:24:49 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+4:25:02 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:384:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+4:25:02 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:113:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:02 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:265:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:02 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:274:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:02 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:291:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:384:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:113:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:265:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:274:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:291:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:25:03 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:384:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+4:26:24 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte, /src/routes/dashboard/components/DetailPanel.svelte, /src/routes/dashboard/components/MetricsView.svelte
+4:26:24 PM [vite] (ssr) page reload src/routes/dashboard/store.ts
+4:26:44 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte
+4:26:44 PM [vite] (ssr) page reload src/routes/dashboard/+page.svelte
+4:26:45 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:395:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+4:27:18 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
+4:27:18 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+4:27:18 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:114:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:29:44 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte, /src/routes/dashboard/components/DetailPanel.svelte, /src/routes/dashboard/components/MetricsView.svelte
+4:29:44 PM [vite] (ssr) page reload src/routes/dashboard/store.ts
+4:30:57 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:395:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+4:30:57 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:114:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:31:55 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
+4:31:55 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+4:31:56 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+
+Google Chrome is requesting /.well-known/appspecific/com.chrome.devtools.json to automatically configure devtools project settings. To learn why, and how to prevent this message, see https://svelte.dev/docs/cli/devtools-json
+
+4:36:12 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:36:38 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:36:57 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:36:58 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:41:02 PM [vite] (client) hmr update /src/routes/dashboard/components/MetricsView.svelte
+4:41:02 PM [vite] (ssr) page reload src/routes/dashboard/components/MetricsView.svelte
+4:41:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:272:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:41:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:281:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+4:41:03 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:298:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
