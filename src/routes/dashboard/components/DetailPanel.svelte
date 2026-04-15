@@ -28,9 +28,18 @@
 
   let conversations: any[] = [];
   let conversationsLoading = false;
+  let lastLoadedClientId = '';
 
+  // Reset conversations when client changes
+  $: if ($selectedClient && $selectedClient.id !== lastLoadedClientId) {
+    conversations = [];
+    conversationsLoading = false;
+    lastLoadedClientId = '';
+  }
+
+  // Load conversations when tab is selected
   $: {
-    if (detailTab === 'conversations' && $selectedClient && conversations.length === 0 && !conversationsLoading) {
+    if (detailTab === 'conversations' && $selectedClient && lastLoadedClientId !== $selectedClient.id && !conversationsLoading) {
       loadConversations();
     }
   }
@@ -39,9 +48,12 @@
     if (!$selectedClient) return;
     conversationsLoading = true;
     try {
-      conversations = await fetchConversations($selectedClient.id);
+      const result = await fetchConversations($selectedClient.id);
+      conversations = result;
+      lastLoadedClientId = $selectedClient.id;
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load conversations:', err);
+      conversations = [];
     } finally {
       conversationsLoading = false;
     }
