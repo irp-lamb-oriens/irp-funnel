@@ -745,7 +745,7 @@
         <!-- Tabs -->
         <nav class="detail-tabs">
           <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>Overview</button>
-          <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>Notes ({$selectedClient.notes?.length || 0})</button>
+          <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>Notes ({($selectedClient.agentNotes?.length || 0) + ($selectedClient.chatbotNotes?.length || 0)})</button>
           <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'}>Activity</button>
           <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>Emails</button>
           <button class:active={detailTab === 'fields'} on:click={() => detailTab = 'fields'}>Fields</button>
@@ -799,9 +799,22 @@
                   <span class="detail-field__value">{$selectedClient.callOutcome}</span>
                 </div>
               {/if}
+              {#if $selectedClient.chatHistory && $selectedClient.chatHistory.length > 0}
+                <div class="detail-field detail-field--full">
+                  <span class="detail-field__label">Chatbot Conversation</span>
+                  <div class="detail-field__transcript chat-history">
+                    {#each $selectedClient.chatHistory as msg}
+                      <div class="chat-msg chat-msg--{msg.role}">
+                        <span class="chat-msg__role">{msg.role === 'assistant' ? '🤖 Lili' : '👤 Client'}:</span>
+                        <span class="chat-msg__content">{msg.content}</span>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
               {#if $selectedClient.transcript}
                 <div class="detail-field detail-field--full">
-                  <span class="detail-field__label">Transcript</span>
+                  <span class="detail-field__label">Call Transcript</span>
                   <div class="detail-field__transcript">{$selectedClient.transcript}</div>
                 </div>
               {/if}
@@ -834,16 +847,32 @@
                 </button>
               </form>
               <div class="detail-notes__list">
-                {#each ($selectedClient.notes || []).slice().reverse() as note}
+                
+                {#if $selectedClient.chatbotNotes && $selectedClient.chatbotNotes.length > 0}
+                  <div class="detail-note detail-note--ai">
+                    <div class="detail-note__meta">
+                      <span class="detail-note__author">🤖 AI Assistant</span>
+                      <span class="detail-note__time">Chatbot</span>
+                    </div>
+                    <ul class="detail-note__ai-list">
+                      {#each $selectedClient.chatbotNotes as aiNote}
+                        <li>{aiNote}</li>
+                      {/each}
+                    </ul>
+                  </div>
+                {/if}
+
+                {#each ($selectedClient.agentNotes || []).slice().reverse() as note}
                   <div class="detail-note">
                     <div class="detail-note__meta">
-                      <span class="detail-note__author">{note.author?.split('@')[0]}</span>
+                      <span class="detail-note__author">👤 {note.author?.split('@')[0]}</span>
                       <span class="detail-note__time">{timeAgo(note.createdAt)}</span>
                     </div>
                     <div class="detail-note__text">{note.text}</div>
                   </div>
                 {/each}
-                {#if !$selectedClient.notes?.length}
+                
+                {#if !($selectedClient.agentNotes?.length) && !($selectedClient.chatbotNotes?.length)}
                   <p class="detail-empty">No notes yet.</p>
                 {/if}
               </div>

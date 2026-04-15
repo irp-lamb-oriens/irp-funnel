@@ -23,7 +23,9 @@ export interface Client {
   stage: string;
   callOutcome: string | null;
   transcript: string;
-  notes: Note[];
+  agentNotes: Note[];
+  chatbotNotes: string[];
+  chatHistory: Array<{ role: string; content: string }>;
   customFields: Record<string, string>;
   activityLog: ActivityEntry[];
   dripEnabled: boolean;
@@ -435,9 +437,9 @@ export async function addNote(id: string, text: string): Promise<Note> {
   });
   const note = data.note;
   clients.update(list =>
-    list.map(c => c.id === id ? { ...c, notes: [...c.notes, note] } : c)
+    list.map(c => c.id === id ? { ...c, agentNotes: [...(c.agentNotes || []), note] } : c)
   );
-  selectedClient.update(c => c && c.id === id ? { ...c, notes: [...c.notes, note] } : c);
+  selectedClient.update(c => c && c.id === id ? { ...c, agentNotes: [...(c.agentNotes || []), note] } : c);
   return note;
 }
 
