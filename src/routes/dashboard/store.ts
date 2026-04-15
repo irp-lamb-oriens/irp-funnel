@@ -443,6 +443,11 @@ export async function addNote(id: string, text: string): Promise<Note> {
   return note;
 }
 
+export async function fetchConversations(id: string): Promise<any[]> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/conversations`);
+  return data.conversations || [];
+}
+
 export async function triggerEmail(id: string, emailType: string): Promise<void> {
   await apiFetch(`/api/dashboard/clients/${id}/trigger-email`, {
     method: 'POST',
