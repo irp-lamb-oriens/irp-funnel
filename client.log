@@ -2926,3 +2926,374 @@ Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#
 You have specified a baseUrl and/or paths in your tsconfig.json which interferes with SvelteKit's auto-generated tsconfig.json. Remove it to avoid problems with intellisense. For path aliases, use `kit.alias` instead: https://svelte.dev/docs/kit/configuration#alias
 2:39:33 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
 2:39:33 PM [vite] server restarted.
+3:00:27 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:384:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+3:00:27 PM [vite-plugin-svelte] src/routes/+layout.svelte:326:2 No scopable elements found in template. If you're using global styles in the style tag, you should move it into an external stylesheet file and import it in JS. See https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#where-should-i-put-my-global-styles.
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:126:0 Unused CSS selector ".main-menu-col"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:0 Unused CSS selector ".header-section a"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:19 Unused CSS selector ".header-section p"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:38 Unused CSS selector ".header-section span"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:60 Unused CSS selector ".header-section li"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:0 Unused CSS selector ".header-section a:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:25 Unused CSS selector ".header-section p:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:50 Unused CSS selector ".header-section span:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:78 Unused CSS selector ".header-section li:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:41:0 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+3:00:27 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:41:0 Non-interactive element `<nav>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions
+3:00:27 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:187:2 Unused CSS selector ".mobile-menu"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:200:2 Unused CSS selector ".mobile-menu li"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/MenuToggle.svelte:59:4 Non-interactive element `<nav>` cannot have interactive role 'menu'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+$funnels hey {}
+$currentFunnelId null
+$currentFunnelVersion null
+currentFunnel null
+$funnels hey {}
+$currentFunnelId null
+$currentFunnelVersion null
+currentFunnel null
+$funnels hey {}
+$currentFunnelId null
+$currentFunnelVersion null
+currentFunnel null
+3:00:27 PM [vite-plugin-svelte] src/components/Header/DestinationsMenu.svelte:71:0 Unused CSS selector ".mobile-menu-toggle"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/components/Header/DestinationsMenu.svelte:79:0 Unused CSS selector ".mobile-menu-bar"
+https://svelte.dev/e/css_unused_selector
+3:00:27 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:116:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:27 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:217:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:27 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:226:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:27 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:243:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+$funnels hey {
+  panama: {
+    '0': {
+      country: 'Panama',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20PA.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/03-THANK%20YOU%20PA.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇵🇦 PANAMA<br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'panama-fe564200-59f9-11f0-95bf-35fa56e89665': {
+    '0': {
+      country: 'Panama-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20PA.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/03-THANK%20YOU%20PA.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇵🇦 PANAMA<br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  mexico: {
+    '0': {
+      country: 'Mexico',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vslmx1.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇲🇽 MEXICO <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Mexico',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vslmx1.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇲🇽 MEXICO KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  general: {
+    '0': {
+      country: 'General',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20CR%20JULY.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING ANYWHERE. <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'General',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20CR%20JULY.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING ANYWHERE. <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'costa-rica': {
+    '0': {
+      country: 'Costa Rica',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vsl1cr.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Costa Rica',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vsl1cr.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'costa-rica-036e4620-59fa-11f0-95bf-35fa56e89665': {
+    '0': {
+      country: 'Costa Rica-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%202%20TAMA%20NEW.mp4',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Costa Rica-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%202%20TAMA%20NEW.mp4',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  }
+}
+$currentFunnelId null
+$currentFunnelVersion null
+currentFunnel null
+Funnels loaded from API: {
+  panama: {
+    '0': {
+      country: 'Panama',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20PA.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/03-THANK%20YOU%20PA.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇵🇦 PANAMA<br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'panama-fe564200-59f9-11f0-95bf-35fa56e89665': {
+    '0': {
+      country: 'Panama-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20PA.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/03-THANK%20YOU%20PA.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇵🇦 PANAMA<br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  mexico: {
+    '0': {
+      country: 'Mexico',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vslmx1.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇲🇽 MEXICO <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Mexico',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vslmx1.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇲🇽 MEXICO KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  general: {
+    '0': {
+      country: 'General',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20CR%20JULY.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING ANYWHERE. <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'General',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%20CR%20JULY.MOV',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING ANYWHERE. <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'costa-rica': {
+    '0': {
+      country: 'Costa Rica',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vsl1cr.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Costa Rica',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/vsl1cr.mov',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  },
+  'costa-rica-036e4620-59fa-11f0-95bf-35fa56e89665': {
+    '0': {
+      country: 'Costa Rica-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%202%20TAMA%20NEW.mp4',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 SHIPPING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    },
+    '1': {
+      country: 'Costa Rica-2',
+      videoSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-VSL%202%20TAMA%20NEW.mp4',
+      thankYouSrc: 'https://storage.googleapis.com/videos-irp-funnels/01-THANK%20YOU%20CR%20JULY.MOV',
+      copy: `"DON'T LOSE THOUSANDS 💰 MOVING TO 🇨🇷 COSTA RICA <br/>KNOW YOUR RISKS ⚠️"`,
+      brand: undefined,
+      eyebrow: undefined,
+      headline: undefined,
+      subhead: undefined,
+      ratingValue: undefined,
+      ratingCount: undefined
+    }
+  }
+}
+3:00:28 PM [vite-plugin-svelte] src/routes/+layout.svelte:326:2 No scopable elements found in template. If you're using global styles in the style tag, you should move it into an external stylesheet file and import it in JS. See https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#where-should-i-put-my-global-styles.
+3:00:28 PM [vite-plugin-svelte] src/routes/dashboard/+page.svelte:384:10 `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions
+3:00:28 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:116:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:28 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:217:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:28 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:226:10 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:28 PM [vite-plugin-svelte] src/routes/dashboard/components/MetricsView.svelte:243:14 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:126:0 Unused CSS selector ".main-menu-col"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:0 Unused CSS selector ".header-section a"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:19 Unused CSS selector ".header-section p"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:38 Unused CSS selector ".header-section span"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:60 Unused CSS selector ".header-section li"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:0 Unused CSS selector ".header-section a:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:25 Unused CSS selector ".header-section p:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:50 Unused CSS selector ".header-section span:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:78 Unused CSS selector ".header-section li:hover"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/DestinationsMenu.svelte:71:0 Unused CSS selector ".mobile-menu-toggle"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/DestinationsMenu.svelte:79:0 Unused CSS selector ".mobile-menu-bar"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:41:0 Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events
+3:00:28 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:41:0 Non-interactive element `<nav>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions
+3:00:28 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:187:2 Unused CSS selector ".mobile-menu"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/MainMenu.svelte:200:2 Unused CSS selector ".mobile-menu li"
+https://svelte.dev/e/css_unused_selector
+3:00:28 PM [vite-plugin-svelte] src/components/Header/MenuToggle.svelte:59:4 Non-interactive element `<nav>` cannot have interactive role 'menu'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role
+3:20:04 PM [vite] (client) hmr update /src/routes/dashboard/components/MetricsView.svelte
+3:20:04 PM [vite] (ssr) page reload src/routes/dashboard/components/MetricsView.svelte

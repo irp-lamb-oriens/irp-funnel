@@ -25,9 +25,36 @@
   let keyValuesMap: Record<string, string[]> = {};
   let isComputing = false;
 
-  // Helper to safely get nested values (e.g. customFields.budget, maps, etc.)
-  function getNestedValue(obj: any, path: string) {
-    return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+  // Helper to safely get nested values (e.g. customFields.budget, arrays, etc.)
+  function getNestedValues(obj: any, path: string): any[] {
+    const segments = path.split('.');
+    let current: any[] = [obj];
+
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      let next: any[] = [];
+      
+      for (const item of current) {
+        if (!item) continue;
+        
+        // Is it trying to access an array item? e.g. "messages[]"
+        if (seg.endsWith('[]')) {
+          const arrKey = seg.replace('[]', '');
+          const val = arrKey ? item[arrKey] : item; // if empty, current item is the array
+          
+          if (Array.isArray(val)) {
+            next.push(...val);
+          }
+        } else {
+          if (item[seg] !== undefined) {
+            next.push(item[seg]);
+          }
+        }
+      }
+      current = next;
+    }
+    
+    return current;
   }
 
   // When collection changes, fetch the appropriate data
@@ -84,19 +111,19 @@
           const newKey = prefix ? `${prefix}.${k}` : k;
 
           if (Array.isArray(val)) {
-            // For arrays: count items and extract primitive values if they exist
+            // For arrays: count items
             tempKeys.add(`${newKey}._count`);
             if (!tempValues[`${newKey}._count`]) tempValues[`${newKey}._count`] = new Set();
             tempValues[`${newKey}._count`].add(String(val.length));
             
-            // Also extract scalar values from array items (e.g. array of strings)
+            // Extract items and inner fields
             for (const item of val) {
-              if (typeof item === 'string' || typeof item === 'number') {
-                tempKeys.add(`${newKey}._items`);
-                if (!tempValues[`${newKey}._items`]) tempValues[`${newKey}._items`] = new Set();
-                tempValues[`${newKey}._items`].add(String(item));
+              if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
+                tempKeys.add(`${newKey}[]`);
+                if (!tempValues[`${newKey}[]`]) tempValues[`${newKey}[]`] = new Set();
+                tempValues[`${newKey}[]`].add(String(item));
               } else if (item && typeof item === 'object') {
-                // Recurse into array items (e.g. vehicles[0].make)
+                // Recurse into array of objects (e.g. messages[].extractedFields.email)
                 extractKeys(item, `${newKey}[]`, depth + 1);
               }
             }
@@ -160,17 +187,30 @@
             const key = filterEntries[j][0];
             const requiredVal = filterEntries[j][1];
             
-            let cValue;
             // Handle special array count keys
+            let foundMatch = false;
+            
             if (key.endsWith('._count')) {
-              const arrPath = key.replace(/\._count$/, '');
-              const arr = getNestedValue(c, arrPath);
-              cValue = Array.isArray(arr) ? arr.length : undefined;
+              // Get the actual array by removing the _count and [] segments
+              const arrPath = key.replace(/\._count$/, '').replace(/\[\]/g, ''); 
+              const arrays = getNestedValues(c, arrPath);
+              for (const arr of arrays) {
+                 if (Array.isArray(arr) && String(arr.length) === requiredVal) {
+                   foundMatch = true;
+                   break;
+                 }
+              }
             } else {
-              cValue = getNestedValue(c, key);
+              const cValues = getNestedValues(c, key);
+              for (const v of cValues) {
+                if (String(v) === requiredVal) {
+                  foundMatch = true;
+                  break;
+                }
+              }
             }
             
-            if (String(cValue) !== requiredVal) {
+            if (!foundMatch) {
               keep = false;
               break;
             }
@@ -179,17 +219,29 @@
           if (keep) {
             matched.push(c);
 
-            let groupVal;
+            // Group By processing
+            let groupVals: any[] = [];
+            
             if (groupByCopy.endsWith('._count')) {
-              const arrPath = groupByCopy.replace(/\._count$/, '');
-              const arr = getNestedValue(c, arrPath);
-              groupVal = Array.isArray(arr) ? arr.length : undefined;
+              const arrPath = groupByCopy.replace(/\._count$/, '').replace(/\[\]/g, '');
+              const arrays = getNestedValues(c, arrPath);
+              for (const arr of arrays) {
+                groupVals.push(Array.isArray(arr) ? arr.length : undefined);
+              }
             } else {
-              groupVal = getNestedValue(c, groupByCopy);
+              groupVals = getNestedValues(c, groupByCopy);
             }
             
-            const valStr = (groupVal === undefined || groupVal === null || groupVal === '') ? 'Unknown / Not Set' : String(groupVal);
-            groupCounts.set(valStr, (groupCounts.get(valStr) || 0) + 1);
+            if (groupVals.length === 0) {
+              groupCounts.set('Unknown / Not Set', (groupCounts.get('Unknown / Not Set') || 0) + 1);
+            } else {
+              // To avoid over-counting if an array has the same extracted field multiple times (e.g. multiple "assistant" messages)
+              // We count each unique group value only once per document
+              const uniqueVals = new Set(groupVals.map(v => (v === undefined || v === null || v === '') ? 'Unknown / Not Set' : String(v)));
+              uniqueVals.forEach(valStr => {
+                groupCounts.set(valStr, (groupCounts.get(valStr) || 0) + 1);
+              });
+            }
           }
         }
         
