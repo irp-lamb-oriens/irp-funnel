@@ -1,16 +1,28 @@
 <script lang="ts">
-  import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS } from '../store.ts';
+  import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
 
   // --- Dynamic Business Intelligence Engine ---
-  let selectedGroupBy = 'stage'; // Default grouping
+  // Now supports ANY collection, not just clients
+  const AVAILABLE_COLLECTIONS = [
+    { value: 'clients', label: '👥 Clients (Consultations)' },
+    { value: 'irp_chatbot_threads', label: '💬 Chatbot Threads' },
+    { value: 'emailQueue', label: '📧 Email Queue' },
+    { value: 'llm_costs', label: '🤖 LLM Costs' },
+    { value: 'llm_cost_snapshots', label: '📊 Weekly Cost Snapshots' },
+  ];
+
+  let selectedCollection = 'clients';
+  let selectedGroupBy = 'stage';
   let activeFilters: Record<string, string> = {};
 
-  // Caching schema and unique values to handle millions of items efficiently
-  // Instead of recalculating per render, we compute maps once
+  // The active dataset for the BI engine (could be clients OR any other collection)
+  let biDataset: any[] = [];
+  let biLoading = false;
+  let biError = '';
+
+  // Caching schema and unique values
   let allKeys: string[] = [];
   let keyValuesMap: Record<string, string[]> = {};
-  
-  // Throttle updates for massive datasets
   let isComputing = false;
 
   // Helper to safely get nested values (e.g. customFields.budget, maps, etc.)
@@ -18,17 +30,52 @@
     return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
   }
 
-  $: if ($clients && $clients.length > 0) {
+  // When collection changes, fetch the appropriate data
+  async function loadCollection(collection: string) {
+    biLoading = true;
+    biError = '';
+    activeFilters = {};
+    selectedGroupBy = '';
+    
+    try {
+      if (collection === 'clients') {
+        // Use the already-loaded clients store
+        biDataset = $clients;
+      } else {
+        // Fetch from the generic BI endpoint
+        biDataset = await fetchCollectionData(collection === 'irp_chatbot_threads' ? 'irp_chatbot_threads' : collection);
+      }
+    } catch (err: any) {
+      biError = err.message || 'Failed to load collection';
+      biDataset = [];
+    } finally {
+      biLoading = false;
+    }
+  }
+
+  // React to collection changes
+  $: {
+    if (selectedCollection) {
+      loadCollection(selectedCollection);
+    }
+  }
+
+  // Also update when clients store changes (for the default 'clients' collection)
+  $: if (selectedCollection === 'clients' && $clients) {
+    biDataset = $clients;
+  }
+
+  // Compute schema from the active dataset recursively
+  $: if (biDataset && biDataset.length > 0) {
     isComputing = true;
     
-    // We use setTimeout to yield to the main thread so the UI doesn't freeze on millions of items
     setTimeout(() => {
       const tempKeys = new Set<string>();
       const tempValues: Record<string, Set<string>> = {};
 
-      // Recursive function to extract keys dynamically, no matter the depth
-      const extractKeys = (obj: any, prefix = '') => {
-        if (!obj || typeof obj !== 'object') return;
+      // Recursive function to extract keys dynamically from maps, arrays, subcollections
+      const extractKeys = (obj: any, prefix = '', depth = 0) => {
+        if (!obj || typeof obj !== 'object' || depth > 5) return; // Max depth 5 to prevent infinite loops
         
         for (const k in obj) {
           if (!Object.prototype.hasOwnProperty.call(obj, k)) continue;
@@ -36,13 +83,28 @@
           const val = obj[k];
           const newKey = prefix ? `${prefix}.${k}` : k;
 
-          // Exclude arrays of complex objects (like chatHistory, agentNotes, activityLog)
-          // because pivoting / filtering by them directly doesn't make logical sense in a flat UI
-          if (Array.isArray(val)) continue;
+          if (Array.isArray(val)) {
+            // For arrays: count items and extract primitive values if they exist
+            tempKeys.add(`${newKey}._count`);
+            if (!tempValues[`${newKey}._count`]) tempValues[`${newKey}._count`] = new Set();
+            tempValues[`${newKey}._count`].add(String(val.length));
+            
+            // Also extract scalar values from array items (e.g. array of strings)
+            for (const item of val) {
+              if (typeof item === 'string' || typeof item === 'number') {
+                tempKeys.add(`${newKey}._items`);
+                if (!tempValues[`${newKey}._items`]) tempValues[`${newKey}._items`] = new Set();
+                tempValues[`${newKey}._items`].add(String(item));
+              } else if (item && typeof item === 'object') {
+                // Recurse into array items (e.g. vehicles[0].make)
+                extractKeys(item, `${newKey}[]`, depth + 1);
+              }
+            }
+            continue;
+          }
 
           if (val && typeof val === 'object' && !(val instanceof Date)) {
-            // It's a map/nested object -> traverse it!
-            extractKeys(val, newKey);
+            extractKeys(val, newKey, depth + 1);
           } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
             tempKeys.add(newKey);
             if (!tempValues[newKey]) tempValues[newKey] = new Set();
@@ -53,14 +115,15 @@
         }
       };
 
-      // Single fast O(n) pass over all clients
-      for (let i = 0; i < $clients.length; i++) {
-        extractKeys($clients[i]);
+      for (let i = 0; i < biDataset.length; i++) {
+        extractKeys(biDataset[i]);
       }
 
       allKeys = Array.from(tempKeys).sort();
+      if (!selectedGroupBy && allKeys.length > 0) {
+        selectedGroupBy = allKeys[0];
+      }
       
-      // Convert sets to sorted arrays
       const finalizedMap: Record<string, string[]> = {};
       for (const k of allKeys) {
         finalizedMap[k] = Array.from(tempValues[k] || []).sort();
@@ -70,55 +133,60 @@
     }, 0);
   }
 
-  // Active filter processing
+  // Active filter processing + grouping in a single pass
   let filteredData: any[] = [];
   let sortedGroups: [string, number][] = [];
   let isFiltering = false;
 
   $: {
-    // When active filters, selected group by, or clients change
-    if ($clients) {
+    if (biDataset && biDataset.length > 0 && selectedGroupBy) {
       const activeFiltersCopy = { ...activeFilters };
       const groupByCopy = selectedGroupBy;
-      const clientsCopy = $clients; // Reference for the timeout
+      const datasetCopy = biDataset;
       
       isFiltering = true;
       
-      // Yield to main thread to prevent UI lockup during filter evaluation
       setTimeout(() => {
-        // Fast Array allocation for the result
         const matched = [];
-        
         const filterEntries = Object.entries(activeFiltersCopy).filter(([_, v]) => v !== '');
         const filterLen = filterEntries.length;
-        
-        // Count Map for the pivot group
         const groupCounts = new Map<string, number>();
 
-        // Single pass for both Filtering + Grouping
-        for (let i = 0; i < clientsCopy.length; i++) {
-          const c = clientsCopy[i];
+        for (let i = 0; i < datasetCopy.length; i++) {
+          const c = datasetCopy[i];
           let keep = true;
 
-          // Process filters
           for (let j = 0; j < filterLen; j++) {
             const key = filterEntries[j][0];
             const requiredVal = filterEntries[j][1];
             
-            // Extract potentially deeply nested value safely
-            const cValue = getNestedValue(c, key);
+            let cValue;
+            // Handle special array count keys
+            if (key.endsWith('._count')) {
+              const arrPath = key.replace(/\._count$/, '');
+              const arr = getNestedValue(c, arrPath);
+              cValue = Array.isArray(arr) ? arr.length : undefined;
+            } else {
+              cValue = getNestedValue(c, key);
+            }
             
             if (String(cValue) !== requiredVal) {
               keep = false;
-              break; // Early exit, fails constraint
+              break;
             }
           }
 
           if (keep) {
             matched.push(c);
 
-            // Directly aggregate for the GroupBy pivot
-            const groupVal = getNestedValue(c, groupByCopy);
+            let groupVal;
+            if (groupByCopy.endsWith('._count')) {
+              const arrPath = groupByCopy.replace(/\._count$/, '');
+              const arr = getNestedValue(c, arrPath);
+              groupVal = Array.isArray(arr) ? arr.length : undefined;
+            } else {
+              groupVal = getNestedValue(c, groupByCopy);
+            }
             
             const valStr = (groupVal === undefined || groupVal === null || groupVal === '') ? 'Unknown / Not Set' : String(groupVal);
             groupCounts.set(valStr, (groupCounts.get(valStr) || 0) + 1);
@@ -127,7 +195,6 @@
         
         filteredData = matched;
         
-        // Sort grouped counts highest to lowest
         const tempSorted: [string, number][] = [];
         groupCounts.forEach((count, key) => {
           tempSorted.push([key, count]);
@@ -167,10 +234,19 @@
     <div class="metrics-section dynamic-bi-section" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
       <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 16px;">🔍 Dynamic Business Intelligence</h2>
       <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
-        Filter and group your CRM data dynamically by any available field to extract specific insights.
+        Query any collection, filter by any field recursively (maps, arrays, subcollections), and group by any dimension.
       </p>
 
       <div class="bi-controls" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div class="bi-group">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Collection</label>
+          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #6366f1; font-size: 13px; min-width: 200px; font-weight: 600; color: #4338ca; background: #eef2ff;">
+            {#each AVAILABLE_COLLECTIONS as col}
+              <option value={col.value}>{col.label}</option>
+            {/each}
+          </select>
+        </div>
+
         <div class="bi-group">
           <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Group By</label>
           <select bind:value={selectedGroupBy} style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; min-width: 180px;">
@@ -216,11 +292,14 @@
 
       <div class="bi-results" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
         <h3 style="margin-top: 0; font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <span>Results Breakdown ({filteredData.length} total matches)</span>
-          {#if isComputing || isFiltering}
-             <span style="font-size: 12px; color: #3b82f6; font-weight: 500;">Calculating... ⏳</span>
+          <span>Results: {filteredData.length} of {biDataset.length} documents · {allKeys.length} fields detected</span>
+          {#if isComputing || isFiltering || biLoading}
+             <span style="font-size: 12px; color: #3b82f6; font-weight: 500;">{biLoading ? 'Loading collection...' : 'Calculating...'} ⏳</span>
           {/if}
         </h3>
+        {#if biError}
+          <p style="font-size: 13px; color: #ef4444;">{biError}</p>
+        {/if}
         
         {#if sortedGroups.length === 0 && !isFiltering}
           <p style="font-size: 13px; color: #94a3b8;">No data matches the current filters.</p>

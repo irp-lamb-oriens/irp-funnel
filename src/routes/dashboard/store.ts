@@ -448,6 +448,11 @@ export async function fetchConversations(id: string): Promise<any[]> {
   return data.conversations || [];
 }
 
+export async function fetchCollectionData(collection: string): Promise<any[]> {
+  const data = await apiFetch(`/api/dashboard/bi/${collection}`);
+  return data.documents || [];
+}
+
 export async function triggerEmail(id: string, emailType: string): Promise<void> {
   await apiFetch(`/api/dashboard/clients/${id}/trigger-email`, {
     method: 'POST',
