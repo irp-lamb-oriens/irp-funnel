@@ -5,6 +5,7 @@ import store from '../../components/store.ts';
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface Client {
   id: string;
+  sessionId: string;
   name: string;
   surname: string;
   email: string;

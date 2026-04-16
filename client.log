@@ -3412,3 +3412,29 @@ https://svelte.dev/e/a11y_label_has_associated_control
 https://svelte.dev/e/a11y_label_has_associated_control
 5:01:10 PM [vite] (client) hmr update /src/routes/dashboard/dashboard.scss
 5:01:10 PM [vite] (ssr) page reload src/routes/dashboard/dashboard.scss
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+5:05:14 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+5:05:14 PM [vite] (client) page reload .svelte-kit/generated/root.js
+5:05:14 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+5:05:15 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:122:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+5:22:56 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+5:22:56 PM [vite] (client) page reload .svelte-kit/generated/root.js
+5:22:56 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+5:24:43 PM [vite] (client) hmr update /src/routes/dashboard/+page.svelte, /src/routes/dashboard/components/DetailPanel.svelte, /src/routes/dashboard/components/MetricsView.svelte
+5:24:43 PM [vite] (ssr) page reload src/routes/dashboard/store.ts
+5:25:02 PM [vite] (client) hmr update /src/routes/dashboard/components/DetailPanel.svelte
+5:25:02 PM [vite] (ssr) page reload src/routes/dashboard/components/DetailPanel.svelte
+5:25:03 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:127:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control
+5:26:30 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:127:6 A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control

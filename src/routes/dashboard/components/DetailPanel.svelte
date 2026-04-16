@@ -118,10 +118,15 @@
     <div class="detail-panel__header">
       <button class="detail-panel__close" on:click={closeDetail}>✕</button>
       <h2>{$selectedClient.name} {$selectedClient.surname}</h2>
-      <span class="detail-panel__email">{$selectedClient.email}</span>
-      {#if $selectedClient.phone}
-        <span class="detail-panel__phone">{$selectedClient.phone}</span>
-      {/if}
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+        <span class="detail-panel__email">{$selectedClient.email}</span>
+        {#if $selectedClient.phone}
+          <span class="detail-panel__phone">· {$selectedClient.phone}</span>
+        {/if}
+        {#if $selectedClient.sessionId}
+          <span style="font-size: 11px; color: #94a3b8; font-family: monospace; display: flex; align-items: center;">· ID: {$selectedClient.sessionId.split('-')[0]}</span>
+        {/if}
+      </div>
     </div>
 
     <!-- Stage Selector -->
