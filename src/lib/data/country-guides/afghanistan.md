@@ -2,7 +2,7 @@
 
 **Updated: November 14, 2016**
 
-**Important Note:** Due to the current coronavirus/COVID-19 situation and restrictions in various countries, the information below may not be accurate. This pandemic is a fluid situation. Check with authorities for local laws and restrictions concerning movements.
+**Important Note:** Due to the current coronavirus/COVID-19 situation and restrictions in various countries, the below information may not be accurate. This pandemic is a fluid situation. Check with authorities for local laws and restrictions concerning movements.
 
 ## Used Household Goods and Personal Effects
 
@@ -68,5 +68,5 @@
 
 ## Cultural and Other Information
 
-- CIA World Factbook
-- Wikipedia Entry for Afghanistan
+- [CIA World Factbook](https://www.cia.gov/the-world-factbook/field/afghanistan/): (Link to CIA World Factbook)
+- [Wikipedia Entry for Afghanistan](https://en.wikipedia.org/wiki/Afghanistan): (Link to Wikipedia Entry for Afghanistan)

@@ -3597,3 +3597,15 @@ https://svelte.dev/e/css_unused_selector
 8:28:16 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
 8:28:16 PM [vite] (client) page reload .svelte-kit/generated/root.js
 8:28:16 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:41:25 PM [vite] (client) hmr update /src/components/Header/Header.svelte
+8:41:25 PM [vite] (ssr) page reload src/components/Header/Header.svelte
+8:41:44 PM [vite] (client) hmr update /src/components/Footer/Footer.svelte
+8:41:44 PM [vite] (ssr) page reload src/components/Footer/Footer.svelte
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+9:02:31 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+9:02:31 PM [vite] (client) page reload .svelte-kit/generated/root.js
+9:02:31 PM [vite] (ssr) page reload .svelte-kit/generated/root.js

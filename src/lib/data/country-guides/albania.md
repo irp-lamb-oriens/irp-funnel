@@ -51,8 +51,7 @@
 
 ### Specific Information
 
-- The import of animals into Albania requires permission from the Albanian authorities
-- Contact destination agent for additional information.
+- The import of animals into Albania requires permission from the Albanian authorities. Contact destination agent for additional information.
 - Import of pets is permitted into Albania and there are no restrictions on what types of pets can be brought into the country.
 - All pets must be checked at the airport upon arrival by the Customs veterinarian.
 - Duty / fee of the health check is roughly 50 EUR per pet.
@@ -93,5 +92,5 @@
 
 ## Cultural and Other Information
 
-- [CIA World Factbook](https://www.cia.gov/the-world-factbook/field/albania/): Comprehensive information about Albania.
-- [Wikipedia Entry for Albania](https://en.wikipedia.org/wiki/Albania): General information about Albania.
+- [CIA World Factbook](https://www.cia.gov/the-world-factbook/field/albania/): (Link to CIA World Factbook)
+- [Wikipedia Entry for Albania](https://en.wikipedia.org/wiki/Albania): (Link to Wikipedia Entry for Albania)

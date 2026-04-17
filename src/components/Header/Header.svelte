@@ -9,11 +9,10 @@
   // Main menu items
   const menuItems: MenuItem[] = [
     { label: "Home", href: "/" },
-    { label: "Careers", href: "/careers" },
     { label: "Free Resources", href: "/free-resources" },
-    { label: "Country Guides", href: "/guides" },
+    { label: "Guides", href: "/guides" },
     { label: "News", href: "/news-updates" },
-    { label: "Contact Us", href: "/contact-us" },
+    { label: "Contact", href: "/contact-us" },
   ];
   const cta = { label: "Schedule Consultation", href: "/consultation" };
   // Destinations
