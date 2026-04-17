@@ -35,9 +35,9 @@
         />
       </div>
       <div class="col col-image free-resource-card__image">
-        <a href="https://propertycertify.com/" target="_blank" rel="noopener noreferrer" style="display: block; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
-          <img class="free-resource-card__img" src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Property Certify Directory" style="width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; border-radius: 12px; transition: transform 0.5s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
-        </a>
+          <a href="https://propertycertify.com/" target="_blank" rel="noopener noreferrer" style="display: block; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
+            <img class="free-resource-card__img" src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Property Certify Directory" style="width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; border-radius: 12px; transition: transform 0.5s ease;" on:mouseover={(e) => e.currentTarget.style.transform='scale(1.05)'} on:mouseout={(e) => e.currentTarget.style.transform='scale(1)'} />
+          </a>
       </div>
     </div>
   </section>
