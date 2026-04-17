@@ -37,16 +37,15 @@
     isCheckingAccess = false;
 
     // Parse markdown into HTML when component mounts
-    // Add target="_blank" to links, and some base classes to tables
-    const renderer = new marked.Renderer();
-    renderer.link = function(href, title, text) {
-      return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" title="' + (title || '') + '">' + text + '</a>';
-    };
-    renderer.table = function(header, body) {
-      return '<div class="table-responsive"><table class="modern-table"><thead>' + header + '</thead><tbody>' + body + '</tbody></table></div>';
-    };
+    let parsedHtml = marked(data.markdownContent) as string;
     
-    htmlContent = marked(data.markdownContent, { renderer }) as string;
+    // Add target="_blank" to links, and some base classes to tables safely via regex
+    // This avoids compatibility issues with different versions of the `marked` renderer API.
+    parsedHtml = parsedHtml.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" href="');
+    parsedHtml = parsedHtml.replace(/<table>/g, '<div class="table-responsive"><table class="modern-table">');
+    parsedHtml = parsedHtml.replace(/<\/table>/g, '</table></div>');
+    
+    htmlContent = parsedHtml;
   });
   
   // Format country name for display
