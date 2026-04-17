@@ -60,67 +60,16 @@
     return `https://wa.me/${WHATSAPP_PHONE}?text=${text}`;
   }
 
-  // --- NEW: Modularized Welcome Message Generator ---
-  function generateWelcomeMessage(fs: any): string {
-    const parts: string[] = [];
-
-    // 1. Greeting
-    if (fs.name && fs.name.trim() !== "") {
-      parts.push(`Hi ${fs.name}! Welcome to IRP. 👋`);
-    } else {
-      parts.push(`Hi! Welcome to IRP. 👋`);
-    }
-
-    // 2. Context Awareness (Origin & Destination)
-    const hasOrigin = fs.originCountry && fs.originCountry.trim() !== "";
-    const hasDest = fs.destinationCountry && fs.destinationCountry.trim() !== "";
-    
-    if (hasOrigin && hasDest) {
-      parts.push(`I see you're planning a move from ${getCountryName(fs.originCountry)} to ${getCountryName(fs.destinationCountry)}.`);
-    } else if (hasDest) {
-      parts.push(`I see you're interested in moving to ${getCountryName(fs.destinationCountry)}.`);
-    } else if (hasOrigin) {
-      parts.push(`I see you're looking to relocate from ${getCountryName(fs.originCountry)}.`);
-    }
-
-    // 3. The Info Request Bridge
-    parts.push("I'm part of the relocation team. In order to help you, I will need some more information to proceed.");
-
-    // 4. The Next Question (Ordered based on your WhatsApp function)
-    if (!fs.name) {
-      parts.push("To get started, could you tell me your name?");
-    } else if (!fs.email) {
-      parts.push("Could you please share your email address?");
-    } else if (!fs.phone) {
-      parts.push("What is the best phone number to reach you at?");
-    } else if (!hasOrigin) {
-      parts.push("Where are you currently living (moving from)?");
-    } else if (!hasDest) {
-      parts.push("Where are you thinking of moving to?");
-    } else if (!fs.budget) {
-      parts.push("Do you have an estimated budget in mind for your move?");
-    } else if (!fs.size) {
-      parts.push("Can you tell me a bit about the size of your move (e.g., number of rooms or boxes)?");
-    } else if (!fs.immigrationStatus) {
-      parts.push("What is your current immigration status?");
-    } else if (!fs.referredBy) {
-      parts.push("How did you hear about us?");
-    } else if (!fs.youtubeVideo) {
-      parts.push("Was there a specific YouTube video of ours that helped you find us?");
-    } else {
-      // Fallback if the form is miraculously 100% complete
-      parts.push("It looks like we have all your preliminary details! How can I assist you with your journey today?");
-    }
-
-    // Join the bits together into a single cohesive paragraph
-    return parts.join(" ");
-  }
-
   let messages = writable<Array<{ role: "user" | "assistant"; content: string; meetingCard?: { calendarLink: string; hangoutLink: string; } }>>([]);
   
   // Sync chat history to global formStore so it persists into CRM upon scheduling
+  // We stringify the JSON array immediately so Svelte/Firestore doesn't see it as [[Object object]] arrays.
   messages.subscribe(m => {
-    updateField(m, 'chatHistory');
+    try {
+      updateField(JSON.stringify(m), 'chatHistory');
+    } catch {
+      updateField('[]', 'chatHistory');
+    }
   });
 
   let userInput = "";
@@ -130,34 +79,42 @@
   let sessionId = crypto.randomUUID();
   let authCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit code for WA handoff
 
-  // --- UPDATED: onMount utilizing the new generator ---
+  // --- UPDATED: Ask the LLM to generate the welcome message so it perfectly honors the selected language ---
   onMount(async () => {
     const fs = get(formState);
-    const welcomeContent = generateWelcomeMessage(fs);
+    isTyping = true;
+    
+    // Instead of hardcoding English, send an invisible system request asking the bot to introduce itself in the user's chosen language.
+    try {
+      const apiURL = get(log).apiURL();
+      const response = await fetch(`${apiURL}/api/chatbot/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          authCode,
+          message: `[SYSTEM COMMAND] Introduce yourself as Lili from IRP and welcome the user. If they have provided their name (${fs.name}), use it. Acknowledge what we know so far (${JSON.stringify(fs)}), and then ask the first missing PRIORITY question to continue. RESPOND ONLY IN THE LANGUAGE CODE: ${preferredLanguage}. Stay completely natural.`,
+          context: initialContext,
+          preferredLanguage
+        })
+      });
 
-    messages.update(m => {
-      if (m.length === 0) {
-        return [{ role: "assistant", content: welcomeContent }];
-      }
-      return m;
-    });
-
-    // Also push this welcome message to the server history on the first load if context exists
-    const hasOrigin = fs.originCountry && fs.originCountry.trim() !== "";
-    const hasDest = fs.destinationCountry && fs.destinationCountry.trim() !== "";
-    if (hasOrigin || hasDest || (fs.name && fs.name.trim() !== "")) {
-      try {
-        const apiURL = get(log).apiURL();
-        await fetch(`${apiURL}/api/chatbot/inject-history`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId,
-            authCode, // Save auth code in DB to verify later
-            message: { role: "assistant", content: welcomeContent }
-          })
+      if (response.ok) {
+        const data = await response.json();
+        messages.update(m => {
+          if (m.length === 0) return [{ role: "assistant", content: data.response }];
+          return m;
         });
-      } catch (e) { console.error("History injection failed", e); }
+      }
+    } catch (e) {
+      console.error("Welcome message generation failed", e);
+      // Fallback
+      messages.update(m => {
+        if (m.length === 0) return [{ role: "assistant", content: "Hi! Welcome to IRP. How can I help you today?" }];
+        return m;
+      });
+    } finally {
+      isTyping = false;
     }
   });
 
@@ -225,40 +182,9 @@
     <button class="back-btn" on:click={onBackToForm}>←</button>
     <div class="header-center">
       <div class="avatar-dropdown-wrapper">
-        <button class="avatar-trigger" on:click={() => isDropdownOpen = !isDropdownOpen}>
+        <div class="avatar-trigger" style="cursor: default;">
           <img src="/lili.png" alt="Relocation team" class="header-avatar" />
-          <span class="dropdown-chevron">▾</span>
-        </button>
-
-        {#if isDropdownOpen}
-          <div class="field-dropdown">
-            <div class="dropdown-header">Consultation Details</div>
-            <div class="field-list">
-              {#each Object.entries($formState) as [key, value]}
-                {#if value && value !== '' && key !== 'vehicles' && key !== 'scheduling'}
-                  <div class="field-item">
-                    <span class="field-key">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
-                    <span class="field-value">{value}</span>
-                  </div>
-                {/if}
-              {/each}
-              {#if $formState.vehicles.length > 0}
-                <div class="field-item">
-                  <span class="field-key">vehicles</span>
-                  <span class="field-value">{$formState.vehicles.length} added</span>
-                </div>
-              {/if}
-              {#if $formState.scheduling.length > 0}
-                <div class="field-item">
-                  <span class="field-key">call scheduled</span>
-                  <span class="field-value">yes</span>
-                </div>
-              {/if}
-            </div>
-          </div>
-          <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-          <div class="dropdown-overlay" on:click={() => isDropdownOpen = false}></div>
-        {/if}
+        </div>
       </div>
       
       <div class="header-info">
