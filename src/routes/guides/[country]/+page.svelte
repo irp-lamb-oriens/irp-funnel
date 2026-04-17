@@ -3,7 +3,8 @@
   import { marked } from 'marked';
   import Header from '../../../components/Header/Header.svelte';
   import Footer from '../../../components/Footer/Footer.svelte';
-  import ContactCTA from '../../../components/ContactSection.svelte';
+  import CountryLayout from '../../../components/ui/CountryLayout.svelte';
+  import CountryContentWrapper from '../../../components/ui/CountryContentWrapper.svelte';
   import './guide.scss';
 
   export let data: { country: string; markdownContent: string };
@@ -34,40 +35,30 @@
 
 <Header />
 
-<div class="guide-layout">
-  <div class="guide-hero">
-    <div class="hero-content">
-      <h6>Official Customs & Relocation Guide</h6>
-      <h1>Moving to <span class="highlight">{displayName}</span></h1>
-      <p>A comprehensive overview of customs rules, restricted items, and preparation steps for your international move.</p>
-    </div>
-  </div>
-
-  <div class="guide-container">
-    <div class="guide-paper">
-      {#if htmlContent}
-        <article class="markdown-body">
-          {@html htmlContent}
-        </article>
-      {:else}
-        <div class="skeleton-loader">
-          <div class="skel-line title"></div>
-          <div class="skel-line"></div>
-          <div class="skel-line"></div>
-          <div class="skel-line short"></div>
-          <div class="skel-line title-small"></div>
-          <div class="skel-line"></div>
-          <div class="skel-line short"></div>
-        </div>
-      {/if}
-      
-      <div class="guide-footer">
-        <p><em>Disclaimer: The information above is a generalized summary sourced from the IAM Country Guides. Customs rules vary heavily based on personal circumstances, visa status, and changing local laws. This guide does not constitute legal or logistical advice.</em></p>
-        <a href="/" class="consultation-btn">Book a Consultation for Personalized Advice</a>
+<CountryLayout 
+  heroTitle={`Moving to ${displayName}`} 
+  heroSubTitle="A comprehensive overview of customs rules, restricted items, and preparation steps for your international move."
+  heroUrl="https://images.pexels.com/photos/834958/pexels-photo-834958.jpeg?w=2000"
+>
+  <CountryContentWrapper>
+    {#if htmlContent}
+      <article class="markdown-body">
+        {@html htmlContent}
+      </article>
+      <br><hr><br>
+      <p><em>Disclaimer: The information above is a generalized summary sourced from the IAM Country Guides. Customs rules vary heavily based on personal circumstances, visa status, and changing local laws. This guide does not constitute legal or logistical advice.</em></p>
+    {:else}
+      <div class="skeleton-loader">
+        <div class="skel-line title"></div>
+        <div class="skel-line"></div>
+        <div class="skel-line"></div>
+        <div class="skel-line short"></div>
+        <div class="skel-line title-small"></div>
+        <div class="skel-line"></div>
+        <div class="skel-line short"></div>
       </div>
-    </div>
-  </div>
-</div>
+    {/if}
+  </CountryContentWrapper>
+</CountryLayout>
 
-<ContactCTA />
 <Footer />
