@@ -199,10 +199,20 @@
                   </div>
                 {/if}
               {/each}
-              {#if $formState.vehicles.length > 0}
+              {#if Array.isArray($formState.vehicles) && $formState.vehicles.length > 0}
                 <div class="field-item">
                   <span class="field-key">vehicles</span>
                   <span class="field-value">{$formState.vehicles.length} added</span>
+                </div>
+              {:else if typeof $formState.vehicles === 'string' && $formState.vehicles !== '' && $formState.vehicles !== 'none'}
+                <div class="field-item">
+                  <span class="field-key">vehicles</span>
+                  <span class="field-value">{$formState.vehicles}</span>
+                </div>
+              {:else if typeof $formState.vehicles === 'string' && $formState.vehicles === 'none'}
+                <div class="field-item">
+                  <span class="field-key">vehicles</span>
+                  <span class="field-value">none</span>
                 </div>
               {/if}
               {#if $formState.scheduling.length > 0}
