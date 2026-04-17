@@ -16,7 +16,7 @@
 
   let isDropdownOpen = false;
 
-  const WHATSAPP_PHONE = "50689662552";
+  const WHATSAPP_PHONE = "+15186227134";
 
   function getCountryName(code: string): string {
     return countries.find(c => c.code === code)?.name || code;
@@ -25,7 +25,7 @@
   function getWhatsAppUrlWithContext(): string {
     const fs = get(formState);
     const parts: string[] = [];
-    parts.push(`Hi! I'd like to continue my relocation consultation.`);
+    parts.push(`Hi! I'd like to continue my relocation consultation. (Ref: ${sessionId})`);
     if (fs.name) parts.push(`*Name:* ${fs.name}${fs.surname ? ' ' + fs.surname : ''}`);
     if (fs.email) parts.push(`*Email:* ${fs.email}`);
     if (fs.phone) parts.push(`*Phone:* ${fs.phone}`);
