@@ -25,17 +25,50 @@
   function getWhatsAppUrlWithContext(): string {
     const fs = get(formState);
     const parts: string[] = [];
-    parts.push(`Hi! I'd like to continue my relocation consultation. (Ref: ${sessionId})`);
-    if (fs.name) parts.push(`*Name:* ${fs.name}${fs.surname ? ' ' + fs.surname : ''}`);
-    if (fs.email) parts.push(`*Email:* ${fs.email}`);
-    if (fs.phone) parts.push(`*Phone:* ${fs.phone}`);
-    if (fs.originCountry) parts.push(`*Moving from:* ${fs.originCity ? fs.originCity + ', ' : ''}${getCountryName(fs.originCountry)}`);
-    if (fs.destinationCountry) parts.push(`*Moving to:* ${fs.destinationCity ? fs.destinationCity + ', ' : ''}${getCountryName(fs.destinationCountry)}`);
-    if (fs.budget) parts.push(`*Budget:* ${fs.budget}`);
-    if (fs.size) parts.push(`*Move size:* ${fs.size}`);
-    if (fs.immigrationStatus) parts.push(`*Immigration status:* ${fs.immigrationStatus}`);
-    if (fs.referredBy) parts.push(`*Referred by:* ${fs.referredBy}`);
-    if (fs.youtubeVideo) parts.push(`*YouTube video:* ${fs.youtubeVideo}`);
+    parts.push(`Hi! I'd like to continue my relocation consultation.`);
+    parts.push(`*ID:* ${sessionId}`);
+    parts.push(`*Auth:* ${authCode}`);
+    
+    // Add all properties that have truthy values dynamically
+    const skipKeys = ['chatHistory', 'scheduling'];
+    for (const [key, val] of Object.entries(fs)) {
+      if (skipKeys.includes(key)) continue;
+      
+      if (val !== undefined && val !== null && val !== '') {
+        // Special formatting for objects/arrays like vehicles
+        if (Array.isArray(val) && val.length > 0) {
+          if (key === 'vehicles') {
+            parts.push(`*Vehicles:* ${val.length} added`);
+          } else {
+            parts.push(`*${key}:* ${JSON.stringify(val)}`);
+          }
+        } 
+        // Special formatting for countries
+        else if (key === 'originCountry') {
+           parts.push(`*Moving from:* ${fs.originCity ? fs.originCity + ', ' : ''}${getCountryName(fs.originCountry)}`);
+        }
+        else if (key === 'destinationCountry') {
+           parts.push(`*Moving to:* ${fs.destinationCity ? fs.destinationCity + ', ' : ''}${getCountryName(fs.destinationCountry)}`);
+        }
+        // Exclude city since it's merged above
+        else if (key === 'originCity' || key === 'destinationCity') {
+           continue;
+        }
+        // Name concatenation
+        else if (key === 'name') {
+           parts.push(`*Name:* ${fs.name}${fs.surname ? ' ' + fs.surname : ''}`);
+        }
+        else if (key === 'surname') {
+           continue;
+        }
+        // Standard strings
+        else if (typeof val === 'string') {
+          const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          parts.push(`*${capitalizedKey}:* ${val}`);
+        }
+      }
+    }
+    
     const text = encodeURIComponent(parts.join('\n'));
     return `https://wa.me/${WHATSAPP_PHONE}?text=${text}`;
   }
@@ -108,6 +141,7 @@
   let isBooked = false;
   let chatContainer: HTMLElement;
   let sessionId = crypto.randomUUID();
+  let authCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit code for WA handoff
 
   // --- UPDATED: onMount utilizing the new generator ---
   onMount(async () => {
@@ -132,6 +166,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId,
+            authCode, // Save auth code in DB to verify later
             message: { role: "assistant", content: welcomeContent }
           })
         });
@@ -157,6 +192,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
+          authCode,
           message: userMsg,
           context: initialContext,
           preferredLanguage
