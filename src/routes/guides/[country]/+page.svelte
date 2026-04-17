@@ -12,15 +12,29 @@
 
   let htmlContent = "";
   let showModal = false;
+  import { browser } from '$app/environment';
+
   let hasAccess = false;
+  let isCheckingAccess = true;
   
   onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessOverride = urlParams.get('access') === 'true';
+    const emailParam = urlParams.get('email');
+    
+    if (emailParam) {
+      localStorage.setItem("userEmail", emailParam);
+    }
+
     const savedEmail = localStorage.getItem("userEmail");
-    if (!savedEmail) {
+    
+    if (!savedEmail && !accessOverride) {
       showModal = true;
     } else {
       hasAccess = true;
     }
+    
+    isCheckingAccess = false;
 
     // Parse markdown into HTML when component mounts
     // Add target="_blank" to links, and some base classes to tables
@@ -51,7 +65,14 @@
   heroUrl="https://images.pexels.com/photos/834958/pexels-photo-834958.jpeg?w=2000"
 >
   <CountryContentWrapper>
-    {#if !hasAccess}
+    {#if isCheckingAccess}
+      <div class="skeleton-loader">
+        <div class="skel-line title"></div>
+        <div class="skel-line"></div>
+        <div class="skel-line"></div>
+        <div class="skel-line short"></div>
+      </div>
+    {:else if !hasAccess}
       <div class="locked-content">
         <div class="icon-wrapper">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>

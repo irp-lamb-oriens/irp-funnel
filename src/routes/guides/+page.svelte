@@ -17,6 +17,13 @@
   let hasAccess = false;
   
   onMount(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    
+    if (emailParam) {
+      localStorage.setItem("userEmail", emailParam);
+    }
+
     if (localStorage.getItem("userEmail")) {
       hasAccess = true;
     }

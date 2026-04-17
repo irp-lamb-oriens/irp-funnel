@@ -16,7 +16,7 @@
   let emailInputRef: HTMLInputElement;
 
   function handleEmailChange(newValue: string) {
-    emailValue = newValue;
+    // Only update validity flag. bind:value handles the raw string.
     isEmailValid = newValue !== "";
   }
 
