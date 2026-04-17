@@ -61,7 +61,7 @@
 <CountryLayout 
   heroTitle={`Moving to ${displayName}`} 
   heroSubTitle="A comprehensive overview of customs rules, restricted items, and preparation steps for your international move."
-  heroUrl="https://images.pexels.com/photos/834958/pexels-photo-834958.jpeg?w=2000"
+  heroUrl="https://images.pexels.com/photos/28376207/pexels-photo-28376207.jpeg"
 >
   <CountryContentWrapper>
     {#if isCheckingAccess}
