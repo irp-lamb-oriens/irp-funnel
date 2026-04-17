@@ -21,6 +21,7 @@
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
   import Chatbot from './Chatbot.svelte';
+  import Language from './systems/inputs/Language/Language.svelte';
   import countries from './systems/inputs/Country/countries.js';
 
   // ─── Views ────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@
   let hangoutLink = '';
 
   let errors: Record<string, string> = {};
+  let selectedLanguage: string = 'en';
 
   // ─── Props ────────────────────────────────────────────────────────────────
   export let videoUrl: string = "https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4";
@@ -326,6 +328,14 @@
               <div class="choice-screen__check">✓</div>
               <h2 class="choice-screen__title">You're all set!</h2>
               <p class="choice-screen__desc">Choose how you'd like to continue:</p>
+              <div class="language-picker">
+                <Language 
+                  label="Preferred language" 
+                  whitelist={["en", "es", "fr", "pt", "de", "it", "zh", "ja", "ko", "ru", "ar", "hi", "nl", "pl", "sv", "he"]} 
+                  defaultLanguageCode="en"
+                  onSelect={(code) => { if (code) selectedLanguage = code; }} 
+                />
+              </div>
               <div class="choice-buttons">
                 <button class="choice-btn choice-btn--primary" on:click={openChatbot}>
                   <span class="choice-btn__icon choice-btn__icon--avatar">
@@ -358,7 +368,7 @@
               <button class="back-btn" on:click={backToChoice}>← Back</button>
               <button class="switch-btn" on:click={openForm}>Switch to Form →</button>
             </div>
-            <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} />
+            <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} preferredLanguage={selectedLanguage} />
           </div>
         {/if}
 
@@ -674,6 +684,8 @@
         0 20px 64px rgba(255, 255, 255, 0.08);
     }
   }
+
+  .language-picker { width: 100%; max-width: 420px; margin-top: 0.25rem; position: relative; z-index: 20; }
 
   .choice-buttons { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 420px; margin-top: 0.5rem; }
   .choice-btn {
