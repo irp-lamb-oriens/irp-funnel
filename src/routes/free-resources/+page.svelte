@@ -19,6 +19,29 @@
 <Header />
 
 <CountryLayout heroTitle="Free Resources" heroUrl="https://images.pexels.com/photos/1106468/pexels-photo-1106468.jpeg?w=2000">
+  <section class="free-resources-propertycertify free-resource-card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+    <div class="row free-resource-card__row">
+      <div class="col col-content free-resource-card__content">
+        <h6 style="color: var(--color-highlight-2); text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.5rem; font-size: 0.9rem;">Official Partner Directory</h6>
+        <h2 class="free-resource-card__title" style="color: #ffffff; font-size: 2rem; margin-bottom: 1rem;">Property Certify</h2>
+        <h5 class="free-resource-card__subtitle" style="color: #cbd5e1; font-weight: 400; line-height: 1.6; margin-bottom: 1.5rem;">
+          The ultimate shipping guide and certified directory of service providers for your property. Connect with verified, trusted experts for every stage of your relocation journey.
+        </h5>
+        <CTAButton
+          label="Explore Certified Providers"
+          href="https://propertycertify.com/"
+          target="_blank"
+          variant="primary"
+        />
+      </div>
+      <div class="col col-image free-resource-card__image">
+        <a href="https://propertycertify.com/" target="_blank" rel="noopener noreferrer" style="display: block; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
+          <img class="free-resource-card__img" src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Property Certify Directory" style="width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; border-radius: 12px; transition: transform 0.5s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+        </a>
+      </div>
+    </div>
+  </section>
+
   <section class="free-resources-checklist free-resource-card">
     <div class="row free-resource-card__row">
       <div class="col col-content free-resource-card__content">
