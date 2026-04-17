@@ -223,12 +223,8 @@
   }
 </script>
 
-<svelte:head>
-  <script src="https://cdn.tailwindcss.com"></script>
-</svelte:head>
-
 <div
-  class="relative font-sans z-10"
+  class="language-selector-wrapper z-10"
   bind:this={dropdownRef}
   on:keydown={handleKeydown}
   role="combobox"
@@ -237,7 +233,7 @@
   aria-owns={open ? "language-listbox" : undefined}
 >
   {#if label}
-    <span class="block mb-2 text-sm font-medium text-gray-700" id="language-select-label">
+    <span class="language-select-label" id="language-select-label">
       {label}
     </span>
   {/if}
@@ -249,7 +245,7 @@
       value={typeahead}
       on:input={handleInput}
       placeholder="Type to search language..."
-      class="w-full max-w-xs px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out"
+      class="language-input"
       aria-autocomplete="list"
       aria-controls={open ? "language-listbox" : undefined}
       aria-labelledby="language-select-label"
@@ -261,46 +257,36 @@
       type="button"
       bind:this={buttonRef}
       on:click={toggleOpen}
-      class="w-full max-w-xs px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out flex items-center justify-between"
+      class="language-button"
       aria-controls={open ? "language-listbox" : undefined}
       aria-labelledby="language-select-label {selectedLanguage ? 'selected-language-label' : ''}"
       in:fade={{ duration: 200 }}
       out:fade={{ duration: 200 }}
     >
       {#if selectedLanguage}
-        <span class="flex items-center gap-2 truncate">
+        <span class="language-button-content">
           {#if selectedLanguage.flag}
-            <span class="text-lg" aria-hidden="true">{selectedLanguage.flag}</span>
+            <span class="flag-icon" aria-hidden="true">{selectedLanguage.flag}</span>
           {/if}
-          <span class="truncate">{selectedLanguage.name}</span>
-          <span class="text-gray-500 text-xs">({selectedLanguage.code})</span>
+          <span class="language-name">{selectedLanguage.name}</span>
+          <span class="language-code">({selectedLanguage.code})</span>
         </span>
       {:else}
-        <span class="text-gray-500">Select a language</span>
+        <span class="language-placeholder">Select a language</span>
       {/if}
       <svg
-        class="w-4 h-4 transform transition-transform duration-200 {open ? 'rotate-180' : ''}"
+        class="dropdown-chevron {open ? 'open' : ''}"
         fill="currentColor"
-        viewBox="0 0 24 24"
+        viewBox="0 0 20 20"
         aria-hidden="true"
       >
-        <path d="M7 10l5 5 5-5z" />
+        <path
+          fill-rule="evenodd"
+          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        />
       </svg>
     </button>
-  {/if}
-
-  {#if selectedLanguage && !showInput}
-    <div
-      class="mt-2 text-sm text-gray-700 flex items-center gap-2"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-    >
-      Selected:
-      {#if selectedLanguage.flag}
-        <span class="text-lg" aria-hidden="true">{selectedLanguage.flag}</span>
-      {/if}
-      <span>{selectedLanguage.name} ({selectedLanguage.code})</span>
-    </div>
   {/if}
 
   {#if open}
@@ -308,7 +294,7 @@
       bind:this={listRef}
       role="listbox"
       id="language-listbox"
-      class="absolute w-full max-w-xs mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto z-20"
+      class="language-dropdown-list"
       tabindex="-1"
       aria-labelledby="language-select-label"
       in:slide={{ duration: 200 }}
@@ -318,7 +304,8 @@
         <li
           bind:this={listItems[index]}
           id={`language-option-${language.code}`}
-          class="px-4 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors duration-150 ease-in-out {highlightedIndex === index ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}"
+          class="language-option"
+          class:highlighted={highlightedIndex === index}
           class:selected={selectedLanguage?.code === language.code}
           role="option"
           aria-selected={selectedLanguage?.code === language.code}
@@ -326,21 +313,164 @@
           on:click={() => selectLanguage(language)}
           on:mouseenter={() => {
             highlightedIndex = index;
+            lastValidHighlightedIndex = index;
           }}
         >
           {#if language.flag}
-            <span class="text-lg" aria-hidden="true">{language.flag}</span>
+            <span class="flag-icon" aria-hidden="true">{language.flag}</span>
           {/if}
-          <span class="truncate">{language.name}</span>
-          <span class="{highlightedIndex === index ? 'text-white' : 'text-gray-500'} text-xs">
+          <span class="language-name">{language.name}</span>
+          <span class="language-code {highlightedIndex === index ? 'code-highlighted' : ''}">
             ({language.code})
           </span>
         </li>
       {:else}
-        <li class="px-4 py-2 text-sm text-gray-500" role="option" aria-disabled="true">
+        <li class="language-empty" role="option" aria-disabled="true">
           No languages available.
         </li>
       {/each}
     </ul>
   {/if}
 </div>
+
+<style lang="scss">
+  .language-selector-wrapper {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .language-select-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .language-input, .language-button {
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    color: #fff;
+    outline: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  .language-input {
+    cursor: text;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-highlight-2, #1ccfc9);
+    box-shadow: 0 0 0 1px rgba(28, 207, 201, 0.2);
+  }
+
+  .language-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .language-button-content {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow: hidden;
+  }
+
+  .language-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .flag-icon {
+    font-size: 1.2rem;
+  }
+
+  .language-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .language-code {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .dropdown-chevron {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .dropdown-chevron.open {
+    transform: rotate(180deg);
+  }
+
+  .language-dropdown-list {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem 0;
+    list-style: none;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 50;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+  }
+
+  .language-option {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.15s ease;
+  }
+
+  .language-option.highlighted {
+    background: rgba(28, 207, 201, 0.15);
+    color: #fff;
+  }
+
+  .language-option.selected {
+    font-weight: 700;
+    color: var(--color-highlight-2, #1ccfc9);
+  }
+
+  .code-highlighted {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .language-empty {
+    padding: 0.8rem 1.2rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+</style>
