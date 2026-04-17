@@ -981,83 +981,84 @@ svelte-virtual-list@3.0.1
 Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
 You have specified a baseUrl and/or paths in your tsconfig.json which interferes with SvelteKit's auto-generated tsconfig.json. Remove it to avoid problems with intellisense. For path aliases, use `kit.alias` instead: https://svelte.dev/docs/kit/configuration#alias
 2:39:34 PM [vite] server restarted.
-eltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
-You have specified a baseUrl and/or paths in your tsconfig.json which interferes with SvelteKit's auto-generated tsconfig.json. Remove it to avoid problems with intellisense. For path aliases, use `kit.alias` instead: https://svelte.dev/docs/kit/configuration#alias
-2:39:34 PM [vite] server restarted.
-tml
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/consultation.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/contact-us.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/cookie-policy.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/costa-rica.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/footer.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/free-resources.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/header.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/mexico.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/news-updates.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/panama.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/portugal.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/spain.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/careers.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/consultation.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/contact-us.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/cookie-policy.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/costa-rica.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/footer.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/free-resources.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/header.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/mexico.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/news-updates.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/panama.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/portugal.html
-5:25:53 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/spain.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/index.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/header.html
-5:26:02 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/header.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/index.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/index.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
-5:26:04 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
-5:36:16 PM [vite] (ssr) page reload src/routes/dashboard/store.ts
-5:36:28 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
-5:36:28 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
-5:36:28 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/3.js
-5:36:29 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
-5:36:29 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
-5:36:29 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
-5:36:29 PM [vite] (client) page reload .svelte-kit/generated/root.js
-5:36:29 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
-5:36:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/costa-rica.html
-5:36:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/careers.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/consultation.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/contact-us.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-m8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/consultation.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/contact-us.html
+8:19:35 PM [vite] (client)8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/header.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/mexico.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/news-u8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/header.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/mexico.html
+8:19:35 PM [vi8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-m8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
 5:36:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/spain.html
 5:36:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
 5:36:29 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/free-resources.html
@@ -3438,3 +3439,153 @@ https://svelte.dev/e/a11y_label_has_associated_control
 https://svelte.dev/e/a11y_label_has_associated_control
 5:26:30 PM [vite-plugin-svelte] src/routes/dashboard/components/DetailPanel.svelte:127:6 A form label must be associated with a control
 https://svelte.dev/e/a11y_label_has_associated_control
+7:44:59 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:00:55 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:126:0 Unused CSS selector ".main-menu-col"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:0 Unused CSS selector ".header-section a"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:19 Unused CSS selector ".header-section p"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:38 Unused CSS selector ".header-section span"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:145:60 Unused CSS selector ".header-section li"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:0 Unused CSS selector ".header-section a:hover"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:25 Unused CSS selector ".header-section p:hover"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:50 Unused CSS selector ".header-section span:hover"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite-plugin-svelte] src/components/Header/Header.svelte:149:78 Unused CSS selector ".header-section li:hover"
+https://svelte.dev/e/css_unused_selector
+8:02:40 PM [vite] (ssr) page reload src/components/Header/Header.svelte
+8:02:55 PM [vite] (client) hmr update /src/components/Header/Header.svelte
+8:02:55 PM [vite] (ssr) page reload src/components/Header/Header.svelte
+8:03:13 PM [vite] (client) hmr update /src/components/Footer/Footer.svelte
+8:03:13 PM [vite] (ssr) page reload src/components/Footer/Footer.svelte
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:05:21 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:05:21 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:05:21 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:07:21 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:07:21 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:07:21 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:08:24 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:08:24 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:08:24 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:08:52 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:08:52 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:08:52 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:10:31 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:10:31 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:10:31 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:11:57 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:11:57 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:11:57 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:13:42 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:13:42 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:13:42 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:16:38 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:16:38 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:16:38 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:18:20 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:18:20 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:18:20 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/0.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/1.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/client/nodes/11.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/client/app.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/client/matchers.js
+8:19:14 PM [vite] (ssr) page reload .svelte-kit/generated/server/internal.js
+8:19:14 PM [vite] (client) page reload .svelte-kit/generated/root.js
+8:19:14 PM [vite] (ssr) page reload .svelte-kit/generated/root.js
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/careers.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/colombia.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/consultation.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/contact-us.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/cookie-policy.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/costa-rica.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/footer.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/free-resources.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/header.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/index.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/mexico.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/news-updates.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/panama.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/portugal.html
+8:19:35 PM [vite] (client) page reload .svelte-kit/output/client/my-website-to-migrate/spain.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/careers.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/colombia.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/consultation.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/contact-us.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/cookie-policy.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/costa-rica.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/footer.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/free-resources.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/header.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/index.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/mexico.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/news-updates.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/panama.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/portugal.html
+8:19:36 PM [vite] (client) page reload build/my-website-to-migrate/spain.html

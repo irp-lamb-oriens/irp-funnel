@@ -87,6 +87,7 @@
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "libphonenumber-js": "^1.12.25",
+    "marked": "^18.0.0",
     "nearest-color": "^0.4.4",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",

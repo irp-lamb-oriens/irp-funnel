@@ -48,6 +48,7 @@
             <li><a href="/">Home</a></li>
             <li><a href="/careers">Careers</a></li>
             <li><a href="/free-resources">Free Resources</a></li>
+            <li><a href="/guides">Country Guides</a></li>
             <li><a href="/news-updates">News</a></li>
             <li><a href="/contact-us">Contact Us</a></li>
           </ul>

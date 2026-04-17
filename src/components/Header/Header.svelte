@@ -11,6 +11,7 @@
     { label: "Home", href: "/" },
     { label: "Careers", href: "/careers" },
     { label: "Free Resources", href: "/free-resources" },
+    { label: "Country Guides", href: "/guides" },
     { label: "News", href: "/news-updates" },
     { label: "Contact Us", href: "/contact-us" },
   ];
