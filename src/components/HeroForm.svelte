@@ -63,7 +63,7 @@
   onDestroy(() => { unsubImmigration(); unsubBudget(); unsubMoveSize(); });
 
   // ─── WhatsApp ─────────────────────────────────────────────────────────────
-  const WHATSAPP_PHONE = "50689662552";
+  const WHATSAPP_PHONE = "+15186227134";
   function getWhatsAppUrl(): string {
     const email = $formState.email || '';
     const text = encodeURIComponent(`Hi Lili! I'm interested in international relocation. My email is ${email}.`);
