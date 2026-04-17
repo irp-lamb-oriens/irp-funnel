@@ -1,0 +1,131 @@
+# Nicaragua Relocation Guide
+
+**Important:** Due to the current global situation, information may be inaccurate. Verify with local authorities for the latest regulations.
+
+**Updated:** August 24, 2016
+
+## Used Household Goods and Personal Effects
+
+### Documents Required
+
+- Copy of passport with main pages and seal with the date of last entry (original passport required for tax exoneration under the Travel Regimen).
+- Packing list (new items must be indicated).
+- Original bill of lading (OBL) / inland letter / airway bill (AWB).
+- Original tax exoneration document (Diplomats).
+- Letter from the Nicaraguan Consulate at the country of origin stating the number of years of residence in the foreign country (returning citizens applying for a tax exoneration).
+- Migratory certification from the migration office in Nicaragua.
+- Affidavits made by an attorney in Nicaragua (must state that no sales, transfer or disposal of goods for a period of 3 years will occur).
+- Nicaraguan residency card (foreigners and returning citizens applying or using the Law of Rented Resident or Retired Resident benefit) resolution from the Institution of Tourism approving the benefit.
+
+### Specific Information
+
+- The owner of the goods should be present prior to shipment arrival.
+- All documents must be complete to initiate Customs clearance.
+- Hand-written packing lists are not accepted and must be completed in either Spanish or English.
+- All household goods and personal effects shipments are subject to taxes; however, owners of the goods that apply to a tourism incentive law, migratory law, or the benefit of travel regimen may qualify for a tax exemption. Contact the destination agent for information.
+- The number of items or packages declared on any shipping document must be the same as those declared on the packing list; otherwise, there will be a USD 100.00 fine that will be billed directly to the destination agent at origin.
+- The contents of each box must be written on the packing list. If not specified, the boxes are subject to inspection prior to Customs clearance.
+- If Customs finds inconsistencies or items inside of boxes that are not identified on the packing list, a fine may be levied of approximately USD 100.00 plus two times the amount of taxes, if applicable, billed directly to the origin agent or the owner of the goods.
+- All shipments must be received, unloaded and inspected by Customs, except for diplomatic shipments.
+- If Customs authorizes delivery into the container, it will not be unloaded at the warehouse and will not be inspected by Customs as long as reciprocity between countries exist, but the container will be delivered by a Customs inspector to the residence.
+- Appliances and electronic devices must be listed and detailed with the brand, model, serial number and country of origin on the packing list.
+- Customs clearance for diplomatic shipments takes approximately 4-5 weeks, excluding weekends.
+- International and national passengers entering Nicaragua can introduce used or new items valued less than USD 500.00, in addition to their luggage, free of taxes if the following conditions are met:
+    - The owner of the goods reapplies every 6 months.
+    - The owner of the goods has lived abroad at least 3 days, excluding the day of departure and the day of return.
+    - No commercial items are included in the shipment.
+- For diplomatic tax exonerations, the diplomatic headquarters can process the tax exoneration.
+    - The owner of the goods must arrive in the country at least 20 days prior to shipment arrival to obtain the accreditation from the Ministry of Foreign Affairs; once obtained, the owner of the goods can request the exoneration.
+- Diplomatic shipments are not subject either to the process of random selection or Customs inspection; if reciprocity between the origin country and Nicaragua exists, the shipments are subject to the inspection and fumigation of the Ministry of Agriculture in the port of entry.
+- To deliver the household goods into a container at a diplomatic residence, the Embassy, International Organism or diplomatic organization must request domiciliary delivery to Customs, which may lead to overtime payments to Customs and GMM personnel. Demurrage charges may be charged from the shipping line for keeping the goods in the container and second delivery.
+- Customs clearance takes approximately 4-5 weeks, excluding weekends.
+- Persons meeting the following requirements may apply for the Law of Rented Resident or Retired Residents for the import of household goods and personal effects shipments up to an amount not higher than the cost, insurance and freight (CIF) value: USD 25,000.00 plus a car up to an amount not higher than the CIF value of USD 25,000.00 dollars exonerated of taxes:
+    - Foreigners that receive a monthly retirement pension from a private or public institution abroad, equivalent to USD 600.00 or foreigners that receive income generated by the distribution of profits, rent or others kinds of legal business that generates monthly a minimum of USD 750.00.
+    - Returning Nicaraguans proving residence abroad in a permanent and stable way for over 10 years and receives pension or income generated abroad in the same amount and condition mentioned above.
+    - The beneficiary must have a legal Nicaraguan Residency Card and meet the conditions required in Law 694.
+- Shipments are subject to Customs inspections for those imported under the Law of Rented Resident or Retired Resident benefit.
+- Customs clearance takes approximately 2-3 months if the clearance process started prior INTUR until shipment arrives and 2-3 weeks (business days) if the process prior to shipment arrival and INTUR has granted the exemption.
+- When the owner of the goods is coming to work for a legal company in Nicaragua, it is advisable to consign the shipment on behalf of the owner of the goods’ employer, so that the shipment can be released with the employer’s documents:
+    - Original constitution deed
+    - Original power of attorney
+    - Copy of the identification card of the legal representative
+    - Original identification card of the Enterprise RUC
+    - Original constancy of responsible of IVA
+    - Original constancy of its economic activity that must show that one of the activities of the Enterprise is the importation
+- By consigning the shipment on behalf of the owner of the goods’ employer, the employer can save 14.5 % in taxes.
+- Returning Nicaraguans citizens living abroad for more than 24 months prior to a definitive return can import household goods and personal effects free of taxes under Law 435, Article 123, Numeral 6.
+    - To apply, Nicaraguans must have lived abroad for a period of more than 5 years beginning 2005 (year that entered as law).
+    - The exemption may apply to household goods and personal effects, instruments for professional performance (e.g., utensils, tools and equipment necessary for the development of their activities) with a value up and not to exceed USD 200,000 plus the importation or local purchase of second-hand and new vehicles with a value up to and not to exceed USD 25,000. If in excess of that amount, taxes must be paid on the difference.
+- Customs clearance takes approximately 4-5 weeks; excluding weekends if the owner of the goods starts the clearance process after shipment arrival and 2-3 weeks, excluding weekends if the owner of the goods begins the clearance process prior to shipment arrival.
+
+**IAM Note:** Customs clearance can take as short as 1-2 weeks, excluding weekends for persons using the travel regimen for tax exemption.
+
+**IAM Note:** If the employer is already enrolled, only copies of the documents are required. Customs clearance takes approximately 4-5 weeks, excluding weekends.
+
+## Motor Vehicles
+
+### Documents Required
+
+- Copy of passport
+- Original purchase invoice or sales contract
+- OBL / inland letter / AWB
+- Original vehicle title
+- Vehicle registration
+- Original tax exoneration document, if applicable
+- Resolution from the Institution of Tourism approving the benefit (applies to those seeking a tax exoneration under the Law of Rented Resident / Retired Residents)
+
+### Specific Information
+
+- Documents should be in the name of the owner of the goods.
+- All vehicles are subject to the payment of taxes, except those qualifying for tax exoneration.
+- Customs clearance takes approximately 4-5 weeks, excluding weekends.
+- Vehicles older than 10 years from the date of manufacture cannot be imported, unless meeting the following conditions:
+    - Returning Nicaraguan citizens living abroad for at least 1 year prior to their final return
+    - Vehicles donated to the Fire Brigades, the Nicaraguan Red Cross, churches, religious denominations and foundations with legal registration
+    - Classic or historical vehicles
+    - Second-hand vehicles imported by an intermediary or the final user destined to the transport of selective cargo or collective passengers.
+- Returning Nicaraguan citizens using the benefit exemption of Law 535 cannot import vehicles older than 7 years from the date of manufacture of the vehicle.
+
+## Pets
+
+### Documents Required
+
+- Rabies vaccination record
+- Veterinary health certificate
+- OBL / AWB
+- Invoice
+
+### Specific Information
+
+- A tax payment and fee of importation for the Ministry of Agriculture at the airport of entry is required.
+
+## Restricted/Dutiable Items
+
+Special permission is required for the following items:
+
+- Food items
+- Alcohol
+- Gas tanks
+- Fire extinguisher
+- Medications
+- Weapons, including collections (permission from the Embassy or Consulate of Nicaragua must be requested from the country of origin)
+- Telecommunications equipment (cellular phones, telephones and signal receivers and signal transmitters, etc.)
+- Products of animal or vegetal origin
+- Gunpowder and firearms
+
+## Prohibited Items
+
+- Drugs
+- Toluene (glue)
+- Chemical products
+- Corrosives and flammables
+- Pornographic or subversive materials
+
+## Consignment Instructions
+
+**Recommended:** Contact the destination agent to ensure all requirements have been met prior to import, especially for differences regarding air / sea shipments.
+
+## Cultural and Other Information
+
+- [CIA World Factbook](https://www.cia.gov/the-world-factbook/field/nicaragua/):
+- [Wikipedia Entry for Nicaragua](https://en.wikipedia.org/wiki/Nicaragua)
