@@ -25,10 +25,10 @@
         <h6 style="color: var(--color-highlight-2); text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.5rem; font-size: 0.9rem;">Official Partner Directory</h6>
         <h2 class="free-resource-card__title" style="color: #ffffff; font-size: 2rem; margin-bottom: 1rem;">Property Certify</h2>
         <h5 class="free-resource-card__subtitle" style="color: #cbd5e1; font-weight: 400; line-height: 1.6; margin-bottom: 1.5rem;">
-          The ultimate shipping guide and certified directory of service providers for your property. Connect with verified, trusted experts for every stage of your relocation journey.
+          Get certainty before buying a property in Costa Rica with AI. Connect with verified, trusted experts for every stage of your journey.
         </h5>
         <CTAButton
-          label="Explore Certified Providers"
+          label="Get certainty"
           href="https://propertycertify.com/"
           target="_blank"
           variant="primary"
