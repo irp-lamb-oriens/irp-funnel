@@ -572,6 +572,46 @@ $t-slow: 400ms $ease-out;
   &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 2px; }
 }
 
+.board__column-search {
+  padding: 0 $sp-2 $sp-2;
+  input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid $border;
+    border-radius: $r-xs;
+    font-size: 12px;
+    background: $surface-2;
+    color: $text;
+    outline: none;
+    font-family: $font;
+    transition: border-color $t-fast, box-shadow $t-fast;
+    &::placeholder { color: $text-dim; }
+    &:focus {
+      border-color: $accent;
+      box-shadow: 0 0 0 2px $accent-glow;
+      background: $surface;
+    }
+  }
+}
+
+.board__show-more {
+  width: 100%;
+  padding: $sp-2;
+  border: 1px dashed $border-hover;
+  border-radius: $r-sm;
+  background: transparent;
+  color: $accent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: $font;
+  transition: background $t-fast, border-color $t-fast;
+  &:hover {
+    background: $accent-subtle;
+    border-color: $accent;
+  }
+}
+
 .board__empty {
   text-align: center;
   padding: $sp-7 $sp-2;
@@ -1588,5 +1628,465 @@ $t-slow: 400ms $ease-out;
       word-wrap: break-word;
       white-space: pre-wrap;
     }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KANBAN ACTIONS TAB
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.actions-tab {
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-3;
+    padding: $sp-4;
+  }
+
+  &__skeleton {
+    height: 72px;
+    border-radius: $r-md;
+    background: linear-gradient(90deg, $surface-3 25%, $surface-4 50%, $surface-3 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+
+    &--short {
+      width: 60%;
+      height: 48px;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $sp-8 $sp-4;
+    text-align: center;
+  }
+
+  &__empty-icon {
+    font-size: 48px;
+    opacity: 0.3;
+    margin-bottom: $sp-3;
+  }
+
+  &__empty-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-2;
+    margin: 0 0 $sp-2;
+  }
+
+  &__empty-desc {
+    font-size: 13px;
+    color: $text-dim;
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.5;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 $sp-3;
+    margin-bottom: $sp-3;
+    border-bottom: 1px solid $border;
+  }
+
+  &__stage-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: $sp-1;
+    padding: $sp-1 $sp-3;
+    border-radius: $r-full;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  &__count {
+    font-size: 12px;
+    color: $text-dim;
+    font-weight: 500;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-3;
+  }
+}
+
+.actions-card {
+  border-radius: $r-md;
+  border: 1px solid $border;
+  background: $surface;
+  overflow: hidden;
+  transition: border-color $t-fast, box-shadow $t-fast;
+
+  &:hover {
+    border-color: $border-hover;
+  }
+
+  &--expanded {
+    border-color: rgba($accent, 0.3);
+    box-shadow: 0 0 0 3px $accent-glow, $shadow-sm;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $sp-3 $sp-4;
+    cursor: pointer;
+    transition: background $t-fast;
+    user-select: none;
+
+    &:hover {
+      background: $surface-2;
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text;
+  }
+
+  &__desc {
+    font-size: 12px;
+    color: $text-dim;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: $text-dim;
+    transition: transform $t-med;
+    margin-left: $sp-3;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__body {
+    padding: 0 $sp-4 $sp-4;
+    border-top: 1px solid $border;
+    animation: actions-slide-in 250ms $ease-out;
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-3;
+    padding-top: $sp-3;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-1;
+  }
+
+  &__field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-2;
+    letter-spacing: 0.2px;
+  }
+
+  &__required {
+    color: $danger;
+    margin-left: 2px;
+  }
+
+  &__input {
+    width: 100%;
+    padding: $sp-2 $sp-3;
+    font-size: 13px;
+    font-family: $font;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    background: $surface-2;
+    color: $text;
+    transition: border-color $t-fast, box-shadow $t-fast;
+    outline: none;
+
+    &:focus {
+      border-color: $accent;
+      box-shadow: 0 0 0 3px $accent-glow;
+    }
+
+    &::placeholder {
+      color: $text-dim;
+    }
+  }
+
+  &__select {
+    @extend .actions-card__input;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23868e96' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right $sp-3 center;
+    padding-right: $sp-7;
+  }
+
+  // ── Toggle Switch ──────────────────────────────────────────────────────
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: $sp-2;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+  }
+
+  &__toggle-track {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: $surface-4;
+    border-radius: $r-full;
+    transition: background $t-fast;
+
+    input:checked + & {
+      background: $accent;
+    }
+  }
+
+  &__toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: $shadow-sm;
+    transition: transform $t-med;
+
+    input:checked ~ .actions-card__toggle-track > & {
+      transform: translateX(18px);
+    }
+  }
+
+  &__toggle-label {
+    font-size: 13px;
+    color: $text-2;
+    font-weight: 500;
+  }
+
+  &__no-args {
+    font-size: 13px;
+    color: $text-dim;
+    padding: $sp-3 0;
+    font-style: italic;
+    margin: 0;
+  }
+
+  // ── Execute Button ─────────────────────────────────────────────────────
+  &__execute {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $sp-2;
+    width: 100%;
+    margin-top: $sp-4;
+    padding: $sp-3 $sp-4;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: $font;
+    color: white;
+    background: linear-gradient(135deg, $accent, $accent-hover);
+    border: none;
+    border-radius: $r-sm;
+    cursor: pointer;
+    transition: transform $t-fast, box-shadow $t-fast, opacity $t-fast;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: $shadow-glow;
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+@keyframes actions-slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENHANCED ACTIVITY LOG
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.activity-controls {
+  display: flex;
+  align-items: center;
+  gap: $sp-3;
+  margin-bottom: $sp-3;
+
+  &__search {
+    flex: 1;
+    padding: $sp-2 $sp-3;
+    font-size: 13px;
+    font-family: $font;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    background: $surface-2;
+    color: $text;
+    outline: none;
+    transition: border-color $t-fast, box-shadow $t-fast;
+
+    &:focus {
+      border-color: $accent;
+      box-shadow: 0 0 0 3px $accent-glow;
+    }
+
+    &::placeholder {
+      color: $text-dim;
+    }
+  }
+
+  &__count {
+    font-size: 11px;
+    color: $text-dim;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+}
+
+.activity-entry {
+  &--action {
+    .activity-entry__icon {
+      background: rgba($accent, 0.12);
+      color: $accent;
+    }
+  }
+
+  &__fail {
+    color: $danger;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  &__meta-row {
+    display: flex;
+    align-items: center;
+    gap: $sp-1;
+    margin-top: 2px;
+  }
+
+  &__blame {
+    display: inline-flex;
+    align-items: center;
+    gap: $sp-1;
+    font-size: 11px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+
+  &__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $accent, $accent-hover);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__time {
+    font-size: 11px;
+    color: $text-dim;
+  }
+}
+
+.activity-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $sp-3;
+  margin-top: $sp-4;
+  padding-top: $sp-3;
+  border-top: 1px solid $border;
+
+  &__btn {
+    padding: $sp-1 $sp-3;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: $font;
+    color: $accent;
+    background: transparent;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    cursor: pointer;
+    transition: background $t-fast, border-color $t-fast;
+
+    &:hover:not(:disabled) {
+      background: $accent-subtle;
+      border-color: rgba($accent, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__info {
+    font-size: 12px;
+    color: $text-dim;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 }

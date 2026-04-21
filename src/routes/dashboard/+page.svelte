@@ -14,6 +14,7 @@
   } from './store.ts';
   import DetailPanel from './components/DetailPanel.svelte';
   import MetricsView from './components/MetricsView.svelte';
+  import ToastContainer from './components/ToastContainer.svelte';
   import './dashboard.scss';
 
   // ─── Login State ────────────────────────────────────────────────────────
@@ -211,6 +212,10 @@
     }
   }
 
+  // ─── Column Search + Pagination ─────────────────────────────────────────
+  let columnSearches: Record<string, string> = {};
+  let columnPages: Record<string, number> = {};
+
   // Drag and drop
   let draggedClient: Client | null = null;
 
@@ -404,6 +409,12 @@
     {#if $activeView === 'board'}
       <div class="board">
         {#each stageEntries as [stageKey, stageLabel]}
+          {@const allCards = $clientsByStage[stageKey] || []}
+          {@const colQuery = (columnSearches[stageKey] || '').toLowerCase().trim()}
+          {@const filteredCards = colQuery ? allCards.filter(c => `${c.name} ${c.surname} ${c.email} ${c.originCity} ${c.destinationCity}`.toLowerCase().includes(colQuery)) : allCards}
+          {@const pageSize = columnPages[stageKey] || 10}
+          {@const visibleCards = filteredCards.slice(0, pageSize)}
+          {@const hasMore = filteredCards.length > pageSize}
           <div
             class="board__column"
             on:dragover={handleDragOver}
@@ -412,10 +423,18 @@
             <div class="board__column-header" style="border-color: {STAGE_COLORS[stageKey]}">
               <span class="board__column-icon">{STAGE_ICONS[stageKey]}</span>
               <span class="board__column-title">{stageLabel}</span>
-              <span class="board__column-count">{($clientsByStage[stageKey] || []).length}</span>
+              <span class="board__column-count">{colQuery ? `${filteredCards.length}/${allCards.length}` : allCards.length}</span>
+            </div>
+            <div class="board__column-search">
+              <input
+                type="text"
+                placeholder="Search column…"
+                value={columnSearches[stageKey] || ''}
+                on:input={(e) => { columnSearches[stageKey] = e.currentTarget.value; columnSearches = columnSearches; }}
+              />
             </div>
             <div class="board__column-cards">
-              {#each ($clientsByStage[stageKey] || []) as client (client.id)}
+              {#each visibleCards as client (client.id)}
                 <div
                   class="card"
                   draggable="true"
@@ -442,8 +461,13 @@
                   {/if}
                 </div>
               {/each}
-              {#if ($clientsByStage[stageKey] || []).length === 0}
-                <div class="board__empty">No clients</div>
+              {#if hasMore}
+                <button class="board__show-more" on:click={() => { columnPages[stageKey] = pageSize + 10; columnPages = columnPages; }}>
+                  Show more ({filteredCards.length - pageSize} remaining)
+                </button>
+              {/if}
+              {#if filteredCards.length === 0}
+                <div class="board__empty">{colQuery ? 'No matches' : 'No clients'}</div>
               {/if}
             </div>
           </div>
@@ -514,4 +538,5 @@
   </div>
 {/if}
 
+<ToastContainer />
 <Footer />

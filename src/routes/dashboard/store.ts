@@ -94,6 +94,7 @@ export interface Metrics {
     weeklySnapshots: WeeklySnapshot[];
   };
   monthlyLeads: Record<string, number>;
+  monthlyPaidUsers: Record<string, number>;
   sourceBreakdown: Record<string, number>;
   countryBreakdown: Record<string, number>;
   channelBreakdown: Record<string, number>;
@@ -494,4 +495,39 @@ export async function fetchMetrics(): Promise<void> {
   } finally {
     loading.set(false);
   }
+}
+
+// ─── Kanban Actions ─────────────────────────────────────────────────────────
+
+export interface ActionArgSchema {
+  label: string;
+  type: 'string' | 'number' | 'date' | 'boolean' | 'enum';
+  required?: boolean;
+  defaultValue?: string | number | boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
+export interface ActionSchemaForClient {
+  description: string;
+  args: Record<string, ActionArgSchema>;
+}
+
+export type ClientActionsPayload = Record<string, ActionSchemaForClient>;
+
+export async function fetchClientActions(id: string): Promise<{ stage: string; actions: ClientActionsPayload }> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/actions`);
+  return { stage: data.stage || '', actions: data.actions || {} };
+}
+
+export async function executeClientAction(
+  id: string,
+  actionKey: string,
+  args: Record<string, any>
+): Promise<{ success: boolean; result: any }> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/actions/${actionKey}`, {
+    method: 'POST',
+    body: JSON.stringify({ args }),
+  });
+  return data;
 }

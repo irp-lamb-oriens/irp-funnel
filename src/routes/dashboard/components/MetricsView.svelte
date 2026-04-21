@@ -599,6 +599,25 @@
         </div>
       </div>
     {/if}
+
+    <!-- Monthly Paid Users -->
+    {#if $metrics.monthlyPaidUsers && Object.keys($metrics.monthlyPaidUsers).length > 0}
+      <div class="metrics-section">
+        <h2>💳 Monthly Paid Users</h2>
+        <div class="metric-total" style="margin-bottom: 12px;">
+          Total paid clients: <strong>{Object.values($metrics.monthlyPaidUsers).reduce((a, b) => a + b, 0)}</strong>
+        </div>
+        <div class="monthly-chart">
+          {#each Object.entries($metrics.monthlyPaidUsers).sort() as [month, count]}
+            <div class="monthly-bar">
+              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyPaidUsers))) * 100)}%; background: linear-gradient(180deg, #10b981, #059669);"></div>
+              <span class="monthly-bar__count">{count}</span>
+              <span class="monthly-bar__label">{month}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   {:else}
     <div class="dashboard__loading">
       <div class="spinner"></div>
