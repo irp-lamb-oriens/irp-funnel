@@ -257,6 +257,11 @@
     isLoading = true;
     try {
       const response = await submitScheduling();
+      if (!response) {
+        // Policy violation or duplicate — user already saw a friendly message
+        // Stay on the current step so they can re-pick a time
+        return;
+      }
       if (response?.calendarLink) {
         calendarLink = response.calendarLink;
         hangoutLink = response.hangoutLink;

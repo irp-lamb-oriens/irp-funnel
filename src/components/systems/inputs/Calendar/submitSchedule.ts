@@ -45,6 +45,37 @@ export async function submitScheduling() {
       }
     );
 
+    // Handle scheduling policy violations gracefully
+    if (response.status === 422) {
+      const errorData = await response.json();
+      console.warn("[submitSchedule] Scheduling policy violation:", errorData);
+      
+      if (errorData.code === "too_soon") {
+        alert(
+          "This time slot requires at least 2 business days advance notice. Please go back and select a later date."
+        );
+      } else if (errorData.code === "outside_hours") {
+        alert(
+          "This time is outside our consultation hours (Mon–Fri, 9 AM – 4 PM Costa Rica time). Please go back and pick another slot."
+        );
+      } else {
+        alert(
+          "This time slot is no longer available. Please go back and select a different time."
+        );
+      }
+      return null;
+    }
+
+    // Handle duplicate bookings gracefully
+    if (response.status === 409) {
+      const errorData = await response.json();
+      console.warn("[submitSchedule] Duplicate booking detected:", errorData);
+      alert(
+        "You already have a consultation booked around this time! Check your email for the details, or pick a different time."
+      );
+      return null;
+    }
+
     if (!response.ok) {
       const errorDetails = await response.text();
       console.error("Backend response details:", errorDetails);
