@@ -35,10 +35,13 @@
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(Date.UTC(currentYear, currentMonth, day));
       const formattedDate = currentDate.toISOString().split("T")[0];
+      const dayOfWeek = currentDate.getUTCDay();
+      // Block weekends (0=Sun, 6=Sat) and Fridays (5)
+      const isBlockedDay = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
       const availableDate = availableDates.find(d => d.date === formattedDate);
       calendarDays.push({
         date: formattedDate,
-        isAvailable: !!availableDate,
+        isAvailable: !isBlockedDay && !!availableDate,
       });
     }
   }
@@ -96,7 +99,7 @@
       maxDate.setUTCDate(maxDate.getUTCDate() + 14);
 
       for (let d = new Date(startOfDay); d <= maxDate; d.setUTCDate(d.getUTCDate() + 1)) {
-        if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+        if (d.getUTCDay() === 0 || d.getUTCDay() === 5 || d.getUTCDay() === 6) continue;
         const dateKey = d.toISOString().split("T")[0];
         datesWithHours[dateKey] = [
           { name: "Morning", children: [] },
@@ -158,7 +161,7 @@
     while (workingDaysToAdd > 0) {
       date.setUTCDate(date.getUTCDate() + 1);
       const dayOfWeek = date.getUTCDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      if (dayOfWeek !== 0 && dayOfWeek !== 5 && dayOfWeek !== 6) {
         workingDaysToAdd--;
       }
     }
