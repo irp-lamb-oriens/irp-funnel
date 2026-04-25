@@ -1,6 +1,7 @@
 <script lang="ts">
   import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
   import { fetchLeaderboard, evoLeaderboard } from './evo/evoStore.ts';
+  import EvoLeaderboard from './evo/EvoLeaderboard.svelte';
   import { onMount } from 'svelte';
 
   onMount(() => {
@@ -365,6 +366,10 @@
           <h2>${($evoLeaderboard.totals.revenueUsd ?? 0).toLocaleString()}</h2>
           <span class="evo-subtitle">{$evoLeaderboard.totals.paidVisitors} Consultations</span>
         </div>
+      </div>
+
+      <div class="metrics-section" style="margin-bottom: 24px;">
+        <EvoLeaderboard />
       </div>
     {/if}
 
