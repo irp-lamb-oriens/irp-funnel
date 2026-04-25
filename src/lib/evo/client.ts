@@ -136,8 +136,8 @@ function fetchWeights(): void {
     .then(r => r.json())
     .then(data => {
       weightsCache = {};
-      for (const [compKey, { weights }] of Object.entries(data)) {
-        weightsCache[compKey] = weights as Record<string, number>;
+      for (const [compKey, entry] of Object.entries(data as Record<string, { weights: Record<string, number> }>)) {
+        weightsCache[compKey] = entry.weights;
       }
     })
     .catch(() => {

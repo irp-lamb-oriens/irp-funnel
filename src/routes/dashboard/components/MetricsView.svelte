@@ -350,7 +350,6 @@
 </style>
 
 <div class="metrics-view">
-<div class="metrics-view">
   {#if $metrics}
     
     {#if $evoLeaderboard && $evoLeaderboard.totals && $evoLeaderboard.rows.length > 0}

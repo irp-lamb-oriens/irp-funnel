@@ -707,7 +707,7 @@ $t-slow: 400ms $ease-out;
 
 .list-header-sticky {
   position: sticky;
-  top: 60px; /* Offset for the main navigation topbar */
+  // top: 60px; /* Offset for the main navigation topbar */ // todo: find a better way
   z-index: 10;
   background: $bg;
   border-bottom: 1px solid $border;
