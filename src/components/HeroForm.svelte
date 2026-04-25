@@ -144,15 +144,15 @@
       updateField(referrer.trim(), 'referredBy');
     }
     // Evo: log the exposure to the visitor's assigned HeroForm variant.
-    trackExposure(EVO_COMPONENT, evoVariant, { variantLabel: evoVariant });
-    trackExposure(EVO_COLOR_COMPONENT, evoColorVariant, { variantLabel: evoColorVariant });
+    trackExposure(EVO_COMPONENT, evoCopyVariantStr, { variantLabel: evoCopyVariantStr });
+    trackExposure(EVO_COLOR_COMPONENT, evoColorVariantStr, { variantLabel: evoColorVariantStr });
   });
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   async function handleStart() {
     // Evo: the CTA click is the headline "did the variant engage them?" signal.
-    trackInteraction(EVO_COMPONENT, evoVariant, 'cta_click', { view: 'cta' });
-    trackInteraction(EVO_COLOR_COMPONENT, evoColorVariant, 'cta_click', { view: 'cta' });
+    trackInteraction(EVO_COMPONENT, evoCopyVariantStr, 'cta_click', { view: 'cta' });
+    trackInteraction(EVO_COLOR_COMPONENT, evoColorVariantStr, 'cta_click', { view: 'cta' });
     view = 'email';
     await tick();
     emailInput?.focus();
@@ -170,7 +170,7 @@
       // Evo: link the anonymous visitorId to this email so sales attribution
       // can credit prior exposures to whatever consultation this becomes.
       identify(cleanEmail);
-      trackInteraction(EVO_COMPONENT, evoVariant, 'email_submit', { view: 'email' });
+      trackInteraction(EVO_COMPONENT, evoCopyVariantStr, 'email_submit', { view: 'email' });
 
       const apiURL = $store.apiURL();
       await fetch(`${apiURL}/api/capture-data`, {
