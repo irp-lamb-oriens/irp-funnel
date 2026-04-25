@@ -2,7 +2,7 @@ import { get } from "svelte/store";
 import { formState, type FormState } from "./formStore.js";
 import store from "../../../store.js";
 
-export async function submitScheduling() {
+export async function submitScheduling(evoConsultationPriceVariant?: string) {
   const formData = get(formState);
   console.log("Form data from store:", formData);
 
@@ -29,6 +29,8 @@ export async function submitScheduling() {
   const submissionData = {
     ...formData,
     events: schedulingData,
+    evoVisitorId: (window as any).__EVO_SESSION__ || null,
+    evoConsultationPriceVariant
   };
 
   console.log("Form data to be sent to backend:", submissionData);

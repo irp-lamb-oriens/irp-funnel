@@ -23,8 +23,56 @@
   import Chatbot from './Chatbot.svelte';
   import Language from './systems/inputs/Language/Language.svelte';
   import countries from './systems/inputs/Country/countries.js';
+  import { useVariant, trackExposure, trackInteraction, identify } from '../lib/evo/index.ts';
+
+  // ─── Evo — sticky variant assignment + reference instrumentation ──────────
+  // First render randomly picks a variant; subsequent renders reuse the sticky
+  // assignment from localStorage. Exposure is logged on mount of the CTA view
+  // below; interactions fire from the click handlers further down.
+  const EVO_COMPONENT = 'HeroForm';
+  const evoVariant = useVariant(EVO_COMPONENT);
+
+  const EVO_COLOR_COMPONENT = 'HeroFormColor';
+  // Subscribe reactively so the button color updates instantly when the store changes
+  let evoColorVariantStr = 'v1-baseline';
+  import { activeVariants } from '../lib/evo/client.ts';
+  $: evoColorVariantStr = $activeVariants[EVO_COLOR_COMPONENT] || useVariant(EVO_COLOR_COMPONENT);
+  $: evoCopyVariantStr = $activeVariants[EVO_COMPONENT] || useVariant(EVO_COMPONENT);
+
+  interface HeroFormCopy {
+    eyebrow: string;
+    title: string;
+    sub: string;
+    btnIcon: string;
+    btnText: string;
+  }
+  const EVO_COPY: Record<string, HeroFormCopy> = {
+    'v1-baseline': {
+      eyebrow: 'Every project is led by professionals with more than 14 years of experience',
+      title: 'Ready to start your<br/>international journey?',
+      sub: "Get personalized relocation guidance — speak with our virtual assistant, fill out a quick form, or connect with us on WhatsApp.",
+      btnIcon: '🌍',
+      btnText: 'Get Started',
+    },
+    'v2-warm-copy': {
+      eyebrow: '14+ years helping families move abroad without the stress',
+      title: "Let's make your move<br/>feel simple.",
+      sub: "Tell us where you're going — we'll map the path. Chat with our team, fill out a quick form, or message us on WhatsApp.",
+      btnIcon: '✨',
+      btnText: 'Start my move',
+    },
+    'v3-urgent-copy': {
+      eyebrow: 'Dates are booking fast — secure your relocation strategy now',
+      title: 'Your move shouldn’t wait.<br/>Act now.',
+      sub: "Lock in your personalized relocation plan today — chat with our team, fill out a quick form, or WhatsApp us.",
+      btnIcon: '⚡',
+      btnText: 'Start now',
+    },
+  };
+  $: evoCopy = EVO_COPY[evoCopyVariantStr] ?? EVO_COPY['v1-baseline'];
 
   // ─── Views ────────────────────────────────────────────────────────────────
+
   // 'cta'     = initial CTA button
   // 'email'   = email capture
   // 'choice'  = channel picker (Lili / WhatsApp / Form)
@@ -95,10 +143,16 @@
     } else {
       updateField(referrer.trim(), 'referredBy');
     }
+    // Evo: log the exposure to the visitor's assigned HeroForm variant.
+    trackExposure(EVO_COMPONENT, evoVariant, { variantLabel: evoVariant });
+    trackExposure(EVO_COLOR_COMPONENT, evoColorVariant, { variantLabel: evoColorVariant });
   });
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   async function handleStart() {
+    // Evo: the CTA click is the headline "did the variant engage them?" signal.
+    trackInteraction(EVO_COMPONENT, evoVariant, 'cta_click', { view: 'cta' });
+    trackInteraction(EVO_COLOR_COMPONENT, evoColorVariant, 'cta_click', { view: 'cta' });
     view = 'email';
     await tick();
     emailInput?.focus();
@@ -112,12 +166,18 @@
     emailError = '';
     isLoading = true;
     try {
+      const cleanEmail = $formState.email.trim();
+      // Evo: link the anonymous visitorId to this email so sales attribution
+      // can credit prior exposures to whatever consultation this becomes.
+      identify(cleanEmail);
+      trackInteraction(EVO_COMPONENT, evoVariant, 'email_submit', { view: 'email' });
+
       const apiURL = $store.apiURL();
       await fetch(`${apiURL}/api/capture-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: $formState.email.trim(),
+          email: cleanEmail,
           name: '', surname: '',
           source: 'hero-form-email-capture',
           timestamp: new Date().toISOString(),
@@ -296,20 +356,24 @@
       <div class="form-steps">
 
         <!-- ═══════════ CTA ═══════════ -->
+        <!-- Evo: copy below is driven by the visitor's sticky variant
+             (`evoVariant`), resolved at component construction time. Exposure
+             logged in onMount; click → `handleStart()` which records the
+             `cta_click` interaction. -->
         {#if view === 'cta'}
-          <div class="form-frame active">
+          <div class="form-frame active" data-evo-component={EVO_COMPONENT} data-evo-variant={evoCopyVariantStr}>
             <div class="cta-hero">
-              <h6 class="cta-hero__eyebrow"><LetterByLetter text="Every project is led by professionals with more than 14 years of experience" /></h6>
-              <h1 class="cta-hero__title">Ready to start your<br/>international journey?</h1>
-              <p class="cta-hero__sub">Get personalized relocation guidance — speak with our virtual assistant, fill out a quick form, or connect with us on WhatsApp.</p>
+              <h6 class="cta-hero__eyebrow"><LetterByLetter text={evoCopy.eyebrow} /></h6>
+              <h1 class="cta-hero__title">{@html evoCopy.title}</h1>
               <div class="cta-hero__btn-wrap">
-                <button class="cta-hero__btn" on:click={handleStart}>
+                <button class="cta-hero__btn cta-hero__btn--{evoColorVariantStr}" on:click={handleStart}>
                   <span class="cta-hero__btn-shimmer"></span>
-                  <span class="cta-hero__btn-icon">🌍</span>
-                  <span class="cta-hero__btn-text">Get Started</span>
+                  <span class="cta-hero__btn-icon">{evoCopy.btnIcon}</span>
+                  <span class="cta-hero__btn-text">{evoCopy.btnText}</span>
                   <span class="cta-hero__btn-arrow">→</span>
                 </button>
               </div>
+              <p class="cta-hero__sub">{evoCopy.sub}</p>
             </div>
           </div>
         {/if}
@@ -606,17 +670,11 @@
     &__btn {
       display: flex; align-items: center; justify-content: center; gap: 0.85rem;
       padding: 1.25rem 3rem; min-width: 280px;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #a855f7 100%);
       color: #fff; border: none; border-radius: 100px;
       font-size: 1.25rem; font-weight: 800; font-family: var(--font-title, inherit);
       letter-spacing: 0.02em; cursor: pointer;
       position: relative; overflow: hidden; z-index: 1;
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow:
-        0 8px 28px rgba(99, 102, 241, 0.45),
-        0 16px 48px rgba(139, 92, 246, 0.25),
-        0 0 0 0 rgba(99, 102, 241, 0);
-      animation: ctaPulseGlow 2.5s ease-in-out infinite;
 
       &::before {
         content: ''; position: absolute; inset: 0;
@@ -625,14 +683,41 @@
       }
       &:hover {
         transform: translateY(-4px) scale(1.04);
-        box-shadow:
-          0 12px 36px rgba(99, 102, 241, 0.55),
-          0 24px 60px rgba(139, 92, 246, 0.3),
-          0 0 60px rgba(168, 85, 247, 0.2);
         animation: none;
-        background: linear-gradient(135deg, #7c7cf7 0%, #9b6ff8 40%, #b86eff 100%);
       }
       &:active { transform: translateY(-1px) scale(1.01); }
+
+      &--v1-baseline {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #a855f7 100%);
+        box-shadow:
+          0 8px 28px rgba(99, 102, 241, 0.45),
+          0 16px 48px rgba(139, 92, 246, 0.25),
+          0 0 0 0 rgba(99, 102, 241, 0);
+        animation: ctaPulseGlowBaseline 2.5s ease-in-out infinite;
+        &:hover {
+          box-shadow:
+            0 12px 36px rgba(99, 102, 241, 0.55),
+            0 24px 60px rgba(139, 92, 246, 0.3),
+            0 0 60px rgba(168, 85, 247, 0.2);
+          background: linear-gradient(135deg, #7c7cf7 0%, #9b6ff8 40%, #b86eff 100%);
+        }
+      }
+
+      &--v2-red {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 40%, #b91c1c 100%);
+        box-shadow:
+          0 8px 28px rgba(239, 68, 68, 0.45),
+          0 16px 48px rgba(220, 38, 38, 0.25),
+          0 0 0 0 rgba(239, 68, 68, 0);
+        animation: ctaPulseGlowRed 2.5s ease-in-out infinite;
+        &:hover {
+          box-shadow:
+            0 12px 36px rgba(239, 68, 68, 0.55),
+            0 24px 60px rgba(220, 38, 38, 0.3),
+            0 0 60px rgba(185, 28, 28, 0.2);
+          background: linear-gradient(135deg, #f87171 0%, #ef4444 40%, #dc2626 100%);
+        }
+      }
     }
     &__btn-shimmer {
       position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
@@ -652,7 +737,7 @@
     50% { left: 150%; }
   }
 
-  @keyframes ctaPulseGlow {
+  @keyframes ctaPulseGlowBaseline {
     0%, 100% {
       box-shadow:
         0 8px 28px rgba(99, 102, 241, 0.45),
@@ -664,6 +749,21 @@
         0 10px 36px rgba(99, 102, 241, 0.55),
         0 20px 56px rgba(139, 92, 246, 0.35),
         0 0 80px rgba(168, 85, 247, 0.12);
+    }
+  }
+
+  @keyframes ctaPulseGlowRed {
+    0%, 100% {
+      box-shadow:
+        0 8px 28px rgba(239, 68, 68, 0.45),
+        0 16px 48px rgba(220, 38, 38, 0.25),
+        0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    50% {
+      box-shadow:
+        0 10px 36px rgba(239, 68, 68, 0.55),
+        0 20px 56px rgba(220, 38, 38, 0.35),
+        0 0 80px rgba(185, 28, 28, 0.12);
     }
   }
 

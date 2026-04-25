@@ -4,6 +4,7 @@
   import log from "./store.js";
   import { formState } from './systems/inputs/Calendar/formStore.js';
     import countries from "./systems/inputs/Country/countries.ts";
+  import { useVariant, trackExposure, trackInteraction } from '../lib/evo/index.ts';
 
   export let initialContext: any = {};
   export let onBackToForm: () => void;
@@ -11,7 +12,19 @@
   export let onErrorFallback: () => void;
   export let onChannelSelect: (channel: string) => void;
   export let preferredLanguage: string = 'en';
-  
+
+  // ─── Evo — Chatbot is the 2nd Evo-registered component ──────────────────
+  // Variants here drive the welcome-message prompt we send to the LLM.
+  // `v2-concierge` nudges the bot into a warmer, guided tone to test whether
+  // it reduces drop-off vs the baseline greeting.
+  const EVO_COMPONENT = 'Chatbot';
+  const evoVariant = useVariant(EVO_COMPONENT);
+  const EVO_GREETING_HINTS: Record<string, string> = {
+    'v1-baseline': '',
+    'v2-concierge': "Adopt a warm, concierge tone — open with 'Hi, I'm Lili — I'll personally guide you through every step' and frame yourself as their dedicated relocation concierge.",
+  };
+  const evoGreetingHint: string = EVO_GREETING_HINTS[evoVariant] ?? '';
+
   import { updateField } from "./systems/inputs/Calendar/formStore.js";
 
   let isDropdownOpen = false;
@@ -80,10 +93,21 @@
   let authCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit code for WA handoff
 
   // --- UPDATED: Ask the LLM to generate the welcome message so it perfectly honors the selected language ---
+  const EVO_PERSONA_COMPONENT = 'ChatbotPersona';
+  const evoPersonaVariant = useVariant(EVO_PERSONA_COMPONENT);
+
   onMount(async () => {
     const fs = get(formState);
     isTyping = true;
-    
+
+    // Evo: expose the chatbot session to the chatbot's sessionId so later
+    // events can correlate, and log the exposure tied to our variants.
+    try {
+      (window as any).__EVO_SESSION__ = sessionId;
+    } catch {}
+    trackExposure(EVO_COMPONENT, evoVariant, { variantLabel: evoVariant });
+    trackExposure(EVO_PERSONA_COMPONENT, evoPersonaVariant, { variantLabel: evoPersonaVariant });
+
     // Instead of hardcoding English, send an invisible system request asking the bot to introduce itself in the user's chosen language.
     try {
       const apiURL = get(log).apiURL();
@@ -93,9 +117,10 @@
         body: JSON.stringify({
           sessionId,
           authCode,
-          message: `[SYSTEM COMMAND] Introduce yourself as Lili from IRP and welcome the user. If they have provided their name (${fs.name}), use it. Acknowledge what we know so far (${JSON.stringify(fs)}), and then ask the first missing PRIORITY question to continue. RESPOND ONLY IN THE LANGUAGE CODE: ${preferredLanguage}. Stay completely natural.`,
+          message: `[SYSTEM COMMAND] Introduce yourself as Lili from IRP and welcome the user. If they have provided their name (${fs.name}), use it. Acknowledge what we know so far (${JSON.stringify(fs)}), and then ask the first missing PRIORITY question to continue. ${evoGreetingHint} RESPOND ONLY IN THE LANGUAGE CODE: ${preferredLanguage}. Stay completely natural.`,
           context: initialContext,
-          preferredLanguage
+          preferredLanguage,
+          evoPersonaVariant
         })
       });
 
@@ -118,6 +143,8 @@
     }
   });
 
+  let evoFirstUserMessageTracked = false;
+
   async function sendMessage() {
     if (!userInput.trim() || isTyping) return;
 
@@ -125,6 +152,15 @@
     userInput = "";
     messages.update(m => [...m, { role: "user", content: userMsg }]);
     isTyping = true;
+
+    // Evo: the first user message is the "did the greeting engage them?"
+    // signal — the most comparable cross-variant interaction.
+    if (!evoFirstUserMessageTracked) {
+      evoFirstUserMessageTracked = true;
+      trackInteraction(EVO_COMPONENT, evoVariant, 'first_user_message', {
+        length: userMsg.length,
+      });
+    }
     
     await tick();
     scrollToBottom();
@@ -139,7 +175,8 @@
           authCode,
           message: userMsg,
           context: initialContext,
-          preferredLanguage
+          preferredLanguage,
+          evoPersonaVariant
         })
       });
 
@@ -188,17 +225,17 @@
         </button>
 
         {#if isDropdownOpen}
-          <div class="field-dropdown">
-            <div class="dropdown-header">Consultation Details</div>
-            <div class="field-list">
-              {#each Object.entries($formState) as [key, value]}
-                {#if value && value !== '' && key !== 'vehicles' && key !== 'scheduling' && key !== 'chatHistory'}
-                  <div class="field-item">
-                    <span class="field-key">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
-                    <span class="field-value">{value}</span>
-                  </div>
-                {/if}
-              {/each}
+      <div class="field-dropdown">
+        <div class="dropdown-header">Consultation Details</div>
+        <div class="field-list">
+          {#each Object.entries($formState) as [key, value]}
+            {#if value && value !== '' && key !== 'vehicles' && key !== 'scheduling' && key !== 'chatHistory' && key !== 'evoConsultationPriceVariant'}
+              <div class="field-item">
+                <span class="field-key">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}</span>
+                <span class="field-value">{value}</span>
+              </div>
+            {/if}
+          {/each}
               {#if Array.isArray($formState.vehicles) && $formState.vehicles.length > 0}
                 <div class="field-item">
                   <span class="field-key">vehicles</span>

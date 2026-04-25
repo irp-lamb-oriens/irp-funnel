@@ -3,6 +3,7 @@
     import { afterNavigate } from "$app/navigation";
     import ThemeChanger from "../components/ThemeChanger/ThemeChanger.svelte";
     import store from "../components/store.ts";
+    import EvoDevSwitcher from "../components/EvoDevSwitcher.svelte";
     // check if need later
     // import SmoothScrollWrapper from "../components/SmoothScrollWrapper/SmoothScrollWrapper.svelte";
     const MEASUREMENT_ID = "G-3X226YFLE6";
@@ -61,6 +62,10 @@
 <!-- <SmoothScrollWrapper> -->
     <slot />
 <!-- </SmoothScrollWrapper> -->
+
+{#if import.meta.env.DEV}
+  <EvoDevSwitcher />
+{/if}
 
 <style lang="scss">
     @use "./styles/everything.scss";

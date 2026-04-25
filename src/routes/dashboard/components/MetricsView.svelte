@@ -1,5 +1,11 @@
 <script lang="ts">
   import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
+  import { fetchLeaderboard, evoLeaderboard } from './evo/evoStore.ts';
+  import { onMount } from 'svelte';
+
+  onMount(() => {
+    fetchLeaderboard();
+  });
 
   // --- Dynamic Business Intelligence Engine ---
   // Now supports ANY collection, not just clients
@@ -287,9 +293,82 @@
   }
 </script>
 
+<style>
+  .evo-highlight-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .evo-highlight-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .evo-icon {
+    font-size: 28px;
+  }
+
+  .evo-highlight-left h3 {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .evo-highlight-left p {
+    margin: 4px 0 0;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+
+  .evo-highlight-right {
+    text-align: right;
+  }
+
+  .evo-highlight-right h2 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: #34d399;
+    letter-spacing: -0.02em;
+  }
+
+  .evo-subtitle {
+    display: block;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+</style>
+
+<div class="metrics-view">
 <div class="metrics-view">
   {#if $metrics}
     
+    {#if $evoLeaderboard && $evoLeaderboard.totals && $evoLeaderboard.rows.length > 0}
+      <div class="evo-highlight-banner">
+        <div class="evo-highlight-left">
+          <span class="evo-icon">✨</span>
+          <div>
+            <h3>Evo Pipeline Generated</h3>
+            <p>Total pipeline value driven by tracked UI components.</p>
+          </div>
+        </div>
+        <div class="evo-highlight-right">
+          <h2>${($evoLeaderboard.totals.revenueUsd ?? 0).toLocaleString()}</h2>
+          <span class="evo-subtitle">{$evoLeaderboard.totals.paidVisitors} Consultations</span>
+        </div>
+      </div>
+    {/if}
+
     <!-- Dynamic Business Intelligence Section -->
     <div class="metrics-section dynamic-bi-section" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
       <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 16px;">🔍 Dynamic Business Intelligence</h2>

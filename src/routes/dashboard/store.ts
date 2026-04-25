@@ -263,7 +263,7 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo'>('board');
 export const detailPanelOpen = writable<boolean>(false);
 
 // Persist auth token
