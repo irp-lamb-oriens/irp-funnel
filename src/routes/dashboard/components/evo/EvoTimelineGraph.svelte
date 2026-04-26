@@ -132,8 +132,11 @@
 							y1={yFor(trackIdx)}
 							y2={yFor(trackIdx)}
 							stroke="#1e293b"
-							stroke-width="1"
-						/>
+							stroke-width="4"
+							class="evo-track-line"
+						>
+							<title>{trackKey.replace('|', ' · ')}</title>
+						</line>
 						{#each points as p}
 							<g class="evo-node" on:click={() => onNodeClick(p)} role="button" tabindex="0">
 								<title>
