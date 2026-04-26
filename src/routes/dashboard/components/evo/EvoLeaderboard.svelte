@@ -94,7 +94,10 @@
 								</span>
 							</td>
 							<td class="mono" title={row.commitMessage}>
-								{row.commitHash?.slice(0, 8) || '—'}
+								{row.commitHash?.split(',')[0]?.trim()?.slice(0, 8) || '—'}
+								{#if row.commitHash?.includes(',')}
+									<small class="evo-commit-msg" style="display:inline; margin-left: 2px;">+{row.commitHash.split(',').length - 1}</small>
+								{/if}
 								{#if row.commitMessage}
 									<small class="evo-commit-msg">· {row.commitMessage}</small>
 								{/if}
