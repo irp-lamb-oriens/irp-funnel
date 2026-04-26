@@ -116,6 +116,59 @@
 		await fetchNode(p.componentKey, p.versionKey, p.commitHash, p.bucket);
 	}
 
+	// Tooltip state
+	// We use a modified interface to support both single nodes and aggregated track lines
+	interface TooltipState {
+		componentKey: string;
+		versionKey: string;
+		commitHash?: string;
+		bucket: string;
+		exposures: number;
+		interactions: number;
+		uniqueVisitors: number;
+	}
+	
+	let tooltipData: TooltipState | null = null;
+	let tooltipX = 0;
+	let tooltipY = 0;
+	
+	function showTooltip(e: MouseEvent, data: TooltipState) {
+		tooltipData = data;
+		// Position slightly above and to the right of the cursor
+		tooltipX = e.clientX + 15;
+		tooltipY = e.clientY - 40;
+	}
+
+	function moveTooltip(e: MouseEvent) {
+		if (tooltipData) {
+			tooltipX = e.clientX + 15;
+			tooltipY = e.clientY - 40;
+		}
+	}
+
+	function hideTooltip() {
+		tooltipData = null;
+	}
+
+	function getTrackAggregate(compKey: string, variantKey: string, points: TimelinePoint[]): TooltipState {
+		let exposures = 0;
+		let interactions = 0;
+		let uniqueVisitors = 0;
+		for (const p of points) {
+			exposures += p.exposures;
+			interactions += p.interactions;
+			uniqueVisitors += p.uniqueVisitors;
+		}
+		return {
+			componentKey: compKey,
+			versionKey: variantKey,
+			bucket: "All Time",
+			exposures,
+			interactions,
+			uniqueVisitors
+		};
+	}
+
 	// Gather distinct commit hashes per bucket — rendered as subtle vertical markers.
 	$: commitMarkers = (() => {
 		const seen = new Map<string, { bucket: string; commitHash: string; commitMessage: string }>();
@@ -223,23 +276,25 @@
 							y1={track.y}
 							y2={track.y}
 							stroke="#1e293b"
-							stroke-width="4"
+							stroke-width="12"
 							class="evo-track-line"
-						>
-							<title>{track.compKey} · {track.variantKey}</title>
-						</line>
+							style="cursor: pointer;"
+							on:mouseenter={(e) => showTooltip(e, getTrackAggregate(track.compKey, track.variantKey, track.points))}
+							on:mousemove={moveTooltip}
+							on:mouseleave={hideTooltip}
+						/>
 						
 						<!-- Data nodes -->
 						{#each track.points as p}
-							<g class="evo-node" on:click={() => onNodeClick(p)} role="button" tabindex="0">
-								<title>
-									{p.componentKey} · {p.versionKey} · {p.commitHash?.slice(0, 8)}
-									{'\n'}bucket: {p.bucket}
-									{'\n'}exposures: {p.exposures}
-									{'\n'}interactions: {p.interactions}
-									{'\n'}visitors: {p.uniqueVisitors}
-									{'\n'}engagement: {fmtPct(p.exposures ? p.interactions / p.exposures : 0)}
-								</title>
+							<g 
+								class="evo-node" 
+								on:click={() => onNodeClick(p)} 
+								on:mouseenter={(e) => showTooltip(e, p)}
+								on:mousemove={moveTooltip}
+								on:mouseleave={hideTooltip}
+								role="button" 
+								tabindex="0"
+							>
 								<circle
 									cx={xFor(p.bucket)}
 									cy={track.y}
@@ -265,6 +320,43 @@
 			<span class="evo-legend__spacer" />
 			<span class="evo-legend__dot evo-legend__dot--sm" style="background: #94a3b8;" /> few exposures
 			<span class="evo-legend__dot evo-legend__dot--lg" style="background: #94a3b8;" /> many exposures
+		</div>
+	{/if}
+
+	<!-- Custom Floating Tooltip -->
+	{#if tooltipData}
+		<div 
+			class="evo-tooltip" 
+			style="left: {tooltipX}px; top: {tooltipY}px;"
+		>
+			<div class="evo-tooltip__header">
+				<span class="evo-tooltip__variant">{tooltipData.componentKey} · {tooltipData.versionKey}</span>
+				{#if tooltipData.commitHash}
+					<span class="evo-tooltip__commit">{tooltipData.commitHash.slice(0, 8)}</span>
+				{/if}
+			</div>
+			<div class="evo-tooltip__body">
+				<div class="evo-tooltip__row">
+					<span class="evo-tooltip__label">Bucket</span>
+					<span class="evo-tooltip__val">{tooltipData.bucket}</span>
+				</div>
+				<div class="evo-tooltip__row">
+					<span class="evo-tooltip__label">Exposures</span>
+					<span class="evo-tooltip__val">{tooltipData.exposures.toLocaleString()}</span>
+				</div>
+				<div class="evo-tooltip__row">
+					<span class="evo-tooltip__label">Interactions</span>
+					<span class="evo-tooltip__val">{tooltipData.interactions.toLocaleString()}</span>
+				</div>
+				<div class="evo-tooltip__row">
+					<span class="evo-tooltip__label">Visitors</span>
+					<span class="evo-tooltip__val">{tooltipData.uniqueVisitors.toLocaleString()}</span>
+				</div>
+				<div class="evo-tooltip__row evo-tooltip__row--highlight">
+					<span class="evo-tooltip__label">Engagement</span>
+					<span class="evo-tooltip__val">{fmtPct(tooltipData.exposures ? tooltipData.interactions / tooltipData.exposures : 0)}</span>
+				</div>
+			</div>
 		</div>
 	{/if}
 </section>
@@ -355,4 +447,68 @@
 	.evo-legend__dot--sm { width: 6px; height: 6px; }
 	.evo-legend__dot--lg { width: 14px; height: 14px; }
 	.evo-legend__spacer { width: 24px; }
+
+	/* Tooltip */
+	.evo-tooltip {
+		position: fixed;
+		pointer-events: none;
+		z-index: 9999;
+		background: rgba(15, 23, 42, 0.95);
+		backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 10px;
+		padding: 14px;
+		width: 220px;
+		box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+		transform: translateY(-50%);
+		animation: tooltipFadeIn 0.15s ease-out;
+		color: #e2e8f0;
+		font-family: var(--font-sans, system-ui, sans-serif);
+	}
+	@keyframes tooltipFadeIn {
+		from { opacity: 0; transform: translateY(-40%) scale(0.95); }
+		to { opacity: 1; transform: translateY(-50%) scale(1); }
+	}
+	.evo-tooltip__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-bottom: 10px;
+		margin-bottom: 10px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+	.evo-tooltip__variant {
+		font-size: 13px;
+		font-weight: 700;
+		color: #f8fafc;
+	}
+	.evo-tooltip__commit {
+		font-family: ui-monospace, monospace;
+		font-size: 11px;
+		color: #94a3b8;
+		background: rgba(255, 255, 255, 0.05);
+		padding: 2px 6px;
+		border-radius: 4px;
+	}
+	.evo-tooltip__body {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.evo-tooltip__row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 12px;
+	}
+	.evo-tooltip__label {
+		color: #94a3b8;
+	}
+	.evo-tooltip__val {
+		font-weight: 600;
+		color: #e2e8f0;
+	}
+	.evo-tooltip__row--highlight .evo-tooltip__val {
+		color: #34d399;
+	}
 </style>
