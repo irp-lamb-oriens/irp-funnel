@@ -1,12 +1,6 @@
 <script lang="ts">
   import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
-  import { fetchLeaderboard, evoLeaderboard } from './evo/evoStore.ts';
-  import EvoLeaderboard from './evo/EvoLeaderboard.svelte';
   import { onMount } from 'svelte';
-
-  onMount(() => {
-    fetchLeaderboard();
-  });
 
   // --- Dynamic Business Intelligence Engine ---
   // Now supports ANY collection, not just clients
@@ -353,26 +347,6 @@
 <div class="metrics-view">
   {#if $metrics}
     
-    {#if $evoLeaderboard && $evoLeaderboard.totals && $evoLeaderboard.rows.length > 0}
-      <div class="evo-highlight-banner">
-        <div class="evo-highlight-left">
-          <span class="evo-icon">✨</span>
-          <div>
-            <h3>Evo Pipeline Generated</h3>
-            <p>Total pipeline value driven by tracked UI components.</p>
-          </div>
-        </div>
-        <div class="evo-highlight-right">
-          <h2>${($evoLeaderboard.totals.revenueUsd ?? 0).toLocaleString()}</h2>
-          <span class="evo-subtitle">{$evoLeaderboard.totals.paidVisitors} Consultations</span>
-        </div>
-      </div>
-
-      <div class="metrics-section" style="margin-bottom: 24px;">
-        <EvoLeaderboard />
-      </div>
-    {/if}
-
     <!-- Dynamic Business Intelligence Section -->
     <div class="metrics-section dynamic-bi-section" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
       <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 16px;">🔍 Dynamic Business Intelligence</h2>
