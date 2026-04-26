@@ -136,7 +136,7 @@
 		</p>
 	</header>
 
-	{#if tracks.length === 0}
+	{#if groupedTracks.length === 0}
 		<div class="evo-timeline__empty">
 			No timeline data yet — instrument a component with <code>trackExposure()</code> + <code>trackInteraction()</code>
 			and refresh.
