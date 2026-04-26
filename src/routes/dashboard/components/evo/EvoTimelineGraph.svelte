@@ -173,67 +173,83 @@
 	{/if}
 </section>
 
-<style>
+<style lang="scss">
 	.evo-timeline {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		border-radius: 12px;
-		padding: 16px 18px;
-		margin-bottom: 18px;
+		background: rgba(15, 23, 42, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 16px;
+		padding: 24px;
+		margin-bottom: 24px;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.5);
 	}
-	.evo-timeline h3 {
-		font-size: 16px;
-		color: #e2e8f0;
-		margin: 0 0 4px;
+	.evo-timeline header h3 {
+		margin: 0 0 6px;
+		font-size: 18px;
+		font-weight: 700;
+		color: #f8fafc;
 	}
-	.evo-timeline p {
-		font-size: 12px;
+	.evo-timeline header p {
+		font-size: 14px;
 		color: #94a3b8;
-		margin: 0 0 14px;
+		margin: 0 0 20px;
+		max-width: 600px;
+		line-height: 1.5;
 	}
 	.evo-timeline__empty {
-		padding: 24px;
+		padding: 32px;
 		text-align: center;
 		color: #64748b;
-		font-size: 13px;
-		background: #020617;
-		border-radius: 8px;
+		font-size: 14px;
+		background: rgba(2, 6, 23, 0.5);
+		border-radius: 12px;
+		border: 1px dashed rgba(255, 255, 255, 0.1);
 	}
 	.evo-timeline__empty code {
-		background: #1e293b;
-		padding: 1px 6px;
+		background: rgba(255, 255, 255, 0.1);
+		padding: 2px 6px;
 		border-radius: 4px;
-		font-size: 12px;
+		font-family: ui-monospace, monospace;
+		font-size: 13px;
+		color: #e2e8f0;
 	}
 	.evo-timeline__scroll {
 		overflow-x: auto;
 		overflow-y: hidden;
+		background: rgba(2, 6, 23, 0.3);
+		border-radius: 12px;
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		padding: 16px;
 	}
 	.evo-node circle {
 		cursor: pointer;
-		transition: transform 0.15s ease;
+		transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 		transform-origin: center;
 		transform-box: fill-box;
 	}
 	.evo-node:hover circle {
-		filter: brightness(1.3);
-		transform: scale(1.15);
+		filter: brightness(1.3) drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+		transform: scale(1.2);
+		stroke: #fff;
+		stroke-width: 2px;
 	}
 	.evo-legend {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		margin-top: 12px;
-		font-size: 11px;
+		gap: 10px;
+		margin-top: 16px;
+		font-size: 12px;
 		color: #94a3b8;
+		font-weight: 500;
 	}
 	.evo-legend__dot {
 		display: inline-block;
 		width: 10px;
 		height: 10px;
 		border-radius: 50%;
+		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
 	}
 	.evo-legend__dot--sm { width: 6px; height: 6px; }
 	.evo-legend__dot--lg { width: 14px; height: 14px; }
-	.evo-legend__spacer { width: 16px; }
+	.evo-legend__spacer { width: 24px; }
 </style>

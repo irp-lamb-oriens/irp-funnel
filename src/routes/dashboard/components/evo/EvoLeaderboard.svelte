@@ -126,114 +126,156 @@
 	{/if}
 </section>
 
-<style>
+<style lang="scss">
 	.evo-leaderboard {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		border-radius: 12px;
-		padding: 16px 18px;
+		background: rgba(15, 23, 42, 0.6);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 16px;
+		padding: 24px;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.5);
 	}
 	.evo-leaderboard__head {
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
-		gap: 18px;
-		margin-bottom: 12px;
+		gap: 20px;
+		margin-bottom: 20px;
 	}
 	.evo-leaderboard__head h3 {
-		font-size: 16px;
-		color: #e2e8f0;
-		margin: 0 0 4px;
+		font-size: 18px;
+		font-weight: 700;
+		color: #f8fafc;
+		margin: 0 0 6px;
 	}
 	.evo-leaderboard__head p {
-		font-size: 12px;
+		font-size: 14px;
 		color: #94a3b8;
 		margin: 0;
 	}
 	.evo-leaderboard__totals {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 14px;
-		font-size: 12px;
+		gap: 16px;
+		font-size: 13px;
 		color: #94a3b8;
+		background: rgba(2, 6, 23, 0.4);
+		padding: 10px 16px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.05);
 	}
 	.evo-leaderboard__totals b {
 		color: #e2e8f0;
-		font-weight: 600;
+		font-weight: 700;
+		margin-left: 4px;
 	}
 	.evo-leaderboard__empty {
-		color: #64748b;
-		font-size: 13px;
-		padding: 24px;
+		color: #94a3b8;
+		font-size: 14px;
+		padding: 40px;
 		text-align: center;
-		background: #020617;
-		border-radius: 8px;
+		background: rgba(2, 6, 23, 0.5);
+		border-radius: 12px;
+		border: 1px dashed rgba(255, 255, 255, 0.1);
 	}
 	.evo-leaderboard__table-wrap {
 		overflow-x: auto;
+		border-radius: 12px;
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		background: rgba(2, 6, 23, 0.3);
 	}
 	.evo-leaderboard__table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 12px;
+		font-size: 13px;
 	}
 	.evo-leaderboard__table th,
 	.evo-leaderboard__table td {
-		padding: 8px 10px;
-		border-bottom: 1px solid #1e293b;
-		color: #cbd5e1;
+		padding: 14px 16px;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 		text-align: left;
+		transition: background 0.2s ease;
 	}
 	.evo-leaderboard__table th {
 		color: #94a3b8;
 		font-weight: 600;
-		font-size: 11px;
-		letter-spacing: 0.04em;
+		font-size: 12px;
+		letter-spacing: 0.05em;
 		text-transform: uppercase;
-		background: #020617;
+		background: rgba(2, 6, 23, 0.8);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		white-space: nowrap;
 	}
-	.rank { width: 32px; }
+	.evo-leaderboard__table tr:last-child td {
+		border-bottom: none;
+	}
+	.evo-leaderboard__table tbody tr:hover {
+		background: rgba(255, 255, 255, 0.02);
+	}
+	.rank { width: 40px; color: #64748b; font-weight: 600; }
 	.num { text-align: right; font-variant-numeric: tabular-nums; }
-	.num--bold { font-weight: 700; color: #e2e8f0; }
-	.mono { font-family: ui-monospace, monospace; }
+	.num--bold { font-weight: 700; color: #f8fafc; }
+	.mono { font-family: ui-monospace, monospace; color: #cbd5e1; }
 	.evo-pill {
-		background: rgba(99, 102, 241, 0.18);
-		border: 1px solid rgba(99, 102, 241, 0.4);
-		color: #c7d2fe;
-		padding: 2px 8px;
+		background: rgba(99, 102, 241, 0.1);
+		border: 1px solid rgba(99, 102, 241, 0.3);
+		color: #a5b4fc;
+		padding: 4px 10px;
 		border-radius: 999px;
-		font-size: 11px;
+		font-size: 12px;
+		font-weight: 500;
+		white-space: nowrap;
 	}
 	.winner {
-		background: linear-gradient(90deg, rgba(16, 185, 129, 0.14), transparent);
+		background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02));
 	}
 	.winner td { color: #bbf7d0; }
 	.candidate {
-		background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent);
+		background: linear-gradient(90deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.01));
 	}
 	.baseline td {
-		color: #cbd5e1;
-		background: rgba(148, 163, 184, 0.04);
+		color: #94a3b8;
+		background: rgba(2, 6, 23, 0.4);
 	}
 	.evo-verdict {
-		display: inline-block;
-		padding: 2px 8px;
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 10px;
 		border-radius: 999px;
-		font-size: 10.5px;
-		font-weight: 600;
+		font-size: 11px;
+		font-weight: 700;
 		border: 1px solid transparent;
 		white-space: nowrap;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
-	.evo-sig { font-size: 11px; color: #94a3b8; }
-	.positive { color: #34d399; }
-	.negative { color: #f87171; }
-	.evo-commit-msg { color: #64748b; margin-left: 4px; font-size: 10px; }
+	.evo-sig { font-size: 12px; color: #64748b; font-weight: 500; }
+	.positive { color: #10b981; font-weight: 600; }
+	.negative { color: #ef4444; font-weight: 600; }
+	.evo-commit-msg { 
+		color: #64748b; 
+		margin-left: 6px; 
+		font-size: 11px;
+		font-family: var(--font-sans, system-ui, sans-serif);
+		display: block;
+		margin-top: 4px;
+	}
 	.evo-btn-link {
-		background: transparent;
-		border: none;
+		background: rgba(99, 102, 241, 0.1);
+		border: 1px solid rgba(99, 102, 241, 0.2);
 		color: #818cf8;
 		cursor: pointer;
 		font-size: 12px;
+		font-weight: 600;
+		padding: 6px 12px;
+		border-radius: 6px;
+		transition: all 0.2s ease;
+		white-space: nowrap;
+
+		&:hover { 
+			background: rgba(99, 102, 241, 0.2);
+			border-color: rgba(99, 102, 241, 0.4);
+			color: #e0e7ff; 
+		}
 	}
-	.evo-btn-link:hover { color: #c7d2fe; }
 </style>

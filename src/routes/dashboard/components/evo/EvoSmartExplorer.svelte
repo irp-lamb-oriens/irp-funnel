@@ -78,96 +78,143 @@
 	{/if}
 </section>
 
-<style>
+<style lang="scss">
 	.evo-explorer {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		border-radius: 12px;
-		padding: 16px 18px;
-		margin-bottom: 18px;
+		background: rgba(15, 23, 42, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 16px;
+		padding: 24px;
+		margin-bottom: 24px;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.5);
 	}
 	.evo-explorer header h3 {
-		margin: 0 0 4px;
-		font-size: 16px;
-		color: #e2e8f0;
+		margin: 0 0 6px;
+		font-size: 18px;
+		font-weight: 700;
+		color: #f8fafc;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+
+		&::before {
+			content: '✨';
+			font-size: 16px;
+		}
 	}
 	.evo-explorer header p {
-		margin: 0 0 12px;
-		font-size: 12px;
+		margin: 0 0 20px;
+		font-size: 14px;
 		color: #94a3b8;
+		max-width: 600px;
+		line-height: 1.5;
 	}
 	.evo-explorer__form {
 		display: flex;
-		gap: 8px;
+		gap: 12px;
 	}
 	.evo-explorer__input {
 		flex: 1;
-		background: #020617;
-		color: #e2e8f0;
-		border: 1px solid #334155;
-		border-radius: 8px;
-		padding: 10px 12px;
-		font-size: 14px;
+		background: rgba(2, 6, 23, 0.5);
+		color: #f8fafc;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 10px;
+		padding: 14px 18px;
+		font-size: 15px;
+		transition: all 0.2s ease;
+		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+		&::placeholder {
+			color: #475569;
+		}
 	}
 	.evo-explorer__input:focus {
 		outline: none;
 		border-color: #6366f1;
+		background: rgba(2, 6, 23, 0.8);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.2);
 	}
 	.evo-explorer__btn {
-		background: linear-gradient(135deg, #6366f1, #8b5cf6);
+		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 		color: #fff;
 		border: none;
-		border-radius: 8px;
-		padding: 0 16px;
+		border-radius: 10px;
+		padding: 0 24px;
 		cursor: pointer;
-		font-size: 13px;
+		font-size: 14px;
 		font-weight: 600;
+		letter-spacing: 0.02em;
+		transition: all 0.2s ease;
+		box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+
+		&:hover:not(:disabled) {
+			transform: translateY(-1px);
+			box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+			filter: brightness(1.1);
+		}
 	}
 	.evo-explorer__btn:disabled {
-		opacity: 0.6;
+		opacity: 0.5;
 		cursor: not-allowed;
+		box-shadow: none;
 	}
 	.evo-explorer__suggestions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 6px;
-		margin-top: 10px;
+		gap: 8px;
+		margin-top: 16px;
 	}
 	.evo-explorer__chip {
-		background: rgba(99, 102, 241, 0.1);
-		border: 1px solid rgba(99, 102, 241, 0.3);
-		color: #c7d2fe;
-		padding: 4px 10px;
+		background: rgba(99, 102, 241, 0.05);
+		border: 1px solid rgba(99, 102, 241, 0.2);
+		color: #a5b4fc;
+		padding: 6px 12px;
 		border-radius: 999px;
-		font-size: 11px;
+		font-size: 12px;
+		font-weight: 500;
 		cursor: pointer;
-	}
-	.evo-explorer__chip:hover {
-		background: rgba(99, 102, 241, 0.2);
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: rgba(99, 102, 241, 0.15);
+			border-color: rgba(99, 102, 241, 0.4);
+			color: #e0e7ff;
+			transform: translateY(-1px);
+		}
 	}
 	.evo-explorer__parsed {
-		margin-top: 16px;
-		padding: 10px 14px;
-		background: #020617;
-		border: 1px solid #1e293b;
-		border-radius: 8px;
+		margin-top: 24px;
+		padding: 16px 20px;
+		background: rgba(2, 6, 23, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 12px;
 	}
 	.evo-explorer__parsed h4 {
-		margin: 0 0 6px;
-		font-size: 11px;
+		margin: 0 0 10px;
+		font-size: 12px;
 		color: #94a3b8;
 		text-transform: uppercase;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.1em;
+		font-weight: 600;
 	}
 	.evo-explorer__parsed ul {
 		margin: 0;
-		padding-left: 18px;
-		font-size: 12px;
+		padding-left: 20px;
+		font-size: 13px;
 		color: #cbd5e1;
+		line-height: 1.6;
+
+		li {
+			margin-bottom: 4px;
+		}
 	}
 	.evo-explorer__unresolved {
 		color: #fbbf24;
-		font-size: 12px;
-		margin: 8px 0 0;
+		font-size: 13px;
+		margin: 12px 0 0;
+		padding: 8px 12px;
+		background: rgba(251, 191, 36, 0.1);
+		border-radius: 6px;
+		border: 1px solid rgba(251, 191, 36, 0.2);
 	}
 </style>

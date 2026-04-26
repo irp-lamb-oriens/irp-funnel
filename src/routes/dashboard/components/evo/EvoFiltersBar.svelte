@@ -118,67 +118,93 @@
 	</div>
 </div>
 
-<style>
+<style lang="scss">
 	.evo-filters {
-		background: #0f172a;
-		border: 1px solid #1e293b;
-		border-radius: 12px;
-		padding: 16px;
-		margin-bottom: 18px;
+		background: rgba(15, 23, 42, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 16px;
+		padding: 24px;
+		margin-bottom: 24px;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.5);
 	}
 	.evo-filters__row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 12px;
+		gap: 16px;
 		align-items: flex-end;
 	}
 	.evo-filters__row + .evo-filters__row {
-		margin-top: 12px;
+		margin-top: 20px;
+		padding-top: 20px;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
 	}
 	.evo-filters label {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		font-size: 11px;
+		gap: 8px;
+		font-size: 12px;
+		font-weight: 600;
 		color: #94a3b8;
-		min-width: 140px;
+		min-width: 160px;
+		flex: 1;
 	}
 	.evo-filters input,
 	.evo-filters select {
-		background: #020617;
-		color: #e2e8f0;
-		border: 1px solid #334155;
-		border-radius: 6px;
-		padding: 6px 8px;
-		font-size: 13px;
+		background: rgba(2, 6, 23, 0.5);
+		color: #f8fafc;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 8px;
+		padding: 10px 12px;
+		font-size: 14px;
+		transition: all 0.2s ease;
+		appearance: none;
+
+		&:focus {
+			outline: none;
+			border-color: #6366f1;
+			background: rgba(2, 6, 23, 0.8);
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+		}
 	}
-	.evo-filters input:focus,
-	.evo-filters select:focus {
-		outline: none;
-		border-color: #6366f1;
+	.evo-filters select {
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 12px center;
+		background-size: 16px;
+		padding-right: 40px;
 	}
 	.evo-filters__actions {
 		display: flex;
-		gap: 8px;
+		gap: 12px;
 		margin-left: auto;
+		flex: 0 0 auto;
 	}
 	.evo-btn {
-		padding: 8px 14px;
-		background: #1e293b;
+		padding: 10px 20px;
+		background: rgba(255, 255, 255, 0.05);
 		color: #e2e8f0;
-		border: 1px solid #334155;
-		border-radius: 6px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 8px;
 		cursor: pointer;
-		font-size: 13px;
-	}
-	.evo-btn:hover {
-		background: #334155;
+		font-size: 14px;
+		font-weight: 600;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: rgba(255, 255, 255, 0.1);
+			transform: translateY(-1px);
+		}
 	}
 	.evo-btn--primary {
-		background: linear-gradient(135deg, #6366f1, #8b5cf6);
+		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 		border-color: transparent;
-	}
-	.evo-btn--primary:hover {
-		filter: brightness(1.15);
+		color: #fff;
+		box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+
+		&:hover {
+			filter: brightness(1.1);
+			box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+		}
 	}
 </style>

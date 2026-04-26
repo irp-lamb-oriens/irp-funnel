@@ -89,46 +89,80 @@
 	<EvoNodeDrawer onClose={closeDrawer} />
 </div>
 
-<style>
+<style lang="scss">
 	.evo-view {
-		padding: 20px 24px 60px;
-		background: #020617;
+		padding: 32px 40px 80px;
+		background: linear-gradient(180deg, #020617 0%, #090f24 100%);
 		min-height: calc(100vh - 60px);
-		color: #e2e8f0;
+		color: #f8fafc;
+		font-family: var(--font-sans, system-ui, sans-serif);
+	}
+	.evo-view__header {
+		margin-bottom: 32px;
 	}
 	.evo-view__header h2 {
-		font-size: 22px;
-		margin: 0 0 6px;
-		color: #e2e8f0;
+		font-size: 28px;
+		font-weight: 800;
+		margin: 0 0 12px;
+		background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		letter-spacing: -0.02em;
 	}
 	.evo-view__header p {
-		font-size: 13px;
-		color: #94a3b8;
-		margin: 0 0 20px;
-		max-width: 880px;
-		line-height: 1.5;
+		font-size: 15px;
+		color: #cbd5e1;
+		margin: 0;
+		max-width: 720px;
+		line-height: 1.6;
+		font-weight: 400;
 	}
 	.evo-view__error {
-		background: rgba(239, 68, 68, 0.12);
-		border: 1px solid rgba(239, 68, 68, 0.4);
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
 		color: #fca5a5;
-		padding: 10px 14px;
-		border-radius: 8px;
-		font-size: 13px;
-		margin-bottom: 16px;
+		padding: 14px 20px;
+		border-radius: 12px;
+		font-size: 14px;
+		margin-bottom: 24px;
+		backdrop-filter: blur(8px);
 	}
 	.evo-view__loading {
 		color: #94a3b8;
-		font-size: 12px;
+		font-size: 14px;
 		text-align: center;
-		padding: 8px 0 18px;
+		padding: 20px 0 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+
+		&::after {
+			content: "";
+			width: 16px;
+			height: 16px;
+			border: 2px solid #334155;
+			border-top-color: #818cf8;
+			border-radius: 50%;
+			animation: evoSpin 0.8s linear infinite;
+		}
 	}
 	.evo-segments-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-		gap: 24px;
+		grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+		gap: 32px;
+		margin-top: 32px;
 	}
 	.evo-segment-card {
 		min-width: 0;
+		animation: evoFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes evoSpin {
+		to { transform: rotate(360deg); }
+	}
+	@keyframes evoFadeInUp {
+		from { opacity: 0; transform: translateY(16px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 </style>
