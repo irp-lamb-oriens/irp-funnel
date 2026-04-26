@@ -13,18 +13,72 @@
 	import type { TimelinePoint } from './evoStore.ts';
 
 	const ROW_HEIGHT = 36;
+	const HEADER_HEIGHT = 32;
 	const LEFT_PAD = 180;
 	const TOP_PAD = 24;
 	const RIGHT_PAD = 24;
 	const MIN_RADIUS = 4;
 	const MAX_RADIUS = 18;
 
-	$: tracks = [...$timelineByVariant.entries()].sort(([a], [b]) => a.localeCompare(b));
+	// State for collapsed components
+	let collapsedComponents: Set<string> = new Set();
+	function toggleComponent(compKey: string) {
+		if (collapsedComponents.has(compKey)) {
+			collapsedComponents.delete(compKey);
+		} else {
+			collapsedComponents.add(compKey);
+		}
+		collapsedComponents = collapsedComponents;
+	}
+
+	// Group tracks by ComponentKey first
+	$: groupedTracks = (() => {
+		const groups = new Map<string, Array<{ variantKey: string, points: TimelinePoint[] }>>();
+		for (const [trackKey, points] of $timelineByVariant.entries()) {
+			const [compKey, variantKey] = trackKey.split('|');
+			if (!groups.has(compKey)) groups.set(compKey, []);
+			groups.get(compKey)!.push({ variantKey, points });
+		}
+		
+		// Sort components alphabetically, and variants within them
+		const sorted = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+		for (const [, variants] of sorted) {
+			variants.sort((a, b) => a.variantKey.localeCompare(b.variantKey));
+		}
+		return sorted;
+	})();
+
 	$: buckets = [...new Set($evoTimeline.map((p) => p.bucket))].sort();
 	$: maxExposures = Math.max(1, ...$evoTimeline.map((p) => p.exposures));
 
+	// Calculate visible Y positions for elements based on collapse state
+	$: layout = (() => {
+		let currentY = TOP_PAD;
+		const headers: Array<{ compKey: string, y: number }> = [];
+		const visibleTracks: Array<{ compKey: string, variantKey: string, y: number, points: TimelinePoint[] }> = [];
+
+		for (const [compKey, variants] of groupedTracks) {
+			headers.push({ compKey, y: currentY });
+			currentY += HEADER_HEIGHT;
+
+			if (!collapsedComponents.has(compKey)) {
+				for (const v of variants) {
+					visibleTracks.push({
+						compKey,
+						variantKey: v.variantKey,
+						y: currentY + ROW_HEIGHT / 2,
+						points: v.points
+					});
+					currentY += ROW_HEIGHT;
+				}
+			}
+		}
+
+		return { headers, visibleTracks, totalHeight: currentY + TOP_PAD };
+	})();
+
 	$: width = Math.max(600, LEFT_PAD + RIGHT_PAD + Math.max(1, buckets.length) * 60);
-	$: height = TOP_PAD * 2 + Math.max(1, tracks.length) * ROW_HEIGHT;
+	$: height = Math.max(200, layout.totalHeight);
 
 	function xFor(bucket: string): number {
 		const idx = buckets.indexOf(bucket);
@@ -120,24 +174,63 @@
 					</text>
 				{/each}
 
-				<!-- Tracks -->
-				{#each tracks as [trackKey, points], trackIdx}
-					<g class="evo-track">
-						<text x={LEFT_PAD - 10} y={yFor(trackIdx) + 4} text-anchor="end" fill="#cbd5e1" font-size="11">
-							{trackKey.replace('|', ' · ')}
+				<!-- Component Headers (Collapsible) -->
+				{#each layout.headers as h}
+					<g 
+						class="evo-component-header" 
+						on:click={() => toggleComponent(h.compKey)}
+						role="button"
+						tabindex="0"
+					>
+						<rect 
+							x="0" 
+							y={h.y} 
+							width={LEFT_PAD - 10} 
+							height={HEADER_HEIGHT - 4} 
+							rx="4" 
+							fill="rgba(255,255,255,0.03)" 
+						/>
+						<text 
+							x="12" 
+							y={h.y + HEADER_HEIGHT / 2 + 4} 
+							fill="#f8fafc" 
+							font-size="12" 
+							font-weight="600"
+						>
+							{collapsedComponents.has(h.compKey) ? '▶' : '▼'} {h.compKey}
 						</text>
+					</g>
+				{/each}
+
+				<!-- Visible Tracks -->
+				{#each layout.visibleTracks as track}
+					<g class="evo-track">
+						<!-- Variant name on the left -->
+						<text 
+							x={LEFT_PAD - 15} 
+							y={track.y + 4} 
+							text-anchor="end" 
+							fill="#94a3b8" 
+							font-size="11"
+						>
+							{track.variantKey}
+						</text>
+						
+						<!-- Background track line -->
 						<line
 							x1={LEFT_PAD}
 							x2={width - RIGHT_PAD}
-							y1={yFor(trackIdx)}
-							y2={yFor(trackIdx)}
+							y1={track.y}
+							y2={track.y}
 							stroke="#1e293b"
 							stroke-width="4"
 							class="evo-track-line"
 						>
-							<title>{trackKey.replace('|', ' · ')}</title>
+							<title>{track.compKey} · {track.variantKey}</title>
 						</line>
-						{#each points as p}
+						
+						<!-- Data nodes -->
+						{#each track.points as p}
 							<g class="evo-node" on:click={() => onNodeClick(p)} role="button" tabindex="0">
 								<title>
 									{p.componentKey} · {p.versionKey} · {p.commitHash?.slice(0, 8)}
@@ -149,7 +242,7 @@
 								</title>
 								<circle
 									cx={xFor(p.bucket)}
-									cy={yFor(trackIdx)}
+									cy={track.y}
 									r={rFor(p)}
 									fill={colorFor(p)}
 									stroke="#020617"
@@ -223,6 +316,13 @@
 		border-radius: 12px;
 		border: 1px solid rgba(255, 255, 255, 0.05);
 		padding: 16px;
+	}
+	.evo-component-header {
+		cursor: pointer;
+		transition: opacity 0.2s ease;
+	}
+	.evo-component-header:hover rect {
+		fill: rgba(255, 255, 255, 0.08);
 	}
 	.evo-node circle {
 		cursor: pointer;
