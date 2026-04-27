@@ -228,6 +228,16 @@
 
   function handleExtractedFields(fields: any) {
     if (!fields) return;
+
+    // Immediately capture booking links if the chatbot generated them,
+    // which triggers `isBooked = true` and hides the switch button.
+    if (fields.calendarLink) {
+      calendarLink = fields.calendarLink;
+    }
+    if (fields.hangoutLink) {
+      hangoutLink = fields.hangoutLink;
+    }
+
     for (const [key, value] of Object.entries(fields)) {
       if (!FORM_KEYS.has(key)) continue; // Skip fields not in formStore
       if (value === null || value === undefined) continue;
