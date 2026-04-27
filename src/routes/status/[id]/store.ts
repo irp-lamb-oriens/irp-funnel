@@ -1,7 +1,15 @@
 import { writable } from 'svelte/store';
-import { env } from '$env/dynamic/public';
 
-const API_BASE = env.PUBLIC_API_URL || 'http://localhost:8000';
+function getApiUrl(): string {
+  if (typeof window !== 'undefined') {
+    if (window.location.origin.startsWith('http://localhost')) {
+      return 'http://localhost:8000';
+    }
+  }
+  return 'https://irp-funnel-server.onrender.com';
+}
+
+const API_BASE = getApiUrl();
 
 export const isAuthenticated = writable(false);
 export const isCheckingAuth = writable(true);
