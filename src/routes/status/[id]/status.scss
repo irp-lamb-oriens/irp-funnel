@@ -2,9 +2,8 @@
 
 .client-portal {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #1a1a2e;
   font-family: 'Montserrat', 'Arial', sans-serif;
-  color: #1a1a2e;
 }
 
 // ─── LOGIN GATE ─────────────────────────────────────────────────────────────
@@ -187,7 +186,7 @@
 .cp-dashboard {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 10rem 2rem;
 
   @media (max-width: 768px) {
     padding: 1rem;
