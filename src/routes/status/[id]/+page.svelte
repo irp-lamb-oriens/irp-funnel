@@ -117,6 +117,20 @@
     return val.startsWith('http://') || val.startsWith('https://');
   }
 
+  function getStageTime(stageKey: string): string {
+    if (!$project || !$project.activityLog) return '';
+    // Find the earliest time this stage was reached in the activity log
+    const entry = $project.activityLog.find((log: any) => log.type === 'stage_change' && log.to === stageKey);
+    if (entry && entry.timestamp) {
+      return formatDate(entry.timestamp);
+    }
+    // Fallback: if it's the very first stage, use createdAt
+    if (stageKey === $stages[0] && $project.createdAt) {
+      return formatDate($project.createdAt);
+    }
+    return '';
+  }
+
   $: currentStageIndex = $project ? $stages.indexOf($project.stage) : -1;
 </script>
 
@@ -216,15 +230,21 @@
       
       <!-- HEADER -->
       <header class="cp-dashboard__header">
-        <div class="cp-dashboard__header-main">
-          <h1 class="cp-dashboard__header-title">Hello, {$project.name}</h1>
-          <div class="cp-dashboard__header-route">
-            {$project.originCountry || 'Origin'} 
-            <span class="arrow">→</span> 
-            {$project.destinationCountry || 'Destination'}
+        <div class="cp-dashboard__header-overlay"></div>
+        <div class="cp-dashboard__header-content">
+          <div class="cp-dashboard__header-main">
+            <h1 class="cp-dashboard__header-title">Hello, {$project.name}</h1>
+            <div class="cp-dashboard__header-route">
+              <span class="route-point">{$project.originCountry || 'Origin'}</span>
+              <svg class="route-arrow" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+              <span class="route-point">{$project.destinationCountry || 'Destination'}</span>
+            </div>
           </div>
+          <button class="cp-dashboard__header-logout" on:click={handleLogout}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Log Out
+          </button>
         </div>
-        <button class="cp-dashboard__header-logout" on:click={handleLogout}>Log Out</button>
       </header>
 
       <!-- PIPELINE STAGE -->
@@ -236,6 +256,9 @@
               <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
                 <div class="step__circle"></div>
                 <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
+                {#if getStageTime(stageKey)}
+                  <div class="step__date">{getStageTime(stageKey)}</div>
+                {/if}
               </div>
             {/each}
           </div>
