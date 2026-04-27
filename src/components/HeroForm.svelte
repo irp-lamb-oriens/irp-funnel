@@ -103,6 +103,7 @@
   // ─── Derived ──────────────────────────────────────────────────────────────
   $: originCountryName = countries.find(c => c.code === $formState.originCountry)?.name || $formState.originCountry;
   $: destinationCountryName = countries.find(c => c.code === $formState.destinationCountry)?.name || $formState.destinationCountry;
+  $: isBooked = ($formState.scheduling && $formState.scheduling.length > 0) || calendarLink !== '';
 
   // ─── Store subscriptions ──────────────────────────────────────────────────
   const unsubImmigration = immigrationStatusStore.subscribe(v => updateField(v || '', 'immigrationStatus'));
@@ -435,7 +436,11 @@
           <div class="form-frame active">
             <div class="back-bar">
               <button class="back-btn" on:click={backToChoice}>← Back</button>
-              <button class="switch-btn" on:click={openForm}>Switch to Form →</button>
+              <button 
+                class="switch-btn" 
+                on:click={openForm}
+                style={isBooked ? "display: none; visibility: hidden; pointer-events: none;" : ""}
+              >Switch to Form →</button>
             </div>
             <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} preferredLanguage={selectedLanguage} />
           </div>
@@ -447,7 +452,11 @@
             <div class="back-bar">
               <button class="back-btn" on:click={formBack}>← Back</button>
               {#if formStep < 12}
-                <button class="switch-btn" on:click={openChatbot}>Chat with the team →</button>
+                <button 
+                  class="switch-btn" 
+                  on:click={openChatbot}
+                  style={isBooked ? "display: none; visibility: hidden; pointer-events: none;" : ""}
+                >Chat with the team →</button>
               {/if}
             </div>
 
