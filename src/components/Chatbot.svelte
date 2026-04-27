@@ -497,6 +497,7 @@
       background: rgba(255, 255, 255, 0.08);
       color: #fff;
       border-bottom-left-radius: 0.2rem;
+      overflow: auto;
     }
 
     &.user .bubble {
