@@ -1,0 +1,4047 @@
+
+====================================
+Loading svelte-check in workspace: /Users/luisarmandooriens/Desktop/projects/irp/irp-funnel
+Getting Svelte diagnostics...
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/CaptureDataForm.svelte:101:5
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+    background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
+    -webkit-background-clip: text;
+  }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:355:7
+Warn: Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+      />
+      <button class="send-btn" on:click={sendMessage} disabled={!userInput.trim() || isTyping}>
+        <svg viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:12:14
+Warn: Component has unused export property 'onErrorFallback'. If it is for external reference only, please consider using `export const onErrorFallback`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let onExtractedFields: (fields: any) => void;
+  export let onErrorFallback: () => void;
+  export let onChannelSelect: (channel: string) => void;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:13:14
+Warn: Component has unused export property 'onChannelSelect'. If it is for external reference only, please consider using `export const onChannelSelect`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let onErrorFallback: () => void;
+  export let onChannelSelect: (channel: string) => void;
+  export let preferredLanguage: string = 'en';
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:365:20
+Warn: Unused CSS selector ".chatbot-header .wa-float-btn"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .chatbot-ui {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:365:20
+Warn: Unused CSS selector ".chatbot-header .wa-float-btn:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .chatbot-ui {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Chatbot.svelte:365:20
+Warn: Unused CSS selector ".chatbot-header .wa-float-btn svg"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .chatbot-ui {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/ContactSection.svelte:139:20
+Warn: Unused CSS selector ".location-card:last-child"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.contact-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/ContactSection.svelte:139:20
+Warn: Unused CSS selector ".location-card"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.contact-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/ContactSection.svelte:256:3
+Warn: Do not use empty rulesets (scss)
+  }
+  .location-cards-container {
+    /* No extra padding */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/FAQSection.svelte:117:11
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+        {#each filteredFaqs.slice(0, showMore ? filteredFaqs.length : 4) as faq, i (faq.idx)}
+          <div
+            class="faq-item"
+            class:open={faqOpen[faq.idx]}
+            on:mouseenter={() => setHovered(faq.idx)}
+            on:mouseleave={() => setHovered(null)}
+            transition:faqCardTransition={{ delay: i * 60, direction: faqOpen[faq.idx] ? 1 : -1 }}
+            on:click={() => toggleFaq(faq.idx)}
+          >
+            <button
+              class="faq-question"
+              class:active={faqOpen[faq.idx]}
+              type="button"
+              on:keydown={(e) => e.key === 'Enter' && toggleFaq(faq.idx)}
+            >
+              {faq.question}
+            </button>
+            {#if faqOpen[faq.idx]}
+              <div class="faq-answer" transition:faqAnswerTransition={{}}>
+                <LetterByLetter text={allFaqs[faq.idx].answer} />
+              </div>
+            {/if}
+          </div>
+        {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/FAQSection.svelte:117:11
+Warn: `<div>` with a mouseenter, mouseleave or click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+        {#each filteredFaqs.slice(0, showMore ? filteredFaqs.length : 4) as faq, i (faq.idx)}
+          <div
+            class="faq-item"
+            class:open={faqOpen[faq.idx]}
+            on:mouseenter={() => setHovered(faq.idx)}
+            on:mouseleave={() => setHovered(null)}
+            transition:faqCardTransition={{ delay: i * 60, direction: faqOpen[faq.idx] ? 1 : -1 }}
+            on:click={() => toggleFaq(faq.idx)}
+          >
+            <button
+              class="faq-question"
+              class:active={faqOpen[faq.idx]}
+              type="button"
+              on:keydown={(e) => e.key === 'Enter' && toggleFaq(faq.idx)}
+            >
+              {faq.question}
+            </button>
+            {#if faqOpen[faq.idx]}
+              <div class="faq-answer" transition:faqAnswerTransition={{}}>
+                <LetterByLetter text={allFaqs[faq.idx].answer} />
+              </div>
+            {/if}
+          </div>
+        {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/FAQSection.svelte:143:14
+Warn: '#' is not a valid href attribute
+https://svelte.dev/e/a11y_invalid_attribute (svelte)
+        <div class="faq-show-more">
+          <a href="#" class="show-more-toggle" on:click|preventDefault={toggleShowMore}>
+            {showMore ? 'Show Less' : 'Show More'}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/GroupImageMagnifier.svelte:59:1
+Warn: `<div>` with a mousemove or mouseleave handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+
+<div
+  class="magnifier-container"
+  bind:this={container}
+  on:mousemove={moveMagnifier}
+  on:mouseleave={hideMagnifier}
+  on:touchmove={moveMagnifier}
+  on:touchend={hideMagnifier}
+>
+  <img
+    bind:this={img}
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    class="magnifier-image"
+    draggable="false"
+    on:mouseenter={() => (showGlass = true)}
+    on:mouseleave={hideMagnifier}
+  />
+  {#if showGlass}
+    <div
+      bind:this={glass}
+      class="magnifier-glass"
+      style="
+        left: {glassX - 60}px;
+        top: {glassY - 60}px;
+        background-image: url('{src}');
+        background-repeat: no-repeat;
+        background-size: {img ? img.width * zoom : 0}px {img ? img.height * zoom : 0}px;
+        background-position: -{(glassX * zoom) - 60}px -{(glassY * zoom) - 60}px;
+      "
+    ></div>
+  {/if}
+</div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/VideoBanner.svelte:67:3
+Warn: `<video>` elements must have a `<track kind="captions">`
+https://svelte.dev/e/a11y_media_has_caption (svelte)
+<div class="re-wrap">
+  <video
+    loop
+    playsinline
+    class="video"
+    class:show={video ? !video?.paused : false}
+    {onclick}
+    bind:this={video}
+    src="https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4"
+  ></video>
+  <div class="wrapper">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/VideoBanner.svelte:2:14
+Warn: Component has unused export property 'videoUrl'. If it is for external reference only, please consider using `export const videoUrl`
+https://svelte.dev/e/export_let_unused (svelte)
+<script lang="ts">
+  export let videoUrl: string;
+  export let videoPoster: string;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroBanner.svelte:152:3
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/PlainText/PlainText.svelte:34:3
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+<div class="text-input-wrapper">
+  <label class="input-label">{value ? label || placeholder : label}</label>
+  <input
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Email/Email.svelte:48:3
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+<div class="email-input-wrapper">
+  <label class="input-label"
+    >{value ? label || placeholder : label}</label
+  >
+  <input
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Country/Country.svelte:232:3
+Warn: Elements with the ARIA role "combobox" must have the following attributes defined: "aria-controls" and "aria-expanded"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Country/Country.svelte:228:1
+Warn: Elements with the 'combobox' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus (svelte)
+
+<div
+  class="country-dropdown-container"
+  bind:this={dropdownRef}
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+  aria-expanded={open}
+  aria-owns={open ? "language-listbox" : undefined}
+>
+  {#if label}
+    <span class="input-label" id="language-select-label">
+      {label}
+    </span>
+  {/if}
+
+  <div class="input-wrapper">
+    {#if showInput}
+      <input
+        type="text"
+        bind:this={inputRef}
+        value={typeahead}
+        on:input={handleInput}
+        placeholder="Type to search country..."
+        class="search-input"
+        aria-autocomplete="list"
+        aria-controls={open ? "language-listbox" : undefined}
+        aria-labelledby="language-select-label"
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      />
+    {:else}
+      <button
+        type="button"
+        bind:this={buttonRef}
+        on:click={toggleOpen}
+        class="country-select-button"
+        aria-controls={open ? "language-listbox" : undefined}
+        aria-labelledby="language-select-label {selectedCountry ? 'selected-language-label' : ''}"
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      >
+        {#if selectedCountry}
+          <span class="selected-value">
+            {#if selectedCountry.flag}
+              <span class="flag" aria-hidden="true">{selectedCountry.flag}</span>
+            {/if}
+            <span class="name">{selectedCountry.name}</span>
+            <span class="code">({selectedCountry.code})</span>
+          </span>
+        {:else}
+          <span class="placeholder">Select a country</span>
+        {/if}
+        <svg
+          class="chevron {open ? 'open' : ''}"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    {/if}
+  </div>
+
+  {#if open}
+    <ul
+      bind:this={listRef}
+      role="listbox"
+      id="language-listbox"
+      class="dropdown-list"
+      tabindex="-1"
+      aria-labelledby="language-select-label"
+      in:slide={{ duration: 300, axis: 'y' }}
+      out:fade={{ duration: 150 }}
+    >
+      {#each countries as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="dropdown-item"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedCountry?.code === language.code}
+          role="option"
+          aria-selected={selectedCountry?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectCountry(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="name">{language.name}</span>
+          <span class="code">({language.code})</span>
+        </li>
+      {:else}
+        <li class="no-results" role="option" aria-disabled="true">
+          No countries available.
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Country/Country.svelte:304:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each countries as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="dropdown-item"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedCountry?.code === language.code}
+          role="option"
+          aria-selected={selectedCountry?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectCountry(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="name">{language.name}</span>
+          <span class="code">({language.code})</span>
+        </li>
+      {:else}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Country/Country.svelte:325:32
+Warn: Elements with the ARIA role "option" must have the following attributes defined: "aria-selected"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+      {:else}
+        <li class="no-results" role="option" aria-disabled="true">
+          No countries available.
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:231:3
+Warn: Elements with the ARIA role "combobox" must have the following attributes defined: "aria-controls" and "aria-expanded"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:227:1
+Warn: Elements with the 'combobox' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus (svelte)
+
+<div
+  class="country-dropdown-container"
+  bind:this={dropdownRef}
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+  aria-expanded={open}
+  aria-owns={open ? "language-listbox" : undefined}
+>
+  <div class="input-wrapper">
+    {#if showInput}
+      <input
+        type="text"
+        bind:this={inputRef}
+        value={typeahead}
+        on:input={handleInput}
+        placeholder="Search..."
+        class="search-input"
+        aria-autocomplete="list"
+        aria-controls={open ? "language-listbox" : undefined}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      />
+    {:else}
+      <button
+        type="button"
+        bind:this={inputElement}
+        bind:this={buttonRef}
+        on:click={toggleOpen}
+        class="country-select-button"
+        aria-controls={open ? "language-listbox" : undefined}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 200 }}
+      >
+        {#if selectedCountry}
+          <span class="selected-value">
+            {#if selectedCountry.flag}
+              <span class="flag" aria-hidden="true">{selectedCountry.flag}</span>
+            {/if}
+            <span class="dial-code">{selectedCountry.dialCode}</span>
+          </span>
+        {:else}
+          <span class="placeholder">Select</span>
+        {/if}
+        <svg
+          class="chevron {open ? 'open' : ''}"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    {/if}
+  </div>
+
+  {#if open}
+    <ul
+      bind:this={listRef}
+      role="listbox"
+      id="language-listbox"
+      class="dropdown-list"
+      tabindex="-1"
+      in:slide={{ duration: 300, axis: 'y' }}
+      out:fade={{ duration: 150 }}
+    >
+      {#each countries as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="dropdown-item"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedCountry?.code === language.code}
+          role="option"
+          aria-selected={selectedCountry?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectCountry(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="name">{language.name}</span>
+          <span class="dial-code">
+            ({language.dialCode})
+          </span>
+        </li>
+      {:else}
+        <li class="no-countries" role="option" aria-disabled="true">
+          No countries available.
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:294:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each countries as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="dropdown-item"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedCountry?.code === language.code}
+          role="option"
+          aria-selected={selectedCountry?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectCountry(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="name">{language.name}</span>
+          <span class="dial-code">
+            ({language.dialCode})
+          </span>
+        </li>
+      {:else}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:317:34
+Warn: Elements with the ARIA role "option" must have the following attributes defined: "aria-selected"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+      {:else}
+        <li class="no-countries" role="option" aria-disabled="true">
+          No countries available.
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:21:14
+Warn: Component has unused export property 'label'. If it is for external reference only, please consider using `export const label`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let inputElement: HTMLButtonElement;
+  export let label = "Country";
+  export let onSelect: (selectedCode: string | null) => void = () => {};
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:325:20
+Warn: Unused CSS selector ".dropdown-item .code"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .country-dropdown-container {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:325:20
+Warn: Unused CSS selector ".dropdown-item.selected .code"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .country-dropdown-container {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Phone/Country/Country.svelte:325:20
+Warn: Unused CSS selector ".no-results"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .country-dropdown-container {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SVG/SVG.svelte:62:20
+Warn: Unused CSS selector ".svg-loader"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use './SVG.scss';
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SVG/SVG.svelte:62:20
+Warn: Unused CSS selector ".svg-loader--loading"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use './SVG.scss';
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Calendar/Calendar.svelte:190:9
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<div ...></div>` rather than `<div ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+      {#each Array(emptyStartCells) as _}
+        <div />
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte:58:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each immigrationStatuses as status}
+        <li
+          class="dropdown-item"
+          class:selected={selectedStatus?.code === status.code}
+          on:click={() => selectStatus(status)}
+        >
+          <span class="truncate">{status.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte:58:9
+Warn: Non-interactive element `<li>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+      {#each immigrationStatuses as status}
+        <li
+          class="dropdown-item"
+          class:selected={selectedStatus?.code === status.code}
+          on:click={() => selectStatus(status)}
+        >
+          <span class="truncate">{status.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Budget/Budget.svelte:58:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each budgets as budget}
+        <li
+          class="dropdown-item"
+          class:selected={selectedBudget?.code === budget.code}
+          on:click={() => selectBudget(budget)}
+        >
+          <span class="truncate">{budget.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Budget/Budget.svelte:58:9
+Warn: Non-interactive element `<li>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+      {#each budgets as budget}
+        <li
+          class="dropdown-item"
+          class:selected={selectedBudget?.code === budget.code}
+          on:click={() => selectBudget(budget)}
+        >
+          <span class="truncate">{budget.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/MoveSize/MoveSize.svelte:58:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each moveSizes as moveSize}
+        <li
+          class="dropdown-item"
+          class:selected={selectedMoveSize?.code === moveSize.code}
+          on:click={() => selectMoveSize(moveSize)}
+        >
+          <span class="truncate">{moveSize.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/MoveSize/MoveSize.svelte:58:9
+Warn: Non-interactive element `<li>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+      {#each moveSizes as moveSize}
+        <li
+          class="dropdown-item"
+          class:selected={selectedMoveSize?.code === moveSize.code}
+          on:click={() => selectMoveSize(moveSize)}
+        >
+          <span class="truncate">{moveSize.name}</span>
+        </li>
+      {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:245:29
+Warn: Non-interactive element `<li>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <li class="dropdown-item" on:click={() => selectMake(i, make)}>
+                                {make.make_display}
+                            </li>
+                        {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:253:21
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+                 {#if vehicleStates[i].showMakeDropdown}
+                    <div class="backdrop" on:click={() => vehicleStates[i].showMakeDropdown = false}></div>
+                {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:253:21
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+                 {#if vehicleStates[i].showMakeDropdown}
+                    <div class="backdrop" on:click={() => vehicleStates[i].showMakeDropdown = false}></div>
+                {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:283:29
+Warn: Non-interactive element `<li>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <li class="dropdown-item" on:click={() => selectModel(i, model)}>
+                                {model.model_name}
+                            </li>
+                        {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:291:21
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+                 {#if vehicleStates[i].showModelDropdown}
+                    <div class="backdrop" on:click={() => vehicleStates[i].showModelDropdown = false}></div>
+                {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Vehicles/Vehicles.svelte:291:21
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+                 {#if vehicleStates[i].showModelDropdown}
+                    <div class="backdrop" on:click={() => vehicleStates[i].showModelDropdown = false}></div>
+                {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Loader/Loader.svelte:328:5
+Warn: Unused CSS selector ".loading-text"
+https://svelte.dev/e/css_unused_selector (svelte)
+  
+    .loading-text {
+      margin-top: 20px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Loader/Loader.svelte:336:5
+Warn: Unused CSS selector ".loading-text span"
+https://svelte.dev/e/css_unused_selector (svelte)
+  
+    .loading-text span {
+      grid-column: 1;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Loader/Loader.svelte:343:5
+Warn: Unused CSS selector ".loading-text span.visible"
+https://svelte.dev/e/css_unused_selector (svelte)
+  
+    .loading-text span.visible {
+      opacity: 1;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Loader/Loader.svelte:46:7
+Warn: Also define the standard property 'user-select' for compatibility (css)
+      border: none;
+      -webkit-user-select: none;
+    }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Language/Language.svelte:230:3
+Warn: Elements with the ARIA role "combobox" must have the following attributes defined: "aria-controls" and "aria-expanded"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Language/Language.svelte:226:1
+Warn: Elements with the 'combobox' interactive role must have a tabindex value
+https://svelte.dev/e/a11y_interactive_supports_focus (svelte)
+
+<div
+  class="language-selector-wrapper z-10"
+  bind:this={dropdownRef}
+  on:keydown={handleKeydown}
+  role="combobox"
+  aria-haspopup="listbox"
+  aria-expanded={open}
+  aria-owns={open ? "language-listbox" : undefined}
+>
+  {#if label}
+    <span class="language-select-label" id="language-select-label">
+      {label}
+    </span>
+  {/if}
+
+  {#if showInput}
+    <input
+      type="text"
+      bind:this={inputRef}
+      value={typeahead}
+      on:input={handleInput}
+      placeholder="Type to search language..."
+      class="language-input"
+      aria-autocomplete="list"
+      aria-controls={open ? "language-listbox" : undefined}
+      aria-labelledby="language-select-label"
+      in:fade={{ duration: 200 }}
+      out:fade={{ duration: 200 }}
+    />
+  {:else}
+    <button
+      type="button"
+      bind:this={buttonRef}
+      on:click={toggleOpen}
+      class="language-button"
+      aria-controls={open ? "language-listbox" : undefined}
+      aria-labelledby="language-select-label {selectedLanguage ? 'selected-language-label' : ''}"
+      in:fade={{ duration: 200 }}
+      out:fade={{ duration: 200 }}
+    >
+      {#if selectedLanguage}
+        <span class="language-button-content">
+          {#if selectedLanguage.flag}
+            <span class="flag-icon" aria-hidden="true">{selectedLanguage.flag}</span>
+          {/if}
+          <span class="language-name">{selectedLanguage.name}</span>
+          <span class="language-code">({selectedLanguage.code})</span>
+        </span>
+      {:else}
+        <span class="language-placeholder">Select a language</span>
+      {/if}
+      <svg
+        class="dropdown-chevron {open ? 'open' : ''}"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </button>
+  {/if}
+
+  {#if open}
+    <ul
+      bind:this={listRef}
+      role="listbox"
+      id="language-listbox"
+      class="language-dropdown-list"
+      tabindex="-1"
+      aria-labelledby="language-select-label"
+      in:slide={{ duration: 200 }}
+      out:slide={{ duration: 200 }}
+    >
+      {#each languages as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="language-option"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedLanguage?.code === language.code}
+          role="option"
+          aria-selected={selectedLanguage?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectLanguage(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+            lastValidHighlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag-icon" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="language-name">{language.name}</span>
+          <span class="language-code {highlightedIndex === index ? 'code-highlighted' : ''}">
+            ({language.code})
+          </span>
+        </li>
+      {:else}
+        <li class="language-empty" role="option" aria-disabled="true">
+          No languages available.
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Language/Language.svelte:304:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      {#each languages as language, index (language.code)}
+        <li
+          bind:this={listItems[index]}
+          id={`language-option-${language.code}`}
+          class="language-option"
+          class:highlighted={highlightedIndex === index}
+          class:selected={selectedLanguage?.code === language.code}
+          role="option"
+          aria-selected={selectedLanguage?.code === language.code}
+          tabindex="-1"
+          on:click={() => selectLanguage(language)}
+          on:mouseenter={() => {
+            highlightedIndex = index;
+            lastValidHighlightedIndex = index;
+          }}
+        >
+          {#if language.flag}
+            <span class="flag-icon" aria-hidden="true">{language.flag}</span>
+          {/if}
+          <span class="language-name">{language.name}</span>
+          <span class="language-code {highlightedIndex === index ? 'code-highlighted' : ''}">
+            ({language.code})
+          </span>
+        </li>
+      {:else}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Language/Language.svelte:328:36
+Warn: Elements with the ARIA role "option" must have the following attributes defined: "aria-selected"
+https://svelte.dev/e/a11y_role_has_required_aria_props (svelte)
+      {:else}
+        <li class="language-empty" role="option" aria-disabled="true">
+          No languages available.
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:612:20
+Warn: Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .hero-banner {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:612:20
+Warn: Unused CSS selector ".choice-btn--whatsapp .choice-btn__icon svg"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .hero-banner {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:638:202
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+
+  h2 { font-size: 1.75rem; font-family: var(--font-title); font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -0.02em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.7)); -webkit-background-clip: text; }
+  h6 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-highlight-2); margin-bottom: -0.5rem; }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:686:177
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+    &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-highlight-2); }
+    &__title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
+    &__sub { font-size: 1.05rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 440px; }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:792:122
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+    &__check { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.08)); border: 2px solid rgba(16,185,129,0.4); color: #10b981; font-size: 1.6rem; font-weight: 700; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    &__title { font-size: 1.8rem; font-weight: 800; background: linear-gradient(to right, #fff, rgba(255,255,255,0.75)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    &__desc { font-size: 1rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 460px; }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroForm.svelte:559:138
+Error: Type 'HTMLTextAreaElement' is missing the following properties from type 'HTMLInputElement': accept, align, alt, capture, and 29 more. (ts)
+              <p class="sub-heading">You can edit the notes gathered during our chat, or add more details.</p>
+              <textarea class="notes-textarea" placeholder="Add any details about your move..." bind:value={$formState.notes} bind:this={notesInput}></textarea>
+              <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroSection.svelte:25:20
+Warn: Unused CSS selector ".hero-section[style*=background-image] .hero-section h1"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.hero-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/HeroSection.svelte:25:20
+Warn: Unused CSS selector ".hero-section[style*=background-image] .hero-section .hero-subtitle"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.hero-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-link"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-image"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-title"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-texts"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-title"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-desc"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".more-link"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".secondary-btn"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".secondary-btn:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LatestNewsSection.svelte:59:20
+Warn: Unused CSS selector ".news-item-card"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+// Main section styling
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/buttons/SubmitButton/SubmitButton.svelte:192:5
+Warn: Do not use empty rulesets (scss)
+
+    &.primary {
+      /* Default style, already applied above */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LeadCaptureModal.svelte:6:21
+Error: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './store.js'? (ts)
+  import SubmitButton from "./systems/buttons/SubmitButton/SubmitButton.svelte";
+  import store from "./store";
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/LeadCaptureModal.svelte:84:13
+Error: Object literal may only specify known properties, and '"text"' does not exist in type '{ disabled?: boolean | undefined; loading?: boolean | undefined; active?: boolean | undefined; label?: string | undefined; callback?: MouseEventHandler<HTMLButtonElement> | undefined; color?: "error" | ... 4 more ... | undefined; }'. (ts)
+          <SubmitButton 
+            text="Read Guide Now" 
+            callback={handleSubmit} 
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MovingProcessSection.svelte:257:20
+Warn: Unused CSS selector ".moving-process-title"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.moving-process-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MovingProcessSection.svelte:257:20
+Warn: Unused CSS selector ".moving-process-title"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.moving-process-section {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/RelocationPhilosophySection.svelte:44:20
+Warn: Unused CSS selector ".col-right img"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.relocation-philosophy {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SpecializationSection.svelte:34:20
+Warn: Unused CSS selector ".specialization-link"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.specialization {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SpecializationSection.svelte:34:20
+Warn: Unused CSS selector ".specialization-link:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.specialization {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/TestimonialsSection.svelte:32:7
+Warn: `<video>` elements must have a `<track kind="captions">`
+https://svelte.dev/e/a11y_media_has_caption (svelte)
+      <h2>What Our Customers Say…</h2>
+      <video
+        controls
+        width="100%"
+        bind:this={videoEl}
+        class:unfolded={$unfolded}
+      >
+        <source type="video/mp4" src="https://storage.googleapis.com/videos-irp-funnels/Copia-de-Jill-Reed-International-Relocation-Partner%20(1).mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/GlobalData/ticks.ts:3:26
+Error: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../audioInteractions.js'? 
+import { get, writable } from "svelte/store";
+import { playTick } from "../audioInteractions";
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/DestinationsMenu.svelte:33:20
+Warn: Unused CSS selector ".mobile-menu-toggle"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.destinations-menu-col {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/DestinationsMenu.svelte:33:20
+Warn: Unused CSS selector ".mobile-menu-bar"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.destinations-menu-col {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/MenuToggle.svelte:75:5
+Warn: Non-interactive element `<nav>` cannot have interactive role 'menu'
+https://svelte.dev/e/a11y_no_noninteractive_element_to_interactive_role (svelte)
+    <!-- Fullscreen menu rendered from menuItems; no hard-coded routes -->
+    <nav
+        id={menuId}
+        class="menu-overlay"
+        aria-hidden={!open}
+        on:click={onOverlayClick}
+        role="menu"
+    >
+    <div class="scrim" aria-hidden="true"></div>
+    <div class="menu-panel">
+            <ul class="menu-list" style={`--count: ${menuItems.length || 0}`}>
+                {#each menuItems as item (item.href)}
+                    <li class="menu-list-item" role="none">
+                        <a
+                            href={item.href}
+                            class="menu-link"
+                            class:menu-link-cta={item.isCTA}
+                            role="menuitem"
+                            tabindex="0"
+                            on:click={onItemClick}
+                            on:auxclick={onItemClick}
+                            target={item.target}
+                            rel={item.rel}
+                            on:mouseenter={() => hoveredHref = item.href}
+                            on:mouseleave={() => hoveredHref = null}
+                        >
+                            <AnimatedUnderline
+                                selected={$page.url.pathname === item.href}
+                                hovered={hoveredHref === item.href}
+                            >
+                                {#if item.icon}
+                                    <img
+                                        src={item.icon}
+                                        alt={`${item.label} icon`}
+                                        width="30"
+                                        height="30"
+                                        class="menu-link-icon"
+                                    />
+                                {/if}
+                                {item.label}
+                            </AnimatedUnderline>
+                        </a>
+                    </li>
+                {/each}
+
+                {#if cta}
+                    <li class="menu-list-item" role="none">
+                        <CTAButton label={cta.label} href={cta.href} />
+                    </li>
+                {/if}
+            </ul>
+            <div class="menu-extra">
+                <div class="menu-socials">
+                    <a class="menu-social-link" href="https://www.facebook.com/IntRelocationPartner/" target="_blank" rel="noopener">
+                        <img class="menu-social-img" src="/icons/facebook.png" alt="Facebook" width="32" height="32" />
+                    </a>
+                    <a class="menu-social-link" href="https://www.instagram.com/int.relocation.partner" target="_blank" rel="noopener">
+                        <img class="menu-social-img" src="/icons/instagram.png" alt="Instagram" width="32" height="32" />
+                    </a>
+                    <a class="menu-social-link" href="https://www.linkedin.com/company/internationalrelocationpartner" target="_blank" rel="noopener">
+                        <img class="menu-social-img" src="/icons/linkedin.png" alt="Linkedin" width="32" height="32" />
+                    </a>
+                    <a class="menu-social-link" href="https://g.page/internationalrelocationpartner?we" target="_blank" rel="noopener">
+                        <img class="menu-social-img" src="/icons/google.png" alt="Google" width="32" height="32" />
+                    </a>
+                    <a class="menu-social-link" href="https://www.youtube.com/channel/UCDXEdyNL5XnFg72n9XjOPvw" target="_blank" rel="noopener">
+                        <img class="menu-social-img" src="/icons/youtube.png" alt="Youtube" width="32" height="32" />
+                    </a>
+                </div>
+                <div class="menu-credits">
+                    <div class="menu-title">International Relocation Partner</div>
+                    <p class="menu-copyright">
+                        Copyright © 2025 Heredia, Costa Rica | Built by
+                        <a class="menu-copyright-link" href="https://aiexecutions.com/" target="_blank" rel="noopener">AI Executions</a> at
+                        <a class="menu-copyright-link" href="https://testcoder.netlify.app/" target="_blank" rel="noopener">Oriens Studios</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/MainMenu.svelte:53:1
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+
+<nav
+  class="main-menu-col"
+  aria-label="Main navigation"
+  on:mousedown|stopPropagation|capture
+  on:click|stopPropagation
+>
+  <ul class="main-menu" role="menubar" on:mouseleave={() => (hoveredIndex = -1)}>
+    <div
+      class="hover-pill"
+      style="left: {pillStyle.left}px; width: {pillStyle.width}px; opacity: {pillStyle.opacity};"
+    ></div>
+    {#each menuItems as item, i (item.href)}
+      <li role="none" bind:this={menuItemsRefs[i]} on:mouseenter={() => (hoveredIndex = i)}>
+        <a
+          href={item.href}
+          role="menuitem"
+          tabindex="0"
+          class:item-cta={item.isCTA}
+          on:click={(e) => handleClick(e, item.href)}
+          rel={isExternal(item.href) ? "noopener noreferrer" : undefined}
+          target={isExternal(item.href) ? "_blank" : undefined}
+          style="position:relative;"
+        >
+          <AnimatedUnderline
+            selected={$page.url.pathname === item.href}
+            hovered={hoveredIndex === i}
+          >
+            {#if item.icon}
+              <img
+                src={item.icon}
+                alt={item.label + " icon"}
+                width="30"
+                height="30"
+              />
+            {/if}
+            {item.label}
+          </AnimatedUnderline>
+        </a>
+      </li>
+    {/each}
+
+    {#if cta}
+      <li role="none" on:mouseenter={() => (hoveredIndex = -1)}>
+        <CTAButton trigger={true} label={cta.label} href={cta.href} variant="primary" />
+      </li>
+    {/if}
+  </ul>
+
+  <MenuToggle
+    open={mobileMenuOpen}
+    onToggle={() => (mobileMenuOpen = !mobileMenuOpen)}
+    {menuItems}
+    cta={cta as { label: string; href: string }}
+  />
+</nav>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/MainMenu.svelte:53:1
+Warn: Non-interactive element `<nav>` should not be assigned mouse or keyboard event listeners
+https://svelte.dev/e/a11y_no_noninteractive_element_interactions (svelte)
+
+<nav
+  class="main-menu-col"
+  aria-label="Main navigation"
+  on:mousedown|stopPropagation|capture
+  on:click|stopPropagation
+>
+  <ul class="main-menu" role="menubar" on:mouseleave={() => (hoveredIndex = -1)}>
+    <div
+      class="hover-pill"
+      style="left: {pillStyle.left}px; width: {pillStyle.width}px; opacity: {pillStyle.opacity};"
+    ></div>
+    {#each menuItems as item, i (item.href)}
+      <li role="none" bind:this={menuItemsRefs[i]} on:mouseenter={() => (hoveredIndex = i)}>
+        <a
+          href={item.href}
+          role="menuitem"
+          tabindex="0"
+          class:item-cta={item.isCTA}
+          on:click={(e) => handleClick(e, item.href)}
+          rel={isExternal(item.href) ? "noopener noreferrer" : undefined}
+          target={isExternal(item.href) ? "_blank" : undefined}
+          style="position:relative;"
+        >
+          <AnimatedUnderline
+            selected={$page.url.pathname === item.href}
+            hovered={hoveredIndex === i}
+          >
+            {#if item.icon}
+              <img
+                src={item.icon}
+                alt={item.label + " icon"}
+                width="30"
+                height="30"
+              />
+            {/if}
+            {item.label}
+          </AnimatedUnderline>
+        </a>
+      </li>
+    {/each}
+
+    {#if cta}
+      <li role="none" on:mouseenter={() => (hoveredIndex = -1)}>
+        <CTAButton trigger={true} label={cta.label} href={cta.href} variant="primary" />
+      </li>
+    {/if}
+  </ul>
+
+  <MenuToggle
+    open={mobileMenuOpen}
+    onToggle={() => (mobileMenuOpen = !mobileMenuOpen)}
+    {menuItems}
+    cta={cta as { label: string; href: string }}
+  />
+</nav>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/MainMenu.svelte:109:20
+Warn: Unused CSS selector ".mobile-menu"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.main-menu-col {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/MainMenu.svelte:109:20
+Warn: Unused CSS selector ".mobile-menu li"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+.main-menu-col {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".main-menu-col"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section a"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section p"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section span"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section li"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section a:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section p:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section span:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/Header.svelte:76:40
+Warn: Unused CSS selector ".header-section li:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss" src="./Header.scss"></style>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:12:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}>Home</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:12:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}>Home</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:12:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}>Home</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:21:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:21:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:21:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:30:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:30:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:30:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:40:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:40:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:40:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <li class="menu-half--list-item home">
+        <a
+          class="menu-half--sub-anchor menu-half--anchor"
+          onclick={() => {
+            isChecked = false;
+
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:50:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <li>
+        <a
+          class="menu-half--anchor menu-half--logout"
+          onclick={() => {
+            isChecked = false;
+          }}>Log Out</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:50:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <li>
+        <a
+          class="menu-half--anchor menu-half--logout"
+          onclick={() => {
+            isChecked = false;
+          }}>Log Out</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:50:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <li>
+        <a
+          class="menu-half--anchor menu-half--logout"
+          onclick={() => {
+            isChecked = false;
+          }}>Log Out</a
+        >
+      </li>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half .home--link-image"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half .icon"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half .icon:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--list-externals"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--list-externals"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".switch + .menu-half--list-externals"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--title"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--anchor :not(.not-anchor)::after"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display:hover::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display:focus::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display.switch"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display.switch:hover::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display.switch:focus::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--display.switch::before"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/MenuHalf/MenuHalf.svelte:65:20
+Warn: Unused CSS selector ".menu-half--sub-list-item"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "./MenuHalf.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:20:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <section class="menu-section left">
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:20:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <section class="menu-section left">
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:20:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <section class="menu-section left">
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 7 });
+          }}>Config</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:26:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:26:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:26:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 8 });
+          }}>News Sources</a
+        >
+        <a
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:32:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+        <section class="menu-x hide-on-desktop interactive">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:32:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+        <section class="menu-x hide-on-desktop interactive">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:32:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+        >
+        <a
+          class="menu-item hide-on-mobile"
+          onclick={() => {
+            saveToStore({ stepsIndex: 9 });
+          }}>Users</a
+        >
+        <section class="menu-x hide-on-desktop interactive">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:43:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+      <section class="menu-section center">
+        <a
+          onclick={() => {
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}
+        >
+          <SVG src="./icons/AIBA.svg" />
+        </a>
+      </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:43:9
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+      <section class="menu-section center">
+        <a
+          onclick={() => {
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}
+        >
+          <SVG src="./icons/AIBA.svg" />
+        </a>
+      </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:43:9
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+      <section class="menu-section center">
+        <a
+          onclick={() => {
+            saveToStore({ stepsIndex: 0, directionsThatShouldDisappear: [] });
+          }}
+        >
+          <SVG src="./icons/AIBA.svg" />
+        </a>
+      </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:56:11
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+        <section class="menu-x hide-on-mobile interactive">
+          <a
+            class="menu-half--anchor menu-half--logout"
+            onclick={() => {  
+            }}>Log Out</a
+          >
+        </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:56:11
+Warn: `<a>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+        <section class="menu-x hide-on-mobile interactive">
+          <a
+            class="menu-half--anchor menu-half--logout"
+            onclick={() => {  
+            }}>Log Out</a
+          >
+        </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:56:11
+Warn: `<a>` element should have an href attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+        <section class="menu-x hide-on-mobile interactive">
+          <a
+            class="menu-half--anchor menu-half--logout"
+            onclick={() => {  
+            }}>Log Out</a
+          >
+        </section>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-space"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section.is-scrolled"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section.is-hidden"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-row"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".logo-col"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".logo-col:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".main-menu-col"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section a"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section p"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section span"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section li"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section a:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section p:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section span:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Header/HeaderSimple.svelte:71:20
+Warn: Unused CSS selector ".header-section li:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "Header.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/ShaderToy/ChosenShader/ChosenShader.svelte:2:22
+Error: Cannot find module '../T.shader' or its corresponding type declarations. (ts)
+<script lang="ts">
+  import shader from "../T.shader";
+  import ShaderToy from "../ShaderToy.svelte";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SmoothScrollWrapper/SmoothScrollWrapper.svelte:73:3
+Warn: Do not use empty rulesets (css)
+  }
+  .spacer { /* width/height set dynamically */ }
+  </style>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:31:5
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+<div class="soft" style="top: {pushToRead ? -$smoothScrollTarget : 0}px; {pushToRead && !z ? 'z-index: -1;' : 'z-index: 1;'}">
+    <video playsinline muted={true} autoplay loop class="video" src={videoURL}/>
+    <h1 class="title">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:38:1
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<div ...></div>` rather than `<div ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+</div>
+<div style="z-index: 1; height: {
+    pushToRead ? 
+        (
+            (offset / $w.innerHeight) + 
+            ($d?.getElementById?.(random)?.offsetWidth / $w.innerWidth) 
+            / scaleSpeed
+        )
+    : 0
+}vh;"/>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:9:16
+Warn: Component has unused export property 'direction'. If it is for external reference only, please consider using `export const direction`
+https://svelte.dev/e/export_let_unused (svelte)
+    export let videoURL = "https://videos.pexels.com/video-files/31196472/13325298_2560_1440_25fps.mp4"
+    export let direction = 1
+    export let offset = 0;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:41:26
+Error: Property 'innerHeight' does not exist on type '{}'. (ts)
+        (
+            (offset / $w.innerHeight) + 
+            ($d?.getElementById?.(random)?.offsetWidth / $w.innerWidth) 
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:42:18
+Error: Property 'getElementById' does not exist on type '{}'. (ts)
+            (offset / $w.innerHeight) + 
+            ($d?.getElementById?.(random)?.offsetWidth / $w.innerWidth) 
+            / scaleSpeed
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/SoftTitle/SoftTitle.svelte:42:61
+Error: Property 'innerWidth' does not exist on type '{}'. (ts)
+            (offset / $w.innerHeight) + 
+            ($d?.getElementById?.(random)?.offsetWidth / $w.innerWidth) 
+            / scaleSpeed
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Video/Video.svelte:329:3
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<video ...></video>` rather than `<video ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+  <!-- Always mounted; visibility by state -->
+  <video
+    bind:this={videoEl}
+    class="hero-banner-video"
+    class:ready={hasMetadata}
+    playsinline
+    autoplay            
+    preload="metadata"
+    muted              
+    {poster}
+    on:loadstart={onLoadStart}
+    on:loadedmetadata={onLoadedMetadata}
+    on:canplay={onCanPlay}
+    on:playing={onPlaying}
+    on:waiting={onWaiting}
+    on:stalled={onStalled}
+    on:timeupdate={onTimeUpdate}
+    on:error={onError}
+    on:pause={onPause}
+    on:ended={onEnded}
+    on:click={togglePlay} />
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Video/Video.svelte:356:5
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+    <!-- If you still want a hint before autoplay starts for some edge case -->
+    <div class="overlay" on:click={tryPlay}>
+      {isMobile ? "Tap to play with sound" : "Click to activate sound"}
+    </div>
+  {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/Video/Video.svelte:356:5
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+    <!-- If you still want a hint before autoplay starts for some edge case -->
+    <div class="overlay" on:click={tryPlay}>
+      {isMobile ? "Tap to play with sound" : "Click to activate sound"}
+    </div>
+  {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/common/CopyUrlWithQR.svelte:122:5
+Warn: Unused CSS selector ".url-text"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+    .url-text {
+        word-wrap: break-word; /* Wrap long URLs */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/common/CopyUrlWithQR.svelte:170:5
+Warn: Do not use empty rulesets (css)
+
+    .copy-button {
+        /* Specific styles if needed */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/common/CopyUrlWithQR.svelte:174:5
+Warn: Do not use empty rulesets (css)
+
+    .download-button {
+        /* Specific styles if needed */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/scouting/VideoScouting.svelte:14:7
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+    <div class="col">
+      <div class="video-wrapper" on:mouseenter={hideCover} on:click={hideCover} on:touchstart={hideCover}>
+        <div class="cover" class:hidden={$coverHidden}>
+          <div class="play-button"></div>
+          <img src="/cover-riviera-maya-scout-trip.png" alt="Riviera Maya Scout Trip" />
+        </div>
+        <iframe class="youtube-video" width="560" height="315" src="https://www.youtube.com/embed/D7s95eodVH8?si=p7TUsZPXIudls_T_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/scouting/VideoScouting.svelte:14:7
+Warn: `<div>` with a mouseenter or click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+    <div class="col">
+      <div class="video-wrapper" on:mouseenter={hideCover} on:click={hideCover} on:touchstart={hideCover}>
+        <div class="cover" class:hidden={$coverHidden}>
+          <div class="play-button"></div>
+          <img src="/cover-riviera-maya-scout-trip.png" alt="Riviera Maya Scout Trip" />
+        </div>
+        <iframe class="youtube-video" width="560" height="315" src="https://www.youtube.com/embed/D7s95eodVH8?si=p7TUsZPXIudls_T_" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/buttons/ToggleCard/ToggleCard.svelte:5:14
+Warn: Component has unused export property 'canReveal'. If it is for external reference only, please consider using `export const canReveal`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let cardTitle: string;
+  export let canReveal = false;
+  export let isOpen = false;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/texts/HTMLTextLettersClassWrapper/HTMLTextLettersClassWrapper.svelte:46:20
+Warn: Unused CSS selector ".wrapper-letter"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  @use "HTMLTextLettersClassWrapper.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:168:3
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+       The on:input event updates the selectedColor state and triggers onChange. -->
+  <div class="picker-wrapper" on:mousedown={handleMouseDown} on:click={handleClick}>
+    <ColorPicker
+      bind:hex={selectedColor}
+      position="responsive"
+    on:input={(e) => {
+      selectedColor = e.detail.hex || $foregroundColor;
+      selectedColorStore.set(selectedColor);
+      if (!isDragging) {
+        onChange(selectedColor);
+        setStoreColor();
+      }
+    }}
+    />
+    <span class="color-name" aria-live="polite">({colorName})</span>
+  </div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:168:3
+Warn: `<div>` with a mousedown or click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+       The on:input event updates the selectedColor state and triggers onChange. -->
+  <div class="picker-wrapper" on:mousedown={handleMouseDown} on:click={handleClick}>
+    <ColorPicker
+      bind:hex={selectedColor}
+      position="responsive"
+    on:input={(e) => {
+      selectedColor = e.detail.hex || $foregroundColor;
+      selectedColorStore.set(selectedColor);
+      if (!isDragging) {
+        onChange(selectedColor);
+        setStoreColor();
+      }
+    }}
+    />
+    <span class="color-name" aria-live="polite">({colorName})</span>
+  </div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".color-dropdown"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".swatch-item button"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".color-swatch"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".swatch-item button:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".swatch-item button:focus"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".checkmark"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-panel"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-panel h3"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-list"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-item button"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-item button:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-item button:focus"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-swatch"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".suggestion-scheme"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".preview-panel"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".preview-panel h3"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".preview-mockup"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ColorPicker/ColorPicker.svelte:223:20
+Warn: Unused CSS selector ".preview-mockup:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .color-picker {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/FileInput/FileInput.svelte:135:1
+Warn: `<div>` with a dragenter, dragover, dragleave or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+
+<div
+bind:this={dropZoneRef}
+class="file-drop-zone"
+class:drag-over={isDraggingOver && !disabled && !isSubmitting}
+class:disabled={disabled || isSubmitting}
+on:dragenter={handleDragEnter}
+on:dragover={handleDragOver}
+on:dragleave={handleDragLeave}
+on:drop={handleDrop}
+aria-disabled={disabled || isSubmitting}
+>
+<button
+    class="file-input-label"
+    class:disabled={disabled || isSubmitting}
+    type="button"
+    aria-disabled={disabled || isSubmitting}
+    aria-describedby={isDraggingOver && !disabled && !isSubmitting ? `${id}-drop-instructions` : undefined}
+    tabindex={disabled || isSubmitting ? -1 : 0}
+    on:click={triggerFileInput}
+    on:keydown={handleKeyDown}
+    disabled={disabled || isSubmitting}
+>
+    {label}
+</button>
+<span class="drop-zone-label" aria-hidden="true">{dropZoneLabel}</span>
+
+{#if isDraggingOver && !disabled && !isSubmitting}
+    <div id={`${id}-drop-instructions`} class="visually-hidden">
+    Release mouse to drop files
+    </div>
+{/if}
+
+<input
+    bind:this={fileInputRef}
+    {id}
+    class="visually-hidden"
+    type="file"
+    {accept}
+    on:change={handleFileSelect}
+    disabled={disabled || isSubmitting}
+    aria-hidden="true"
+    tabindex="-1"
+/>
+</div>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Link/Link.svelte:120:3
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+<div class="url-input-wrapper">
+  <label class="input-label">{value ? label || placeholder : label}</label>
+  <input
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Personality/Personality.svelte:70:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+  {#if currentContent}
+    <label class="textarea-label">
+      {placeholderText}
+    </label>
+  {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Personality/Personality.svelte:11:14
+Warn: Component has unused export property 'newsSourceId'. If it is for external reference only, please consider using `export const newsSourceId`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let personality: string = "";
+  export let newsSourceId: string;
+  export let onChange: (value: string) => void = () => {};
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Personality/Personality.svelte:13:14
+Warn: Component has unused export property 'onError'. If it is for external reference only, please consider using `export const onError`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let onChange: (value: string) => void = () => {};
+  export let onError: (message: string) => void = () => {};
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/Personality/Personality.svelte:180:3
+Warn: Do not use empty rulesets (scss)
+
+  :global(.submit-button) {
+    // Specific styles if needed
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/inputs/ScheduleTime/ScheduleTime.svelte:181:5
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+  <div class="schedule-input-wrapper">
+    <label class="input-label">{label}</label>
+    <div class="input-container">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/WheelPicker.svelte:25:3
+Warn: noninteractive element cannot have nonnegative tabIndex value
+https://svelte.dev/e/a11y_no_noninteractive_tabindex (svelte)
+  {/if}
+  <div class="wheel-list" tabindex="0">
+    {#each items as item}
+      <div
+        class="wheel-item {item === $storeToUse ? 'selected' : ''}"
+        on:click={() => selectItem(item)}
+      >
+        {itemToString(item)}
+      </div>
+    {/each}
+  </div>
+</div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/WheelPicker.svelte:27:7
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+    {#each items as item}
+      <div
+        class="wheel-item {item === $storeToUse ? 'selected' : ''}"
+        on:click={() => selectItem(item)}
+      >
+        {itemToString(item)}
+      </div>
+    {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/WheelPicker.svelte:27:7
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+    {#each items as item}
+      <div
+        class="wheel-item {item === $storeToUse ? 'selected' : ''}"
+        on:click={() => selectItem(item)}
+      >
+        {itemToString(item)}
+      </div>
+    {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Card/Card.svelte:67:20
+Warn: Unused CSS selector ".card-body > *"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .card {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Card/Card.svelte:67:20
+Warn: Unused CSS selector ".card-body > *.visible"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .card {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Switch/Switch.svelte:110:5
+Warn: Do not use empty rulesets (scss)
+
+    &:focus {
+    }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Card/JsonViewer.svelte:72:20
+Warn: Unused CSS selector ".json-date"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .json-viewer {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Card/JsonViewer.svelte:57:8
+Error: Property 'inputElement' is missing in type '{ value: string; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; type?: "number" | "email" | "url" | "text" | "tel" | "password" | undefined; onChange?: ((newValue: string) => void) | undefined; onEnter?: (() => void) | undefined; textStore?: Writable<...> |...'. (ts)
+    <span class="json-string">
+      <PlainText value={data} />
+    </span>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Radio/Radio.svelte:5:14
+Warn: Component has unused export property 'selected'. If it is for external reference only, please consider using `export const selected`
+https://svelte.dev/e/export_let_unused (svelte)
+  // Props for the custom radio button.
+  export let selected: boolean = false; // (Not directly used; store drives state)
+  export let label: string = "";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/selectors/Radio/Radio.svelte:8:14
+Warn: Component has unused export property 'name'. If it is for external reference only, please consider using `export const name`
+https://svelte.dev/e/export_let_unused (svelte)
+  export let value: string | number = "";
+  export let name: string = "";
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:44:49
+Error: Cannot find name 'index'. (ts)
+    const labels = rawData.map(
+      (item) => item.name || item.id || `Item ${index + 1}` || "Unknown"
+    ); // Improved fallback label
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:175:43
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+    // Update scales
+    if (chartInstance.options?.scales?.x?.title) {
+      chartInstance.options.scales.x.title.text = xText;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:176:38
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+    if (chartInstance.options?.scales?.x?.title) {
+      chartInstance.options.scales.x.title.text = xText;
+      chartInstance.options.scales.x.title.display = !!xText;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:177:38
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+      chartInstance.options.scales.x.title.text = xText;
+      chartInstance.options.scales.x.title.display = !!xText;
+    }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:179:43
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+    }
+    if (chartInstance.options?.scales?.y?.title) {
+      chartInstance.options.scales.y.title.text = yText;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:180:38
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+    if (chartInstance.options?.scales?.y?.title) {
+      chartInstance.options.scales.y.title.text = yText;
+      chartInstance.options.scales.y.title.display = !!yText;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/stats/Stat.svelte:181:38
+Error: Property 'title' does not exist on type '_DeepPartialObject<{ type: "time"; } & Omit<CartesianScaleOptions, "max" | "min"> & { min: string | number; max: string | number; suggestedMin: string | number; ... 5 more ...; ticks: TimeScaleTickOptions; }> | ... 4 more ... | _DeepPartialObject<...>'.
+  Property 'title' does not exist on type '_DeepPartialObject<{ type: "radialLinear"; } & CoreScaleOptions & { animate: boolean; startAngle: number; angleLines: { display: boolean; color: Scriptable<Color, ScriptableScaleContext>; lineWidth: Scriptable<...>; borderDash: Scriptable<...>; borderDashOffset: Scriptable<...>; }; ... 7 more ...; ticks: RadialTickO...'. (ts)
+      chartInstance.options.scales.y.title.text = yText;
+      chartInstance.options.scales.y.title.display = !!yText;
+    }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/wrappers/Page/Page.svelte:20:20
+Warn: Unused CSS selector ".brand"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .brand {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/wrappers/Page/Page.svelte:20:20
+Warn: Unused CSS selector ".logo"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+  .brand {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:14:14
+Warn: Component has unused export property 'thankYouUrl'. If it is for external reference only, please consider using `export const thankYouUrl`
+https://svelte.dev/e/export_let_unused (svelte)
+	export let canReveal = false;
+  export let thankYouUrl: string = '/thank-you';
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:180:2
+Warn: Unused CSS selector ".pt"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.pt	{ padding-top: 100px; }
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:182:2
+Warn: Unused CSS selector ".wrapper"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.wrapper {
+		background: var(--color-background);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:186:2
+Warn: Unused CSS selector ".logo"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.logo {
+		width: 150px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:239:3
+Warn: Unused CSS selector ".arrow-bounce"
+https://svelte.dev/e/css_unused_selector (svelte)
+  }
+  .arrow-bounce {
+    font-size: 100px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:246:2
+Warn: Unused CSS selector "video"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	video {
+		position: relative;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:271:2
+Warn: Unused CSS selector ".login-overlay"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-overlay {
+		z-index: 2;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:279:2
+Warn: Unused CSS selector ".login-button"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-button {
+		padding: 8px 15px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:287:2
+Warn: Unused CSS selector ".login-button.google"
+https://svelte.dev/e/css_unused_selector (svelte)
+	}
+	.login-button.google { background-color: #db4437; }
+	.login-button.facebook { background-color: #4267b2; }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:288:2
+Warn: Unused CSS selector ".login-button.facebook"
+https://svelte.dev/e/css_unused_selector (svelte)
+	.login-button.google { background-color: #db4437; }
+	.login-button.facebook { background-color: #4267b2; }
+	.login-button.linkedin { background-color: #0077b5; }
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:289:2
+Warn: Unused CSS selector ".login-button.linkedin"
+https://svelte.dev/e/css_unused_selector (svelte)
+	.login-button.facebook { background-color: #4267b2; }
+	.login-button.linkedin { background-color: #0077b5; }
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/VSL.svelte:291:2
+Warn: Unused CSS selector ".login-button:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-button:hover { opacity: 0.9; }
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ZohoScheduling.svelte:15:3
+Warn: `<iframe>` element should have a title attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+	<div class="spacing">
+		<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder={0} allowfullscreen={true} > </iframe>
+	</div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ZohoScheduling.svelte:21:2
+Warn: Unused CSS selector ".pt"
+https://svelte.dev/e/css_unused_selector (svelte)
+<style>
+	.pt	{
+		padding-top: 100px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/EmailInputStage.svelte:44:10
+Error: Property 'inputElement' is missing in type '{ label: string; placeholder: string; value: any; onChange: (newValue: string) => void; onEnter: () => void; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; onEnter?: (() => void) | undefined; onChange?: ((newValue: string) => void) | undefined; emailStore?: Writable<...> | undefined; valid?: boolean | undefined; }'. (ts)
+
+        <EmailInput
+            label="Email Address"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/AgeInputStage.svelte:39:2
+Warn: `<div>` with a keydown handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+<Page>
+	<div class="stage-content" on:keydown={handleEnter}>
+		<MarkdownText {canReveal}>
+			## **What is your age range?**
+		</MarkdownText>
+
+		<div class="options-wrapper">
+			<Options
+				options={AGE_RANGES_OPTIONS}
+				selected={age}                 
+				groupName="age-range-selection" />
+		</div>
+
+		<SubmitButton
+			label="Next"
+			callback={handleNext}
+			active={isValid}
+			disabled={!isValid} />
+	</div>
+</Page>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SquareFeetInputStage.svelte:111:3
+Warn: Unused CSS selector ".sublabel"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .sublabel {
+    font-size: 0.9rem;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ReasonInputStage.svelte:65:22
+Error: Property 'inputElement' is missing in type '{ placeholder: string; value: any; onChange: (newValue: string) => void; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; type?: "number" | "email" | "url" | "text" | "tel" | "password" | undefined; onChange?: ((newValue: string) => void) | undefined; onEnter?: (() => void) | undefined; textStore?: Writable<...> |...'. (ts)
+                <div class="reason-item">
+                    <PlainText
+                        placeholder={`Reason ${index + 1}`}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SubmitStage.svelte:212:20
+Warn: Unused CSS selector ".anchor"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    .anchor {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SubmitStage.svelte:212:20
+Warn: Unused CSS selector ".anchor:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    .anchor {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SubmitStage.svelte:212:20
+Warn: Unused CSS selector ".vsl-copy-display"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    .anchor {
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/NameInputStage.svelte:33:10
+Error: Property 'inputElement' is missing in type '{ label: string; placeholder: string; value: any; onChange: (newValue: string) => void; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; type?: "number" | "email" | "url" | "text" | "tel" | "password" | undefined; onChange?: ((newValue: string) => void) | undefined; onEnter?: (() => void) | undefined; textStore?: Writable<...> |...'. (ts)
+
+        <PlainText
+            label="Full Name"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:238:2
+Warn: Unused CSS selector "video"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	video {
+		/* opacity: 0; */ /* Removed initial hidden state */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:260:2
+Warn: Unused CSS selector "p"
+https://svelte.dev/e/css_unused_selector (svelte)
+	/* Optional: Style for the error state */
+	p {
+		position: absolute;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:272:2
+Warn: Unused CSS selector ".login-overlay"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-overlay {
+		z-index: 2; /* Ensure buttons are above video and error message */
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:280:2
+Warn: Unused CSS selector ".login-button"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-button {
+		padding: 8px 15px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:289:2
+Warn: Unused CSS selector ".login-button.google"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-button.google {
+		background-color: #db4437;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:292:2
+Warn: Unused CSS selector ".login-button.facebook"
+https://svelte.dev/e/css_unused_selector (svelte)
+	}
+	.login-button.facebook {
+		background-color: #4267b2;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:295:2
+Warn: Unused CSS selector ".login-button.linkedin"
+https://svelte.dev/e/css_unused_selector (svelte)
+	}
+	.login-button.linkedin {
+		background-color: #0077b5;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/ThankYou.svelte:299:2
+Warn: Unused CSS selector ".login-button:hover"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+	.login-button:hover {
+		opacity: 0.9;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SexInputStage.svelte:40:5
+Warn: `<div>` with a keydown handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+<Page>
+    <div class="stage-content" on:keydown={handleEnter}>
+        <MarkdownText {canReveal}>
+            ## **What is your **sex?
+        </MarkdownText>
+
+        <div class="options-wrapper horizontal-options">
+            <Options
+                options={sexOptions}
+                selectedValue={currentSex}
+                on:update={handleSexUpdate}
+                groupName="sex-selection"
+            />
+        </div>
+
+        <SubmitButton
+            label="Next"
+            callback={handleNext}
+            disabled={!isValid}
+        />
+    </div>
+</Page>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/BaseStepsFunnel/stages/SexInputStage.svelte:48:17
+Error: Object literal may only specify known properties, and '"selectedValue"' does not exist in type '{ options: Record<string, string>; selected?: Writable<string | undefined> | undefined; groupName?: string | undefined; }'. (ts)
+                options={sexOptions}
+                selectedValue={currentSex}
+                on:update={handleSexUpdate}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/EmailInputStage.svelte:44:10
+Error: Property 'inputElement' is missing in type '{ label: string; placeholder: string; value: string; onChange: (newValue: string) => void; onEnter: () => void; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; onEnter?: (() => void) | undefined; onChange?: ((newValue: string) => void) | undefined; emailStore?: Writable<...> | undefined; valid?: boolean | undefined; }'. (ts)
+
+        <EmailInput
+            label="Email Address"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/NameInputStage.svelte:40:10
+Error: Property 'inputElement' is missing in type '{ label: string; placeholder: string; value: string; onChange: (newValue: string) => void; }' but required in type '{ value?: string | undefined; placeholder?: string | undefined; inputElement: HTMLInputElement; label?: string | undefined; type?: "number" | "email" | "url" | "text" | "tel" | "password" | undefined; onChange?: ((newValue: string) => void) | undefined; onEnter?: (() => void) | undefined; textStore?: Writable<...> |...'. (ts)
+
+        <TextInput
+            label="Name"
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/TopCountriesInputStage.svelte:76:3
+Warn: Unused CSS selector "input"
+https://svelte.dev/e/css_unused_selector (svelte)
+  /* Optional polish if <Country> renders native inputs */
+  input, select {
+    width: 100%;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/TopCountriesInputStage.svelte:76:10
+Warn: Unused CSS selector "select"
+https://svelte.dev/e/css_unused_selector (svelte)
+  /* Optional polish if <Country> renders native inputs */
+  input, select {
+    width: 100%;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/TopCountriesInputStage.svelte:43:8
+Error: Property 'buttonRef' is missing in type '{ label: string; onSelect: (v: string | null) => void; }' but required in type '{ defaultCountryCode?: string | null | undefined; label?: string | undefined; onSelect?: ((selectedCode: string | null) => void) | undefined; selectedCountryStore?: Writable<Country | null> | undefined; buttonRef: HTMLButtonElement; }'. (ts)
+      <!-- 1. Always show the first -->
+      <Country
+        label={$topCountries[0] ?? "Country"}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/MainFunnel.svelte:27:3
+Warn: Unused CSS selector ".funnel-container"
+https://svelte.dev/e/css_unused_selector (svelte)
+<style>
+  .funnel-container {
+    max-width: 600px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/components/systems/steps/NewFunnel/MainFunnel.svelte:35:3
+Warn: Unused CSS selector "button"
+https://svelte.dev/e/css_unused_selector (svelte)
+  }
+  button {
+    padding: 10px 20px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/+layout.svelte:70:20
+Warn: Unused CSS selector "*"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    @use "./styles/everything.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/agent/+page.svelte:119:7
+Warn: Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+      </div>
+      <button
+        class="toggle {noShow ? 'toggle--on' : ''}"
+        on:click={() => noShow = !noShow}
+        aria-pressed={noShow}
+        type="button"
+      >
+        <span class="toggle-knob"></span>
+      </button>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/agent/+page.svelte:143:7
+Warn: Buttons and links should either contain text or have an `aria-label` or `aria-labelledby` attribute
+https://svelte.dev/e/a11y_consider_explicit_label (svelte)
+      </div>
+      <button
+        class="toggle {requiresQuote ? 'toggle--on' : ''}"
+        on:click={() => { if (!noShow) requiresQuote = !requiresQuote; }}
+        aria-pressed={requiresQuote}
+        disabled={noShow}
+        type="button"
+      >
+        <span class="toggle-knob"></span>
+      </button>
+    </div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/consultation/+page.svelte:35:5
+Warn: `<iframe>` element should have a title attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+  <section class="consultation-iframe-section" id="iframe-wrapper">
+    <iframe
+      width="100%"
+      height="750px"
+      src={iframeUrl}
+      frameborder="0"
+      allowfullscreen
+      data-testid="consultation-iframe"
+    ></iframe>
+    <p>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/contact-us/+page.svelte:74:7
+Warn: `<iframe>` element should have a title attribute
+https://svelte.dev/e/a11y_missing_attribute (svelte)
+    <div class="consultation-iframe">
+      <iframe
+        loading="lazy"
+        width="100%"
+        height="750px"
+        src={iframeUrl}
+        frameborder="0"
+        allowfullscreen
+        data-testid="consultation-iframe"
+      ></iframe>
+      <p>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/DetailPanel.svelte:232:7
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+    <div class="detail-stage">
+      <label>Pipeline Stage</label>
+      <div class="detail-stage__pipeline">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/DetailPanel.svelte:375:31
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                            <div class="actions-card__field">
+                              <label class="actions-card__field-label">
+                                {argSchema.label}
+                                {#if argSchema.required}<span class="actions-card__required">*</span>{/if}
+                              </label>
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/DetailPanel.svelte:571:43
+Error: Property 'actionKey' does not exist on type 'ActivityEntry'. (ts)
+                  {#if entry.type === 'action_executed'}
+                    Action <strong>{entry.actionKey || 'unknown'}</strong> executed
+                    {#if entry.success === false}<span class="activity-entry__fail"> (failed)</span>{/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/DetailPanel.svelte:572:32
+Error: Property 'success' does not exist on type 'ActivityEntry'. (ts)
+                    Action <strong>{entry.actionKey || 'unknown'}</strong> executed
+                    {#if entry.success === false}<span class="activity-entry__fail"> (failed)</span>{/if}
+                  {:else}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:359:11
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+        <div class="bi-group">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Collection</label>
+          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #6366f1; font-size: 13px; min-width: 200px; font-weight: 600; color: #4338ca; background: #eef2ff;">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:368:11
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+        <div class="bi-group">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Group By</label>
+          <select bind:value={selectedGroupBy} style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; min-width: 180px;">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:385:15
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+              <button on:click={() => removeFilter(filterKey)} style="position: absolute; top: 4px; right: 4px; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 4px;" title="Remove this filter">✕</button>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px; padding-right: 16px;">{filterKey}</label>
+              <select on:change={(e) => handleFilterChange(filterKey, e)} style="padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; font-size: 13px; color: #1d4ed8; font-weight: 500; min-width: 160px; outline: none; background-color: #eff6ff;">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:292:3
+Warn: Unused CSS selector ".evo-highlight-banner"
+https://svelte.dev/e/css_unused_selector (svelte)
+<style>
+  .evo-highlight-banner {
+    display: flex;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:303:3
+Warn: Unused CSS selector ".evo-highlight-left"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-highlight-left {
+    display: flex;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:309:3
+Warn: Unused CSS selector ".evo-icon"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-icon {
+    font-size: 28px;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:313:3
+Warn: Unused CSS selector ".evo-highlight-left h3"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-highlight-left h3 {
+    margin: 0;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:320:3
+Warn: Unused CSS selector ".evo-highlight-left p"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-highlight-left p {
+    margin: 4px 0 0;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:326:3
+Warn: Unused CSS selector ".evo-highlight-right"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-highlight-right {
+    text-align: right;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:330:3
+Warn: Unused CSS selector ".evo-highlight-right h2"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-highlight-right h2 {
+    margin: 0;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/MetricsView.svelte:338:3
+Warn: Unused CSS selector ".evo-subtitle"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+  .evo-subtitle {
+    display: block;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoLeaderboard.svelte:75:7
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<th ...></th>` rather than `<th ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+						<th class="num">Significance</th>
+						<th />
+					</tr>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:232:6
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+				{#each layout.headers as h}
+					<g 
+						class="evo-component-header" 
+						on:click={() => toggleComponent(h.compKey)}
+						role="button"
+						tabindex="0"
+					>
+						<rect 
+							x="0" 
+							y={h.y} 
+							width={LEFT_PAD - 10} 
+							height={HEADER_HEIGHT - 4} 
+							rx="4" 
+							fill="rgba(255,255,255,0.03)" 
+						/>
+						<text 
+							x="12" 
+							y={h.y + HEADER_HEIGHT / 2 + 4} 
+							fill="#f8fafc" 
+							font-size="12" 
+							font-weight="600"
+						>
+							{collapsedComponents.has(h.compKey) ? '▶' : '▼'} {h.compKey}
+						</text>
+					</g>
+				{/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:273:7
+Warn: `<line>` with a mouseenter, mousemove or mouseleave handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+						<!-- Background track line -->
+						<line
+							x1={LEFT_PAD}
+							x2={width - RIGHT_PAD}
+							y1={track.y}
+							y2={track.y}
+							stroke="#1e293b"
+							stroke-width="12"
+							class="evo-track-line"
+							style="cursor: pointer;"
+							on:mouseenter={(e) => showTooltip(e, getTrackAggregate(track.compKey, track.variantKey, track.points))}
+							on:mousemove={moveTooltip}
+							on:mouseleave={hideTooltip}
+						/>
+						
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:289:8
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+						{#each track.points as p}
+							<g 
+								class="evo-node" 
+								on:click={() => onNodeClick(p)} 
+								on:mouseenter={(e) => showTooltip(e, p)}
+								on:mousemove={moveTooltip}
+								on:mouseleave={hideTooltip}
+								role="button" 
+								tabindex="0"
+							>
+								<circle
+									cx={xFor(p.bucket)}
+									cy={track.y}
+									r={rFor(p)}
+									fill={colorFor(p)}
+									stroke="#020617"
+									stroke-width="1.5"
+								/>
+							</g>
+						{/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:314:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+		<div class="evo-legend">
+			<span class="evo-legend__dot" style="background: #6366f1;" />
+			low engagement
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:316:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			low engagement
+			<span class="evo-legend__dot" style="background: #9ba0eb;" />
+			<span class="evo-legend__dot" style="background: #6cbac8;" />
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:317:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			<span class="evo-legend__dot" style="background: #9ba0eb;" />
+			<span class="evo-legend__dot" style="background: #6cbac8;" />
+			<span class="evo-legend__dot" style="background: #34d399;" />
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:318:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			<span class="evo-legend__dot" style="background: #6cbac8;" />
+			<span class="evo-legend__dot" style="background: #34d399;" />
+			high engagement
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:320:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			high engagement
+			<span class="evo-legend__spacer" />
+			<span class="evo-legend__dot evo-legend__dot--sm" style="background: #94a3b8;" /> few exposures
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:321:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			<span class="evo-legend__spacer" />
+			<span class="evo-legend__dot evo-legend__dot--sm" style="background: #94a3b8;" /> few exposures
+			<span class="evo-legend__dot evo-legend__dot--lg" style="background: #94a3b8;" /> many exposures
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoTimelineGraph.svelte:322:4
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<span ...></span>` rather than `<span ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+			<span class="evo-legend__dot evo-legend__dot--sm" style="background: #94a3b8;" /> few exposures
+			<span class="evo-legend__dot evo-legend__dot--lg" style="background: #94a3b8;" /> many exposures
+		</div>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoNodeDrawer.svelte:35:3
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+	<div class="evo-drawer" role="dialog" aria-label="Evo node drill-down">
+		<div class="evo-drawer__backdrop" on:click={onClose} role="button" tabindex="-1" />
+		<aside class="evo-drawer__panel">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoNodeDrawer.svelte:35:3
+Warn: Self-closing HTML tags for non-void elements are ambiguous — use `<div ...></div>` rather than `<div ... />`
+https://svelte.dev/e/element_invalid_self_closing_tag (svelte)
+	<div class="evo-drawer" role="dialog" aria-label="Evo node drill-down">
+		<div class="evo-drawer__backdrop" on:click={onClose} role="button" tabindex="-1" />
+		<aside class="evo-drawer__panel">
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/components/evo/EvoView.svelte:108:3
+Warn: Also define the standard property 'background-clip' for compatibility (scss)
+		background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/+page.svelte:420:11
+Warn: `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+          {@const hasMore = filteredCards.length > pageSize}
+          <div
+            class="board__column"
+            on:dragover={handleDragOver}
+            on:drop={(e) => handleDrop(e, stageKey)}
+          >
+            <div class="board__column-header" style="border-color: {STAGE_COLORS[stageKey]}">
+              <span class="board__column-icon">{STAGE_ICONS[stageKey]}</span>
+              <span class="board__column-title">{stageLabel}</span>
+              <span class="board__column-count">{colQuery ? `${filteredCards.length}/${allCards.length}` : allCards.length}</span>
+            </div>
+            <div class="board__column-search">
+              <input
+                type="text"
+                placeholder="Search column…"
+                value={columnSearches[stageKey] || ''}
+                on:input={(e) => { columnSearches[stageKey] = e.currentTarget.value; columnSearches = columnSearches; }}
+              />
+            </div>
+            <div class="board__column-cards">
+              {#each visibleCards as client (client.id)}
+                <div
+                  class="card"
+                  draggable="true"
+                  on:dragstart={(e) => handleDragStart(e, client)}
+                  on:click={() => openClientDetail(client)}
+                  role="button"
+                  tabindex="0"
+                  on:keydown={(e) => e.key === 'Enter' && openClientDetail(client)}
+                >
+                  <div class="card__name">{client.name} {client.surname}</div>
+                  <div class="card__route">
+                    {client.originCity || client.originCountry}
+                    <span class="card__arrow">→</span>
+                    {client.destinationCity || client.destinationCountry}
+                  </div>
+                  <div class="card__meta">
+                    {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
+                    {#if client.scheduling?.length}
+                      <span class="card__date">{formatDate(client.scheduling[0])}</span>
+                    {/if}
+                  </div>
+                  {#if client.notes?.length}
+                    <span class="card__notes-badge">{client.notes.length} note{client.notes.length > 1 ? 's' : ''}</span>
+                  {/if}
+                </div>
+              {/each}
+              {#if hasMore}
+                <button class="board__show-more" on:click={() => { columnPages[stageKey] = pageSize + 10; columnPages = columnPages; }}>
+                  Show more ({filteredCards.length - pageSize} remaining)
+                </button>
+              {/if}
+              {#if filteredCards.length === 0}
+                <div class="board__empty">{colQuery ? 'No matches' : 'No clients'}</div>
+              {/if}
+            </div>
+          </div>
+        {/each}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/+page.svelte:461:31
+Error: Property 'notes' does not exist on type 'Client'. (ts)
+                  </div>
+                  {#if client.notes?.length}
+                    <span class="card__notes-badge">{client.notes.length} note{client.notes.length > 1 ? 's' : ''}</span>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/+page.svelte:462:61
+Error: Property 'notes' does not exist on type 'Client'. (ts)
+                  {#if client.notes?.length}
+                    <span class="card__notes-badge">{client.notes.length} note{client.notes.length > 1 ? 's' : ''}</span>
+                  {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/+page.svelte:462:87
+Error: Property 'notes' does not exist on type 'Client'. (ts)
+                  {#if client.notes?.length}
+                    <span class="card__notes-badge">{client.notes.length} note{client.notes.length > 1 ? 's' : ''}</span>
+                  {/if}
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:3:80
+Error: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './store.js'? 
+import { get } from 'svelte/store';
+import { clients, filters, searchQuery, filteredClients, clientsByStage } from './store';
+import type { Client } from './store';
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:4:29
+Error: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './store.js'? 
+import { clients, filters, searchQuery, filteredClients, clientsByStage } from './store';
+import type { Client } from './store';
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:111:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(3);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:117:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(2); // John Doe and Bob Johnson
+      expect(result.map(c => c.id)).toContain('1');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:118:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(2); // John Doe and Bob Johnson
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:118:25
+Error: Parameter 'c' implicitly has an 'any' type. 
+      expect(result.length).toBe(2); // John Doe and Bob Johnson
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:119:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('3');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:119:25
+Error: Parameter 'c' implicitly has an 'any' type. 
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('3');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:125:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:126:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:132:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toContain('1');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:133:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:133:25
+Error: Parameter 'c' implicitly has an 'any' type. 
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:134:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('2');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:134:25
+Error: Parameter 'c' implicitly has an 'any' type. 
+      expect(result.map(c => c.id)).toContain('1');
+      expect(result.map(c => c.id)).toContain('2');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:140:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(2);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:146:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by stage', () => {
+      filters.update(f => ({ ...f, stage: 'sales_pricing_quote' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:148:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:149:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:153:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by originCountry', () => {
+      filters.update(f => ({ ...f, originCountry: 'USA' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:155:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toEqual(['1', '3']);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:156:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toEqual(['1', '3']);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:156:25
+Error: Parameter 'c' implicitly has an 'any' type. 
+      expect(result.length).toBe(2);
+      expect(result.map(c => c.id)).toEqual(['1', '3']);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:160:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by destinationCountry', () => {
+      filters.update(f => ({ ...f, destinationCountry: 'Mexico' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:162:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:163:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:167:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by budget', () => {
+      filters.update(f => ({ ...f, budget: '20k+' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:169:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:170:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:174:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by size', () => {
+      filters.update(f => ({ ...f, size: 'Studio' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:176:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:177:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:181:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by callOutcome = none (null)', () => {
+      filters.update(f => ({ ...f, callOutcome: 'none' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:183:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('1');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:184:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('1');
+      expect(result[0].callOutcome).toBeNull();
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:185:14
+Error: 'result' is of type 'unknown'. 
+      expect(result[0].id).toBe('1');
+      expect(result[0].callOutcome).toBeNull();
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:189:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('filters by specific callOutcome', () => {
+      filters.update(f => ({ ...f, callOutcome: 'qualified' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:191:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:192:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('2');
+      expect(result[0].callOutcome).toBe('qualified');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:193:14
+Error: 'result' is of type 'unknown'. 
+      expect(result[0].id).toBe('2');
+      expect(result[0].callOutcome).toBe('qualified');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:199:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('applies multiple field filters together', () => {
+      filters.update(f => ({ ...f, originCountry: 'USA', destinationCountry: 'Spain' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:201:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('1');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:202:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('1');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:206:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('applies field filters and search query together', () => {
+      filters.update(f => ({ ...f, originCountry: 'USA' }));
+      searchQuery.set('Miami');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:209:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:210:14
+Error: 'result' is of type 'unknown'. 
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe('3');
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:214:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('returns empty when filters conflict', () => {
+      filters.update(f => ({ ...f, originCountry: 'Canada', destinationCountry: 'Mexico' }));
+      const result = get(filteredClients);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:216:14
+Error: 'result' is of type 'unknown'. 
+      const result = get(filteredClients);
+      expect(result.length).toBe(0);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:222:22
+Error: Parameter 'f' implicitly has an 'any' type. 
+    it('groups filtered clients into correct stage buckets', () => {
+      filters.update(f => ({ ...f, originCountry: 'USA' }));
+      const grouped = get(clientsByStage);
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:226:14
+Error: 'grouped' is of type 'unknown'. 
+      // Should have 1 in opt_in and 1 in gathering, 0 in pricing_quote
+      expect(grouped['sales_opt_in_email']?.length).toBe(1);
+      expect(grouped['sales_opt_in_email'][0].id).toBe('1');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:227:14
+Error: 'grouped' is of type 'unknown'. 
+      expect(grouped['sales_opt_in_email']?.length).toBe(1);
+      expect(grouped['sales_opt_in_email'][0].id).toBe('1');
+      
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:229:14
+Error: 'grouped' is of type 'unknown'. 
+      
+      expect(grouped['ops_gathering']?.length).toBe(1);
+      expect(grouped['ops_gathering'][0].id).toBe('3');
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:230:14
+Error: 'grouped' is of type 'unknown'. 
+      expect(grouped['ops_gathering']?.length).toBe(1);
+      expect(grouped['ops_gathering'][0].id).toBe('3');
+      
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/dashboard/store.test.ts:232:14
+Error: 'grouped' is of type 'unknown'. 
+      
+      expect(grouped['sales_pricing_quote']?.length).toBe(0);
+    });
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/free-resources/+page.svelte:39:13
+Warn: 'mouseover' event must be accompanied by 'focus' event
+https://svelte.dev/e/a11y_mouse_events_have_key_events (svelte)
+          <a href="https://propertycertify.com/" target="_blank" rel="noopener noreferrer" style="display: block; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
+            <img class="free-resource-card__img" src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Property Certify Directory" style="width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; border-radius: 12px; transition: transform 0.5s ease;" on:mouseover={(e) => e.currentTarget.style.transform='scale(1.05)'} on:mouseout={(e) => e.currentTarget.style.transform='scale(1)'} />
+          </a>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/free-resources/+page.svelte:39:13
+Warn: 'mouseout' event must be accompanied by 'blur' event
+https://svelte.dev/e/a11y_mouse_events_have_key_events (svelte)
+          <a href="https://propertycertify.com/" target="_blank" rel="noopener noreferrer" style="display: block; overflow: hidden; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transition: transform 0.3s ease;">
+            <img class="free-resource-card__img" src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Property Certify Directory" style="width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/3; border-radius: 12px; transition: transform 0.5s ease;" on:mouseover={(e) => e.currentTarget.style.transform='scale(1.05)'} on:mouseout={(e) => e.currentTarget.style.transform='scale(1)'} />
+          </a>
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/funnel/+page.svelte:15:16
+Warn: Component has unused export property 'data'. If it is for external reference only, please consider using `export const data`
+https://svelte.dev/e/export_let_unused (svelte)
+
+    export let data: PageData; // Receive data from load function
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/funnel/+page.svelte:120:20
+Warn: Unused CSS selector "*"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    @use "../styles/everything.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/main-funnel/+page.svelte:11:12
+Warn: Component has unused export property 'data'. If it is for external reference only, please consider using `export const data`
+https://svelte.dev/e/export_let_unused (svelte)
+
+export let data: PageData; // Receive data from load function
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/main-funnel/+page.svelte:65:20
+Warn: Unused CSS selector "*"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    @use "../styles/everything.scss";
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/main-funnel/+page.svelte:11:18
+Error: Cannot find name 'PageData'. Did you mean 'ImageData'? (ts)
+
+export let data: PageData; // Receive data from load function
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/scouting-trip-riviera-maya/+page.svelte:128:3
+Warn: Unused CSS selector ".cta-btn[data-disabled='true']"
+https://svelte.dev/e/css_unused_selector (svelte)
+  }
+  .cta-btn[data-disabled='true'] {
+    opacity: 0.6;
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/status/[id]/+page.svelte:343:26
+Error: Type 'unknown' is not assignable to type 'string | null | undefined'. (ts)
+                    {:else if isUrl(val)}
+                      <a href={val} target="_blank" rel="noopener noreferrer" class="field__value field__value--link">
+                        View Document ↗
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/thank-you/+page.svelte:15:16
+Warn: Component has unused export property 'data'. If it is for external reference only, please consider using `export const data`
+https://svelte.dev/e/export_let_unused (svelte)
+
+    export let data: PageData; // Receive data from load function
+
+
+
+/Users/luisarmandooriens/Desktop/projects/irp/irp-funnel/src/routes/thank-you/+page.svelte:131:20
+Warn: Unused CSS selector "*"
+https://svelte.dev/e/css_unused_selector (svelte)
+
+<style lang="scss">
+    @use "../styles/everything.scss";
+
+
+====================================
+svelte-check found 84 errors and 286 warnings in 87 files
