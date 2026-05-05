@@ -3,11 +3,18 @@
   import {
     selectedClient, detailPanelOpen,
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES,
+    SHIPPING_MODE_LABEL, PACKING_TIER_LABEL,
+    selectedSentEmailId,
     updateClientStage, addNote, triggerEmail, updateClientFields,
-    fetchConversations, fetchClientActions, executeClientAction
+    fetchConversations, fetchClientActions, executeClientAction,
+    extractInsights,
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
+  import CardFieldsAccordion from './CardFieldsAccordion.svelte';
+  import CardHistory from './CardHistory.svelte';
+  import EditableField from './EditableField.svelte';
+  import { exactTime, relativeTime } from '../utils/relativeTime.ts';
 
   export let stageChanging: boolean;
   export let handleStageChange: (clientId: string, newStage: string) => Promise<void>;
@@ -25,8 +32,68 @@
   let emailSentMessage = '';
   let newFieldKey = '';
   let newFieldValue = '';
-  let detailTab: 'overview' | 'notes' | 'activity' | 'emails' | 'fields' | 'conversations' | 'actions' = 'overview';
+  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' = 'overview';
   let stageEntries = Object.entries(STAGE_LABELS);
+
+  // ── Pipeline-stage chip + popover (replaces the giant emoji strip) ─────
+  let stagePopoverOpen = false;
+  function toggleStagePopover() { stagePopoverOpen = !stagePopoverOpen; }
+  async function chooseStage(stageKey: string) {
+    if (!$selectedClient) return;
+    stagePopoverOpen = false;
+    await handleStageChange($selectedClient.id, stageKey);
+  }
+
+  // ── Insights tab state ─────────────────────────────────────────────────
+  let insightsExtracting = false;
+  let manualTranscriptText = '';
+  let showAdvancedFields = false;
+
+  /**
+   * Index of the **latest** consultations[] entry. The Overview fields edit
+   * the latest consultation in place, so we need its array index for the
+   * dotted path strings sent to PATCH /clients/:id/field.
+   *
+   * `consultationCount` is the array length; latest index = length - 1.
+   */
+  $: latestIdx = Math.max(0, ($selectedClient?.consultationCount ?? 1) - 1);
+
+  /**
+   * "Has some kind of transcript text" — used for the Insights empty-state
+   * messaging. We're more honest than the previous "no transcript yet" copy:
+   * we show a different sub-heading depending on whether the client is in
+   * post-call territory (we expect a transcript) or pre-call (we don't).
+   */
+  $: hasSomeTranscript = !!(
+    $selectedClient?.transcript ||
+    $selectedClient?.meetingNotes?.text
+  );
+  $: isPostCallStage = !!(
+    $selectedClient?.stage &&
+    String($selectedClient.stage).startsWith('sales_post_')
+  );
+  async function reExtractInsights(force = true) {
+    if (!$selectedClient) return;
+    insightsExtracting = true;
+    try {
+      const insights = await extractInsights($selectedClient.id, {
+        force,
+        manualText: manualTranscriptText.trim() ? manualTranscriptText.trim() : undefined,
+      });
+      if (insights) {
+        toasts.success(
+          `Extracted: ${insights.shippingMode ?? '—'} / ${insights.packingTier ?? '—'}`,
+        );
+      } else {
+        toasts.error('Extraction returned no result.');
+      }
+      manualTranscriptText = '';
+    } catch (err: any) {
+      toasts.error(`Extraction failed: ${err?.message ?? err}`);
+    } finally {
+      insightsExtracting = false;
+    }
+  }
 
   let conversations: any[] = [];
   let conversationsLoading = false;
@@ -215,7 +282,13 @@
   <aside class="detail-panel">
     <div class="detail-panel__header">
       <button class="detail-panel__close" on:click={closeDetail}>✕</button>
-      <h2>{$selectedClient.name} {$selectedClient.surname}</h2>
+      <h2
+        class:detail-panel__title--missing-name={!$selectedClient.nameKnown}
+        title={!$selectedClient.nameKnown ? 'First name not provided — only surname/email known' : `${$selectedClient.name} ${$selectedClient.surname}`.trim()}
+      >
+        {#if !$selectedClient.nameKnown}<span class="detail-panel__name-badge" aria-label="First name unknown">?</span>{/if}{$selectedClient.displayName || $selectedClient.email}
+      </h2>
+
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
         <span class="detail-panel__email">{$selectedClient.email}</span>
         {#if $selectedClient.phone}
@@ -227,65 +300,156 @@
       </div>
     </div>
 
-    <!-- Stage Selector -->
-    <div class="detail-stage">
-      <label>Pipeline Stage</label>
-      <div class="detail-stage__pipeline">
-        {#each stageEntries as [stageKey, stageLabel]}
-          <button
-            class="detail-stage__dot"
-            class:active={$selectedClient.stage === stageKey}
-            style="background: {$selectedClient.stage === stageKey ? STAGE_COLORS[stageKey] : 'transparent'}; border-color: {STAGE_COLORS[stageKey]}"
-            title={stageLabel}
-            disabled={stageChanging}
-            on:click={() => handleStageChange($selectedClient?.id || '', stageKey)}
-          >
-            <span class="detail-stage__dot-icon">{STAGE_ICONS[stageKey]}</span>
-          </button>
-        {/each}
-      </div>
-      <span class="detail-stage__current" style="color: {STAGE_COLORS[$selectedClient.stage]}">
-        {STAGE_LABELS[$selectedClient.stage]}
-      </span>
+    <!-- Stage Chip + Popover (replaces the giant emoji-strip selector). -->
+    <!-- Click the chip to open a popover with the full stage grid. -->
+    <div class="detail-stage detail-stage--collapsed">
+      <button
+        type="button"
+        class="detail-panel__stage-chip"
+        style="background: {STAGE_COLORS[$selectedClient.stage]}20; border-color: {STAGE_COLORS[$selectedClient.stage]}; color: {STAGE_COLORS[$selectedClient.stage]}"
+        on:click={toggleStagePopover}
+        disabled={stageChanging}
+        title="Click to change pipeline stage"
+      >
+        <span>{STAGE_ICONS[$selectedClient.stage]}</span>
+        <span>{STAGE_LABELS[$selectedClient.stage]}</span>
+        <span class="detail-panel__stage-chip-caret">▾</span>
+      </button>
+
+      {#if stagePopoverOpen}
+        <div class="detail-panel__stage-popover" role="presentation" on:click|stopPropagation>
+          <div class="detail-panel__stage-popover-grid">
+            {#each stageEntries as [stageKey, stageLabel]}
+              <button
+                class="detail-panel__stage-popover-dot"
+                class:active={$selectedClient.stage === stageKey}
+                style="background: {$selectedClient.stage === stageKey ? STAGE_COLORS[stageKey] : 'transparent'}; border-color: {STAGE_COLORS[stageKey]}"
+                title={stageLabel}
+                disabled={stageChanging}
+                on:click={() => chooseStage(stageKey)}
+              >
+                <span>{STAGE_ICONS[stageKey]}</span>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
 
     <!-- Tabs -->
     <nav class="detail-tabs">
       <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>Overview</button>
+      <button class:active={detailTab === 'journey'} on:click={() => detailTab = 'journey'}>🛣 Journey</button>
+      <button class:active={detailTab === 'insights'} on:click={() => detailTab = 'insights'}>📝 Insights</button>
       <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'}>⚡ Actions</button>
       <button class:active={detailTab === 'conversations'} on:click={() => detailTab = 'conversations'}>Conversations</button>
       <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>Notes ({($selectedClient.agentNotes?.length || 0) + ($selectedClient.chatbotNotes?.length || 0)})</button>
       <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'}>Activity</button>
       <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>Emails</button>
-      <button class:active={detailTab === 'fields'} on:click={() => detailTab = 'fields'}>Fields</button>
     </nav>
 
     <div class="detail-content">
-      <!-- ── Overview Tab ─────────────────────────── -->
+      <!-- ── Overview Tab — every field inline-editable ──────────────── -->
+      <!--
+        Each row is a click-to-edit `<EditableField>` whose `path` targets the
+        latest `consultations[N]` entry on the Firestore doc. The PATCH endpoint
+        coerces the type and writes the activity log so any change is undoable
+        from the Activity tab.
+      -->
       {#if detailTab === 'overview'}
-        <div class="detail-fields">
-          <div class="detail-field">
+        <div class="detail-overview detail-fields">
+          <!-- Route is two values; render them as a pair of editable chips. -->
+          <div class="detail-field detail-field--full">
             <span class="detail-field__label">Route</span>
-            <span class="detail-field__value">
-              {$selectedClient.originCity}, {$selectedClient.originCountry} → {$selectedClient.destinationCity}, {$selectedClient.destinationCountry}
-            </span>
+            <div class="detail-field__route">
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.originCity`}
+                value={$selectedClient.originCity}
+                label="Origin city"
+                placeholder="—"
+              />
+              <span class="detail-field__route-sep">,</span>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.originCountry`}
+                value={$selectedClient.originCountry}
+                label="Origin country"
+                placeholder="—"
+              />
+              <span class="detail-field__route-arrow">→</span>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.destinationCity`}
+                value={$selectedClient.destinationCity}
+                label="Destination city"
+                placeholder="—"
+              />
+              <span class="detail-field__route-sep">,</span>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.destinationCountry`}
+                value={$selectedClient.destinationCountry}
+                label="Destination country"
+                placeholder="—"
+              />
+            </div>
           </div>
+
           <div class="detail-field">
             <span class="detail-field__label">Budget</span>
-            <span class="detail-field__value">{$selectedClient.budget || '—'}</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path={`consultations.${latestIdx}.budget`}
+              value={$selectedClient.budget}
+              label="Budget"
+              placeholder="—"
+            />
           </div>
+
           <div class="detail-field">
             <span class="detail-field__label">Move Size</span>
-            <span class="detail-field__value">{$selectedClient.size || '—'}</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path={`consultations.${latestIdx}.size`}
+              value={$selectedClient.size}
+              label="Move size"
+              placeholder="—"
+            />
           </div>
+
           <div class="detail-field">
             <span class="detail-field__label">Immigration Status</span>
-            <span class="detail-field__value">{$selectedClient.immigrationStatus || '—'}</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path={`consultations.${latestIdx}.immigrationStatus`}
+              value={$selectedClient.immigrationStatus}
+              label="Immigration status"
+              placeholder="—"
+            />
           </div>
+
           <div class="detail-field">
             <span class="detail-field__label">Property</span>
-            <span class="detail-field__value">{$selectedClient.propertyTypeFrom || '—'} → {$selectedClient.propertyTypeTo || '—'}</span>
+            <div class="detail-field__route">
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.propertyTypeFrom`}
+                value={$selectedClient.propertyTypeFrom}
+                label="From"
+                placeholder="—"
+              />
+              <span class="detail-field__route-arrow">→</span>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`consultations.${latestIdx}.propertyTypeTo`}
+                value={$selectedClient.propertyTypeTo}
+                label="To"
+                placeholder="—"
+              />
+            </div>
           </div>
+
           {#if $selectedClient.vehicles?.length}
             <div class="detail-field">
               <span class="detail-field__label">Vehicles</span>
@@ -296,35 +460,433 @@
               </div>
             </div>
           {/if}
+
           {#if $selectedClient.scheduling?.length}
             <div class="detail-field">
               <span class="detail-field__label">Scheduled Call</span>
-              <span class="detail-field__value">{formatDateTime($selectedClient.scheduling[0])}</span>
+              <span class="detail-field__value detail-field__value--readonly" title="Set via Calendar — not editable here">
+                {formatDateTime($selectedClient.scheduling[0])}
+              </span>
             </div>
           {/if}
+
           {#if $selectedClient.callOutcome}
             <div class="detail-field">
               <span class="detail-field__label">Call Outcome</span>
-              <span class="detail-field__value">{$selectedClient.callOutcome}</span>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`callOutcome`}
+                value={$selectedClient.callOutcome}
+                label="Call outcome"
+                placeholder="—"
+              />
             </div>
           {/if}
+
           {#if $selectedClient.transcript}
             <div class="detail-field detail-field--full">
               <span class="detail-field__label">Call Transcript</span>
-              <div class="detail-field__transcript">{$selectedClient.transcript}</div>
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`transcript`}
+                value={$selectedClient.transcript}
+                label="Transcript"
+                multiline
+                placeholder="No transcript"
+              />
             </div>
           {/if}
+
           <div class="detail-field">
-            <span class="detail-field__label">Consultations</span>
-            <span class="detail-field__value">{$selectedClient.consultationCount}</span>
+            <span class="detail-field__label">Phone</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path={`phone`}
+              value={$selectedClient.phone}
+              label="Phone"
+              placeholder="—"
+            />
           </div>
-          <div class="detail-field">
-            <span class="detail-field__label">Created</span>
-            <span class="detail-field__value">{formatDate($selectedClient.createdAt)}</span>
-          </div>
+
           <div class="detail-field">
             <span class="detail-field__label">Drip Active</span>
-            <span class="detail-field__value">{$selectedClient.dripEnabled ? '✅ Yes' : '❌ No'}</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path={`dripEnabled`}
+              value={$selectedClient.dripEnabled}
+              label="Drip enabled"
+              placeholder="—"
+            />
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field__label">Consultations</span>
+            <span class="detail-field__value detail-field__value--readonly" title="Computed from consultations[] length">
+              {$selectedClient.consultationCount}
+            </span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field__label">Created</span>
+            <span class="detail-field__value detail-field__value--readonly" title="First consultation timestamp — read-only">
+              {formatDate($selectedClient.createdAt)}
+            </span>
+          </div>
+
+          <!-- ── Advanced fields (every other top-level Firestore key) ── -->
+          <div class="detail-field detail-field--full">
+            <button
+              type="button"
+              class="detail-overview__advanced-toggle"
+              on:click={() => (showAdvancedFields = !showAdvancedFields)}
+            >
+              {showAdvancedFields ? '▾' : '▸'} Advanced fields ({Object.keys($selectedClient.rawDoc || {}).length} total)
+            </button>
+            {#if showAdvancedFields}
+              <div class="detail-overview__advanced">
+                <CardFieldsAccordion
+                  clientId={$selectedClient.id}
+                  rawDoc={$selectedClient.rawDoc}
+                />
+                <details class="detail-custom-fields-add">
+                  <summary>+ Add a new custom field</summary>
+                  <form class="detail-custom-fields__form" on:submit|preventDefault={handleAddCustomField}>
+                    <input type="text" bind:value={newFieldKey} placeholder="Field name (e.g. petPolicy)" class="detail-cf-input" />
+                    <input type="text" bind:value={newFieldValue} placeholder="Value" class="detail-cf-input" />
+                    <button type="submit" disabled={!newFieldKey.trim() || !newFieldValue.trim()}>Add</button>
+                  </form>
+                  <p class="detail-custom-fields-add__hint">
+                    The new field will be added under <code>customFields.&lt;name&gt;</code>.
+                  </p>
+                </details>
+              </div>
+            {/if}
+          </div>
+        </div>
+
+      <!-- ── Journey Tab — chronological merge of EVERY event we know about ─ -->
+      <!--
+        Why this exists: operators wanted ONE pane of glass that shows the
+        end-to-end timeline for a client — emails sent, calls scheduled,
+        notes added, transcripts pulled, AI-insights extracted, stage moves,
+        and any operator action — without bouncing between Activity, Emails,
+        Notes, and Conversations tabs.
+        Source data:
+          - $selectedClient.activityLog (already merged: stage_change,
+            email_triggered, note_added, action_executed, gemini_notes_received,
+            insights_extracted, field_update, …)
+          - scheduling[] from latest consultation (calls)
+          - meetingNotes (Gemini-pulled transcript landing event)
+          - createdAt (genesis row)
+        We render newest-first to match how the rest of the panel works.
+      -->
+      {:else if detailTab === 'journey'}
+        {@const sc = $selectedClient}
+        {@const events = (() => {
+          // Build a unified, sorted-desc timeline. Each entry is normalized to
+          // { ts, kind, icon, title, subtitle?, raw? }. We tolerate missing
+          // timestamps by falling back to "—".
+          const out: Array<{ ts: string; kind: string; icon: string; title: string; subtitle?: string; tone?: 'ok' | 'warn' | 'info'; raw?: any }> = [];
+          // Genesis row
+          if (sc.createdAt) {
+            out.push({
+              ts: sc.createdAt,
+              kind: 'created',
+              icon: '🌱',
+              title: 'Client record created',
+              subtitle: 'First consultation captured',
+              tone: 'info',
+            });
+          }
+          // Scheduled calls (every entry on scheduling[])
+          for (const iso of sc.scheduling || []) {
+            if (!iso) continue;
+            const isFuture = new Date(iso).getTime() > Date.now();
+            out.push({
+              ts: iso,
+              kind: 'call_scheduled',
+              icon: isFuture ? '📅' : '📞',
+              title: isFuture ? 'Consultation call scheduled' : 'Consultation call held',
+              subtitle: isFuture ? 'Upcoming — calendar event live' : 'Past meeting',
+              tone: isFuture ? 'info' : 'ok',
+            });
+          }
+          // Gemini meeting-notes landing
+          if (sc.meetingNotes?.fetched && sc.meetingNotes.fetchedAt) {
+            out.push({
+              ts: sc.meetingNotes.fetchedAt,
+              kind: 'gemini_notes',
+              icon: '✨',
+              title: 'Gemini meeting notes pulled',
+              subtitle: sc.meetingNotes.docTitle ? `Doc: ${sc.meetingNotes.docTitle}` : 'Plain text persisted',
+              tone: 'ok',
+            });
+          }
+          // ActivityLog entries (the workhorse — heterogeneous union, so we
+          // widen to `any` and pull keys defensively. Each variant has its
+          // own field set per the server-side activityLog writers in
+          // irp-funnel-server/API/dashboard/clientHelpers.ts).
+          for (const eRaw of sc.activityLog || []) {
+            const e: any = eRaw;
+            if (!e || typeof e !== 'object') continue;
+            const ts = e.timestamp || e.at || '';
+            switch (e.type) {
+              case 'stage_change':
+                out.push({
+                  ts,
+                  kind: 'stage_change',
+                  icon: '🚦',
+                  title: `Stage moved to ${(e.to && STAGE_LABELS[e.to as keyof typeof STAGE_LABELS]) || e.to || '?'}`,
+                  subtitle: e.from ? `from ${(STAGE_LABELS[e.from as keyof typeof STAGE_LABELS] ?? e.from)}` : undefined,
+                  tone: 'info',
+                  raw: e,
+                });
+                break;
+              case 'email_triggered':
+              case 'email_sent':
+                out.push({
+                  ts,
+                  kind: 'email',
+                  icon: '📧',
+                  title: e.emailType ? `Email sent — ${e.emailType}` : 'Email sent',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'ok',
+                  raw: e,
+                });
+                break;
+              case 'note_added':
+                out.push({
+                  ts,
+                  kind: 'note',
+                  icon: '📝',
+                  title: 'Note added',
+                  subtitle: e.author ? `by ${e.author}` : (e.actor ? `by ${e.actor}` : undefined),
+                  tone: 'info',
+                  raw: e,
+                });
+                break;
+              case 'action_executed':
+                out.push({
+                  ts,
+                  kind: 'action',
+                  icon: e.success === false ? '❌' : '⚡',
+                  title: e.actionKey ? `Action — ${e.actionKey.replace(/_/g, ' ')}` : 'Action executed',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: e.success === false ? 'warn' : 'ok',
+                  raw: e,
+                });
+                break;
+              case 'gemini_notes_received':
+                out.push({
+                  ts,
+                  kind: 'gemini_received',
+                  icon: '🛰',
+                  title: 'Gemini notes received',
+                  subtitle: e.eventId ? `event ${String(e.eventId).slice(0, 8)}…` : undefined,
+                  tone: 'ok',
+                  raw: e,
+                });
+                break;
+              case 'insights_extracted':
+                out.push({
+                  ts,
+                  kind: 'insights',
+                  icon: '🧠',
+                  title: 'AI insights extracted',
+                  subtitle: `${e.shippingMode ?? '—'} / ${e.packingTier ?? '—'} (conf ${(((e.confidence ?? 0) * 100) | 0)}%)`,
+                  tone: 'ok',
+                  raw: e,
+                });
+                break;
+              case 'field_update':
+                out.push({
+                  ts,
+                  kind: 'field',
+                  icon: '✏️',
+                  title: `Fields updated: ${(e.fields || []).join(', ') || '?'}`,
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'info',
+                  raw: e,
+                });
+                break;
+              default:
+                out.push({
+                  ts,
+                  kind: e.type || 'other',
+                  icon: '•',
+                  title: e.type || 'Event',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'info',
+                  raw: e,
+                });
+            }
+          }
+          // Sort newest-first; missing timestamps go to the bottom.
+          out.sort((a, b) => {
+            const at = a.ts ? new Date(a.ts).getTime() : 0;
+            const bt = b.ts ? new Date(b.ts).getTime() : 0;
+            return bt - at;
+          });
+          return out;
+        })()}
+
+        <div class="detail-journey">
+          {#if events.length === 0}
+            <div class="detail-journey__empty">
+              <span class="detail-journey__empty-icon">🛣</span>
+              <p class="detail-journey__empty-title">No journey events yet</p>
+              <p class="detail-journey__empty-desc">
+                Stage moves, sent emails, scheduled calls, AI extractions, and
+                operator actions will appear here as they happen.
+              </p>
+            </div>
+          {:else}
+            <ol class="detail-journey__list">
+              {#each events as ev}
+                <li class="detail-journey__item detail-journey__item--{ev.tone || 'info'}">
+                  <span class="detail-journey__icon" aria-hidden="true">{ev.icon}</span>
+                  <div class="detail-journey__body">
+                    <div class="detail-journey__title">{ev.title}</div>
+                    {#if ev.subtitle}
+                      <div class="detail-journey__subtitle">{ev.subtitle}</div>
+                    {/if}
+                  </div>
+                  <span class="detail-journey__time" title={ev.ts ? exactTime(ev.ts) : ''}>
+                    {ev.ts ? relativeTime(ev.ts) : '—'}
+                  </span>
+                </li>
+              {/each}
+            </ol>
+          {/if}
+        </div>
+
+      <!-- ── Insights Tab (AI-extracted shipping mode + packing tier) ─── -->
+      {:else if detailTab === 'insights'}
+        <div class="detail-insights">
+          {#if $selectedClient.transcriptInsights}
+            {@const ins = $selectedClient.transcriptInsights}
+            <div class="detail-insights__hero">
+              <div class="detail-insights__hero-row">
+                <span class="detail-insights__ai-label">AI</span>
+                {#if ins.shippingMode && SHIPPING_MODE_LABEL[ins.shippingMode]}
+                  <span class="detail-insights__mode-chip">
+                    <span>{SHIPPING_MODE_LABEL[ins.shippingMode].icon}</span>
+                    <span>{SHIPPING_MODE_LABEL[ins.shippingMode].label}</span>
+                  </span>
+                {:else}
+                  <span class="detail-insights__mode-chip detail-insights__mode-chip--unset">No shipping mode inferred</span>
+                {/if}
+                {#if ins.packingTier && PACKING_TIER_LABEL[ins.packingTier]}
+                  <span class="detail-insights__tier-chip">
+                    <span>{PACKING_TIER_LABEL[ins.packingTier].icon}</span>
+                    <span>{PACKING_TIER_LABEL[ins.packingTier].label}</span>
+                  </span>
+                {/if}
+              </div>
+
+              <div class="detail-insights__confidence-row">
+                <span class="detail-insights__confidence-label">Confidence</span>
+                <span class="detail-insights__confidence-bar-wrap" style="--conf:{Math.round((ins.confidence || 0) * 100)}%">
+                  <span class="detail-insights__confidence-bar"></span>
+                </span>
+                <span class="detail-insights__confidence-pct">{Math.round((ins.confidence || 0) * 100)}%</span>
+              </div>
+            </div>
+
+            {#if ins.reasoning}
+              <div class="detail-insights__reasoning">
+                <strong>Reasoning:</strong> {ins.reasoning}
+              </div>
+            {/if}
+
+            {#if Object.keys(ins.extractedFields || {}).length > 0}
+              <div class="detail-insights__extracted">
+                <h4>Extracted facts</h4>
+                <div class="detail-insights__extracted-grid">
+                  {#each Object.entries(ins.extractedFields) as [k, v]}
+                    <div class="detail-insights__extracted-row">
+                      <span class="detail-insights__extracted-key">{k}</span>
+                      <span class="detail-insights__extracted-val">{Array.isArray(v) ? v.join(', ') : (v ?? '—')}</span>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+
+            <div class="detail-insights__meta">
+              <span title={exactTime(ins.generatedAt)}>Generated {relativeTime(ins.generatedAt)}</span>
+              <span class="detail-insights__source">· source: <code>{ins.source}</code></span>
+              <span class="detail-insights__source">· model: <code>{ins.model}</code></span>
+            </div>
+          {:else if hasSomeTranscript}
+            <!--
+              We have transcript material but no AI insights yet — most likely
+              the Gemini-extractor hasn't been triggered, or it ran and
+              returned no_source_text. Tell the operator and let them re-run.
+            -->
+            <div class="detail-insights__empty">
+              <span class="detail-insights__empty-icon">⚙️</span>
+              <p class="detail-insights__empty-title">Transcript ready — insights pending</p>
+              <p class="detail-insights__empty-desc">
+                We have transcript material on file but the AI hasn't classified
+                this client yet. Click <strong>Re-extract</strong> below to run
+                the shipping-mode + packing-tier classifier now.
+              </p>
+            </div>
+          {:else if isPostCallStage}
+            <!--
+              Client is in a post-call stage but we have NO transcript text.
+              The Gemini meeting-notes poller probably hasn't fetched yet —
+              point the operator at the right action instead of saying
+              the misleading "no transcript yet".
+            -->
+            <div class="detail-insights__empty">
+              <span class="detail-insights__empty-icon">⏳</span>
+              <p class="detail-insights__empty-title">Waiting for Gemini meeting notes</p>
+              <p class="detail-insights__empty-desc">
+                This client is in <strong>{STAGE_LABELS[$selectedClient.stage]}</strong>,
+                but the Google Meet transcript hasn't been pulled yet. The next
+                polling cycle will fetch it automatically — or you can paste the
+                transcript text below to extract insights right now.
+              </p>
+            </div>
+          {:else}
+            <!-- Pre-call client — insights aren't expected yet. -->
+            <div class="detail-insights__empty">
+              <span class="detail-insights__empty-icon">📝</span>
+              <p class="detail-insights__empty-title">No call yet — no insights expected</p>
+              <p class="detail-insights__empty-desc">
+                The AI classifies shipping mode + packing tier from the call
+                transcript. Once <strong>{$selectedClient.displayName || 'this client'}</strong>
+                completes the consultation call (and Gemini transcribes it),
+                insights will appear here automatically.
+              </p>
+            </div>
+          {/if}
+
+          <div class="detail-insights__manual">
+            <h4>Manual transcript paste (optional)</h4>
+            <textarea
+              class="detail-insights__manual-textarea"
+              placeholder="Paste a transcript snippet here, then click Extract to classify shipping mode + packing tier."
+              bind:value={manualTranscriptText}
+              rows="4"
+            ></textarea>
+            <div class="detail-insights__actions">
+              <button
+                type="button"
+                class="detail-insights__extract-btn"
+                disabled={insightsExtracting}
+                on:click={() => reExtractInsights(true)}
+              >
+                {#if insightsExtracting}
+                  <span class="actions-card__spinner"></span>
+                  Extracting…
+                {:else}
+                  🔄 Re-extract from transcript
+                {/if}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -544,121 +1106,107 @@
           </div>
         </div>
 
-      <!-- ── Activity Tab ─────────────────────────── -->
+      <!-- ── Activity Tab — natural-language audit log w/ Undo ────────── -->
       {:else if detailTab === 'activity'}
         <div class="detail-activity">
-          <!-- Search & Pagination Controls -->
-          <div class="activity-controls">
-            <input
-              type="text"
-              class="activity-controls__search"
-              placeholder="Search activity…"
-              bind:value={activitySearch}
-            />
-            <span class="activity-controls__count">
-              {filteredActivity.length} entr{filteredActivity.length === 1 ? 'y' : 'ies'}
-            </span>
-          </div>
-
-          {#each pagedActivity as entry}
-            <div class="activity-entry" class:activity-entry--action={entry.type === 'action_executed'}>
-              <span class="activity-entry__icon">
-                {#if entry.type === 'action_executed'}⚡{:else}{getActivityIcon(entry.type)}{/if}
-              </span>
-              <div class="activity-entry__content">
-                <span class="activity-entry__text">
-                  {#if entry.type === 'action_executed'}
-                    Action <strong>{entry.actionKey || 'unknown'}</strong> executed
-                    {#if entry.success === false}<span class="activity-entry__fail"> (failed)</span>{/if}
-                  {:else}
-                    {getActivityText(entry)}
-                  {/if}
-                </span>
-                <div class="activity-entry__meta-row">
-                  {#if entry.actor}
-                    <span class="activity-entry__blame">
-                      <span class="activity-entry__avatar">{(entry.actor?.split('@')[0] || '?')[0].toUpperCase()}</span>
-                      {entry.actor?.split('@')[0]}
-                    </span>
-                  {/if}
-                  <span class="activity-entry__time">· {timeAgo(entry.timestamp)}</span>
-                </div>
-              </div>
-            </div>
-          {/each}
-
-          {#if filteredActivity.length === 0}
-            <p class="detail-empty">
-              {activitySearch ? 'No matching activity found.' : 'No activity recorded yet.'}
-            </p>
-          {/if}
-
-          <!-- Pagination -->
-          {#if totalActivityPages > 1}
-            <div class="activity-pagination">
-              <button
-                class="activity-pagination__btn"
-                disabled={activityPage === 0}
-                on:click={() => activityPage = Math.max(0, activityPage - 1)}
-              >← Prev</button>
-              <span class="activity-pagination__info">
-                {activityPage + 1} / {totalActivityPages}
-              </span>
-              <button
-                class="activity-pagination__btn"
-                disabled={activityPage >= totalActivityPages - 1}
-                on:click={() => activityPage = Math.min(totalActivityPages - 1, activityPage + 1)}
-              >Next →</button>
-            </div>
-          {/if}
+          <CardHistory
+            clientId={$selectedClient.id}
+            activityLog={$selectedClient.activityLog}
+            limit={50}
+          />
         </div>
 
-      <!-- ── Emails Tab ───────────────────────────── -->
+      <!-- ── Emails Tab — sent history + send-from-template ─────────────── -->
+      <!--
+        We surface BOTH (a) every email we've already sent — derived from the
+        activityLog — AND (b) the trigger-a-new-email form. The history list
+        is the operator's "what have we already said to this person" view,
+        previously buried inside the Activity tab.
+      -->
       {:else if detailTab === 'emails'}
+        {@const sentEmails = ($selectedClient.activityLog || [])
+          .filter((e: any) => e && (e.type === 'email_triggered' || e.type === 'email_sent'))
+          .slice()
+          .reverse()}
         <div class="detail-emails">
-          <p class="detail-emails__desc">Send an email to this client from a template:</p>
-          <div class="detail-emails__form">
-            <select bind:value={selectedEmailType} class="detail-emails__select">
-              <option value="">Choose email type…</option>
-              {#each EMAIL_TYPES as et}
-                <option value={et.value}>{et.label}</option>
-              {/each}
-            </select>
-            <button
-              class="detail-emails__btn"
-              disabled={emailSending || !selectedEmailType}
-              on:click={handleTriggerEmail}
-            >
-              {emailSending ? 'Sending…' : 'Send Email'}
-            </button>
-          </div>
-          {#if emailSentMessage}
-            <div class="detail-emails__message" class:success={emailSentMessage.startsWith('✓')} class:fail={emailSentMessage.startsWith('✗')}>
-              {emailSentMessage}
-            </div>
-          {/if}
-        </div>
-
-      <!-- ── Custom Fields Tab ────────────────────── -->
-      {:else if detailTab === 'fields'}
-        <div class="detail-custom-fields">
-          <div class="detail-custom-fields__list">
-            {#each Object.entries($selectedClient.customFields || {}) as [key, value]}
-              <div class="detail-custom-field">
-                <span class="detail-custom-field__key">{key}</span>
-                <span class="detail-custom-field__value">{value}</span>
-              </div>
-            {/each}
-            {#if !Object.keys($selectedClient.customFields || {}).length}
-              <p class="detail-empty">No custom fields yet.</p>
+          <div class="detail-emails__history">
+            <h4 class="detail-emails__history-title">
+              📨 Sent emails ({sentEmails.length})
+            </h4>
+            {#if sentEmails.length === 0}
+              <p class="detail-empty">No emails sent yet.</p>
+            {:else}
+              <ol class="detail-emails__history-list">
+                {#each sentEmails as e}
+                  {@const isInferred = !!(e as any).inferred}
+                  {@const sentEmailId = (e as any).sentEmailId as string | undefined}
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                  <li
+                    class="detail-emails__history-item"
+                    class:detail-emails__history-item--inferred={isInferred}
+                    class:detail-emails__history-item--clickable={!!sentEmailId}
+                    title={
+                      sentEmailId
+                        ? 'Click to preview the rendered email'
+                        : isInferred
+                          ? `Inferred from stage history (${(e as any).reason || 'no reason recorded'}) — no rendered snapshot yet. Run scripts/backfill-render-inferred-emails.ts to render.`
+                          : 'No snapshot saved (this email pre-dates the saveSentEmail wiring).'
+                    }
+                    on:click={() => sentEmailId && selectedSentEmailId.set(sentEmailId)}
+                    role={sentEmailId ? 'button' : undefined}
+                    tabindex={sentEmailId ? 0 : undefined}
+                  >
+                    <span class="detail-emails__history-icon">{isInferred ? '🔮' : '📧'}</span>
+                    <div class="detail-emails__history-body">
+                      <div class="detail-emails__history-type">
+                        {(EMAIL_TYPES.find(t => t.value === e.emailType)?.label) || e.emailType || 'Email'}
+                        {#if isInferred}
+                          <span class="detail-emails__history-inferred-badge">inferred</span>
+                        {/if}
+                      </div>
+                      <div class="detail-emails__history-meta">
+                        {#if isInferred}
+                          backfilled from stage history
+                        {:else}
+                          {e.actor ? `by ${e.actor}` : 'system'}
+                        {/if}
+                      </div>
+                    </div>
+                    <span class="detail-emails__history-time" title={e.timestamp ? exactTime(e.timestamp) : ''}>
+                      {e.timestamp ? relativeTime(e.timestamp) : '—'}
+                    </span>
+                  </li>
+                {/each}
+              </ol>
             {/if}
           </div>
-          <form class="detail-custom-fields__form" on:submit|preventDefault={handleAddCustomField}>
-            <input type="text" bind:value={newFieldKey} placeholder="Field name" class="detail-cf-input" />
-            <input type="text" bind:value={newFieldValue} placeholder="Value" class="detail-cf-input" />
-            <button type="submit" disabled={!newFieldKey.trim() || !newFieldValue.trim()}>Add</button>
-          </form>
+
+          <div class="detail-emails__send">
+            <p class="detail-emails__desc">Send a new email from a template:</p>
+            <div class="detail-emails__form">
+              <select bind:value={selectedEmailType} class="detail-emails__select">
+                <option value="">Choose email type…</option>
+                {#each EMAIL_TYPES as et}
+                  <option value={et.value}>{et.label}</option>
+                {/each}
+              </select>
+              <button
+                class="detail-emails__btn"
+                disabled={emailSending || !selectedEmailType}
+                on:click={handleTriggerEmail}
+              >
+                {emailSending ? 'Sending…' : 'Send Email'}
+              </button>
+            </div>
+            {#if emailSentMessage}
+              <div class="detail-emails__message" class:success={emailSentMessage.startsWith('✓')} class:fail={emailSentMessage.startsWith('✗')}>
+                {emailSentMessage}
+              </div>
+            {/if}
+          </div>
         </div>
+
       {/if}
     </div>
   </aside>

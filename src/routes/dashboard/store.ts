@@ -3,12 +3,72 @@ import { browser } from '$app/environment';
 import store from '../../components/store.ts';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * AI-extracted shipping mode + packing tier classification + freeform
+ * extracted facts. Mirrors `irp-funnel-server/helper/transcriptInsights.types.ts`.
+ */
+export type ShippingMode =
+  | 'car_only_in_container'
+  | 'car_roro_only'
+  | 'car_via_rail'
+  | '20ft_container'
+  | '40ft_container'
+  | '20ft_household'
+  | '20ft_household_plus_car'
+  | '40ft_household'
+  | '40ft_household_plus_car'
+  | 'lcl';
+
+export type PackingTier =
+  | 'self_pack_self_load'
+  | 'self_pack_assisted_load'
+  | 'full_pack_full_load'
+  | 'lcl_full_service';
+
+export interface TranscriptInsights {
+  shippingMode: ShippingMode | null;
+  packingTier: PackingTier | null;
+  confidence: number;
+  reasoning: string;
+  extractedFields: Record<string, string | number | boolean | string[] | null>;
+  generatedAt: string;
+  source: 'gemini_notes' | 'transcript' | 'manual_paste' | 'chatbot_notes';
+  model: string;
+}
+
+/** Calendar / Gemini-meeting-notes payload surfaced by `buildClientSummary`. */
+export interface MeetingNotes {
+  eventId: string | null;
+  meetCode: string | null;
+  hangoutLink: string;
+  htmlLink: string;
+  startTime: string | null;
+  endTime: string | null;
+  fetched: boolean;
+  attempts: number;
+  fetchedAt: string | null;
+  docId: string | null;
+  docTitle: string | null;
+  text: string;
+}
+
 export interface Client {
   id: string;
   sessionId: string;
   name: string;
   surname: string;
+  /**
+   * Pre-computed display name for titles/cards. Falls back through the
+   * chain: "Name Surname" → "Surname" → "Name" → email-prefix → docId.
+   * NEVER contains the literal "Unknown" — the dashboard uses `nameKnown`
+   * to apply special italic+"?" styling when the first name was never asked.
+   */
+  displayName: string;
+  /** True iff the client's FIRST name was actually collected (not blank, not "Unknown"). */
+  nameKnown: boolean;
   email: string;
+
   phone: string;
   originCountry: string;
   originCity: string;
@@ -33,6 +93,16 @@ export interface Client {
   consultationCount: number;
   lastUpdated: string;
   createdAt: string;
+  /** Gemini meeting-notes payload + calendar metadata. */
+  meetingNotes?: MeetingNotes;
+  /** AI-extracted shipping/packing classification. `null` until extracted. */
+  transcriptInsights?: TranscriptInsights | null;
+  /**
+   * Full Firestore document (server strips a few large branches before
+   * sending). Front-end uses this to show every key on the card and let
+   * operators edit any field via the schema-agnostic PATCH endpoint.
+   */
+  rawDoc?: Record<string, any>;
 }
 
 export interface Note {
@@ -229,6 +299,73 @@ export const EMAIL_TYPES = [
   { value: 'quote_proposal_feedback', label: 'Quote Proposal Feedback' },
 ];
 
+/**
+ * Pretty labels + emojis for AI-extracted shipping modes. Mirrors the server
+ * `SHIPPING_MODE_LABEL` in helper/transcriptInsights.types.ts.
+ */
+export const SHIPPING_MODE_LABEL: Record<ShippingMode, { icon: string; label: string }> = {
+  car_only_in_container:    { icon: '🚗',   label: 'Car only — container'    },
+  car_roro_only:            { icon: '🚙',   label: 'Car only — RoRo'         },
+  car_via_rail:             { icon: '🚆',   label: 'Car — rail'              },
+  '20ft_container':         { icon: '📦',   label: '20 ft FCL'               },
+  '40ft_container':         { icon: '📦',   label: '40 ft FCL'               },
+  '20ft_household':         { icon: '🏠',   label: '20 ft — household'       },
+  '20ft_household_plus_car':{ icon: '🏠🚗', label: '20 ft — household + car' },
+  '40ft_household':         { icon: '🏠',   label: '40 ft — household'       },
+  '40ft_household_plus_car':{ icon: '🏠🚗', label: '40 ft — household + car' },
+  lcl:                      { icon: '🧊',   label: 'LCL (2–7 m³)'            },
+};
+
+export const PACKING_TIER_LABEL: Record<PackingTier, { icon: string; label: string }> = {
+  self_pack_self_load:     { icon: '👤',  label: 'Self pack & load'      },
+  self_pack_assisted_load: { icon: '👥',  label: 'Self pack, crew loads' },
+  full_pack_full_load:     { icon: '🛡️',  label: 'Full pack & load'      },
+  lcl_full_service:        { icon: '🚚',  label: 'LCL — full service'    },
+};
+
+/** Human-friendly labels for canonical Firestore field paths. */
+export const FIELD_LABEL: Record<string, string> = {
+  name: 'First Name',
+  surname: 'Surname',
+  email: 'Email',
+  phone: 'Phone',
+  originCountry: 'Origin Country',
+  originCity: 'Origin City',
+  destinationCountry: 'Destination Country',
+  destinationCity: 'Destination City',
+  budget: 'Budget',
+  size: 'Move Size',
+  immigrationStatus: 'Immigration Status',
+  propertyTypeFrom: 'Property Type (Origin)',
+  propertyTypeTo: 'Property Type (Destination)',
+  vehicles: 'Vehicles',
+  scheduling: 'Scheduling',
+  pipelineStage: 'Pipeline Stage',
+  callOutcome: 'Call Outcome',
+  transcript: 'Transcript',
+  notes: 'Notes',
+  customFields: 'Custom Fields',
+  dripEnabled: 'Drip Email Active',
+  dripEmail: 'Drip Email Address',
+  consultations: 'Consultations',
+};
+
+/** Best-effort humanizer for any field path the dashboard renders. */
+export function humanizeFieldLabel(path: string): string {
+  if (!path) return '';
+  // Use the explicit map first
+  if (FIELD_LABEL[path]) return FIELD_LABEL[path];
+  // For nested paths like "consultations.0.budget" → take the last segment
+  const lastSeg = path.split(/[.[]/).pop()?.replace(/\]/g, '') || path;
+  if (FIELD_LABEL[lastSeg]) return FIELD_LABEL[lastSeg];
+  // camelCase → "Camel Case"
+  return lastSeg
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
+
 // ─── Stores ─────────────────────────────────────────────────────────────────
 export const authToken = writable<string | null>(
   browser ? localStorage.getItem('dashboard_token') : null
@@ -265,6 +402,14 @@ export const filters = writable<Filters>({
 
 export const activeView = writable<'board' | 'list' | 'metrics' | 'evo'>('board');
 export const detailPanelOpen = writable<boolean>(false);
+
+/**
+ * The id of the `sentEmails/{autoId}` snapshot currently shown in the
+ * <EmailPreviewDrawer>. Setting it to a non-empty string opens the drawer
+ * and triggers a fetch; setting it to `null` closes the drawer. Driven by
+ * clicks on the Emails-tab "Sent emails (N)" rows in <DetailPanel>.
+ */
+export const selectedSentEmailId = writable<string | null>(null);
 
 // Persist auth token
 if (browser) {
@@ -530,4 +675,188 @@ export async function executeClientAction(
     body: JSON.stringify({ args }),
   });
   return data;
+}
+
+// ─── Schema-agnostic field editor + Undo + AI insights ─────────────────────
+
+/** Result returned by `editField()`. */
+export interface EditFieldResult {
+  success: boolean;
+  path: string;
+  oldValue: unknown;
+  newValue: unknown;
+  entry: ActivityEntry & { fieldPath: string; oldValue: unknown; newValue: unknown };
+}
+
+/**
+ * Edit ANY field on the consultation document via the schema-agnostic
+ * server endpoint. The server appends a `field_edit` entry to the
+ * activityLog, including the actor's email + timestamp.
+ *
+ *   await editField('b1e537da', 'originCity', 'Orlando');
+ *   await editField('b1e537da', 'consultations.0.budget', '5000-10000');
+ *   await editField('b1e537da', 'customFields.driverPref', 'manual');
+ *
+ * Pass `expectedOldValue` for optimistic concurrency. The server returns
+ * 409 if the value was changed by another user since you read it.
+ */
+export async function editField(
+  id: string,
+  path: string,
+  value: unknown,
+  expectedOldValue?: unknown,
+): Promise<EditFieldResult> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/field`, {
+    method: 'PATCH',
+    body: JSON.stringify({ path, value, expectedOldValue }),
+  });
+
+  // Optimistically reflect the change in the local store. The server is
+  // the source of truth, but doing this here avoids a full re-fetch round-
+  // trip on every edit.
+  const patchClient = (c: Client | null): Client | null => {
+    if (!c || c.id !== id) return c;
+    const next: any = { ...c };
+    // Keep the curated top-level summary fields in sync if they were edited
+    if (typeof path === 'string' && !path.includes('.') && path in next) {
+      next[path] = data.newValue;
+    }
+    if (next.rawDoc) {
+      next.rawDoc = applyPatch(next.rawDoc, path, data.newValue);
+    }
+    next.activityLog = [...(c.activityLog || []), data.entry];
+    return next as Client;
+  };
+  clients.update((list) => list.map((c) => patchClient(c) ?? c));
+  selectedClient.update((c) => patchClient(c));
+
+  return data;
+}
+
+/**
+ * Undo the most recent undoable change for this client. The server walks
+ * the activityLog backwards and reverts the first `field_edit` /
+ * `field_revert` / `stage_change` it finds. Notes / emails / AI
+ * extractions are NOT undoable.
+ */
+export async function undoLast(id: string): Promise<{
+  success: boolean;
+  undoType: 'field' | 'stage_change';
+  path?: string;
+  revertedTo?: unknown;
+  entry?: ActivityEntry;
+}> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/undo-last`, {
+    method: 'POST',
+  });
+
+  // Refresh the doc; cheaper than rebuilding the patch locally because undo
+  // can affect any field path.
+  try {
+    await fetchClientDetail(id);
+  } catch {
+    // ignore — the activityLog will resync next time the dashboard reloads
+  }
+  return data;
+}
+
+/**
+ * On-demand AI transcript-insights extraction. Hits the LLM and persists
+ * `transcriptInsights` on the consultation doc.
+ *
+ *   await extractInsights('b1e537da');                    // re-extract if stale
+ *   await extractInsights('b1e537da', { force: true });   // force fresh extraction
+ *   await extractInsights('b1e537da', { manualText: '...' }); // paste-to-extract
+ */
+export async function extractInsights(
+  id: string,
+  opts: { force?: boolean; manualText?: string } = {},
+): Promise<TranscriptInsights | null> {
+  const data = await apiFetch(`/api/dashboard/clients/${id}/extract-insights`, {
+    method: 'POST',
+    body: JSON.stringify(opts),
+  });
+  const insights: TranscriptInsights | null = data.insights ?? null;
+  // Mirror into local stores for instant UI feedback
+  clients.update((list) =>
+    list.map((c) => (c.id === id ? { ...c, transcriptInsights: insights } : c)),
+  );
+  selectedClient.update((c) =>
+    c && c.id === id ? { ...c, transcriptInsights: insights } : c,
+  );
+  return insights;
+}
+
+/**
+ * Apply a deep value via the same dotted/bracket path syntax as the server.
+ * Used internally to keep `client.rawDoc` consistent after `editField()`.
+ */
+function applyPatch(
+  obj: Record<string, any>,
+  path: string,
+  value: unknown,
+): Record<string, any> {
+  const segments = path.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean);
+  if (segments.length === 0) return obj;
+  const out: any = Array.isArray(obj) ? obj.slice() : { ...obj };
+  let cursor: any = out;
+  for (let i = 0; i < segments.length - 1; i++) {
+    const seg = segments[i];
+    const nextIsNum = /^\d+$/.test(segments[i + 1]);
+    if (/^\d+$/.test(seg)) {
+      const idx = Number(seg);
+      cursor[idx] =
+        cursor[idx] !== undefined && cursor[idx] !== null
+          ? Array.isArray(cursor[idx]) ? cursor[idx].slice() : { ...cursor[idx] }
+          : nextIsNum ? [] : {};
+      cursor = cursor[idx];
+    } else {
+      cursor[seg] =
+        cursor[seg] !== undefined && cursor[seg] !== null
+          ? Array.isArray(cursor[seg]) ? cursor[seg].slice() : { ...cursor[seg] }
+          : nextIsNum ? [] : {};
+      cursor = cursor[seg];
+    }
+  }
+  const last = segments[segments.length - 1];
+  if (/^\d+$/.test(last)) cursor[Number(last)] = value;
+  else cursor[last] = value;
+  return out;
+}
+
+// ─── Sent-email snapshots ─────────────────────────────────────────────────
+//
+// Fetches one verbatim email render (subject + bodyHtml + context + Evo
+// variant labels + templateVersion) from the top-level `sentEmails`
+// collection. The `<EmailPreviewDrawer>` calls this when an operator clicks
+// any row in the Emails-tab "Sent emails" list.
+export interface SentEmailSnapshot {
+  id: string;
+  consultationDocId: string;
+  clientEmail: string;
+  emailType: string;
+  templateKey: string;
+  templateVersion: string;
+  subject: string;
+  bodyHtml: string;
+  context: Record<string, unknown>;
+  evoSubjectVariant: string | null;
+  evoBodyVariant: string | null;
+  inferred: boolean;
+  templateBackfilled: boolean;
+  sentAt: string;
+  engagement?: {
+    opened?: boolean;
+    openedAt?: string | null;
+    clicked?: boolean;
+    clickedAt?: string | null;
+    replied?: boolean;
+    repliedAt?: string | null;
+    converted?: boolean;
+  };
+}
+
+export async function fetchSentEmail(id: string): Promise<SentEmailSnapshot> {
+  const data = await apiFetch(`/api/dashboard/sent-emails/${id}`);
+  return data as SentEmailSnapshot;
 }

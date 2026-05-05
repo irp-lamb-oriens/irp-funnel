@@ -446,11 +446,15 @@
           <div class="form-frame active">
             <div class="back-bar">
               <button class="back-btn" on:click={backToChoice}>← Back</button>
-              <button 
-                class="switch-btn" 
-                on:click={openForm}
-                style={isBooked ? "display: none; visibility: hidden; pointer-events: none;" : ""}
-              >Switch to Form →</button>
+              <!--
+                Belt-and-suspenders: hide the switch button entirely (not just
+                via inline style) once the user has a booking. This prevents
+                any path to the multi-step form re-submitting and creating a
+                duplicate Calendar event.
+              -->
+              {#if !isBooked}
+                <button class="switch-btn" on:click={openForm}>Switch to Form →</button>
+              {/if}
             </div>
             <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} preferredLanguage={selectedLanguage} />
           </div>
@@ -461,12 +465,17 @@
           <div class="form-frame active">
             <div class="back-bar">
               <button class="back-btn" on:click={formBack}>← Back</button>
-              {#if formStep < 12}
-                <button 
-                  class="switch-btn" 
-                  on:click={openChatbot}
-                  style={isBooked ? "display: none; visibility: hidden; pointer-events: none;" : ""}
-                >Chat with the team →</button>
+              <!--
+                Same belt-and-suspenders here: once `isBooked`, no path to the
+                chatbot from this side either. The chatbot scheduler-agent now
+                also goes through the same idempotent helper on the server,
+                so even if the user routed there it could no longer double-book,
+                but we defend in depth on the client too.
+              -->
+              {#if formStep < 12 && !isBooked}
+                <button class="switch-btn" on:click={openChatbot}
+                  >Chat with the team →</button
+                >
               {/if}
             </div>
 

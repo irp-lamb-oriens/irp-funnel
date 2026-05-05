@@ -13,6 +13,7 @@
     type Client
   } from './store.ts';
   import DetailPanel from './components/DetailPanel.svelte';
+  import EmailPreviewDrawer from './components/EmailPreviewDrawer.svelte';
   import MetricsView from './components/MetricsView.svelte';
   import EvoView from './components/evo/EvoView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
@@ -439,6 +440,7 @@
               {#each visibleCards as client (client.id)}
                 <div
                   class="card"
+                  class:card--missing-name={!client.nameKnown}
                   draggable="true"
                   on:dragstart={(e) => handleDragStart(e, client)}
                   on:click={() => openClientDetail(client)}
@@ -446,21 +448,30 @@
                   tabindex="0"
                   on:keydown={(e) => e.key === 'Enter' && openClientDetail(client)}
                 >
-                  <div class="card__name">{client.name} {client.surname}</div>
+                  <div
+                    class="card__name"
+                    title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
+                  >
+                    {#if !client.nameKnown}<span class="card__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
+                  </div>
+
                   <div class="card__route">
                     {client.originCity || client.originCountry}
                     <span class="card__arrow">→</span>
                     {client.destinationCity || client.destinationCountry}
                   </div>
+
                   <div class="card__meta">
                     {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
                     {#if client.scheduling?.length}
                       <span class="card__date">{formatDate(client.scheduling[0])}</span>
                     {/if}
+                    {#if (client.agentNotes?.length || 0) + (client.chatbotNotes?.length || 0) > 0}
+                      <span class="card__notes-badge">
+                        📝 {(client.agentNotes?.length || 0) + (client.chatbotNotes?.length || 0)}
+                      </span>
+                    {/if}
                   </div>
-                  {#if client.notes?.length}
-                    <span class="card__notes-badge">{client.notes.length} note{client.notes.length > 1 ? 's' : ''}</span>
-                  {/if}
                 </div>
               {/each}
               {#if hasMore}
@@ -495,13 +506,23 @@
           {#each $filteredClients as client (client.id)}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div on:click={() => openClientDetail(client)} class="list-row list-grid-layout">
+            <div
+              on:click={() => openClientDetail(client)}
+              class="list-row list-grid-layout"
+              class:list-row--missing-name={!client.nameKnown}
+            >
               <div class="list-cell">
-                <div class="list-row__name" title="{client.name} {client.surname}">{client.name} {client.surname}</div>
+                <div
+                  class="list-row__name"
+                  title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
+                >
+                  {#if !client.nameKnown}<span class="list-row__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
+                </div>
                 <div class="list-row__email" title={client.email}>{client.email}</div>
               </div>
+
               <div class="list-cell" title="{client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}">
-                {client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}
+                <div>{client.originCity || client.originCountry} → {client.destinationCity || client.destinationCountry}</div>
               </div>
               <div class="list-cell" title="{STAGE_LABELS[client.stage]}">
                 <span class="stage-badge" style="background: {STAGE_COLORS[client.stage]}">
@@ -543,6 +564,8 @@
     />
   </div>
 {/if}
+
+<EmailPreviewDrawer />
 
 <ToastContainer />
 <Footer />
