@@ -2,6 +2,14 @@
   import { onMount, onDestroy, tick } from 'svelte';
   import { writable } from 'svelte/store';
   import RevealingImage from './RevealingImage.svelte';
+  import { useVariant, trackExposure, trackInteraction, identify } from '../../../../lib/evo/index.ts';
+
+  const EVO_COMPONENT = 'Collaborations';
+
+  const evoVariant = useVariant(EVO_COMPONENT);
+
+  import { activeVariants } from '../../../../lib/evo/client.ts';
+  $: evoCopyVariantStr = $activeVariants[EVO_COMPONENT] || useVariant(EVO_COMPONENT);
 
   // Public props
   export let images: string[] = [];
@@ -98,10 +106,44 @@
       const decay = Math.pow(friction, dt / 16);
       drag.v *= decay;
     }
-
-    if (delta !== 0) x.update((curr) => wrapX(curr + delta));
+    if (evoCopyVariantStr === 'v1-collaborations' && delta !== 0) x.update((curr) => wrapX(curr + delta));
 
     rAF = requestAnimationFrame(() => loop(now));
+  }
+
+  let rADs: number[] = [];
+  let direction = 0;
+  let velocity = 0;
+
+  function loopArrowDown(e: PointerEvent, n = 0) {
+    // Accelerate over time, but with diminishing return
+    direction = Math.sign(e.x - window.innerWidth / 2);
+    x.update((curr) => wrapX(curr + velocity));
+
+    velocity += direction;
+
+    rADs.push(requestAnimationFrame(() => loopArrowDown(e, n)));
+  }
+
+  function onArrowDown(e: PointerEvent) {
+    loopArrowDown(e);
+  }
+
+  function loopArrowUp() {
+    x.update((curr) => wrapX(curr + velocity));
+    if (Math.abs(velocity) > Math.abs(direction)) {
+      velocity -= direction * friction;
+      requestAnimationFrame(() => loopArrowUp());
+    }
+  }
+
+  function onArrowUp() {
+    // velocity = 0;
+    // direction = 0;
+
+    loopArrowUp();
+
+    if (rADs.length) rADs.forEach((rAD) => cancelAnimationFrame(rAD));
   }
 
   $: if (tripled.length) {
@@ -126,6 +168,19 @@
       <span class="stars">⭐️⭐️⭐️⭐️⭐️</span>
       <h3 class="titles">Partners, Collaborations & Excellent Reviews</h3>
     </div>
+
+    {#if evoCopyVariantStr === 'v2-collaborations'}
+      <div class="arrows">
+        <button class="arrows__arrow arrow-left" 
+        on:pointerdown={onArrowDown}
+        on:pointerup={onArrowUp}
+        >&lt;</button>
+        <button class="arrows__arrow arrow-right" 
+        on:pointerdown={onArrowDown}
+        on:pointerup={onArrowUp}
+        >&gt;</button>
+      </div>  
+    {/if}
 
     <div
       class="carousel"
@@ -156,6 +211,42 @@
 </div>
 
 <style lang="scss">
+  .arrows {
+    display: inline-flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1600px;
+    margin: -5rem auto 1rem;
+    padding: 0 max(2rem, 5vw);
+    height: 0;
+    position: relative;
+    top: 7.5rem;
+    z-index: 10000;
+    
+    &__arrow {
+      background: rgba(255, 255, 255, 0.02);
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      padding: 0.5rem 1rem 2.55rem;
+      cursor: pointer;
+      transition: background 0.3s ease, box-shadow 0.5s ease, color 0.35s ease, border 0.4s ease-out;
+      border-radius: 50%;
+      width: 3.05rem;
+      place-content: center;
+      border: 1px solid #ffffff4d;
+      box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0.678), 0 0 0 0 white;
+
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: inset 0 0 0 50px rgba(255, 255, 255, 0.955);
+        color: black;
+        border: 1px solid #ffffff;
+      }
+    }
+  }
+
   .image-grid-outer {
     position: relative;
     width: 100%;
@@ -251,6 +342,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    user-select: none;
+    pointer-events: none;
   }
 
   @media (max-width: 768px) {

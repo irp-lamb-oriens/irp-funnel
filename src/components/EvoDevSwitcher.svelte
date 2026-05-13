@@ -56,6 +56,11 @@
       id: 'emails',
       title: 'Email Drip Campaigns',
       components: ['EmailDripSubject', 'EmailDripBody']
+    },
+    {
+      id: 'social-proof',
+      title: 'Social Proof',
+      components: ['Collaborations']
     }
   ];
 

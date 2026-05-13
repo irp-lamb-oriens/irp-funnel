@@ -36,6 +36,21 @@ export interface EvoComponentConfig {
  * Keep variant order stable — old assignments keyed by `key` stay valid.
  */
 export const EVO_COMPONENTS: Record<string, EvoComponentConfig> = {
+  Collaborations: {
+    key: 'Collaborations',
+    variants: [
+      {
+        key: 'v1-collaborations',
+        label: 'Baseline Rotating Collaborations',
+        hypothesis: 'Rotating carousel of partner logos may capture more attention and build more trust.',
+      },
+      {
+        key: 'v2-collaborations',
+        label: 'Static Collaborations',
+        hypothesis: 'Static logos of partner companies to build trust.',
+      }
+    ]
+  },
   HeroForm: {
     key: 'HeroForm',
     variants: [
