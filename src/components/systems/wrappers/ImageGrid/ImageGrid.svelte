@@ -3,13 +3,16 @@
   import { writable } from 'svelte/store';
   import RevealingImage from './RevealingImage.svelte';
   import { useVariant, trackExposure, trackInteraction, identify } from '../../../../lib/evo/index.ts';
+  import { formState } from '../../../systems/inputs/Calendar/formStore.js';
 
   const EVO_COMPONENT = 'Collaborations';
 
-  const evoVariant = useVariant(EVO_COMPONENT);
-
   import { activeVariants } from '../../../../lib/evo/client.ts';
   $: evoCopyVariantStr = $activeVariants[EVO_COMPONENT] || useVariant(EVO_COMPONENT);
+
+  onMount(() => {
+    trackExposure(EVO_COMPONENT, evoCopyVariantStr, { variantLabel: evoCopyVariantStr });
+  });
 
   // Public props
   export let images: string[] = [];
@@ -64,6 +67,9 @@
   };
 
   function onPointerDown(e: PointerEvent) {
+    const cleanEmail = $formState.email.trim();
+    identify(cleanEmail);
+    trackInteraction(EVO_COMPONENT, evoCopyVariantStr, 'carrousel_drag', { view: 'rotating' });
     if (drag.active) return;
     container.setPointerCapture(e.pointerId);
     drag.active = true;
@@ -126,6 +132,9 @@
   }
 
   function onArrowDown(e: PointerEvent) {
+    const cleanEmail = $formState.email.trim();
+    identify(cleanEmail);
+    trackInteraction(EVO_COMPONENT, evoCopyVariantStr, 'carrousel_arrow_click', { view: 'static' });
     loopArrowDown(e);
   }
 
