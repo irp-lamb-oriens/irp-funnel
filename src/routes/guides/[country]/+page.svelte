@@ -14,6 +14,7 @@
   let htmlContent = "";
   let showModal = false;
   import { browser } from '$app/environment';
+    import countries from '../../../components/systems/inputs/Country/countries.ts';
 
   let hasAccess = false;
   let isCheckingAccess = true;
@@ -64,7 +65,7 @@
   });
   
   // Format country name for display
-  $: displayName = data.country.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  $: displayName = countries.find(c => c.code === data.country.toUpperCase())?.name || data.country;
 
   /**
    * Staff-only: open the lead-capture modal so an organization agent can
