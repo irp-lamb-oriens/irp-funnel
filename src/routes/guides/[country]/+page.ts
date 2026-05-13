@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import countries from '../../../components/systems/inputs/Country/countries.ts';
 
 export async function load({ params }) {
   const { country } = params;
@@ -11,12 +12,16 @@ export async function load({ params }) {
   });
   
   const expectedPath = `../../../lib/data/country-guides/${country}.md`;
+
+  const alternativePath = `../../../lib/data/country-guides/${
+    countries.find(c => c.code === country.toUpperCase())?.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || country
+  }.md`;
   
-  if (!modules[expectedPath]) {
+  if (!modules[expectedPath] && !modules[alternativePath]) {
     throw error(404, `Guide for country "${country}" not found.`);
   }
   
-  const markdownContent = await modules[expectedPath]() as string;
+  const markdownContent = await (modules[expectedPath] || modules[alternativePath])() as string;
   
   return {
     country,

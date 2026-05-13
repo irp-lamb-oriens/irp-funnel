@@ -1,5 +1,5 @@
 const countries = [
-  { "code": "US", "name": "United States of America", "flag": "🇺🇸", "dialCode": "+1" },
+  { "code": "US", "name": "United States", "flag": "🇺🇸", "dialCode": "+1" },
   { "code": "CA", "name": "Canada", "flag": "🇨🇦", "dialCode": "+1" },
   { "code": "PA", "name": "Panama", "flag": "🇵🇦", "dialCode": "+507" },
   { "code": "PT", "name": "Portugal", "flag": "🇵🇹", "dialCode": "+351" },
