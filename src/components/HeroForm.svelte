@@ -127,7 +127,9 @@
   let sizeInput: HTMLButtonElement, immigrationStatusInput: HTMLButtonElement;
   let referrerInput: HTMLInputElement;
   let youtubeVideoInput: HTMLInputElement;
-  let notesInput: HTMLInputElement;
+  // Notes step uses a <textarea> rather than an <input>; widen the type
+  // so the bind:this typechecks against either element.
+  let notesInput: HTMLInputElement | HTMLTextAreaElement;
 
   // ─── YouTube referral detection ─────────────────────────────────────────
   function isYouTubeReferral(val: string): boolean {

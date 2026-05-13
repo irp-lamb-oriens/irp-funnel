@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { clients, filters, searchQuery, filteredClients, clientsByStage } from './store';
-import type { Client } from './store';
+import { clients, filters, searchQuery, filteredClients, clientsByStage } from './store.ts';
+import type { Client } from './store.ts';
 
 const mockClients: Client[] = [
   {

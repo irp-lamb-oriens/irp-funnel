@@ -210,3 +210,41 @@
   50% { opacity: 1; }
   100% { opacity: 0.6; }
 }
+
+// ─── Staff-only "Audit lead capture" pill ────────────────────────────────
+//
+// Visible only when an IRP organization agent is signed in (the inline
+// `style="display: ..."` on the element toggles `block` vs. `none`). Lets
+// staff re-open the lead-capture modal so they can assess how the wall
+// behaves end-to-end. Hidden completely from public visitors.
+.staff-audit-pill {
+  display: none; // default — toggled to `block` inline by the page
+  margin: 0 0 1.5rem auto;
+  padding: 0.55rem 1rem;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #422006;
+  border: 1px solid rgba(251, 191, 36, 0.6);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(251, 191, 36, 0.45);
+  }
+
+  &:active {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+  }
+}

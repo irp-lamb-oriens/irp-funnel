@@ -8,6 +8,10 @@
     project, loading, error, stages, stageLabels,
     requestClientOTP, verifyClientOTP, checkClientAuth, logout, fetchProject
   } from './store.ts';
+  import {
+    irpStaffIsAuthenticated, irpStaffEmail,
+    checkIrpStaff, clearIrpStaff,
+  } from '../../../lib/auth/irpStaff.ts';
   import './status.scss';
 
   $: projectId = $page.params.id;
@@ -21,6 +25,19 @@
   let loginLoading = false;
 
   onMount(async () => {
+    // ─── 1. IRP organization-agent bypass ────────────────────────────────
+    // If a /dashboard session is present, every /api/client-status request
+    // is authorized via the `x-dashboard-token` header. Skip the OTP wall
+    // entirely and load the project as if we were already signed in.
+    const isStaff = await checkIrpStaff();
+    if (isStaff) {
+      isAuthenticated.set(true);
+      isCheckingAuth.set(false);
+      await fetchProject(projectId);
+      return;
+    }
+
+    // ─── 2. Existing end-customer flow ───────────────────────────────────
     const valid = await checkClientAuth();
     if (valid) {
       await fetchProject(projectId);
@@ -55,6 +72,10 @@
   }
 
   function handleLogout() {
+    // Also clear the IRP-staff session so a logged-in agent is signed out
+    // from /dashboard, /guides, and every other gated page in one click.
+    // No-op for non-staff visitors.
+    if ($irpStaffIsAuthenticated) clearIrpStaff();
     logout();
     loginStep = 'email';
     loginCode = '';
@@ -112,7 +133,10 @@
     return typeof val === 'string' && val.length > 60;
   }
 
-  function isUrl(val: any): boolean {
+  // Type predicate so the {:else if isUrl(val)} branch narrows `val` to
+  // string for the <a href={val}> binding (Svelte 4+ requires a string|null
+  // there, not the inferred `unknown` from Object.entries).
+  function isUrl(val: unknown): val is string {
     if (typeof val !== 'string') return false;
     return val.startsWith('http://') || val.startsWith('https://');
   }
@@ -240,10 +264,23 @@
               <span class="route-point">{$project.destinationCountry || 'Destination'}</span>
             </div>
           </div>
-          <button class="cp-dashboard__header-logout" on:click={handleLogout}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Log Out
-          </button>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            {#if $irpStaffIsAuthenticated}
+              <!--
+                Staff-bypass indicator. Visible only when an IRP organization
+                agent is viewing this client portal via their /dashboard
+                session (the OTP wall was skipped). Hidden for end-customers.
+              -->
+              <span class="cp-dashboard__header-staff-pill" title="You are viewing this client portal as an IRP organization agent (signed in via /dashboard).">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M20.188 10.934c.388.756.612 1.612.612 2.566 0 4.418-3.582 8-8 8a7.962 7.962 0 0 1-5.5-2.187"></path></svg>
+                Staff bypass{#if $irpStaffEmail} · {$irpStaffEmail}{/if}
+              </span>
+            {/if}
+            <button class="cp-dashboard__header-logout" on:click={handleLogout}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Log Out
+            </button>
+          </div>
         </div>
       </header>
 

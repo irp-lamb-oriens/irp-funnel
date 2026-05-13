@@ -1,5 +1,5 @@
 <script lang="ts">
-  import shader from "../T.shader";
+  import shader from "../T.shader.js";
   import ShaderToy from "../ShaderToy.svelte";
 </script>
 

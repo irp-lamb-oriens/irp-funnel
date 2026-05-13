@@ -283,6 +283,37 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       }
     }
+
+    // ─── Staff-bypass indicator ─────────────────────────────────────────
+    // Shown next to "Log Out" when an IRP organization agent is viewing
+    // this client portal via the centralized /dashboard session bypass.
+    // Uses an amber tone so it is clearly distinguishable from a real
+    // end-customer's view.
+    &-staff-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: #fef3c7;
+      background: rgba(251, 191, 36, 0.18);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      backdrop-filter: blur(6px);
+      cursor: default;
+      max-width: 22rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      svg {
+        flex-shrink: 0;
+        opacity: 0.95;
+      }
+    }
   }
 
   // ─── PIPELINE STAGE ───

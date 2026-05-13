@@ -1,6 +1,15 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import store from '../../components/store.ts';
+import {
+  irpStaffToken,
+  irpStaffEmail,
+  irpStaffIsAuthenticated,
+  isCheckingIrpStaff,
+  checkIrpStaff,
+  clearIrpStaff,
+  setIrpStaffSession,
+} from '../../lib/auth/irpStaff.ts';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -367,14 +376,16 @@ export function humanizeFieldLabel(path: string): string {
 
 
 // ─── Stores ─────────────────────────────────────────────────────────────────
-export const authToken = writable<string | null>(
-  browser ? localStorage.getItem('dashboard_token') : null
-);
-export const authEmail = writable<string | null>(
-  browser ? localStorage.getItem('dashboard_email') : null
-);
-export const isAuthenticated = writable<boolean>(false);
-export const isCheckingAuth = writable<boolean>(true); // Start in loading state
+//
+// Auth stores are sourced from the centralized `$lib/auth/irpStaff` module so
+// that signing in here is immediately observable by every other page that
+// gates IRP-staff access (e.g. /status/[id], /guides). The legacy export
+// names (`authToken`, `authEmail`, `isAuthenticated`, `isCheckingAuth`) are
+// preserved as aliases so the existing dashboard UI keeps working unchanged.
+export const authToken = irpStaffToken;
+export const authEmail = irpStaffEmail;
+export const isAuthenticated = irpStaffIsAuthenticated;
+export const isCheckingAuth = isCheckingIrpStaff;
 export const clients = writable<Client[]>([]);
 export const selectedClient = writable<Client | null>(null);
 export const metrics = writable<Metrics | null>(null);
@@ -411,17 +422,9 @@ export const detailPanelOpen = writable<boolean>(false);
  */
 export const selectedSentEmailId = writable<string | null>(null);
 
-// Persist auth token
-if (browser) {
-  authToken.subscribe(val => {
-    if (val) localStorage.setItem('dashboard_token', val);
-    else localStorage.removeItem('dashboard_token');
-  });
-  authEmail.subscribe(val => {
-    if (val) localStorage.setItem('dashboard_email', val);
-    else localStorage.removeItem('dashboard_email');
-  });
-}
+// Note: localStorage persistence for `authToken` / `authEmail` is owned by
+// `$lib/auth/irpStaff` (the underlying source of truth). No duplicate
+// subscriptions needed here.
 
 // ─── Derived: filtered clients ──────────────────────────────────────────────
 export const filteredClients = derived([clients, searchQuery, filters], ([$clients, $search, $filters]) => {
@@ -513,28 +516,21 @@ export async function verifyOTP(email: string, code: string): Promise<void> {
     method: 'POST',
     body: JSON.stringify({ email: email.trim(), code: code.trim() }),
   });
-  authToken.set(data.token);
-  authEmail.set(data.email);
-  isAuthenticated.set(true);
+  // Persist via the centralized helper so every other page that gates on
+  // IRP staff (e.g. /status/[id], /guides) sees the new session immediately.
+  setIrpStaffSession(data.token, data.email);
 }
 
 export async function checkAuth(): Promise<boolean> {
-  try {
-    await apiFetch('/api/dashboard/auth/check');
-    isAuthenticated.set(true);
-    return true;
-  } catch {
-    isAuthenticated.set(false);
-    return false;
-  } finally {
-    isCheckingAuth.set(false);
-  }
+  // Delegate to the centralized check so every page shares one source of
+  // truth (and one network round-trip on initial load).
+  return checkIrpStaff();
 }
 
 export function logout() {
-  authToken.set(null);
-  authEmail.set(null);
-  isAuthenticated.set(false);
+  // Clearing the staff stores propagates to /dashboard, /status/[id], and
+  // /guides simultaneously — staff are signed out everywhere at once.
+  clearIrpStaff();
 }
 
 // ─── Data actions ───────────────────────────────────────────────────────────

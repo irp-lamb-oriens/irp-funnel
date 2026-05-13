@@ -1,4 +1,5 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
+import { irpStaffToken } from '../../../lib/auth/irpStaff.ts';
 
 function getApiUrl(): string {
   if (typeof window !== 'undefined') {
@@ -28,19 +29,28 @@ export const error = writable('');
 export const stages = writable<string[]>([]);
 export const stageLabels = writable<Record<string, string>>({});
 
-// Generic fetch wrapper to inject token
+// Generic fetch wrapper. Injects two tokens when available:
+//   - `x-client-token`     — the end-customer's client-portal session
+//   - `x-dashboard-token`  — the IRP staff dashboard session (for staff bypass)
+// The server's `requireClientAuth` middleware accepts either, preferring the
+// dashboard token so an organization agent already signed into /dashboard
+// transparently authorizes every /api/client-status call without seeing the
+// OTP wall.
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  let token: string | null = null;
-  authToken.subscribe(v => token = v)();
+  const clientToken = get(authToken);
+  const staffToken = get(irpStaffToken);
 
   const headers = new Headers(options.headers);
-  if (token) headers.set('x-client-token', token);
+  if (clientToken) headers.set('x-client-token', clientToken);
+  if (staffToken) headers.set('x-dashboard-token', staffToken);
   headers.set('Content-Type', 'application/json');
 
   const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
-  
+
   if (res.status === 401) {
-    logout();
+    // Don't auto-logout staff just because a stale per-page client_token
+    // happened to fail — only clear the client-portal session.
+    if (clientToken) logout();
     throw new Error('Session expired');
   }
 

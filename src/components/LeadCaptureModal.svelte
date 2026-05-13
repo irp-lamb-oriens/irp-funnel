@@ -3,7 +3,7 @@
   import { fade, scale } from "svelte/transition";
   import Email from "./systems/inputs/Email/Email.svelte";
   import SubmitButton from "./systems/buttons/SubmitButton/SubmitButton.svelte";
-  import store from "./store";
+  import store from "./store.js";
 
   export let show = false;
   export let destinationCountry = "";
@@ -80,10 +80,10 @@
         />
         
         <div class="btn-wrapper">
-          <SubmitButton 
-            text="Read Guide Now" 
-            callback={handleSubmit} 
-            loading={isLoading} 
+          <SubmitButton
+            label="Read Guide Now"
+            callback={handleSubmit}
+            loading={isLoading}
             disabled={!isEmailValid}
           />
         </div>

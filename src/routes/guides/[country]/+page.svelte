@@ -6,6 +6,7 @@
   import CountryLayout from '../../../components/ui/CountryLayout.svelte';
   import CountryContentWrapper from '../../../components/ui/CountryContentWrapper.svelte';
   import LeadCaptureModal from '../../../components/LeadCaptureModal.svelte';
+  import { irpStaffIsAuthenticated, checkIrpStaff } from '../../../lib/auth/irpStaff.ts';
   import './guide.scss';
 
   export let data: { country: string; markdownContent: string };
@@ -17,9 +18,17 @@
   let hasAccess = false;
   let isCheckingAccess = true;
   
-  onMount(() => {
+  onMount(async () => {
+    // ─── IRP organization-agent bypass ────────────────────────────────────
+    // Staff signed into /dashboard skip the lead-capture wall by default
+    // and can re-open the modal on demand to assess the lead-capture
+    // mechanism (see floating "Audit lead capture" pill below + the
+    // `?audit=lead-capture` URL override).
+    const isStaff = await checkIrpStaff();
+
     const urlParams = new URLSearchParams(window.location.search);
     const accessOverride = urlParams.get('access') === 'true';
+    const auditParam = urlParams.get('audit');
     const emailParam = urlParams.get('email');
     
     if (emailParam) {
@@ -28,12 +37,18 @@
 
     const savedEmail = localStorage.getItem("userEmail");
     
-    if (!savedEmail && !accessOverride) {
-      showModal = true;
-    } else {
+    if (isStaff || savedEmail || accessOverride) {
       hasAccess = true;
+    } else {
+      showModal = true;
     }
-    
+
+    // Staff-only "audit mode" override — opens the modal even though the
+    // staff bypass is granting access, so an agent can inspect the form.
+    if (isStaff && auditParam === 'lead-capture') {
+      showModal = true;
+    }
+
     isCheckingAccess = false;
 
     // Parse markdown into HTML when component mounts
@@ -50,6 +65,16 @@
   
   // Format country name for display
   $: displayName = data.country.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  /**
+   * Staff-only: open the lead-capture modal so an organization agent can
+   * audit the wall behavior end-to-end without losing their access.
+   * `hasAccess` is left untouched so submitting the modal won't lock the
+   * page back down — the agent stays bypassed.
+   */
+  function openLeadCaptureAudit() {
+    showModal = true;
+  }
 </script>
 
 <svelte:head>
@@ -64,6 +89,23 @@
   heroUrl="https://images.pexels.com/photos/28376207/pexels-photo-28376207.jpeg"
 >
   <CountryContentWrapper>
+    <!--
+      Staff-only "Audit lead capture" pill. Per centralized auth contract:
+      visible only via `display: block` when the visitor is an IRP
+      organization agent (`$irpStaffIsAuthenticated === true`). Hidden
+      (`display: none`) for every other visitor. Lets agents re-open the
+      lead-capture modal on demand to assess the mechanism end-to-end.
+    -->
+    <button
+      type="button"
+      class="staff-audit-pill"
+      style="display: {$irpStaffIsAuthenticated ? 'block' : 'none'};"
+      title="Open the lead-capture modal to audit how it behaves for a real visitor."
+      on:click={openLeadCaptureAudit}
+    >
+      🔎 Audit lead capture
+    </button>
+
     {#if isCheckingAccess}
       <div class="skeleton-loader">
         <div class="skel-line title"></div>

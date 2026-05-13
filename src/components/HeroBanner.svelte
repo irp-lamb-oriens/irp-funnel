@@ -8,14 +8,14 @@
   export let imageAlt: string = "video-lightbox1b";
 </script>
 <div class="hero-banner">
-  <video
+  <!-- <video
     autoplay
     muted
     loop
     playsinline
     class="bg-video"
     src="https://www.pexels.com/download/video/7855756/"
-  ></video>
+  ></video> -->
   <VideoBanner
     videoUrl={videoUrl}
     videoPoster={imageUrl}
