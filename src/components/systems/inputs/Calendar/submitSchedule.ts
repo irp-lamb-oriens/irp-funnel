@@ -58,7 +58,7 @@ export async function submitScheduling(evoConsultationPriceVariant?: string) {
         );
       } else if (errorData.code === "outside_hours") {
         alert(
-          "This time is outside our consultation hours (Mon–Fri, 9 AM – 4 PM Costa Rica time). Please go back and pick another slot."
+          "This time is outside our consultation hours (Mon–Fri, 9 AM – 4 PM Standard Central Time). Please go back and pick another slot."
         );
       } else {
         alert(
