@@ -13,14 +13,15 @@
         'Female': 'Female'
     };
 
-    let currentSex = get(store).sex || '';
+    import { writable } from 'svelte/store';
+    let currentSexStore = writable(get(store).sex || '');
+    $: currentSex = $currentSexStore;
     $: isValid = !!currentSex; // Simpler check: any selection is valid
 
     // Update store whenever currentSex changes
-    function handleSexUpdate(event: CustomEvent<string>) {
-        currentSex = event.detail;
-        saveToStore({ sex: currentSex });
-    }
+    currentSexStore.subscribe(val => {
+        if (val) saveToStore({ sex: val });
+    });
 
     function handleNext() {
         if (isValid) {
@@ -45,8 +46,7 @@
         <div class="options-wrapper horizontal-options">
             <Options
                 options={sexOptions}
-                selectedValue={currentSex}
-                on:update={handleSexUpdate}
+                selected={currentSexStore}
                 groupName="sex-selection"
             />
         </div>

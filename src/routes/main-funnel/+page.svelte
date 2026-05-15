@@ -7,6 +7,7 @@ import { isScrollingDown, saveToStore } from "../../components/store.ts";
 import MainFunnel from "../../components/systems/steps/NewFunnel/MainFunnel.svelte";
 import { browser } from "$app/environment";
 import BgWrapper from "../../components/BgWrapper.svelte";
+import type { PageData } from './$types.js';
 
 export let data: PageData; // Receive data from load function
 

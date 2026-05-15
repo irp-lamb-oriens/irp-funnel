@@ -8,7 +8,7 @@
   export let onFocus: () => void = () => {};
   export let onBlur: () => void = () => {};
   export let onCountryChange: (code: string | null) => void = () => {};
-  export let inputElement: HTMLButtonElement;
+  export let inputElement: HTMLButtonElement | undefined = undefined;
   export let isValid = true;
   export let onUpdate: (val: string) => void = () => {};
 

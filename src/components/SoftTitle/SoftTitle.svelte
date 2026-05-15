@@ -10,8 +10,8 @@
     export let offset = 0;
     export let pushToRead = false;
     export let z = false;
-    let w = writable({});
-    let d = writable({});
+    let w = writable<Window | null>(null);
+    let d = writable<Document | null>(null);
     let random = writable("");
 
     onMount(() => {
@@ -36,10 +36,10 @@
     </h1>
 </div>
 <div style="z-index: 1; height: {
-    pushToRead ? 
+    pushToRead && $w && $d ? 
         (
             (offset / $w.innerHeight) + 
-            ($d?.getElementById?.(random)?.offsetWidth / $w.innerWidth) 
+            (($d.getElementById($random)?.offsetWidth || 0) / $w.innerWidth) 
             / scaleSpeed
         )
     : 0

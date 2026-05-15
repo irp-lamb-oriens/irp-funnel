@@ -41,7 +41,7 @@
     }
 
     const labels = rawData.map(
-      (item) => item.name || item.id || `Item ${index + 1}` || "Unknown"
+      (item, index) => item.name || item.id || `Item ${index + 1}` || "Unknown"
     ); // Improved fallback label
     const dataValues = rawData.map((item) => item.total || 0); // Default to 0 if total is missing/falsy
 
@@ -172,13 +172,14 @@
       chartInstance.data.datasets[0].label = yText; // Update dataset label
     }
     // Update scales
-    if (chartInstance.options?.scales?.x?.title) {
-      chartInstance.options.scales.x.title.text = xText;
-      chartInstance.options.scales.x.title.display = !!xText;
+    const scales: any = chartInstance.options?.scales;
+    if (scales?.x?.title) {
+      scales.x.title.text = xText;
+      scales.x.title.display = !!xText;
     }
-    if (chartInstance.options?.scales?.y?.title) {
-      chartInstance.options.scales.y.title.text = yText;
-      chartInstance.options.scales.y.title.display = !!yText;
+    if (scales?.y?.title) {
+      scales.y.title.text = yText;
+      scales.y.title.display = !!yText;
     }
     // Trigger chart update to reflect option changes
     chartInstance.update();

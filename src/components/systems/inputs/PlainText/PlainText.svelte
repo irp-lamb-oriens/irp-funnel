@@ -4,7 +4,7 @@
   // Props for the plain text input.
   export let value: string = "";
   export let placeholder: string = "";
-  export let inputElement: HTMLInputElement;
+  export let inputElement: HTMLInputElement | undefined = undefined;
   export let label: string = "";
   export let type: "text" | "password" | "email" | "number" | "tel" | "url" = "text"; // Add type prop
 

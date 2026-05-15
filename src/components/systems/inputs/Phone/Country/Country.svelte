@@ -17,7 +17,7 @@
   // Props
   export let countries: Country[] = countriesData;
   export let defaultCountryCode: string | null = null;
-  export let inputElement: HTMLButtonElement;
+  export let inputElement: HTMLButtonElement | undefined = undefined;
   export let label = "Country";
   export let onSelect: (selectedCode: string | null) => void = () => {};
 

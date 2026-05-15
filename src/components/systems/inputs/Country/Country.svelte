@@ -27,7 +27,7 @@
   let showInput = false;
   let dropdownRef: HTMLElement;
   let inputRef: HTMLInputElement;
-  export let buttonRef: HTMLButtonElement;
+  export let buttonRef: HTMLButtonElement | undefined = undefined;
   let listRef: HTMLUListElement;
   let listItems: Array<HTMLLIElement | null> = [];
 

@@ -14,6 +14,7 @@
   import CardFieldsAccordion from './CardFieldsAccordion.svelte';
   import CardHistory from './CardHistory.svelte';
   import EditableField from './EditableField.svelte';
+  import TranscriptPaster from './TranscriptPaster.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
 
   export let stageChanging: boolean;
@@ -483,9 +484,9 @@
             </div>
           {/if}
 
-          {#if $selectedClient.transcript}
-            <div class="detail-field detail-field--full">
-              <span class="detail-field__label">Call Transcript</span>
+          <div class="detail-field detail-field--full">
+            <span class="detail-field__label">Call Transcript</span>
+            {#if $selectedClient.transcript}
               <EditableField
                 clientId={$selectedClient.id}
                 path={`transcript`}
@@ -494,8 +495,9 @@
                 multiline
                 placeholder="No transcript"
               />
-            </div>
-          {/if}
+            {/if}
+            <TranscriptPaster clientId={$selectedClient.id} />
+          </div>
 
           <div class="detail-field">
             <span class="detail-field__label">Phone</span>

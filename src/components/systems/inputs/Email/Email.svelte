@@ -5,7 +5,7 @@
   // Props for the email input.
   export let value: string = "";
   export let placeholder: string = "Enter your email...";
-  export let inputElement: HTMLInputElement;
+  export let inputElement: HTMLInputElement | undefined = undefined;
   export let label: string = "";
   export let onEnter: () => void = () => {};
 
