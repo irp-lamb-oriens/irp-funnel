@@ -10,6 +10,7 @@
     requestOTP, verifyOTP, checkAuth, logout,
     fetchClients, fetchClientDetail, updateClientStage,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
+    initDashboardSocket, disconnectDashboardSocket,
     type Client
   } from './store.ts';
   import DetailPanel from './components/DetailPanel.svelte';
@@ -56,6 +57,7 @@
   });
 
   async function loadData() {
+    initDashboardSocket();
     await Promise.all([fetchClients(), fetchMetrics()]);
   }
 
@@ -87,6 +89,7 @@
   }
 
   function handleLogout() {
+    disconnectDashboardSocket();
     logout();
     loginStep = 'email';
     loginCode = '';
@@ -243,6 +246,25 @@
   }
 
   $: stageEntries = Object.entries(STAGE_LABELS);
+
+  const stageKeys = Object.keys(STAGE_LABELS);
+  const postTranscriptIdx = stageKeys.indexOf('sales_post_transcript');
+
+  function isMissingTranscript(client: Client): boolean {
+    const idx = stageKeys.indexOf(client.stage);
+    if (idx < postTranscriptIdx) return false;
+    return !client.transcript && !client.meetingNotes?.text;
+  }
+
+  function isNoShow(client: Client): boolean {
+    if (client.callOutcome === 'no_show') return true;
+    if (client.stage === 'sales_preconsultation' && client.scheduling?.length > 0) {
+      // If call date is past by more than 1 hour and they are still in preconsultation
+      const callTime = new Date(client.scheduling[0]).getTime();
+      return Date.now() > (callTime + 60 * 60 * 1000);
+    }
+    return false;
+  }
 </script>
 
 <svelte:head>
@@ -441,6 +463,7 @@
                 <div
                   class="card"
                   class:card--missing-name={!client.nameKnown}
+                  class:card--no-show={isNoShow(client)}
                   draggable="true"
                   on:dragstart={(e) => handleDragStart(e, client)}
                   on:click={() => openClientDetail(client)}
@@ -467,8 +490,13 @@
                       <span class="card__date">{formatDate(client.scheduling[0])}</span>
                     {/if}
                     {#if (client.agentNotes?.length || 0) + (client.chatbotNotes?.length || 0) > 0}
-                      <span class="card__notes-badge">
+                      <span class="card__notes-badge" title="Notes available">
                         📝 {(client.agentNotes?.length || 0) + (client.chatbotNotes?.length || 0)}
+                      </span>
+                    {/if}
+                    {#if isMissingTranscript(client)}
+                      <span class="card__notes-badge card__notes-badge--missing" title="Missing call transcript">
+                        ❌ Transcript
                       </span>
                     {/if}
                   </div>
@@ -510,6 +538,7 @@
               on:click={() => openClientDetail(client)}
               class="list-row list-grid-layout"
               class:list-row--missing-name={!client.nameKnown}
+              class:list-row--no-show={isNoShow(client)}
             >
               <div class="list-cell">
                 <div
@@ -528,6 +557,11 @@
                 <span class="stage-badge" style="background: {STAGE_COLORS[client.stage]}">
                   {STAGE_ICONS[client.stage]} {STAGE_LABELS[client.stage]}
                 </span>
+                {#if isMissingTranscript(client)}
+                  <span class="stage-badge stage-badge--missing" title="Missing call transcript" style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; margin-left: 6px;">
+                    ❌
+                  </span>
+                {/if}
               </div>
               <div class="list-cell" title={client.budget || '—'}>{client.budget || '—'}</div>
               <div class="list-cell" title={client.scheduling?.length ? formatDate(client.scheduling[0]) : '—'}>

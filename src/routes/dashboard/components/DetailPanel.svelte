@@ -8,6 +8,7 @@
     updateClientStage, addNote, triggerEmail, updateClientFields,
     fetchConversations, fetchClientActions, executeClientAction,
     extractInsights,
+    triggerConversationRefetch,
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
@@ -100,6 +101,10 @@
   let conversationsLoading = false;
   let currentSessionId = '';
 
+  $: if ($triggerConversationRefetch > 0 && detailTab === 'conversations' && $selectedClient) {
+    loadConversations($selectedClient.id, $selectedClient.email, true);
+  }
+
   // ── Actions State ──────────────────────────────────────────────────────────
   let actionsLoading = false;
   let actionsStage = '';
@@ -147,8 +152,8 @@
     }
   }
 
-  async function loadConversations(targetId: string, targetEmail?: string) {
-    conversationsLoading = true;
+  async function loadConversations(targetId: string, targetEmail?: string, isBackgroundRefresh = false) {
+    if (!isBackgroundRefresh) conversationsLoading = true;
     currentSessionId = targetId; 
     try {
       const result = await fetchConversations(targetId, targetEmail);

@@ -415,6 +415,12 @@ export const activeView = writable<'board' | 'list' | 'metrics' | 'evo'>('board'
 export const detailPanelOpen = writable<boolean>(false);
 
 /**
+ * Incrementing this store signals `DetailPanel.svelte` to re-fetch
+ * the live chat history if the Conversations tab is currently open.
+ */
+export const triggerConversationRefetch = writable<number>(0);
+
+/**
  * The id of the `sentEmails/{autoId}` snapshot currently shown in the
  * <EmailPreviewDrawer>. Setting it to a non-empty string opens the drawer
  * and triggers a fetch; setting it to `null` closes the drawer. Driven by
@@ -531,6 +537,108 @@ export function logout() {
   // Clearing the staff stores propagates to /dashboard, /status/[id], and
   // /guides simultaneously — staff are signed out everywhere at once.
   clearIrpStaff();
+}
+
+// ─── Socket ─────────────────────────────────────────────────────────────────
+let dashboardSocket: any = null;
+let reconnectInterval: any;
+let fetchTimeouts: Record<string, NodeJS.Timeout> = {};
+
+export async function initDashboardSocket() {
+  if (!browser || dashboardSocket) return;
+  const token = get(authToken);
+  const email = get(authEmail);
+  if (!token || !email) return;
+
+  try {
+    const { io } = await import('socket.io-client');
+    dashboardSocket = io(getApiUrl(), { path: '/socket-io' });
+
+    dashboardSocket.on('connect', () => {
+      console.log('[DASHBOARD SOCKET] Connected');
+      dashboardSocket.emit('dashboard_register', { email, token });
+    });
+
+    dashboardSocket.on('db_update', (data: any) => {
+      // Debounce logic
+      const { collection, document: docId, action, actorEmail } = data;
+      
+      if (collection === 'consultations') {
+        if (fetchTimeouts[docId]) clearTimeout(fetchTimeouts[docId]);
+        
+        fetchTimeouts[docId] = setTimeout(async () => {
+          // KEY-AWARE REFETCH: Avoid fetching the entire collection to prevent mass read spikes.
+          if (action === 'delete') {
+            clients.update(list => list.filter(c => c.id !== docId));
+            const selected = get(selectedClient);
+            if (selected && selected.id === docId) selectedClient.set(null);
+          } else {
+            // For 'post', 'put', 'patch', we fetch ONLY the single mutated document
+            try {
+              const freshClient = await apiFetch(`/api/dashboard/clients/${docId}`);
+              
+              clients.update(list => {
+                const exists = list.some(c => c.id === docId);
+                if (exists) {
+                  return list.map(c => c.id === docId ? { ...c, ...freshClient } : c);
+                } else {
+                  return [freshClient, ...list];
+                }
+              });
+
+              // Update the Detail Panel if it's currently showing this client
+              const selected = get(selectedClient);
+              if (selected && selected.id === docId) {
+                selectedClient.set(freshClient);
+              }
+            } catch (err) {
+              console.error(`Failed to selectively refetch client ${docId}`, err);
+            }
+          }
+
+          // Only fetch expensive collection-scanning metrics if the user is actively staring at the Metrics tab.
+          if (get(activeView) === 'metrics') {
+            await fetchMetrics();
+          }
+
+          delete fetchTimeouts[docId];
+        }, 500);
+      } 
+      else if (collection === 'irp_chatbot_threads') {
+        // 4. Live Chat History Update
+        if (fetchTimeouts['chatbot_threads']) clearTimeout(fetchTimeouts['chatbot_threads']);
+        fetchTimeouts['chatbot_threads'] = setTimeout(() => {
+          triggerConversationRefetch.update(n => n + 1);
+          delete fetchTimeouts['chatbot_threads'];
+        }, 300);
+      }
+      else if (collection.startsWith('evo_')) {
+        // 5. Live Evolutionary UI Update
+        if (fetchTimeouts['evo']) clearTimeout(fetchTimeouts['evo']);
+        fetchTimeouts['evo'] = setTimeout(async () => {
+          if (get(activeView) === 'evo') {
+            const evoStore = await import('./components/evo/evoStore.ts');
+            await Promise.all([evoStore.fetchTimeline(), evoStore.fetchLeaderboard()]);
+          }
+          delete fetchTimeouts['evo'];
+        }, 500);
+      }
+    });
+
+    dashboardSocket.on('disconnect', () => {
+      console.log('[DASHBOARD SOCKET] Disconnected');
+    });
+
+  } catch (err) {
+    console.error('Failed to init dashboard socket', err);
+  }
+}
+
+export function disconnectDashboardSocket() {
+  if (dashboardSocket) {
+    dashboardSocket.disconnect();
+    dashboardSocket = null;
+  }
 }
 
 // ─── Data actions ───────────────────────────────────────────────────────────

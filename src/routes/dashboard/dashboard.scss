@@ -725,6 +725,19 @@ $t-slow: 400ms $ease-out;
     color: $text-muted;
     font-weight: 600;
   }
+
+  &--no-show {
+    background: linear-gradient(to right, rgba(254, 226, 226, 0.4), transparent);
+    border-left: 3px solid #ef4444;
+    
+    &:hover {
+      background: linear-gradient(to right, rgba(254, 226, 226, 0.7), rgba(254, 226, 226, 0.2));
+    }
+
+    .list-row__name {
+      color: #7f1d1d;
+    }
+  }
 }
 
 
