@@ -810,10 +810,12 @@ export async function editField(
   value: unknown,
   expectedOldValue?: unknown,
 ): Promise<EditFieldResult> {
+  console.log('[store.ts] editField called', { id, path, value, expectedOldValue });
   const data = await apiFetch(`/api/dashboard/clients/${id}/field`, {
     method: 'PATCH',
     body: JSON.stringify({ path, value, expectedOldValue }),
   });
+  console.log('[store.ts] apiFetch returned', data);
 
   // Optimistically reflect the change in the local store. The server is
   // the source of truth, but doing this here avoids a full re-fetch round-

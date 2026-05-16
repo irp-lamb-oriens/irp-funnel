@@ -1,4 +1,5 @@
 <script lang="ts">
+  console.log("TranscriptPaster.svelte component loaded");
   import { editField } from '../store.ts';
   import { toasts } from '../toastStore.ts';
 
@@ -38,29 +39,51 @@
   }
 
   async function handleSave() {
-    if (!rawText.trim()) return;
+    console.log('[TranscriptPaster] handleSave triggered', { clientId, parserType, rawTextLength: rawText.length });
+    if (!rawText.trim()) {
+      console.log('[TranscriptPaster] No text, aborting.');
+      return;
+    }
     parsing = true;
     try {
+      const notesPayload = {
+        text: rawText,
+        source: 'manual_paste',
+        fetchedAt: new Date().toISOString(),
+      };
+      console.log('[TranscriptPaster] Preparing to save notes payload:', notesPayload);
+
       if (parserType === 'happyscribe') {
+        console.log('[TranscriptPaster] Parsing as HappyScribe format...');
         const segments = parseHappyScribe(rawText);
         if (segments.length === 0) {
+          console.error('[TranscriptPaster] No segments parsed from HappyScribe format.');
           toasts.error('No segments parsed. Check format.');
           parsing = false;
           return;
         }
+        console.log(`[TranscriptPaster] Parsed ${segments.length} segments.`);
         
-        // Update both transcript and chatHistory
-        await editField(clientId, 'transcript', rawText);
+        // Update both lastCalendarEvent.notes and chatHistory
+        await editField(clientId, 'lastCalendarEvent.notes', notesPayload);
+        console.log('[TranscriptPaster] editField call for lastCalendarEvent.notes completed.');
         await editField(clientId, 'chatHistory', segments);
-        toasts.success(`Parsed ${segments.length} messages and saved.`);
+        console.log('[TranscriptPaster] editField call for chatHistory completed.');
+        toasts.success(`Parsed ${segments.length} messages and saved to centralized notes.`);
       } else {
-        await editField(clientId, 'transcript', rawText);
-        toasts.success('Raw transcript saved.');
+        // Just update lastCalendarEvent.notes for raw text
+        console.log('[TranscriptPaster] Saving as raw text...');
+        await editField(clientId, 'lastCalendarEvent.notes', notesPayload);
+        console.log('[TranscriptPaster] editField call for lastCalendarEvent.notes completed.');
+        toasts.success('Raw transcript saved to centralized notes.');
       }
       rawText = '';
+      console.log('[TranscriptPaster] Save successful, rawText cleared.');
     } catch (e: any) {
+      console.error('[TranscriptPaster] Error in handleSave:', e);
       toasts.error(e.message || 'Failed to save transcript');
     } finally {
+      console.log('[TranscriptPaster] handleSave finished.');
       parsing = false;
     }
   }
