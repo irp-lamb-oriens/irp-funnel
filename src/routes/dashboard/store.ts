@@ -428,6 +428,29 @@ export const triggerConversationRefetch = writable<number>(0);
  */
 export const selectedSentEmailId = writable<string | null>(null);
 
+/**
+ * Pre-send preview state — populated by the Emails tab when the operator
+ * clicks "Preview & Send". When non-null, EmailPreviewDrawer enters
+ * "pre-send mode": shows the rendered email with an editable body and a
+ * Send/Cancel footer instead of the historical engagement view.
+ * Setting back to `null` closes the pre-send drawer.
+ */
+export interface PresendEmailData {
+  /** The client doc-id (used for the trigger-email call on confirm). */
+  clientId: string;
+  /** The email type key, e.g. "pre_call_confirmation". */
+  emailType: string;
+  /** Email address the message will go to. */
+  clientEmail: string;
+  /** Rendered subject line from the preview endpoint. */
+  subject: string;
+  /** Fully-rendered HTML body from the preview endpoint. */
+  bodyHtml: string;
+  /** Template context dict — shown in the collapsible context panel. */
+  context: Record<string, unknown>;
+}
+export const presendEmail = writable<PresendEmailData | null>(null);
+
 // Note: localStorage persistence for `authToken` / `authEmail` is owned by
 // `$lib/auth/irpStaff` (the underlying source of truth). No duplicate
 // subscriptions needed here.
@@ -764,9 +787,24 @@ export interface ActionSchemaForClient {
 
 export type ClientActionsPayload = Record<string, ActionSchemaForClient>;
 
-export async function fetchClientActions(id: string): Promise<{ stage: string; actions: ClientActionsPayload }> {
+export async function fetchClientActions(id: string): Promise<{ stage: string; clientStage: string; actions: ClientActionsPayload }> {
   const data = await apiFetch(`/api/dashboard/clients/${id}/actions`);
-  return { stage: data.stage || '', actions: data.actions || {} };
+  return { stage: data.stage || '', clientStage: data.clientStage || data.stage || '', actions: data.actions || {} };
+}
+
+/**
+ * Fetch actions for a specific pipeline stage (cross-stage selector).
+ * Pass `stage` to override which stage's actions are returned; the client's
+ * real stage (`clientStage`) is always echoed back for indicator rendering.
+ */
+export async function fetchClientActionsForStage(
+  id: string,
+  stage: string,
+): Promise<{ stage: string; clientStage: string; actions: ClientActionsPayload }> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${id}/actions?stage=${encodeURIComponent(stage)}`,
+  );
+  return { stage: data.stage || stage, clientStage: data.clientStage || '', actions: data.actions || {} };
 }
 
 export async function executeClientAction(
@@ -965,4 +1003,48 @@ export interface SentEmailSnapshot {
 export async function fetchSentEmail(id: string): Promise<SentEmailSnapshot> {
   const data = await apiFetch(`/api/dashboard/sent-emails/${id}`);
   return data as SentEmailSnapshot;
+}
+
+// ─── Email pre-send preview ───────────────────────────────────────────────
+
+export interface EmailPreviewResult {
+  emailType: string;
+  subject: string;
+  bodyHtml: string;
+  context: Record<string, unknown>;
+  clientEmail: string;
+}
+
+/**
+ * Fetch a rendered email preview WITHOUT sending it.
+ * Calls GET /api/dashboard/clients/:id/email-preview?type=<emailType>.
+ * Used by the Emails tab "Preview & Send" two-step flow.
+ */
+export async function fetchEmailPreview(
+  id: string,
+  emailType: string,
+): Promise<EmailPreviewResult> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${id}/email-preview?type=${encodeURIComponent(emailType)}`,
+  );
+  return data as EmailPreviewResult;
+}
+
+/**
+ * Send an email with optional edit attribution metadata.
+ * Backward-compatible: calling without editMeta behaves exactly like
+ * the original `triggerEmail()`.
+ *
+ * @param editMeta  - `{ editedBy, editedAt }` when the operator modified the
+ *                    body in the pre-send preview before confirming.
+ */
+export async function triggerEmailWithEdit(
+  id: string,
+  emailType: string,
+  editMeta?: { editedBy: string; editedAt: string },
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${id}/trigger-email`, {
+    method: 'POST',
+    body: JSON.stringify({ emailType, ...(editMeta ? { editMeta } : {}) }),
+  });
 }

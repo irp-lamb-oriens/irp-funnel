@@ -5,8 +5,12 @@
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES,
     SHIPPING_MODE_LABEL, PACKING_TIER_LABEL,
     selectedSentEmailId,
+    presendEmail,
+    authEmail,
     updateClientStage, addNote, triggerEmail, updateClientFields,
-    fetchConversations, fetchClientActions, executeClientAction,
+    fetchConversations, fetchClientActions, fetchClientActionsForStage,
+    executeClientAction,
+    fetchEmailPreview,
     extractInsights,
     triggerConversationRefetch,
   } from '../store.ts';
@@ -108,11 +112,19 @@
   // ── Actions State ──────────────────────────────────────────────────────────
   let actionsLoading = false;
   let actionsStage = '';
+  /** The client's real pipeline stage — used for the "current stage" badge. */
+  let actionsClientStage = '';
+  /** The stage currently shown in the cross-stage selector (defaults to client's stage). */
+  let selectedActionsStage = '';
   let actionsPayload: ClientActionsPayload = {};
   let expandedAction: string | null = null;
   let actionFormValues: Record<string, Record<string, any>> = {};
   let actionExecuting: Record<string, boolean> = {};
   let actionsLoadedForId = '';
+
+  // ── Email pre-send state ───────────────────────────────────────────────────
+  /** True while fetching the email preview from the backend. */
+  let emailPreviewing = false;
 
   // ── Activity Log State ─────────────────────────────────────────────────────
   let activitySearch = '';
@@ -180,23 +192,83 @@
     actionsLoading = true;
     actionsLoadedForId = clientId;
     try {
-      const { stage, actions } = await fetchClientActions(clientId);
+      const { stage, clientStage, actions } = await fetchClientActions(clientId);
       actionsStage = stage;
+      actionsClientStage = clientStage || stage;
+      // Default the selector to the client's current stage on first load
+      if (!selectedActionsStage) selectedActionsStage = actionsClientStage;
       actionsPayload = actions || {};
-      
-      // Initialize form values from defaults
-      actionFormValues = {};
-      for (const [actionKey, schema] of Object.entries(actionsPayload)) {
-        actionFormValues[actionKey] = {};
-        for (const [argKey, argSchema] of Object.entries(schema.args || {})) {
-          actionFormValues[actionKey][argKey] = argSchema.defaultValue ?? '';
-        }
-      }
+      initActionFormValues();
     } catch (err: any) {
       actionsPayload = {};
       toasts.error('Failed to load actions: ' + err.message);
     } finally {
       actionsLoading = false;
+    }
+  }
+
+  /**
+   * Load actions for a specific stage (cross-stage selector).
+   * Called when the operator changes the stage dropdown in the Actions tab.
+   */
+  async function loadActionsForSelectedStage(stage: string) {
+    if (!$selectedClient) return;
+    actionsLoading = true;
+    expandedAction = null;
+    try {
+      const { actions } = await fetchClientActionsForStage($selectedClient.id, stage);
+      actionsStage = stage;
+      actionsPayload = actions || {};
+      initActionFormValues();
+    } catch (err: any) {
+      actionsPayload = {};
+      toasts.error('Failed to load actions: ' + err.message);
+    } finally {
+      actionsLoading = false;
+    }
+  }
+
+  function initActionFormValues() {
+    actionFormValues = {};
+    for (const [actionKey, schema] of Object.entries(actionsPayload)) {
+      actionFormValues[actionKey] = {};
+      for (const [argKey, argSchema] of Object.entries(schema.args || {})) {
+        actionFormValues[actionKey][argKey] = argSchema.defaultValue ?? '';
+      }
+    }
+  }
+
+  /** Handle cross-stage selector change. */
+  async function handleActionsStageChange(e: Event) {
+    const newStage = (e.target as HTMLSelectElement).value;
+    selectedActionsStage = newStage;
+    await loadActionsForSelectedStage(newStage);
+  }
+
+  /**
+   * Email pre-send preview — Step 1 of the 2-step send flow.
+   * Fetches a rendered preview of the email from the backend and opens
+   * the EmailPreviewDrawer in pre-send mode instead of firing immediately.
+   */
+  async function handlePreviewEmail() {
+    if (!selectedEmailType || !$selectedClient) return;
+    emailPreviewing = true;
+    emailSentMessage = '';
+    try {
+      const preview = await fetchEmailPreview($selectedClient.id, selectedEmailType);
+      presendEmail.set({
+        clientId: $selectedClient.id,
+        emailType: selectedEmailType,
+        clientEmail: preview.clientEmail,
+        subject: preview.subject,
+        bodyHtml: preview.bodyHtml,
+        context: preview.context,
+      });
+      // Don't reset selectedEmailType here — let the user decide in the drawer
+    } catch (err: any) {
+      toasts.error(`Couldn't load preview: ${err?.message ?? err}`);
+    } finally {
+      emailPreviewing = false;
     }
   }
 
@@ -920,6 +992,26 @@
                 {STAGE_ICONS[$selectedClient.stage] || '⚡'} {STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}
               </span>
               <span class="actions-tab__count">{Object.keys(actionsPayload).length} action{Object.keys(actionsPayload).length !== 1 ? 's' : ''}</span>
+              <!-- ── Cross-stage selector ──────────────────────────────────── -->
+              <div class="actions-tab__stage-selector-wrap" title="Run actions from any pipeline stage">
+                <label class="actions-tab__stage-selector-label" for="actions-stage-select">Stage:</label>
+                <select
+                  id="actions-stage-select"
+                  class="actions-tab__stage-select"
+                  value={selectedActionsStage}
+                  on:change={handleActionsStageChange}
+                  disabled={actionsLoading}
+                >
+                  {#each Object.entries(STAGE_LABELS) as [stageKey, stageLabel]}
+                    <option value={stageKey}>{stageLabel}</option>
+                  {/each}
+                </select>
+                {#if selectedActionsStage && selectedActionsStage !== actionsClientStage}
+                  <span class="actions-tab__cross-stage-hint" title="Showing actions from a different stage">
+                    ↔ cross-stage
+                  </span>
+                {/if}
+              </div>
             </div>
 
             <div class="actions-tab__list">
@@ -1198,12 +1290,19 @@
                   <option value={et.value}>{et.label}</option>
                 {/each}
               </select>
+              <!-- ── 2-step flow: "Preview & Send" opens the pre-send drawer ── -->
               <button
-                class="detail-emails__btn"
-                disabled={emailSending || !selectedEmailType}
-                on:click={handleTriggerEmail}
+                class="detail-emails__btn detail-emails__btn--preview"
+                disabled={emailPreviewing || !selectedEmailType}
+                on:click={handlePreviewEmail}
+                title="Preview the rendered email before it's sent"
               >
-                {emailSending ? 'Sending…' : 'Send Email'}
+                {#if emailPreviewing}
+                  <span class="actions-card__spinner"></span>
+                  Loading…
+                {:else}
+                  👁 Preview & Send
+                {/if}
               </button>
             </div>
             {#if emailSentMessage}

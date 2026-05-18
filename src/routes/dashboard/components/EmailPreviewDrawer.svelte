@@ -3,44 +3,81 @@
    * EmailPreviewDrawer.svelte
    * ────────────────────────────────────────────────────────────────────────
    *
-   *  A right-edge slide-over that shows the actual content of a single
-   *  `sentEmails` snapshot — subject + bodyHtml in a sandboxed iframe,
-   *  template version chip, Evo variant chips, the full context dict
-   *  (collapsible), engagement placeholders, and a "this is a reconstructed
-   *  render" caveat for backfilled rows.
+   *  Dual-mode right-edge slide-over:
+   *
+   *  MODE 1 — Historical view (default, unchanged)
+   *    Driven by `selectedSentEmailId` store. Shows the rendered email the
+   *    customer actually received: subject, bodyHtml in sandboxed iframe,
+   *    template version chip, Evo variant chips, engagement placeholders,
+   *    and collapsible context table.
+   *
+   *  MODE 2 — Pre-send preview (new)
+   *    Driven by `presendEmail` store. Shows a draft email BEFORE it's sent:
+   *    same iframe preview, plus an editable body textarea (toggle between
+   *    edit/preview), edit attribution note, and Send / Cancel footer.
+   *    Setting `presendEmail` to null closes this mode.
+   *
+   *  The two modes are mutually exclusive. Pre-send takes priority if both
+   *  stores are simultaneously non-null (shouldn't happen in practice).
    *
    *  Why a sandboxed iframe?
    *  ───────────────────────
-   *  Email HTML carries its own inline CSS (sometimes very aggressive
-   *  global resets) which would destroy the dashboard's typography if we
-   *  injected it directly with `{@html}`. The iframe with sandbox="" gives
-   *  us total style + script isolation; we just hand it `srcdoc=…` and let
-   *  it render natively.
-   *
-   *  Open/close model
-   *  ────────────────
-   *  Driven by a Svelte store `selectedSentEmailId` (defined in store.ts).
-   *  Setting it to a string opens the drawer; setting it to null closes it.
-   *  This component fetches lazily — only when there's an id, only once
-   *  per id — so opening the drawer is instant after first load.
+   *  Email HTML carries aggressive global CSS resets. The iframe + sandbox=""
+   *  gives us total style isolation; we hand it `srcdoc` and let it render.
    */
 
   import { onMount } from 'svelte';
-  import { selectedSentEmailId, fetchSentEmail } from '../store.ts';
+  import {
+    selectedSentEmailId,
+    presendEmail,
+    fetchSentEmail,
+    triggerEmailWithEdit,
+    authEmail,
+    EMAIL_TYPES,
+  } from '../store.ts';
   import type { SentEmailSnapshot } from '../store.ts';
+  import { toasts } from '../toastStore.ts';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
-  import { EMAIL_TYPES } from '../store.ts';
 
+  // ── Historical mode state ────────────────────────────────────────────────
   let snapshot: SentEmailSnapshot | null = null;
   let loading = false;
   let error = '';
   let showContext = false;
   let lastFetchedId = '';
 
-  // Reactive: when the store flips to a new id, fetch it.
-  $: if ($selectedSentEmailId && $selectedSentEmailId !== lastFetchedId) {
+  // ── Pre-send mode state ──────────────────────────────────────────────────
+  /** Whether the operator has switched to the HTML edit textarea. */
+  let editMode = false;
+  /** Editable copy of the body HTML (starts as the original, operator may change it). */
+  let editableBody = '';
+  /** True once the operator has actually changed the body text. */
+  let wasEdited = false;
+  /** Original body at the time the drawer opened (for dirty check). */
+  let originalBody = '';
+  /** Sending in progress. */
+  let sending = false;
+
+  // ── Derived: which mode are we in? ──────────────────────────────────────
+  $: isPresendMode = !!$presendEmail;
+  $: isHistoricalMode = !isPresendMode && !!$selectedSentEmailId;
+
+  // ── Historical mode: fetch on id change ─────────────────────────────────
+  $: if ($selectedSentEmailId && $selectedSentEmailId !== lastFetchedId && !isPresendMode) {
     loadSnapshot($selectedSentEmailId);
   }
+
+  // ── Pre-send mode: initialise editable state when drawer opens ───────────
+  $: if ($presendEmail) {
+    editableBody = $presendEmail.bodyHtml;
+    originalBody = $presendEmail.bodyHtml;
+    wasEdited = false;
+    editMode = false;
+    showContext = false;
+  }
+
+  // ── Track dirty edits ────────────────────────────────────────────────────
+  $: wasEdited = editableBody !== originalBody;
 
   async function loadSnapshot(id: string) {
     lastFetchedId = id;
@@ -56,28 +93,57 @@
     }
   }
 
-  function close() {
+  // ── Close handlers ───────────────────────────────────────────────────────
+  function closeHistorical() {
     selectedSentEmailId.set(null);
-    // Don't reset `snapshot` here — the slide-out animation looks weird if
-    // the content vanishes mid-animation. Reset on next open instead.
   }
 
+  function closePresend() {
+    presendEmail.set(null);
+    editMode = false;
+    editableBody = '';
+    originalBody = '';
+    wasEdited = false;
+    sending = false;
+  }
+
+  function close() {
+    if (isPresendMode) closePresend();
+    else closeHistorical();
+  }
+
+  // ── Send handler (pre-send mode) ─────────────────────────────────────────
+  async function handleSend() {
+    if (!$presendEmail) return;
+    sending = true;
+    try {
+      const editMeta = wasEdited
+        ? { editedBy: $authEmail || 'unknown', editedAt: new Date().toISOString() }
+        : undefined;
+      await triggerEmailWithEdit($presendEmail.clientId, $presendEmail.emailType, editMeta);
+      toasts.success(
+        `✓ ${emailTypeLabel($presendEmail.emailType)} queued for ${$presendEmail.clientEmail}${wasEdited ? ' (edited)' : ''}`
+      );
+      closePresend();
+    } catch (err: any) {
+      toasts.error(`Send failed: ${err?.message ?? err}`);
+    } finally {
+      sending = false;
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
   function emailTypeLabel(t: string): string {
     return (EMAIL_TYPES.find((e) => e.value === t)?.label) || t || 'Email';
   }
 
-  /**
-   * Build the iframe `srcdoc` content. We wrap the email body in a minimal
-   * `<html>` doctype + UTF-8 meta + base styles so emails that rely on
-   * doctype quirks render the same way the customer saw them.
-   */
   function buildIframeSrcDoc(html: string): string {
     return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><base target="_blank"></head><body style="margin:0;padding:0;background:#f5f6f7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">${html}</body></html>`;
   }
 
-  // Close on Escape
+  // ── Keyboard: Escape closes ──────────────────────────────────────────────
   function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape' && $selectedSentEmailId) close();
+    if (e.key === 'Escape' && (isPresendMode || isHistoricalMode)) close();
   }
   onMount(() => {
     window.addEventListener('keydown', handleKey);
@@ -85,13 +151,153 @@
   });
 </script>
 
-{#if $selectedSentEmailId}
+<!-- ════════════════════════════════════════════════════════════════════════
+     PRE-SEND MODE
+     ════════════════════════════════════════════════════════════════════════ -->
+{#if $presendEmail}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="email-preview-overlay" on:click={close} role="presentation"></div>
+  <div class="email-preview-overlay" on:click={closePresend} role="presentation"></div>
+  <aside class="email-preview-drawer email-preview-drawer--presend" role="dialog" aria-label="Pre-send email preview">
+
+    <header class="email-preview-drawer__header">
+      <button class="email-preview-drawer__close" on:click={closePresend} aria-label="Cancel pre-send preview">✕</button>
+
+      <div class="email-preview-drawer__title-row">
+        <span class="email-preview-drawer__icon" aria-hidden="true">✍️</span>
+        <h2 class="email-preview-drawer__title">Review before sending</h2>
+        <span class="email-preview-drawer__badge email-preview-drawer__badge--presend">PREVIEW</span>
+      </div>
+
+      <div class="email-preview-drawer__meta">
+        <span><strong>To:</strong> {$presendEmail.clientEmail}</span>
+        <span class="email-preview-drawer__meta-dot">·</span>
+        <span class="email-preview-drawer__meta-type">{emailTypeLabel($presendEmail.emailType)}</span>
+      </div>
+
+      <div class="email-preview-drawer__subject">{$presendEmail.subject}</div>
+
+      <!-- Edit / Preview toggle -->
+      <div class="email-preview-drawer__presend-toolbar">
+        <button
+          type="button"
+          class="email-preview-drawer__toggle-btn"
+          class:email-preview-drawer__toggle-btn--active={!editMode}
+          on:click={() => (editMode = false)}
+        >
+          👁 Preview
+        </button>
+        <button
+          type="button"
+          class="email-preview-drawer__toggle-btn"
+          class:email-preview-drawer__toggle-btn--active={editMode}
+          on:click={() => (editMode = true)}
+        >
+          ✏️ Edit HTML
+        </button>
+        {#if wasEdited}
+          <span class="email-preview-drawer__edit-attribution">
+            ✍️ Modified by {$authEmail?.split('@')[0] || 'you'}
+          </span>
+        {/if}
+      </div>
+    </header>
+
+    <!-- Body: iframe preview or textarea editor -->
+    <section class="email-preview-drawer__body">
+      {#if editMode}
+        <textarea
+          class="email-preview-drawer__editable-body"
+          bind:value={editableBody}
+          aria-label="Email HTML body — edit before sending"
+          spellcheck="false"
+        ></textarea>
+      {:else}
+        <iframe
+          class="email-preview-drawer__iframe"
+          title="Email preview"
+          srcdoc={buildIframeSrcDoc(editableBody)}
+          sandbox="allow-same-origin allow-popups"
+        ></iframe>
+      {/if}
+    </section>
+
+    <!-- Context (collapsible) -->
+    <section class="email-preview-drawer__context">
+      <button
+        type="button"
+        class="email-preview-drawer__context-toggle"
+        on:click={() => (showContext = !showContext)}
+        aria-expanded={showContext}
+      >
+        {showContext ? '▾' : '▸'} Template context
+        ({Object.keys($presendEmail.context || {}).length} fields)
+      </button>
+      {#if showContext}
+        <table class="email-preview-drawer__context-table">
+          <tbody>
+            {#each Object.entries($presendEmail.context || {}) as [k, v]}
+              <tr>
+                <th scope="row">{k}</th>
+                <td>
+                  {#if v === null || v === undefined}
+                    <span class="email-preview-drawer__context-nullish">—</span>
+                  {:else if typeof v === 'object'}
+                    <code class="email-preview-drawer__context-mono">{JSON.stringify(v)}</code>
+                  {:else}
+                    {String(v)}
+                  {/if}
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
+    </section>
+
+    <!-- Sticky footer with Send / Cancel -->
+    <footer class="email-preview-drawer__footer">
+      {#if wasEdited}
+        <p class="email-preview-drawer__footer-attribution">
+          ✍️ Edited by <strong>{$authEmail || 'you'}</strong> — edit will be logged on send
+        </p>
+      {/if}
+      <div class="email-preview-drawer__footer-actions">
+        <button
+          type="button"
+          class="email-preview-drawer__footer-cancel"
+          on:click={closePresend}
+          disabled={sending}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="email-preview-drawer__footer-send"
+          on:click={handleSend}
+          disabled={sending}
+        >
+          {#if sending}
+            <span class="actions-card__spinner"></span>
+            Sending…
+          {:else}
+            📤 Send Email
+          {/if}
+        </button>
+      </div>
+    </footer>
+  </aside>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     HISTORICAL MODE (unchanged from original)
+     ════════════════════════════════════════════════════════════════════════ -->
+{:else if $selectedSentEmailId}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="email-preview-overlay" on:click={closeHistorical} role="presentation"></div>
   <aside class="email-preview-drawer" role="dialog" aria-label="Email preview">
     <header class="email-preview-drawer__header">
-      <button class="email-preview-drawer__close" on:click={close} aria-label="Close email preview">✕</button>
+      <button class="email-preview-drawer__close" on:click={closeHistorical} aria-label="Close email preview">✕</button>
       {#if loading}
         <h2 class="email-preview-drawer__title email-preview-drawer__title--loading">Loading…</h2>
       {:else if error}
@@ -139,7 +345,7 @@
     </header>
 
     {#if snapshot && !loading && !error}
-      <!-- ── Email body in sandboxed iframe ─────────────────────────────── -->
+      <!-- Email body in sandboxed iframe -->
       <section class="email-preview-drawer__body">
         <iframe
           class="email-preview-drawer__iframe"
@@ -149,7 +355,7 @@
         ></iframe>
       </section>
 
-      <!-- ── Engagement placeholders (Phase-5 will populate) ────────────── -->
+      <!-- Engagement placeholders -->
       <section class="email-preview-drawer__engagement">
         <h3 class="email-preview-drawer__h3">Engagement</h3>
         <div class="email-preview-drawer__engagement-grid">
@@ -175,7 +381,7 @@
         </p>
       </section>
 
-      <!-- ── Context (collapsible) ──────────────────────────────────────── -->
+      <!-- Context (collapsible) -->
       <section class="email-preview-drawer__context">
         <button
           type="button"
