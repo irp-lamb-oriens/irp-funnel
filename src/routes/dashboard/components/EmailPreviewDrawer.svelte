@@ -120,7 +120,13 @@
       const editMeta = wasEdited
         ? { editedBy: $authEmail || 'unknown', editedAt: new Date().toISOString() }
         : undefined;
-      await triggerEmailWithEdit($presendEmail.clientId, $presendEmail.emailType, editMeta);
+      // Pass suggestionId when present so the backend can clear the suggestion atomically
+      await triggerEmailWithEdit(
+        $presendEmail.clientId,
+        $presendEmail.emailType,
+        editMeta,
+        $presendEmail.suggestionId,
+      );
       toasts.success(
         `✓ ${emailTypeLabel($presendEmail.emailType)} queued for ${$presendEmail.clientEmail}${wasEdited ? ' (edited)' : ''}`
       );

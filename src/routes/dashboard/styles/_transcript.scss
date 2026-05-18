@@ -1,0 +1,130 @@
+// ── Transcript renderer (the gem) ─────────────────────────────────────────
+//
+//  This is the centerpiece — operators want to FEEL the conversation, not
+//  read it. We split each Gemini-style "Speaker: text" line into a chat-bubble
+//  row and colour the agent's turns differently from the customer's. The
+//  whole block is collapsible because transcripts can be 50+KB.
+.fields-viewer__transcript {
+  border: 1px solid rgba($accent, 0.20);
+  border-radius: $r-md;
+  background: linear-gradient(180deg, $surface 0%, rgba($accent, 0.02) 100%);
+  overflow: hidden;
+}
+.fields-viewer__transcript-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: $sp-2;
+  padding: $sp-2 $sp-3;
+  background: linear-gradient(90deg, rgba($accent, 0.06), rgba($accent, 0.02));
+  border: none;
+  border-bottom: 1px solid rgba($accent, 0.15);
+  cursor: pointer;
+  font-family: $font;
+  text-align: left;
+  transition: background 140ms $ease-out;
+  &:hover {
+    background: linear-gradient(90deg, rgba($accent, 0.10), rgba($accent, 0.04));
+  }
+  &--open { border-bottom-color: rgba($accent, 0.25); }
+}
+.fields-viewer__transcript-icon {
+  font-size: 12px;
+  color: $accent;
+  width: 18px;
+  text-align: center;
+  font-weight: 700;
+}
+.fields-viewer__transcript-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: $accent-hover;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fields-viewer__transcript-stats {
+  font-size: 11px;
+  color: $text-muted;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fields-viewer__transcript-preface {
+  margin: 0;
+  padding: $sp-2 $sp-4;
+  background: $surface-2;
+  border-bottom: 1px solid $border;
+  font-size: 12px;
+  color: $text-muted;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  font-style: italic;
+}
+.fields-viewer__transcript-turns {
+  list-style: none;
+  margin: 0;
+  padding: $sp-3 $sp-4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 480px;
+  overflow-y: auto;
+  // Native-ish thin scrollbar; matches the conversations panel.
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 3px; }
+}
+.fields-viewer__transcript-turn {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: $sp-3;
+  padding: 6px 8px;
+  border-radius: $r-sm;
+  background: $surface;
+  border: 1px solid transparent;
+  transition: background 120ms $ease-out, border-color 120ms $ease-out;
+
+  &:hover {
+    background: $surface-2;
+    border-color: $border;
+  }
+
+  // Agent turns get the brand-teal accent so operators can see "ours" vs
+  // "theirs" at a glance, like a chat app.
+  &--agent {
+    background: rgba($accent, 0.06);
+    .fields-viewer__transcript-speaker {
+      color: $accent-hover;
+      font-weight: 700;
+    }
+  }
+}
+.fields-viewer__transcript-speaker {
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: start;
+  padding-top: 2px;
+}
+.fields-viewer__transcript-text {
+  font-size: 13px;
+  color: $text;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.fields-viewer__transcript-footer {
+  margin: 0;
+  padding: $sp-2 $sp-4;
+  background: $surface-2;
+  border-top: 1px solid $border;
+  font-size: 11px;
+  color: $text-dim;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+

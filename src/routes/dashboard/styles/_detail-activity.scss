@@ -1,0 +1,466 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _detail-activity.scss — Activity Tab + CardHistory Component
+   ───────────────────────────────────────────────────────────────────────────
+
+   DESIGN LANGUAGE
+   ━━━━━━━━━━━━━━
+   • Vertical timeline connector — subtle gradient line linking events
+   • Left-border accent coded by event category (stage / email / note / etc.)
+   • Soft glassmorphic row cards with micro-lift on hover
+   • Actor rendered as a teal initials pill
+   • Undo pill: spring-bounce on hover, danger-coloured
+   • Entry animation: staggered fade + slide-up per row
+   • Empty state: large icon + helpful description
+   • "Show more" uses a dashed pill that fills on hover
+
+   CSS VAR TREE  (inherits from :root --irp-* — see _tokens.scss)
+   ━━━━━━━━━━━━
+   :root  --irp-accent / --irp-danger / --irp-surface / …
+     └─ .card-history   --ch-accent / --ch-danger / --ch-surface / …
+         └─ per-row overrides (left-border colour via --ch-row-accent)
+
+   WHAT THIS FILE COVERS
+   ━━━━━━━━━━━━━━━━━━━━
+   .detail-activity        wrapper applied by Detail Panel's Activity tab
+   .card-history           feed container
+   .card-history__toolbar  undo-all bar at the top
+   .card-history__undo-all global undo button
+   .card-history__list     <ul> with timeline connector
+   .card-history__row      individual event <li>
+   .card-history__icon     emoji icon with halo
+   .card-history__body     text content area
+   .card-history__line     actor + description line
+   .card-history__who      actor pill
+   .card-history__what     description text
+   .card-history__detail   monospace supplemental detail
+   .card-history__when     relative timestamp
+   .card-history__row-undo inline ↩ button on newest undoable row
+   .card-history__show-more expand / collapse trigger
+   .card-history__empty    empty-state illustration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Activity tab wrapper ─────────────────────────────────────────────────────
+.detail-activity {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CardHistory — CSS custom-property tree
+//  All values below fall back through --irp-* → hard-coded defaults.
+//  Override any of these on a parent element to re-theme the whole feed.
+// ══════════════════════════════════════════════════════════════════════════════
+.card-history {
+  // ── Brand colours (Level-2 tokens, inherited from :root --irp-*) ─────────
+  --ch-accent:          var(--irp-accent,         #02b5bb);
+  --ch-accent-hover:    var(--irp-accent-hover,   #02999e);
+  --ch-accent-subtle:   var(--irp-accent-subtle,  rgba(2, 181, 187, .12));
+  --ch-danger:          var(--irp-danger,         #c62426);
+  --ch-success:         var(--irp-success,        #10b981);
+  --ch-warning:         var(--irp-warning,        #f59e0b);
+  --ch-info:            var(--irp-info,           #38bdf8);
+
+  // ── Surface colours ───────────────────────────────────────────────────────
+  --ch-surface:         var(--irp-surface,        #fff);
+  --ch-surface-2:       var(--irp-surface-2,      #f8f9fa);
+  --ch-border:          var(--irp-border,         rgba(0,0,0,.08));
+  --ch-border-hover:    var(--irp-border-hover,   rgba(0,0,0,.15));
+
+  // ── Text colours ──────────────────────────────────────────────────────────
+  --ch-text:            var(--irp-text,           #181818);
+  --ch-text-2:          var(--irp-text-2,         #343a40);
+  --ch-text-muted:      var(--irp-text-muted,     #495057);
+  --ch-text-dim:        var(--irp-text-dim,       #868e96);
+  --ch-mono:            var(--irp-mono, 'SF Mono', monospace);
+
+  // ── Per event-type accent colours (Level-3 tokens) ───────────────────────
+  // Components or parent elements can override these selectively.
+  --ch-type-email:      #3b82f6;   // blue  — emails
+  --ch-type-stage:      var(--ch-accent);          // teal  — stage moves
+  --ch-type-note:       #8b5cf6;   // violet— notes
+  --ch-type-action:     #f59e0b;   // amber — actions
+  --ch-type-field:      #ec4899;   // pink  — field edits
+  --ch-type-undo:       var(--ch-danger);           // red   — reverts
+  --ch-type-gemini:     #10b981;   // green — AI
+  --ch-type-default:    var(--ch-text-dim);
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  --ch-row-pad-v:       10px;
+  --ch-row-pad-h:       14px;
+  --ch-row-gap:          6px;
+  --ch-icon-size:       18px;
+  --ch-icon-gap:        12px;
+  --ch-connector-w:      2px;
+  --ch-dot-size:        10px;
+
+  // ── Animation ─────────────────────────────────────────────────────────────
+  --ch-anim-dur:        260ms;
+  --ch-anim-ease:       cubic-bezier(.16, 1, .3, 1);
+  --ch-spring:          cubic-bezier(.34, 1.56, .64, 1);
+
+  // ── Layout ────────────────────────────────────────────────────────────────
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  flex: 1;
+}
+
+// ── Toolbar (Undo-all bar) ────────────────────────────────────────────────────
+.card-history__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: $sp-3;
+  margin-bottom: $sp-3;
+  border-bottom: 1px solid var(--ch-border);
+}
+
+.card-history__undo-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px 5px 12px;
+  border-radius: $r-full;
+  border: 1.5px solid var(--ch-danger);
+  background: transparent;
+  color: var(--ch-danger);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: $font;
+  cursor: pointer;
+  letter-spacing: .025em;
+  transition:
+    background var(--ch-anim-dur) var(--ch-anim-ease),
+    color var(--ch-anim-dur) var(--ch-anim-ease),
+    box-shadow var(--ch-anim-dur) var(--ch-anim-ease),
+    transform 200ms var(--ch-spring);
+
+  &::before {
+    content: '↩';
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--ch-danger);
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(198, 36, 38, .28);
+    transform: translateY(-1px);
+  }
+  &:active:not(:disabled) { transform: translateY(0) scale(.96); }
+  &:disabled {
+    opacity: .4;
+    cursor: wait;
+    pointer-events: none;
+  }
+}
+
+// ── Feed list ─────────────────────────────────────────────────────────────────
+.card-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ch-row-gap);
+  position: relative;
+
+  // Vertical timeline connector — a gradient line that fades at both ends
+  &::before {
+    content: '';
+    position: absolute;
+    // Align with the centre of the icon column
+    left: calc(var(--ch-row-pad-h) + var(--ch-icon-size) / 2 - var(--ch-connector-w) / 2);
+    // Start just below the first icon, end just above the last
+    top:    calc(var(--ch-row-pad-v) + var(--ch-icon-size) + 4px);
+    bottom: calc(var(--ch-row-pad-v) + var(--ch-icon-size) + 4px);
+    width: var(--ch-connector-w);
+    background: linear-gradient(
+      180deg,
+      transparent    0%,
+      var(--ch-border) 12%,
+      var(--ch-border) 88%,
+      transparent  100%
+    );
+    border-radius: var(--ch-connector-w);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+// ── Row ───────────────────────────────────────────────────────────────────────
+.card-history__row {
+  // Level-3 token: overridable left-border accent for this specific row
+  --ch-row-accent: var(--ch-type-default);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ch-icon-gap);
+  padding: var(--ch-row-pad-v) var(--ch-row-pad-h);
+  border-radius: $r-md;
+  background: var(--ch-surface);
+  border: 1px solid var(--ch-border);
+  border-left: 3px solid var(--ch-row-accent);
+  position: relative;
+  z-index: 1;
+  animation: ch-row-enter var(--ch-anim-dur) var(--ch-anim-ease) both;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 200ms ease,
+    transform 200ms var(--ch-spring);
+
+  // ── Per-type left-border using BEM modifier ────────────────────────────
+  // The `formatActivity` util in store returns a `kind` string — CardHistory
+  // can add data-kind to the <li> for zero-template-change colouring.
+  // Meanwhile, the undoable modifier (already in the template) uses danger.
+  &--undoable {
+    --ch-row-accent: var(--ch-danger);
+    background: rgba(198, 36, 38, .025);
+  }
+
+  // ── Type colouring via data-kind attribute (progressive enhancement) ────
+  &[data-kind='email_triggered'],
+  &[data-kind='email_sent']       { --ch-row-accent: var(--ch-type-email);  }
+  &[data-kind='stage_change']     { --ch-row-accent: var(--ch-type-stage);  }
+  &[data-kind='note_added']       { --ch-row-accent: var(--ch-type-note);   }
+  &[data-kind='action_executed']  { --ch-row-accent: var(--ch-type-action); }
+  &[data-kind='field_edit'],
+  &[data-kind='field_update'],
+  &[data-kind='field_revert']     { --ch-row-accent: var(--ch-type-field);  }
+  &[data-kind='gemini_notes_received'],
+  &[data-kind='insights_extracted'] { --ch-row-accent: var(--ch-type-gemini); }
+
+  &:hover {
+    background: var(--ch-surface-2);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, .06);
+    transform: translateY(-1px);
+  }
+  &:active { transform: translateY(0); }
+}
+
+// Staggered entry — first 12 rows animate in with increasing delay
+@for $i from 1 through 12 {
+  .card-history__row:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 24}ms;
+  }
+}
+
+@keyframes ch-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// ── Icon ──────────────────────────────────────────────────────────────────────
+.card-history__icon {
+  font-size: var(--ch-icon-size);
+  flex-shrink: 0;
+  width: var(--ch-icon-size);
+  height: var(--ch-icon-size);
+  line-height: 1;
+  margin-top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // Soft halo glow — gives depth without harshness
+  filter: drop-shadow(0 0 5px rgba(2, 181, 187, .25));
+  transition:
+    filter 160ms ease,
+    transform 220ms var(--ch-spring);
+
+  .card-history__row:hover & {
+    filter: drop-shadow(0 2px 8px rgba(2, 181, 187, .45));
+    transform: scale(1.18);
+  }
+}
+
+// ── Body ──────────────────────────────────────────────────────────────────────
+.card-history__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-history__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Actor pill — small teal-accented badge
+.card-history__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: $r-full;
+  background: var(--ch-accent-subtle);
+  border: 1px solid rgba(2, 181, 187, .18);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ch-accent-hover);
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+
+  // Initials dot
+  &::before {
+    content: '⬤';
+    font-size: 6px;
+    color: var(--ch-accent);
+    flex-shrink: 0;
+  }
+}
+
+.card-history__what {
+  font-size: 12.5px;
+  color: var(--ch-text-muted);
+  line-height: 1.45;
+  min-width: 0;
+  flex: 1;
+
+  strong {
+    color: var(--ch-text);
+    font-weight: 600;
+  }
+}
+
+// Monospace detail — diff / field path / action args
+.card-history__detail {
+  font-size: 11px;
+  font-family: var(--ch-mono);
+  color: var(--ch-text-dim);
+  line-height: 1.4;
+  background: var(--ch-surface-2);
+  border: 1px solid var(--ch-border);
+  border-radius: $r-xs;
+  padding: 3px 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Relative timestamp
+.card-history__when {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ch-text-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  cursor: default;
+  line-height: 1;
+}
+
+// ── Inline undo button ────────────────────────────────────────────────────────
+// Shown only on the newest undoable row.
+.card-history__row-undo {
+  flex-shrink: 0;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ch-danger);
+  background: transparent;
+  color: var(--ch-danger);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 240ms var(--ch-spring);
+
+  &:hover:not(:disabled) {
+    background: var(--ch-danger);
+    color: #fff;
+    transform: rotate(-18deg) scale(1.15);
+    box-shadow: 0 4px 16px rgba(198, 36, 38, .32);
+  }
+  &:active:not(:disabled) {
+    transform: rotate(-5deg) scale(.93);
+  }
+  &:disabled {
+    opacity: .35;
+    cursor: wait;
+    pointer-events: none;
+  }
+}
+
+// ── Show more / Show less ─────────────────────────────────────────────────────
+.card-history__show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 20px;
+  margin-top: $sp-2;
+  border-radius: $r-full;
+  border: 1.5px dashed var(--ch-border);
+  background: transparent;
+  color: var(--ch-accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: $font;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: .025em;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 220ms var(--ch-spring);
+
+  // Expand icon (changes to ↑ when collapsing via sibling selector isn't
+  // viable in SCSS — the component adds a CSS class or swaps text content)
+  &::before { content: '↓'; font-size: 13px; margin-right: 2px; }
+
+  &:hover {
+    border-color: var(--ch-accent);
+    background: var(--ch-accent-subtle);
+    transform: translateY(-1px);
+  }
+  &:active { transform: translateY(0) scale(.97); }
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.card-history__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: $sp-9 $sp-4;
+  gap: $sp-2;
+  color: var(--ch-text-dim);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.55;
+
+  &::before {
+    content: '📋';
+    font-size: 40px;
+    opacity: .3;
+    display: block;
+    margin-bottom: $sp-1;
+    filter: grayscale(.4);
+  }
+}

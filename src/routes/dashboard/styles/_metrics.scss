@@ -1,0 +1,298 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIST VIEW (CSS Grid implementation to fix sticky headers)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.list-view {
+  padding: $sp-5;
+  overflow-x: auto;
+}
+
+.list-header-sticky {
+  position: sticky;
+  // top: 60px; /* Offset for the main navigation topbar */ // todo: find a better way
+  z-index: 10;
+  background: $bg;
+  border-bottom: 1px solid $border;
+}
+
+.list-grid-layout {
+  display: grid;
+  /* Using minmax(0, Xfr) prevents long unbroken text (like emails) from expanding the grid cell beyond its fractional share */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  min-width: 850px; /* Prevent squeezing too much on mobile/small screens */
+}
+
+.list-col-header {
+  padding: $sp-3 $sp-4;
+  color: $text-dim;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-cell {
+  padding: $sp-3 $sp-4;
+  font-size: 13px;
+  text-align: left;
+  /* Prevent cell content from overflowing its grid fraction */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-row {
+  cursor: pointer;
+  transition: background $t-fast;
+  border-bottom: 1px solid rgba($border, 0.5);
+  
+  &:hover { background: $surface; }
+  
+  &__name { 
+    font-weight: 700; 
+    color: $text; 
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  &__email { 
+    font-size: 12px; 
+    color: $text-dim; 
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Missing-first-name styling — see `.card--missing-name` for rationale. */
+  &__name-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    border-radius: $r-full;
+    background: rgba($text-muted, 0.18);
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 700;
+    font-style: normal;
+    line-height: 1;
+    vertical-align: middle;
+    user-select: none;
+  }
+
+  &--missing-name &__name {
+    font-style: italic;
+    color: $text-muted;
+    font-weight: 600;
+  }
+}
+
+
+.list-empty {
+  text-align: center;
+  padding: $sp-7 $sp-4;
+  color: $text-dim;
+  font-size: 13px;
+}
+
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $sp-1;
+  padding: $sp-1 $sp-3;
+  border-radius: $r-full;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  box-shadow: $shadow-sm;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   METRICS VIEW
+   ═══════════════════════════════════════════════════════════════════════════ */
+.metrics-view {
+  padding: $sp-6;
+  max-width: 1200px;
+}
+
+.metrics-section {
+  margin-bottom: $sp-8;
+  h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: $text;
+    margin: 0 0 $sp-4;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: $sp-3;
+  &--small { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+
+.metric-card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-md;
+  padding: $sp-5 $sp-4;
+  text-align: center;
+  transition: all $t-fast;
+  &:hover { border-color: $border-hover; transform: translateY(-2px); box-shadow: $shadow-md; }
+  &__icon { font-size: 22px; margin-bottom: $sp-1; }
+  &__value {
+    font-size: 32px;
+    font-weight: 800;
+    color: $text;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  &__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: $text-dim;
+    margin-top: $sp-1;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.metric-card__sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: $text-dim;
+  margin-top: $sp-1;
+}
+
+.metric-total {
+  margin-top: $sp-4;
+  font-size: 14px;
+  color: $text-muted;
+  font-weight: 500;
+  strong { color: $text; font-size: 20px; font-weight: 800; }
+}
+
+/* ── Breakdown Table (models, countries) ──────────────────────────────────── */
+.breakdown-table {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-md;
+  overflow: hidden;
+}
+
+.breakdown-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  padding: $sp-3 $sp-4;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $text-dim;
+  border-bottom: 1px solid $border;
+  background: $surface-2;
+  // For 3-column variant (country)
+  &:has(+ .breakdown-row span:nth-child(3):last-child) {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  padding: $sp-2 $sp-4;
+  font-size: 13px;
+  color: $text-2;
+  border-bottom: 1px solid rgba($border, 0.3);
+  transition: background $t-fast;
+  align-items: center;
+  &:last-child { border-bottom: none; }
+  &:hover { background: $surface-2; }
+
+  &__model {
+    font-weight: 600;
+    color: $text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__cost {
+    font-weight: 700;
+    color: $warning;
+    font-family: $mono;
+  }
+}
+
+// 3-column variant for country/source tables
+.breakdown-header:has(span:nth-child(3):last-child),
+.breakdown-row:has(span:nth-child(3):last-child) {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+.monthly-chart {
+  display: flex;
+  gap: $sp-2;
+  align-items: flex-end;
+  height: 180px;
+  padding: $sp-5;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-md;
+}
+
+.monthly-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  justify-content: flex-end;
+
+  &__fill {
+    width: 100%;
+    max-width: 36px;
+    background: linear-gradient(180deg, $accent-hover, $accent);
+    border-radius: $r-xs $r-xs 0 0;
+    min-height: 4px;
+    transition: height 0.6s $ease-out;
+    box-shadow: 0 -2px 8px $accent-glow;
+  }
+
+  &__count {
+    font-size: 11px;
+    font-weight: 800;
+    color: $text;
+    margin-bottom: $sp-1;
+  }
+
+  &__label {
+    font-size: 9px;
+    font-weight: 600;
+    color: $text-dim;
+    margin-top: $sp-2;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+

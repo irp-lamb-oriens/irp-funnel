@@ -1,0 +1,240 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile-first breakpoints
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// Tablet
+@media (max-width: 1024px) {
+  .dashboard.panel-open { padding-right: 0; }
+  .detail-panel { width: 100%; max-width: 1024px; }
+}
+
+// Mobile
+@media (max-width: 768px) {
+  .login-card { padding: $sp-7 $sp-6; border-radius: $r-lg; }
+  .login-email-combo__domain { font-size: 11px; padding: 0 $sp-2; }
+
+  .topbar {
+    padding: 0 $sp-3;
+    height: 52px;
+    &__title { display: none; }
+    &__nav {
+      button { padding: $sp-1 $sp-2; font-size: 12px; }
+    }
+    &__search input {
+      width: 120px;
+      font-size: 12px;
+      padding: 6px $sp-2;
+      &:focus { width: 160px; }
+    }
+    &__user { display: none; }
+    &__logout { padding: $sp-1 $sp-2; font-size: 11px; }
+  }
+
+  .board {
+    padding: $sp-3;
+    gap: $sp-2;
+  }
+  .board__column {
+    flex: 0 0 240px;
+    min-width: 240px;
+    border-radius: $r-md;
+    max-height: calc(100dvh - 80px);
+  }
+  .board__column-header { padding: $sp-3; }
+
+  .detail-panel {
+    width: 100%;
+    max-width: 100%;
+    border-radius: $r-lg $r-lg 0 0;
+    height: 92dvh;
+    bottom: 0;
+    top: auto;
+    animation: slideUp 0.3s $ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .detail-panel__header { padding: $sp-4 $sp-4 $sp-3; }
+  .detail-panel__header h2 { font-size: 18px; }
+  .detail-content { padding: $sp-4; }
+  .detail-fields { grid-template-columns: 1fr; gap: $sp-3; }
+  .detail-tabs button { padding: $sp-2 $sp-3; font-size: 12px; }
+  .detail-stage { padding: $sp-3 $sp-4; }
+
+  .list-view { padding: $sp-3; }
+  .list-col-header, .list-cell { padding: $sp-2 $sp-3; font-size: 12px; }
+
+  .metrics-view { padding: $sp-4; }
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+// Small mobile
+@media (max-width: 480px) {
+  .login-gate { padding: $sp-4; }
+  .login-card { padding: $sp-6 $sp-5; }
+  .login-input--code { font-size: 22px; letter-spacing: 6px; }
+  .login-email-combo__domain { font-size: 10px; }
+
+  .board__column { flex: 0 0 85vw; min-width: 85vw; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: $sp-2; }
+  .metric-card { padding: $sp-3; }
+  .metric-card__value { font-size: 24px; }
+}
+
+/* ── Conversations Tab (Hypermodern Chat) ──────────────────────────────── */
+.detail-conversations {
+  display: flex;
+  flex-direction: column;
+  gap: $sp-5;
+}
+
+.detail-thread {
+  background: $surface;
+  border-radius: $r-lg;
+  border: 1px solid $border;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+
+  &__header {
+    padding: $sp-3 $sp-4;
+    background: $surface-2;
+    border-bottom: 1px solid $border;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__info {
+    display: flex;
+    align-items: baseline;
+    gap: $sp-2;
+  }
+
+  &__title {
+    font-size: 12px;
+    font-weight: 800;
+    margin: 0;
+    color: $text-2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__id {
+    font-family: $mono;
+    font-size: 11px;
+    color: $text-dim;
+  }
+
+  &__date {
+    font-size: 11px;
+    font-weight: 600;
+    color: $text-dim;
+  }
+}
+
+.modern-chat {
+  max-height: 450px;
+  overflow-y: auto;
+  // Prevent any bubble content from expanding the container horizontally
+  overflow-x: hidden;
+  padding: $sp-4;
+  display: flex;
+  flex-direction: column;
+  gap: $sp-3;
+  background: $surface;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-thumb { background: rgba($border, 0.5); border-radius: 4px; }
+
+  .chat-bubble-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: $sp-2;
+    // 85% of the chat container — neither wrapper nor bubble exceeds this
+    max-width: 85%;
+    // min-width: 0 prevents flex children from overflowing their parent
+    min-width: 0;
+    // overflow-x: clip constrains horizontal bleed without clipping vertical
+    // content (box-shadows, bottom-radius overhangs). Do NOT use overflow:hidden
+    // here — it clips the bubble vertically on short messages.
+    overflow-x: clip;
+
+    &--left {
+      align-self: flex-start;
+      .chat-bubble__avatar { order: 0; }
+      .chat-bubble { order: 1; border-bottom-left-radius: 4px; }
+    }
+
+    &--right {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+      .chat-bubble__avatar { order: 1; }
+      .chat-bubble { order: 0; border-bottom-right-radius: 4px; }
+    }
+  }
+
+  .chat-bubble__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    background: $surface-3;
+    border: 1px solid $border;
+    flex-shrink: 0;
+  }
+
+  .chat-bubble {
+    padding: $sp-2 $sp-3;
+    border-radius: $r-md;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    // Constrain to wrapper width — prevents bubble from exceeding max-width
+    min-width: 0;
+    max-width: 100%;
+    // Ensure the box model never leaks wider than its container
+    box-sizing: border-box;
+
+    &--assistant {
+      background: rgba($accent-subtle, 0.4);
+      border: 1px solid rgba($accent, 0.15);
+      .chat-bubble__role { color: $accent-hover; }
+    }
+
+    &--user {
+      background: $surface-2;
+      border: 1px solid $border;
+      .chat-bubble__role { color: $text-2; }
+    }
+
+    &__role {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    &__text {
+      margin: 0;
+      font-size: 13px;
+      color: $text;
+      line-height: 1.4;
+      // overflow-wrap: anywhere breaks at any character when there is no other
+      // break opportunity — handles JSON blobs, long URLs, base64 strings, etc.
+      overflow-wrap: anywhere;
+      // white-space: pre-wrap preserves newlines but still wraps long lines
+      white-space: pre-wrap;
+      // Belt-and-suspenders: stop any long token from overflowing the bubble
+      word-break: break-word;
+      min-width: 0;
+    }
+  }
+}
+

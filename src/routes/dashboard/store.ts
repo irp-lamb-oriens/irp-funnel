@@ -107,6 +107,13 @@ export interface Client {
   /** AI-extracted shipping/packing classification. `null` until extracted. */
   transcriptInsights?: TranscriptInsights | null;
   /**
+   * Pending email suggestions from stage-change triggers. Populated by the
+   * server whenever an operator moves the client into a stage with a
+   * configured `STAGE_EMAIL_TRIGGERS` entry. Empty array for clients
+   * without any pending suggestions (backward-compatible default).
+   */
+  pendingEmailSuggestions?: PendingEmailSuggestion[];
+  /**
    * Full Firestore document (server strips a few large branches before
    * sending). Front-end uses this to show every key on the card and let
    * operators edit any field via the schema-agnostic PATCH endpoint.
@@ -429,6 +436,22 @@ export const triggerConversationRefetch = writable<number>(0);
 export const selectedSentEmailId = writable<string | null>(null);
 
 /**
+ * A pending email suggestion — created by the server when an operator moves
+ * a client into a stage that has an email trigger configured. The suggestion
+ * sits in the client's `pendingEmailSuggestions` array until the operator
+ * either confirms (sends) or dismisses it. Only "pending" entries are
+ * surfaced; everything else has already been resolved.
+ */
+export interface PendingEmailSuggestion {
+  suggestionId: string;
+  emailType: string;
+  triggeredByStage: string;
+  suggestedAt: string;
+  movedByActor: string;
+  status: 'pending';
+}
+
+/**
  * Pre-send preview state — populated by the Emails tab when the operator
  * clicks "Preview & Send". When non-null, EmailPreviewDrawer enters
  * "pre-send mode": shows the rendered email with an editable body and a
@@ -448,6 +471,11 @@ export interface PresendEmailData {
   bodyHtml: string;
   /** Template context dict — shown in the collapsible context panel. */
   context: Record<string, unknown>;
+  /**
+   * Set when the drawer was opened from a pending suggestion so the
+   * backend can clear it atomically on send.
+   */
+  suggestionId?: string;
 }
 export const presendEmail = writable<PresendEmailData | null>(null);
 
@@ -750,11 +778,13 @@ export async function fetchCollectionData(collection: string): Promise<any[]> {
   return data.documents || [];
 }
 
+/**
+ * Thin wrapper kept for backward-compatibility.
+ * Internally delegates to `triggerEmailWithEdit` which is the canonical
+ * implementation supporting optional edit attribution + suggestion resolution.
+ */
 export async function triggerEmail(id: string, emailType: string): Promise<void> {
-  await apiFetch(`/api/dashboard/clients/${id}/trigger-email`, {
-    method: 'POST',
-    body: JSON.stringify({ emailType }),
-  });
+  return triggerEmailWithEdit(id, emailType);
 }
 
 export async function fetchMetrics(): Promise<void> {
@@ -787,24 +817,33 @@ export interface ActionSchemaForClient {
 
 export type ClientActionsPayload = Record<string, ActionSchemaForClient>;
 
-export async function fetchClientActions(id: string): Promise<{ stage: string; clientStage: string; actions: ClientActionsPayload }> {
-  const data = await apiFetch(`/api/dashboard/clients/${id}/actions`);
-  return { stage: data.stage || '', clientStage: data.clientStage || data.stage || '', actions: data.actions || {} };
+/**
+ * Fetch actions for a client.
+ * Pass an optional `stage` to retrieve actions for a different pipeline stage
+ * than the client's current one (cross-stage selector in the Actions tab).
+ * When omitted the server returns the client's own stage actions.
+ */
+export async function fetchClientActions(
+  id: string,
+  stage?: string,
+): Promise<{ stage: string; clientStage: string; actions: ClientActionsPayload }> {
+  const url = stage
+    ? `/api/dashboard/clients/${id}/actions?stage=${encodeURIComponent(stage)}`
+    : `/api/dashboard/clients/${id}/actions`;
+  const data = await apiFetch(url);
+  return { stage: data.stage || stage || '', clientStage: data.clientStage || data.stage || '', actions: data.actions || {} };
 }
 
 /**
- * Fetch actions for a specific pipeline stage (cross-stage selector).
- * Pass `stage` to override which stage's actions are returned; the client's
- * real stage (`clientStage`) is always echoed back for indicator rendering.
+ * @deprecated Use `fetchClientActions(id, stage)` instead.
+ * Kept as a thin alias so any call sites that haven't been migrated yet
+ * continue to work without any changes.
  */
 export async function fetchClientActionsForStage(
   id: string,
   stage: string,
 ): Promise<{ stage: string; clientStage: string; actions: ClientActionsPayload }> {
-  const data = await apiFetch(
-    `/api/dashboard/clients/${id}/actions?stage=${encodeURIComponent(stage)}`,
-  );
-  return { stage: data.stage || stage, clientStage: data.clientStage || '', actions: data.actions || {} };
+  return fetchClientActions(id, stage);
 }
 
 export async function executeClientAction(
@@ -1042,9 +1081,44 @@ export async function triggerEmailWithEdit(
   id: string,
   emailType: string,
   editMeta?: { editedBy: string; editedAt: string },
+  suggestionId?: string,
 ): Promise<void> {
   await apiFetch(`/api/dashboard/clients/${id}/trigger-email`, {
     method: 'POST',
-    body: JSON.stringify({ emailType, ...(editMeta ? { editMeta } : {}) }),
+    body: JSON.stringify({
+      emailType,
+      ...(editMeta ? { editMeta } : {}),
+      ...(suggestionId ? { suggestionId } : {}),
+    }),
   });
+}
+
+// ─── Email suggestion dismissal ───────────────────────────────────────────
+
+/**
+ * Dismiss a pending email suggestion without sending the email.
+ * The server removes the suggestion from `pendingEmailSuggestions` and
+ * appends an `email_suggestion_dismissed` entry to `activityLog` with the
+ * operator's email + timestamp for full audit trail.
+ */
+export async function dismissEmailSuggestion(
+  id: string,
+  suggestionId: string,
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${id}/dismiss-email-suggestion`, {
+    method: 'POST',
+    body: JSON.stringify({ suggestionId }),
+  });
+  // Optimistically remove the suggestion from local state
+  const patchSuggestions = (c: Client | null): Client | null => {
+    if (!c || c.id !== id) return c;
+    return {
+      ...c,
+      pendingEmailSuggestions: (c.pendingEmailSuggestions || []).filter(
+        (s) => s.suggestionId !== suggestionId,
+      ),
+    };
+  };
+  clients.update((list) => list.map((c) => patchSuggestions(c) ?? c));
+  selectedClient.update((c) => patchSuggestions(c));
 }

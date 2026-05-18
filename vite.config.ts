@@ -22,6 +22,17 @@ const EVO_COMMIT_MSG = process.env.EVO_COMMIT_MSG || readGit('git log -1 --prett
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	css: {
+		preprocessorOptions: {
+			scss: {
+				// Silence Dart Sass 2.x @import deprecation warnings.
+				// The dashboard uses the legacy @import pattern intentionally
+				// (global $var scope across partials). Migrate to @use when
+				// all Svelte components are ready for the Sass module system.
+				silenceDeprecations: ['import'],
+			},
+		},
+	},
 	define: {
 		__EVO_COMMIT__: JSON.stringify(EVO_COMMIT),
 		__EVO_COMMIT_MSG__: JSON.stringify(EVO_COMMIT_MSG)

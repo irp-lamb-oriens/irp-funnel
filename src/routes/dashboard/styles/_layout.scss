@@ -1,0 +1,215 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DASHBOARD LAYOUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  transition: padding-right $t-slow;
+  &.panel-open {
+    @media (min-width: 1024px) { padding-right: 520px; }
+  }
+}
+
+/* ── Top Bar ──────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $sp-5;
+  height: 60px;
+  background: $glass;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid $glass-border;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.filters-bar {
+  display: flex;
+  gap: $sp-3;
+  padding: $sp-3 $sp-5;
+  background: $surface-2;
+  border-bottom: 1px solid $border;
+  overflow-x: auto;
+  align-items: center;
+  white-space: nowrap;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.filter-select {
+  background: $surface;
+  border: 1px solid $border;
+  color: $text;
+  padding: $sp-2 $sp-3;
+  border-radius: $r-full;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all $t-fast;
+  appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23495057'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  &:focus, &:hover { 
+    border-color: $accent; 
+    box-shadow: 0 0 0 2px $accent-glow;
+  }
+}
+
+.filter-clear {
+  background: transparent;
+  border: none;
+  color: $danger;
+  font-size: 13px;
+  cursor: pointer;
+  padding: $sp-2;
+  font-weight: 600;
+  opacity: 0.8;
+  transition: all $t-fast;
+  &:hover { opacity: 1; text-decoration: underline; }
+}
+
+.topbar {
+  &__left, &__right {
+    display: flex;
+    align-items: center;
+    gap: $sp-3;
+  }
+
+  &__logo {
+    font-size: 26px;
+    filter: drop-shadow(0 2px 6px rgba(2,181,187,0.2));
+  }
+  &__title {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+    color: $text;
+    letter-spacing: -0.3px;
+  }
+
+  &__nav {
+    display: flex;
+    gap: $sp-1;
+    margin-left: $sp-2;
+    padding: $sp-1;
+    background: $surface;
+    border-radius: $r-sm;
+    border: 1px solid $border;
+    button {
+      padding: $sp-2 $sp-3;
+      background: none;
+      border: none;
+      border-radius: $r-xs;
+      color: $text-dim;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: $font;
+      transition: all $t-fast;
+      &:hover { color: $text-2; background: $surface-2; }
+      &.active {
+        color: $text;
+        background: $accent;
+        box-shadow: $shadow-sm;
+      }
+    }
+  }
+
+  &__search {
+    input {
+      padding: $sp-2 $sp-3;
+      background: $surface;
+      border: 1px solid $border;
+      border-radius: $r-full;
+      color: $text;
+      font-size: 13px;
+      font-family: $font;
+      width: 180px;
+      outline: none;
+      transition: all $t-med;
+      &:focus {
+        border-color: $accent;
+        box-shadow: 0 0 0 3px $accent-glow;
+        width: 260px;
+      }
+      &::placeholder { color: $text-dim; }
+    }
+  }
+
+  &__spend {
+    font-size: 13px;
+    font-weight: 700;
+    padding: $sp-1 $sp-3;
+    background: rgba($warning, 0.1);
+    border: 1px solid rgba($warning, 0.2);
+    border-radius: $r-full;
+    color: $warning;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+  }
+
+  &__user {
+    font-size: 13px;
+    color: $text-muted;
+    font-weight: 600;
+    padding: $sp-1 $sp-3;
+    background: $accent-subtle;
+    border-radius: $r-full;
+    color: $accent-hover;
+  }
+
+  &__logout {
+    padding: $sp-2 $sp-3;
+    background: none;
+    border: 1px solid $border;
+    border-radius: $r-full;
+    color: $text-dim;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: $font;
+    transition: all $t-fast;
+    &:hover { border-color: $danger; color: $danger; background: rgba($danger, 0.06); }
+  }
+}
+
+/* ── Loading / Error ──────────────────────────────────────────────────────── */
+.dashboard__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $sp-10 $sp-6;
+  color: $text-muted;
+  p { margin-top: $sp-4; font-size: 14px; font-weight: 500; }
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid $surface-3;
+  border-top-color: $accent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.dashboard__error {
+  margin: $sp-4 $sp-5;
+  padding: $sp-3 $sp-4;
+  background: rgba($danger, 0.06);
+  border: 1px solid rgba($danger, 0.15);
+  border-radius: $r-sm;
+  color: $danger;
+  font-size: 13px;
+  font-weight: 500;
+}
+

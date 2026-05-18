@@ -1,0 +1,244 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOARD VIEW — Kanban
+   ═══════════════════════════════════════════════════════════════════════════ */
+.board {
+  display: flex;
+  gap: $sp-3;
+  padding: $sp-5 $sp-4;
+  overflow-x: auto;
+  flex: 1;
+  align-items: flex-start;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar { height: 6px; }
+  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+}
+
+.board__column {
+  flex: 0 0 272px;
+  min-width: 272px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-lg;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 100px);
+  scroll-snap-align: start;
+  transition: border-color $t-fast;
+  &:hover { border-color: $border-hover; }
+}
+
+.board__column-header {
+  display: flex;
+  align-items: center;
+  gap: $sp-2;
+  padding: $sp-3 $sp-4;
+  border-top: 3px solid;
+  border-radius: $r-lg $r-lg 0 0;
+  position: sticky;
+  top: 0;
+  background: $surface;
+  z-index: 1;
+}
+
+.board__column-icon { font-size: 16px; }
+.board__column-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: $text-2;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.board__column-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-dim;
+  background: $surface-2;
+  padding: 2px $sp-2;
+  border-radius: $r-full;
+  min-width: 22px;
+  text-align: center;
+}
+
+.board__column-cards {
+  padding: $sp-2;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $sp-2;
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 2px; }
+}
+
+.board__column-search {
+  padding: 0 $sp-2 $sp-2;
+  input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid $border;
+    border-radius: $r-xs;
+    font-size: 12px;
+    background: $surface-2;
+    color: $text;
+    outline: none;
+    font-family: $font;
+    transition: border-color $t-fast, box-shadow $t-fast;
+    &::placeholder { color: $text-dim; }
+    &:focus {
+      border-color: $accent;
+      box-shadow: 0 0 0 2px $accent-glow;
+      background: $surface;
+    }
+  }
+}
+
+.board__show-more {
+  width: 100%;
+  padding: $sp-2;
+  border: 1px dashed $border-hover;
+  border-radius: $r-sm;
+  background: transparent;
+  color: $accent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: $font;
+  transition: background $t-fast, border-color $t-fast;
+  &:hover {
+    background: $accent-subtle;
+    border-color: $accent;
+  }
+}
+
+.board__empty {
+  text-align: center;
+  padding: $sp-7 $sp-2;
+  color: $text-dim;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+  padding: $sp-3;
+  cursor: pointer;
+  transition: all $t-fast;
+  position: relative;
+  &:hover {
+    border-color: rgba($accent, 0.4);
+    transform: translateY(-2px);
+    box-shadow: $shadow-md, 0 0 0 1px rgba($accent, 0.1);
+  }
+  &:active { transform: translateY(0); }
+
+  &__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: $text;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__route {
+    font-size: 11px;
+    color: $text-muted;
+    margin-bottom: $sp-2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__arrow {
+    color: $accent-hover;
+    margin: 0 3px;
+    font-weight: 700;
+  }
+
+  &__meta {
+    display: flex;
+    gap: $sp-1;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  &__tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    background: $accent-subtle;
+    color: $accent-hover;
+    border-radius: $r-full;
+    white-space: nowrap;
+  }
+
+  &__date {
+    font-size: 10px;
+    color: $text-dim;
+    font-weight: 500;
+  }
+
+  &__notes-badge {
+    position: absolute;
+    top: $sp-2;
+    right: $sp-2;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: rgba($warning, 0.12);
+    color: $warning;
+    border-radius: $r-full;
+  }
+
+  /* ── Missing-first-name styling ───────────────────────────────────────
+     Applied when the chatbot/HeroForm never collected the client's first
+     name. Honesty over guessing: instead of fabricating "Unknown {Surname}",
+     we render in italic + a discreet "?" badge so operators see at-a-glance
+     that this client's full name is missing. Tooltip on the title gives
+     the explicit reason. */
+  &__name-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-right: 5px;
+    border-radius: $r-full;
+    background: rgba($text-muted, 0.18);
+    color: $text-muted;
+    font-size: 10px;
+    font-weight: 700;
+    font-style: normal; /* keep "?" upright even when parent is italic */
+    line-height: 1;
+    vertical-align: middle;
+    user-select: none;
+  }
+
+  &--missing-name &__name {
+    font-style: italic;
+    color: $text-muted;
+    font-weight: 600;
+  }
+
+  &--no-show {
+    background: linear-gradient(to right, rgba(254, 226, 226, 0.4), transparent);
+    border-left: 3px solid #ef4444;
+    
+    &:hover {
+      background: linear-gradient(to right, rgba(254, 226, 226, 0.7), rgba(254, 226, 226, 0.2));
+    }
+
+    .list-row__name {
+      color: #7f1d1d;
+    }
+  }
+}
+
+

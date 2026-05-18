@@ -1,0 +1,101 @@
+/* ── Emails ─────────────────────────────────────────────────────────────────── */
+.detail-emails {
+  &__desc { font-size: 13px; color: $text-muted; margin-bottom: $sp-4; font-weight: 500; }
+  &__form {
+    display: flex;
+    gap: $sp-2;
+  }
+  &__select {
+    flex: 1;
+    padding: $sp-3;
+    background: $surface-2;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    color: $text;
+    font-size: 13px;
+    font-family: $font;
+    outline: none;
+    transition: border-color $t-fast;
+    option { background: $surface-2; color: $text; }
+    &:focus { border-color: $accent; }
+  }
+  &__btn {
+    padding: $sp-3 $sp-4;
+    background: $accent;
+    color: white;
+    border: none;
+    border-radius: $r-sm;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: $font;
+    white-space: nowrap;
+    transition: all $t-fast;
+    &:hover:not(:disabled) { background: $accent-hover; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+  &__message {
+    margin-top: $sp-3;
+    padding: $sp-3;
+    border-radius: $r-sm;
+    font-size: 13px;
+    font-weight: 600;
+    &.success { background: rgba($success, 0.08); color: $success; border: 1px solid rgba($success, 0.2); }
+    &.fail { background: rgba($danger, 0.08); color: $danger; border: 1px solid rgba($danger, 0.2); }
+  }
+}
+
+/* ── Custom Fields ─────────────────────────────────────────────────────────── */
+.detail-custom-fields__list { margin-bottom: $sp-5; }
+
+.detail-custom-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $sp-3 0;
+  border-bottom: 1px solid rgba($border, 0.3);
+  &__key { font-size: 13px; font-weight: 600; color: $text-muted; }
+  &__value { font-size: 13px; color: $text; font-weight: 500; }
+}
+
+.detail-custom-fields__form {
+  display: flex;
+  gap: $sp-2;
+  .detail-cf-input {
+    flex: 1;
+    padding: $sp-2 $sp-3;
+    background: $surface-2;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    color: $text;
+    font-size: 13px;
+    font-family: $font;
+    outline: none;
+    transition: border-color $t-fast;
+    &:focus { border-color: $accent; }
+    &::placeholder { color: $text-dim; }
+  }
+  button {
+    padding: $sp-2 $sp-3;
+    background: $accent;
+    color: white;
+    border: none;
+    border-radius: $r-sm;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: $font;
+    transition: all $t-fast;
+    &:hover:not(:disabled) { background: $accent-hover; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+}
+
+.detail-empty {
+  font-size: 13px;
+  color: $text-dim;
+  text-align: center;
+  padding: $sp-7 0;
+  font-weight: 500;
+}
+

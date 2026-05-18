@@ -1,0 +1,170 @@
+/* ── Detail Content ───────────────────────────────────────────────────────── */
+.detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: $sp-5 $sp-6;
+}
+
+.detail-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $sp-4;
+}
+
+/*
+ * Each Overview field is a soft-bordered "card row" that hover-lifts to hint
+ * the value is editable. The label is small + uppercase; the value sits below
+ * with comfortable line-height so the inline <EditableField> input/textarea
+ * has breathing room.
+ *
+ * Variants:
+ *   .detail-field--full      → spans the full grid (Route, Transcript, etc).
+ *   .detail-field__value--readonly → muted, no hover lift, with cursor:default.
+ */
+  .detail-field {
+    position: relative;
+    padding: $sp-3 $sp-3;
+    background: linear-gradient(45deg, rgba($surface-2, 0.55), rgba($surface, 0.85));
+    border: 1px solid rgba($border, 0.006);
+    border-radius: $r-md;
+    transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+
+    &:hover {
+      border-color: rgba($accent, 0.55);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      transform: translateY(-1px);
+    }
+
+    &--full { grid-column: 1 / -1; }
+
+    &__label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: $text-dim;
+      margin-bottom: $sp-2;
+    }
+    &__value {
+      font-size: 14px;
+      color: $text;
+      font-weight: 500;
+      &--readonly {
+        color: $text-muted;
+        cursor: default;
+      }
+    }
+    /*
+     * Route + Property rows render multiple <EditableField>s on one line.
+     * Wrap so long city names don't break the layout, separators sit dim.
+     */
+    &__route {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: $sp-1 $sp-2;
+      font-size: 14px;
+    }
+    &__route-sep,
+    &__route-arrow {
+      color: $text-dim;
+      font-weight: 600;
+      user-select: none;
+    }
+    &__route-arrow {
+      color: $accent;
+      font-size: 16px;
+      margin: 0 $sp-1;
+    }
+    &__tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px $sp-2;
+      background: $surface-3;
+      border-radius: $r-xs;
+      margin: 2px $sp-1 2px 0;
+      color: $text-2;
+    }
+    &__transcript {
+      font-size: 13px;
+      color: $text-muted;
+      background: $surface-2;
+      border-radius: $r-sm;
+      padding: $sp-3;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      border: 1px solid $border;
+      &.chat-history {
+        display: flex;
+        flex-direction: column;
+        gap: $sp-2;
+      }
+    }
+
+    // ── Call Transcript field — special treatment ──────────────────────────
+    // The transcript field is the widest + most data-dense field in the
+    // Overview grid. We give it a teal top-border accent, a slightly deeper
+    // background, and a bolder label so it reads as a "primary" data zone.
+    &--transcript,
+    &--full:has(.transcript-paster) {
+      background: linear-gradient(
+        160deg,
+        rgba($surface, .92) 0%,
+        rgba($surface-2, .75) 100%
+      );
+      border-color: rgba($accent, .18);
+      border-top: 2px solid rgba($accent, .35);
+
+      // "Call Transcript" label stays teal + slightly larger
+      .detail-field__label {
+        color: $accent-hover;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        // Waveform icon prefix — matches the tp-title microphone treatment
+        &::before {
+          content: '🎙';
+          font-size: 13px;
+          text-transform: none;
+          letter-spacing: 0;
+          opacity: .8;
+        }
+      }
+
+      &:hover {
+        border-color: rgba($accent, .38);
+        border-top-color: rgba($accent, .6);
+      }
+    }
+  }
+
+  .chat-msg {
+    display: flex;
+    gap: $sp-2;
+    padding-bottom: $sp-2;
+    border-bottom: 1px solid rgba($border, 0.2);
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    &__role {
+      font-weight: 700;
+      font-size: 12px;
+      color: $text-2;
+      white-space: nowrap;
+    }
+    &__content {
+      color: $text-muted;
+      font-size: 13px;
+    }
+    &--assistant .chat-msg__role {
+      color: $accent-hover;
+    }
+  }
+

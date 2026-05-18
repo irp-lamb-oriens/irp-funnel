@@ -1,0 +1,103 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL PANEL — Slide-over
+   ═══════════════════════════════════════════════════════════════════════════ */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  z-index: 200;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s $ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 1200px;
+  max-width: 100vw;
+  height: 100dvh;
+  background: $surface;
+  border-left: 1px solid $glass-border;
+  z-index: 201;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s $ease-out;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.1);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.detail-panel__header {
+  padding: $sp-6 $sp-6 $sp-4;
+  border-bottom: 1px solid $border;
+  position: relative;
+  background: linear-gradient(180deg, $surface-2 0%, $surface 100%);
+  h2 {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.3px;
+    padding-right: $sp-9;
+  }
+}
+
+.detail-panel__close {
+  position: absolute;
+  top: $sp-4;
+  right: $sp-4;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $surface-3;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+  color: $text-muted;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: $font;
+  transition: all $t-fast;
+  &:hover { color: $text; background: $surface-4; border-color: $border-hover; }
+}
+
+.detail-panel__email,
+.detail-panel__phone {
+  display: block;
+  font-size: 13px;
+  color: $text-muted;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+/* Detail panel — missing-first-name styling, mirrors `.card--missing-name`. */
+.detail-panel__title--missing-name {
+  font-style: italic;
+  color: $text-muted;
+}
+.detail-panel__name-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: $r-full;
+  background: rgba($text-muted, 0.18);
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 700;
+  font-style: normal; /* keep "?" upright even when parent is italic */
+  line-height: 1;
+  vertical-align: middle;
+  user-select: none;
+}
+
+

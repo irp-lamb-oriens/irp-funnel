@@ -11,6 +11,7 @@
     fetchConversations, fetchClientActions, fetchClientActionsForStage,
     executeClientAction,
     fetchEmailPreview,
+    dismissEmailSuggestion,
     extractInsights,
     triggerConversationRefetch,
   } from '../store.ts';
@@ -125,6 +126,62 @@
   // ── Email pre-send state ───────────────────────────────────────────────────
   /** True while fetching the email preview from the backend. */
   let emailPreviewing = false;
+  /** Track which suggestion is currently being dismissed (by id). */
+  let dismissingId = '';
+
+  /**
+   * Unified pre-send preview opener.
+   * Fetches the rendered email from the backend and opens
+   * EmailPreviewDrawer in "pre-send" mode (editable + Send footer).
+   *
+   * @param emailType   The template key, e.g. "pre_call_confirmation".
+   * @param suggestionId  Optional — when opening from a pending suggestion,
+   *                      pass its id so the backend clears it atomically on
+   *                      send. Omit when opening from the manual dropdown.
+   */
+  async function openEmailPreview(emailType: string, suggestionId?: string) {
+    if (!emailType || !$selectedClient) return;
+    emailPreviewing = true;
+    emailSentMessage = '';
+    try {
+      const preview = await fetchEmailPreview($selectedClient.id, emailType);
+      presendEmail.set({
+        clientId: $selectedClient.id,
+        emailType,
+        clientEmail: preview.clientEmail,
+        subject: preview.subject,
+        bodyHtml: preview.bodyHtml,
+        context: preview.context,
+        ...(suggestionId ? { suggestionId } : {}),
+      });
+    } catch (err: any) {
+      toasts.error(`Couldn't load preview: ${err?.message ?? err}`);
+    } finally {
+      emailPreviewing = false;
+    }
+  }
+
+  /**
+   * @deprecated Thin shim — call `openEmailPreview` directly instead.
+   * Kept so any template references that haven't been migrated yet still
+   * compile without changes.
+   */
+  const handlePreviewFromSuggestion = (suggestion: any) =>
+    openEmailPreview(suggestion.emailType, suggestion.suggestionId);
+
+  /** Dismiss a suggestion without sending the email. */
+  async function handleDismissSuggestion(suggestionId: string) {
+    if (!$selectedClient) return;
+    dismissingId = suggestionId;
+    try {
+      await dismissEmailSuggestion($selectedClient.id, suggestionId);
+      toasts.success('Suggestion dismissed.');
+    } catch (err: any) {
+      toasts.error(`Couldn't dismiss: ${err?.message ?? err}`);
+    } finally {
+      dismissingId = '';
+    }
+  }
 
   // ── Activity Log State ─────────────────────────────────────────────────────
   let activitySearch = '';
@@ -210,13 +267,15 @@
   /**
    * Load actions for a specific stage (cross-stage selector).
    * Called when the operator changes the stage dropdown in the Actions tab.
+   * Delegates to `fetchClientActions(id, stage)` — `fetchClientActionsForStage`
+   * is kept as a deprecated alias in store.ts.
    */
   async function loadActionsForSelectedStage(stage: string) {
     if (!$selectedClient) return;
     actionsLoading = true;
     expandedAction = null;
     try {
-      const { actions } = await fetchClientActionsForStage($selectedClient.id, stage);
+      const { actions } = await fetchClientActions($selectedClient.id, stage);
       actionsStage = stage;
       actionsPayload = actions || {};
       initActionFormValues();
@@ -245,32 +304,8 @@
     await loadActionsForSelectedStage(newStage);
   }
 
-  /**
-   * Email pre-send preview — Step 1 of the 2-step send flow.
-   * Fetches a rendered preview of the email from the backend and opens
-   * the EmailPreviewDrawer in pre-send mode instead of firing immediately.
-   */
-  async function handlePreviewEmail() {
-    if (!selectedEmailType || !$selectedClient) return;
-    emailPreviewing = true;
-    emailSentMessage = '';
-    try {
-      const preview = await fetchEmailPreview($selectedClient.id, selectedEmailType);
-      presendEmail.set({
-        clientId: $selectedClient.id,
-        emailType: selectedEmailType,
-        clientEmail: preview.clientEmail,
-        subject: preview.subject,
-        bodyHtml: preview.bodyHtml,
-        context: preview.context,
-      });
-      // Don't reset selectedEmailType here — let the user decide in the drawer
-    } catch (err: any) {
-      toasts.error(`Couldn't load preview: ${err?.message ?? err}`);
-    } finally {
-      emailPreviewing = false;
-    }
-  }
+  /** @deprecated Use `openEmailPreview(selectedEmailType)` — kept for template compat. */
+  const handlePreviewEmail = () => openEmailPreview(selectedEmailType);
 
   function toggleAction(actionKey: string) {
     expandedAction = expandedAction === actionKey ? null : actionKey;
@@ -1141,7 +1176,7 @@
                 </div>
                 <div class="chat-history modern-chat">
                   {#each thread.messages || [] as msg}
-                    {#if msg.role !== 'system'}
+                    {#if msg.role !== 'system' && !String(msg.content || '').startsWith('[SYSTEM COMMAND]')}
                       <div class="chat-bubble-wrapper {msg.role === 'assistant' ? 'chat-bubble-wrapper--left' : 'chat-bubble-wrapper--right'}">
                         <div class="chat-bubble__avatar">
                           {msg.role === 'assistant' ? '🤖' : '👤'}
@@ -1227,7 +1262,66 @@
           .filter((e: any) => e && (e.type === 'email_triggered' || e.type === 'email_sent'))
           .slice()
           .reverse()}
+        {@const pendingSuggestions = ($selectedClient.pendingEmailSuggestions || []).filter((s: any) => s && s.status === 'pending')}
         <div class="detail-emails">
+          <!-- ── Pending email suggestions ──────────────────────────────── -->
+          <!--
+            These are created automatically when the operator moves the
+            client to a stage with an email trigger configured.
+            No email has been sent yet — the operator must preview + confirm.
+            Hidden entirely when there are no pending suggestions.
+          -->
+          {#if pendingSuggestions.length > 0}
+            <div class="detail-emails__suggestions">
+              <h4 class="detail-emails__suggestions-title">
+                💡 Suggested emails ({pendingSuggestions.length})
+              </h4>
+              <div class="detail-emails__suggestions-list">
+                {#each pendingSuggestions as suggestion}
+                  <div class="detail-emails__suggestion-card">
+                    <div class="detail-emails__suggestion-body">
+                      <span class="detail-emails__suggestion-icon">📬</span>
+                      <div class="detail-emails__suggestion-info">
+                        <div class="detail-emails__suggestion-type">
+                          {(EMAIL_TYPES.find(t => t.value === suggestion.emailType)?.label) || suggestion.emailType}
+                        </div>
+                        <div class="detail-emails__suggestion-meta">
+                          Suggested when moving to <strong>{STAGE_LABELS[suggestion.triggeredByStage] || suggestion.triggeredByStage}</strong>
+                          · <span title={suggestion.suggestedAt}>{relativeTime(suggestion.suggestedAt)}</span>
+                          {#if suggestion.movedByActor}
+                            · by {suggestion.movedByActor.split('@')[0]}
+                          {/if}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="detail-emails__suggestion-actions">
+                      <button
+                        class="detail-emails__suggestion-preview"
+                        disabled={emailPreviewing}
+                        on:click={() => handlePreviewFromSuggestion(suggestion)}
+                        title="Preview this email before sending"
+                      >
+                        {#if emailPreviewing}
+                          <span class="actions-card__spinner"></span>
+                        {:else}
+                          👁 Preview & Send
+                        {/if}
+                      </button>
+                      <button
+                        class="detail-emails__suggestion-dismiss"
+                        disabled={dismissingId === suggestion.suggestionId}
+                        on:click={() => handleDismissSuggestion(suggestion.suggestionId)}
+                        title="Dismiss this suggestion without sending"
+                      >
+                        {dismissingId === suggestion.suggestionId ? '…' : '✕'}
+                      </button>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
           <div class="detail-emails__history">
             <h4 class="detail-emails__history-title">
               📨 Sent emails ({sentEmails.length})

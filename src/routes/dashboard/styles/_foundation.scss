@@ -1,0 +1,13 @@
+/* ── Foundation ──────────────────────────────────────────────────────────── */
+.login-gate,
+.dashboard {
+  font-family: $font;
+  color: $text;
+  background: $bg;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  *, *::before, *::after { box-sizing: inherit; }
+}
+

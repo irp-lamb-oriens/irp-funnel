@@ -1,0 +1,142 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _tokens.scss — IRP Dashboard Design Tokens
+   ───────────────────────────────────────────────────────────────────────────
+   Single source of truth for every colour, spacing, shadow, radius, and
+   transition used across the dashboard.
+
+   TWO-LAYER TOKEN SYSTEM
+   ━━━━━━━━━━━━━━━━━━━━━
+   1. SCSS $variables  — resolved at compile time; used in all partials for
+                         arithmetic, colour functions, and code readability.
+   2. CSS --irp-* vars — emitted onto :root so child components can inherit,
+                         override locally, and be read from JavaScript.
+                         The CSS vars intentionally mirror the SCSS vars 1:1.
+
+   Component partials add a THIRD layer of scoped vars, e.g.
+     .card-history { --ch-accent: var(--irp-accent, #02b5bb); }
+   This creates the top-down inheritance tree:
+     :root --irp-* → .component --ch-* / --da-* / --ep-* …
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Typography ───────────────────────────────────────────────────────────────
+$font:       var(--font-paragraph, 'Jost'), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+$font-title: var(--font-title, 'Kiona Regular'), serif;
+$mono:       'SF Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+// ── Palette — IRP light mode ─────────────────────────────────────────────────
+$bg:          #fafbfc;
+$bg-subtle:   #f1f3f5;
+$surface:     #ffffff;
+$surface-2:   #f8f9fa;
+$surface-3:   #f1f3f5;
+$surface-4:   #e9ecef;
+$glass:       rgba(255, 255, 255, 0.85);
+$glass-border: rgba(0, 0, 0, 0.06);
+
+$border:       rgba(0, 0, 0, 0.08);
+$border-hover: rgba(0, 0, 0, 0.15);
+$border-focus: rgba(2, 181, 187, 0.5);
+
+$text:        #181818;
+$text-2:      #343a40;
+$text-muted:  #495057;
+$text-dim:    #868e96;
+
+// Brand accent — IRP teal
+$accent:        #02b5bb;
+$accent-hover:  #02999e;
+$accent-glow:   rgba(2, 181, 187, 0.2);
+$accent-subtle: rgba(2, 181, 187, 0.1);
+
+// Status colours
+$highlight: #c62426;
+$danger:    #c62426;
+$success:   #10b981;
+$warning:   #f59e0b;
+$info:      #38bdf8;
+
+// ── Spacing scale ────────────────────────────────────────────────────────────
+$sp-1: 4px;  $sp-2: 8px;   $sp-3: 12px;  $sp-4: 16px;
+$sp-5: 20px; $sp-6: 24px;  $sp-7: 32px;  $sp-8: 40px;
+$sp-9: 48px; $sp-10: 64px;
+
+// ── Radius scale ─────────────────────────────────────────────────────────────
+$r-xs:   6px;
+$r-sm:   8px;
+$r-md:   12px;
+$r-lg:   16px;
+$r-xl:   20px;
+$r-2xl:  24px;
+$r-full: 9999px;
+
+// ── Shadows ──────────────────────────────────────────────────────────────────
+$shadow-sm:   0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+$shadow-md:   0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+$shadow-lg:   0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+$shadow-glow: 0 0 20px $accent-glow, 0 0 40px rgba(2, 181, 187, 0.08);
+
+// ── Transitions ──────────────────────────────────────────────────────────────
+$ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+$t-fast:      150ms $ease-out;
+$t-med:       250ms $ease-out;
+$t-slow:      400ms $ease-out;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CSS CUSTOM PROPERTIES — emitted to :root for runtime/JS access
+//  These mirror every $scss-var above so child components can inherit and
+//  override them with standard CSS var() calls.
+// ══════════════════════════════════════════════════════════════════════════════
+:root {
+  // Typography
+  --irp-font:       #{$font};
+  --irp-font-title: #{$font-title};
+  --irp-mono:       #{$mono};
+
+  // Surfaces
+  --irp-bg:           #{$bg};
+  --irp-bg-subtle:    #{$bg-subtle};
+  --irp-surface:      #{$surface};
+  --irp-surface-2:    #{$surface-2};
+  --irp-surface-3:    #{$surface-3};
+  --irp-surface-4:    #{$surface-4};
+
+  // Borders
+  --irp-border:       #{$border};
+  --irp-border-hover: #{$border-hover};
+  --irp-border-focus: #{$border-focus};
+
+  // Text
+  --irp-text:         #{$text};
+  --irp-text-2:       #{$text-2};
+  --irp-text-muted:   #{$text-muted};
+  --irp-text-dim:     #{$text-dim};
+
+  // Brand
+  --irp-accent:        #{$accent};
+  --irp-accent-hover:  #{$accent-hover};
+  --irp-accent-glow:   #{$accent-glow};
+  --irp-accent-subtle: #{$accent-subtle};
+
+  // Status
+  --irp-danger:   #{$danger};
+  --irp-success:  #{$success};
+  --irp-warning:  #{$warning};
+  --irp-info:     #{$info};
+
+  // Spacing
+  --irp-sp-1: #{$sp-1};  --irp-sp-2: #{$sp-2};  --irp-sp-3: #{$sp-3};
+  --irp-sp-4: #{$sp-4};  --irp-sp-5: #{$sp-5};  --irp-sp-6: #{$sp-6};
+
+  // Radius
+  --irp-r-xs:   #{$r-xs};
+  --irp-r-sm:   #{$r-sm};
+  --irp-r-md:   #{$r-md};
+  --irp-r-lg:   #{$r-lg};
+  --irp-r-full: #{$r-full};
+
+  // Shadows
+  --irp-shadow-sm: #{$shadow-sm};
+  --irp-shadow-md: #{$shadow-md};
+  --irp-shadow-lg: #{$shadow-lg};
+}

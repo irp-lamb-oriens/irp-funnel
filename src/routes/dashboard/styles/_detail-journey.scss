@@ -1,0 +1,103 @@
+// ─── Journey Tab ──────────────────────────────────────────────────────────
+//
+// One-pane-of-glass timeline that merges every event we know about for a
+// client (created, scheduled calls, gemini-notes pulled, AI insights
+// extracted, stage changes, sent emails, notes added, action_executed,
+// field_update, …). Newest-first.
+//
+// Each row is a thin horizontal flex layout: [icon] [title + subtitle] [time].
+// The left border colour is keyed off the tone modifier (`info | ok | warn`)
+// so operators get a quick at-a-glance "what kind of thing happened" cue.
+.detail-journey {
+  padding: $sp-3 0;
+}
+.detail-journey__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $sp-2;
+}
+.detail-journey__item {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: $sp-3;
+  padding: $sp-2 $sp-3;
+  background: $surface;
+  border: 1px solid $border;
+  border-left-width: 3px;
+  border-radius: $r-md;
+  transition: background-color 120ms ease, transform 120ms ease;
+
+  &:hover {
+    background: $surface-2;
+    transform: translateX(2px);
+  }
+
+  &--info {
+    border-left-color: #6366f1; // indigo for neutral events
+  }
+  &--ok {
+    border-left-color: #10b981; // green for success-y events
+  }
+  &--warn {
+    border-left-color: #f59e0b; // amber for action failures
+  }
+}
+.detail-journey__icon {
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+}
+.detail-journey__body {
+  min-width: 0;
+}
+.detail-journey__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail-journey__subtitle {
+  font-size: 11px;
+  color: $text-muted;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.detail-journey__time {
+  font-size: 11px;
+  color: $text-dim;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.detail-journey__empty {
+  text-align: center;
+  padding: $sp-6 $sp-3;
+  color: $text-muted;
+}
+.detail-journey__empty-icon {
+  display: inline-block;
+  font-size: 36px;
+  opacity: 0.5;
+  margin-bottom: $sp-2;
+}
+.detail-journey__empty-title {
+  margin: 0 0 $sp-1 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text;
+}
+.detail-journey__empty-desc {
+  margin: 0;
+  font-size: 12px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
