@@ -631,21 +631,6 @@
             </div>
           {/if}
 
-          <div class="detail-field detail-field--full">
-            <span class="detail-field__label">Call Transcript</span>
-            {#if $selectedClient.transcript}
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`transcript`}
-                value={$selectedClient.transcript}
-                label="Transcript"
-                multiline
-                placeholder="No transcript"
-              />
-            {/if}
-            <TranscriptPaster clientId={$selectedClient.id} />
-          </div>
-
           <div class="detail-field">
             <span class="detail-field__label">Phone</span>
             <EditableField
@@ -710,6 +695,21 @@
                 </details>
               </div>
             {/if}
+          </div>
+
+          <div class="detail-field detail-field--full">
+            <span class="detail-field__label">Call Transcript</span>
+            {#if $selectedClient.transcript}
+              <EditableField
+                clientId={$selectedClient.id}
+                path={`transcript`}
+                value={$selectedClient.transcript}
+                label="Transcript"
+                multiline
+                placeholder="No transcript"
+              />
+            {/if}
+            <TranscriptPaster clientId={$selectedClient.id} />
           </div>
         </div>
 

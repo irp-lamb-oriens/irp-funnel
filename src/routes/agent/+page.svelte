@@ -95,19 +95,6 @@
       />
     </div>
 
-    <!-- Transcript -->
-    <div class="field">
-      <label for="transcript">Call Transcript</label>
-      <textarea
-        id="transcript"
-        placeholder="Paste the full call transcript here..."
-        bind:value={transcript}
-        class="textarea"
-        rows="12"
-      ></textarea>
-      <span class="hint">Stored in Firestore. Will be used by the AI agent when activated.</span>
-    </div>
-
     <!-- Toggle: No Show -->
     <div class="field toggle-field">
       <div class="toggle-info">
@@ -209,6 +196,19 @@
         Submit Call Outcome
       {/if}
     </button>
+
+    <!-- Transcript -->
+    <div class="field">
+      <label for="transcript">Call Transcript</label>
+      <textarea
+        id="transcript"
+        placeholder="Paste the full call transcript here..."
+        bind:value={transcript}
+        class="textarea"
+        rows="12"
+      ></textarea>
+      <span class="hint">Stored in Firestore. Will be used by the AI agent when activated.</span>
+    </div>
   </div>
 </div>
 
