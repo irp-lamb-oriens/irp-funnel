@@ -65,7 +65,7 @@
           disabled={undoing}
           title="Undo most-recent change"
         >
-          ↩ Undo last
+          Undo last
         </button>
       </div>
     {/if}

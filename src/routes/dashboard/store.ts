@@ -114,6 +114,14 @@ export interface Client {
    */
   pendingEmailSuggestions?: PendingEmailSuggestion[];
   /**
+   * Field-agnostic pending actions. Each entry is self-describing via
+   * `type` + `tab` + `meta`; the system never inspects `meta` directly.
+   * Coexists with `pendingEmailSuggestions` for backward compatibility.
+   * Unified with `pendingEmailSuggestions` by the `pendingCountByClient`
+   * and `pendingTabsByClient` derived stores below.
+   */
+  pendingActions?: PendingAction[];
+  /**
    * Full Firestore document (server strips a few large branches before
    * sending). Front-end uses this to show every key on the card and let
    * operators edit any field via the schema-agnostic PATCH endpoint.
@@ -452,6 +460,57 @@ export interface PendingEmailSuggestion {
 }
 
 /**
+ * Field-agnostic pending action.
+ *
+ * The system treats every kind of outstanding operator task identically —
+ * it does NOT inspect `meta` or hardcode knowledge of Firestore fields.
+ * Callers describe what they need via `type` + `tab`; the rest lives in
+ * `meta` and is only read by the component that renders that specific type.
+ *
+ * This mirrors `irp-funnel-server/API/dashboard/pendingActions.ts`.
+ */
+export interface PendingAction {
+  /** Unique id (server assigns a nanoid/ulid). */
+  actionId: string;
+  /**
+   * Category — controls how the action is presented and which notification
+   * template is used when routing to `assignedTo` actors.
+   * Extensible: add new literals here as new workflows emerge.
+   */
+  type:
+    | 'email_suggestion'   // stage-change triggered email to preview + send
+    | 'action_suggestion'  // recommended pipeline action to execute
+    | 'follow_up'          // scheduled / overdue manual follow-up
+    | 'manual';            // ad-hoc task created by an operator
+  /**
+   * Detail Panel tab that "owns" this action.
+   * Drives which tab receives a badge count and which section is highlighted
+   * when the Panel opens. Also used by `pendingTabsByClient`.
+   */
+  tab: 'emails' | 'actions' | 'notes' | 'overview' | 'activity';
+  /** Short human-readable label shown in the badge tooltip + notification. */
+  title: string;
+  priority: 'high' | 'normal' | 'low';
+  /**
+   * Org-actor emails that receive a notification when this action is
+   * resolved (sent, executed, dismissed). Empty → no notification.
+   */
+  assignedTo: string[];
+  /** Actor (email or 'system') that created this pending action. */
+  triggeredBy: string;
+  /** ISO 8601 creation timestamp. */
+  triggeredAt: string;
+  status: 'pending' | 'done' | 'dismissed';
+  /**
+   * All type-specific payload. The core system never reads this map.
+   * Only the component responsible for rendering that `type` interprets it.
+   */
+  meta: Record<string, unknown>;
+  /** Denormalized client id — used by aggregate queries on the backend. */
+  clientId: string;
+}
+
+/**
  * Pre-send preview state — populated by the Emails tab when the operator
  * clicks "Preview & Send". When non-null, EmailPreviewDrawer enters
  * "pre-send mode": shows the rendered email with an editable body and a
@@ -526,6 +585,104 @@ export const clientsByStage = derived(filteredClients, ($filtered) => {
   }
   return grouped;
 });
+
+// ─── Derived: pending-action aggregate maps ──────────────────────────────────
+//
+// Both stores derive from `clients` (already kept live by the Socket.IO
+// db_update listener) so they update in real-time with zero extra wiring.
+//
+// These are the ONLY places in the codebase that understand how to count
+// pending items from both `pendingEmailSuggestions` (legacy) and the new
+// `pendingActions` array. Everything else — card badges, tab badges,
+// in-tab highlights — reads from these two aggregates.
+
+/**
+ * Total pending-action count per client id.
+ * Unified over both `pendingEmailSuggestions` and `pendingActions`.
+ * Used by <PendingBadge variant="card"> on every Kanban card.
+ *
+ * Map is empty for a client with no pending items.
+ */
+export const pendingCountByClient = derived(clients, ($clients): Map<string, number> => {
+  const map = new Map<string, number>();
+  for (const c of $clients) {
+    const emailCount  = (c.pendingEmailSuggestions || []).filter(s => s.status === 'pending').length;
+    const actionCount = (c.pendingActions         || []).filter(a => a.status === 'pending').length;
+    const total = emailCount + actionCount;
+    if (total > 0) map.set(c.id, total);
+  }
+  return map;
+});
+
+/**
+ * Per-tab pending count per client id.
+ * Key: clientId → inner Map<tabKey, count>.
+ * `pendingEmailSuggestions` always maps to the `'emails'` tab.
+ * `pendingActions` route to whatever `action.tab` specifies.
+ *
+ * Used by <PendingBadge variant="tab"> inside the Detail Panel tab nav.
+ */
+export const pendingTabsByClient = derived(clients, ($clients): Map<string, Map<string, number>> => {
+  const outer = new Map<string, Map<string, number>>();
+  for (const c of $clients) {
+    const tabCounts = new Map<string, number>();
+    for (const s of (c.pendingEmailSuggestions || [])) {
+      if (s.status === 'pending') tabCounts.set('emails', (tabCounts.get('emails') ?? 0) + 1);
+    }
+    for (const a of (c.pendingActions || [])) {
+      if (a.status === 'pending') tabCounts.set(a.tab, (tabCounts.get(a.tab) ?? 0) + 1);
+    }
+    if (tabCounts.size > 0) outer.set(c.id, tabCounts);
+  }
+  return outer;
+});
+
+// ─── Pending-action store functions ──────────────────────────────────────────
+
+/**
+ * Create a new field-agnostic pending action on a client.
+ * The system does not inspect or validate `action.meta`.
+ */
+export async function addPendingAction(
+  clientId: string,
+  action: Omit<PendingAction, 'actionId' | 'clientId'>,
+): Promise<PendingAction> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/pending-action`, {
+    method: 'POST',
+    body: JSON.stringify(action),
+  });
+  return data.pendingAction as PendingAction;
+}
+
+/**
+ * Resolve (mark done or dismissed) a pending action and trigger org
+ * notifications to all `assignedTo` actors.
+ */
+export async function resolvePendingAction(
+  clientId: string,
+  actionId: string,
+  resolution: 'done' | 'dismissed',
+): Promise<void> {
+  await apiFetch(
+    `/api/dashboard/clients/${clientId}/pending-action/${actionId}/resolve`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ resolution }),
+    },
+  );
+  // Optimistically update local state so badges disappear immediately
+  const patch = (c: Client | null): Client | null => {
+    if (!c || c.id !== clientId) return c;
+    return {
+      ...c,
+      pendingActions: (c.pendingActions || []).map(a =>
+        a.actionId === actionId ? { ...a, status: resolution } : a,
+      ),
+    };
+  };
+  clients.update(list => list.map(c => patch(c) ?? c));
+  selectedClient.update(c => patch(c));
+}
 
 // ─── API helper ─────────────────────────────────────────────────────────────
 function getApiUrl(): string {

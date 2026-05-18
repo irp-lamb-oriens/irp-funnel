@@ -21,6 +21,7 @@
   import CardHistory from './CardHistory.svelte';
   import EditableField from './EditableField.svelte';
   import TranscriptPaster from './TranscriptPaster.svelte';
+  import PendingBadge from './PendingBadge.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
 
   export let stageChanging: boolean;
@@ -203,6 +204,25 @@
 
   // Reset page when search changes
   $: activitySearch, activityPage = 0;
+
+  // ── Pending tab counts — drives tab badge numbers ─────────────────────────
+  // Computed from $selectedClient so it updates reactively whenever the doc
+  // changes (e.g. a suggestion is dismissed or a new pending action arrives
+  // via Socket.IO). The core system is field-agnostic: it only reads
+  // `action.tab` to route the count — never `action.meta` or field names.
+  $: pendingTabCounts = (() => {
+    if (!$selectedClient) return {} as Record<string, number>;
+    const counts: Record<string, number> = {};
+    // Legacy: email suggestions always belong to the 'emails' tab
+    for (const s of ($selectedClient.pendingEmailSuggestions || [])) {
+      if (s.status === 'pending') counts.emails = (counts.emails ?? 0) + 1;
+    }
+    // Field-agnostic: route each pending action to its declared tab
+    for (const a of ($selectedClient.pendingActions || [])) {
+      if (a.status === 'pending') counts[a.tab] = (counts[a.tab] ?? 0) + 1;
+    }
+    return counts;
+  })();
 
   $: {
     if ($selectedClient) {
@@ -449,16 +469,31 @@
       {/if}
     </div>
 
-    <!-- Tabs -->
+    <!-- Tabs — PendingBadge renders nothing when count=0, so no conditional needed -->
     <nav class="detail-tabs">
-      <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>Overview</button>
+      <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>
+        Overview
+        <PendingBadge count={pendingTabCounts.overview ?? 0} variant="tab" />
+      </button>
       <button class:active={detailTab === 'journey'} on:click={() => detailTab = 'journey'}>🛣 Journey</button>
       <button class:active={detailTab === 'insights'} on:click={() => detailTab = 'insights'}>📝 Insights</button>
-      <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'}>⚡ Actions</button>
+      <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'}>
+        ⚡ Actions
+        <PendingBadge count={pendingTabCounts.actions ?? 0} variant="tab" />
+      </button>
       <button class:active={detailTab === 'conversations'} on:click={() => detailTab = 'conversations'}>Conversations</button>
-      <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>Notes ({($selectedClient.agentNotes?.length || 0) + ($selectedClient.chatbotNotes?.length || 0)})</button>
-      <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'}>Activity</button>
-      <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>Emails</button>
+      <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>
+        Notes ({($selectedClient.agentNotes?.length || 0) + ($selectedClient.chatbotNotes?.length || 0)})
+        <PendingBadge count={pendingTabCounts.notes ?? 0} variant="tab" />
+      </button>
+      <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'}>
+        Activity
+        <PendingBadge count={pendingTabCounts.activity ?? 0} variant="tab" />
+      </button>
+      <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>
+        Emails
+        <PendingBadge count={pendingTabCounts.emails ?? 0} variant="tab" />
+      </button>
     </nav>
 
     <div class="detail-content">

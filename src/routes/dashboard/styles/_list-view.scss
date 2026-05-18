@@ -187,14 +187,21 @@
 
   &__notes-badge {
     position: absolute;
-    top: $sp-2;
-    right: $sp-2;
+    top: 0;
+    right: 0;
     font-size: 9px;
     font-weight: 700;
     padding: 2px 6px;
     background: rgba($warning, 0.12);
     color: $warning;
     border-radius: $r-full;
+
+    &--missing {
+      left: unset;
+      top: unset;
+      bottom: 0;
+      right: 0;
+    }
   }
 
   /* ── Missing-first-name styling ───────────────────────────────────────

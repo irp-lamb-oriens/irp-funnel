@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _pending-badges.scss — Field-agnostic pending-action badge system
+   ───────────────────────────────────────────────────────────────────────────
+
+   DESIGN LANGUAGE
+   ━━━━━━━━━━━━━━
+   • Card variant  — absolute top-right pill, slow teal pulse
+   • Tab variant   — inline pill beside the tab label, inverts on active tab
+   • Both use the --pb-* CSS var tree (level-2, inherits from :root --irp-*)
+
+   DOT ON EACH PENDING TAB BUTTON
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   When a client has pending actions, the relevant Detail Panel tab buttons
+   automatically display the count inline via PendingBadge.svelte (variant=tab).
+   No selector magic needed — the component handles visibility.
+
+   KANBAN CARD BUBBLE
+   ━━━━━━━━━━━━━━━━━━
+   .pending-badge--card is absolutely positioned inside .card which already
+   has `position: relative` from _list-view.scss. The pulse animation is
+   gentle enough to draw attention without causing distracting motion.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Safety net: card needs relative positioning for the badge ────────────────
+// _list-view.scss should already have this; this is belt-and-suspenders.
+.card { position: relative; }
+
+// ── Base badge ────────────────────────────────────────────────────────────────
+.pending-badge {
+  // Level-2 CSS var tokens — fall back through --irp-* → hard-coded defaults
+  --pb-bg:       var(--irp-accent,        #02b5bb);
+  --pb-color:    #fff;
+  --pb-size:     18px;
+  --pb-font-sz:  10px;
+  --pb-shadow:   0 2px 8px rgba(2, 181, 187, .45);
+  --pb-anim:     cubic-bezier(.34, 1.56, .64, 1);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pb-size);
+  height: var(--pb-size);
+  padding: 0 5px;
+  border-radius: $r-full;
+  background: var(--pb-bg);
+  color: var(--pb-color);
+  font-size: var(--pb-font-sz);
+  font-weight: 700;
+  font-family: $font;
+  letter-spacing: .02em;
+  line-height: 1;
+  box-shadow: var(--pb-shadow);
+  user-select: none;
+  pointer-events: none;   // clicks pass through to the parent card/button
+  flex-shrink: 0;
+  white-space: nowrap;
+  // Entry pop animation
+  animation: pb-pop 320ms var(--pb-anim) both;
+}
+
+@keyframes pb-pop {
+  from { opacity: 0; transform: scale(.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+// ── Card variant — absolute top-right corner of a Kanban card ─────────────────
+.pending-badge--card {
+  --pb-size:    20px;
+  --pb-font-sz: 11px;
+
+  position: absolute;
+  top: -4.5px;
+  left: -4.5px;
+  z-index: 10;
+  // Slow, soft pulse — draws the eye without being distracting
+  animation:
+    pb-pop   320ms var(--pb-anim) both,
+    pb-pulse 3.2s  ease-in-out 420ms infinite;
+}
+
+@keyframes pb-pulse {
+  0%,  100% { box-shadow: var(--pb-shadow); }
+  50%        {
+    box-shadow:
+      0 2px 14px rgba(2, 181, 187, .65),
+      0 0 0 5px rgba(2, 181, 187, .1);
+  }
+}
+
+// ── Tab variant — inline beside a Detail Panel tab label ──────────────────────
+.pending-badge--tab {
+  --pb-size:    16px;
+  --pb-font-sz: 9px;
+  --pb-shadow:  0 1px 4px rgba(2, 181, 187, .35);
+
+  margin-left: 5px;
+  position: relative;
+  top: -1px;
+  // No pulse on tab badges — they're already prominent enough in the nav
+  animation: pb-pop 280ms var(--pb-anim) both;
+}
+
+// Active tab: invert badge so it stays readable on the teal active background
+.detail-tabs button.active .pending-badge--tab {
+  --pb-bg:     #fff;
+  --pb-color:  var(--irp-accent, #02b5bb);
+  --pb-shadow: none;
+}

@@ -81,3 +81,6 @@
 
 // ── 12. Kanban board (large block — after detail so specificity is correct) ──
 @import './styles/kanban';
+
+// ── 13. Pending-action badge system (card + tab variants) ─────────────────────
+@import './styles/pending-badges';

@@ -11,9 +11,11 @@
     fetchClients, fetchClientDetail, updateClientStage,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
     initDashboardSocket, disconnectDashboardSocket,
+    pendingCountByClient,
     type Client
   } from './store.ts';
   import DetailPanel from './components/DetailPanel.svelte';
+  import PendingBadge from './components/PendingBadge.svelte';
   import EmailPreviewDrawer from './components/EmailPreviewDrawer.svelte';
   import MetricsView from './components/MetricsView.svelte';
   import EvoView from './components/evo/EvoView.svelte';
@@ -471,6 +473,8 @@
                   tabindex="0"
                   on:keydown={(e) => e.key === 'Enter' && openClientDetail(client)}
                 >
+                  <!-- Pending-actions badge — top-right corner, auto-hides when count=0 -->
+                  <PendingBadge count={$pendingCountByClient.get(client.id) ?? 0} variant="card" />
                   <div
                     class="card__name"
                     title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
