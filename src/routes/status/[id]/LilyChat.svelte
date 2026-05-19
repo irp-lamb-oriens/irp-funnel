@@ -92,12 +92,32 @@
     {/if}
   </div>
 
+  <!-- ── Quick-prompt chips for clients ──────────────────────────────── -->
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="lily-chat__chips">
+    {#each [
+      { label: '📅 My dates',       text: "What are the important dates for my move? Include my move date and estimated arrival at destination." },
+      { label: '📦 Packing tips',   text: "What are the most important packing tips for an international move? What should I be careful about?" },
+      { label: '📋 Documents',      text: "What documents will I need for customs and the move to my destination?" },
+      { label: '💰 What to expect', text: "Can you give me an overview of the typical costs involved in an international relocation?" },
+    ] as chip}
+      <button
+        type="button"
+        class="lily-chat__chip"
+        disabled={$lilyLoading}
+        on:click={() => { input = chip.text; }}
+        title={chip.text}
+      >{chip.label}</button>
+    {/each}
+  </div>
+
   <form class="lily-chat__form" on:submit={handleSubmit}>
     <textarea
       class="lily-chat__input"
       bind:value={input}
       on:keydown={handleKeydown}
-      placeholder="Ask Lily a question…"
+      placeholder="Ask Lily a question about your move…"
       rows="2"
       disabled={$lilyLoading}
     ></textarea>
@@ -249,6 +269,31 @@
       opacity: 0.5;
       margin-top: 4px;
       text-align: right;
+    }
+
+    &__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.6rem 1rem 0.2rem;
+      background: #fafffe;
+      border-top: 1px solid rgba(2, 181, 187, 0.1);
+    }
+
+    &__chip {
+      padding: 5px 12px;
+      border: 1px solid rgba(2, 181, 187, 0.4);
+      border-radius: 20px;
+      background: transparent;
+      color: #02b5bb;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+      &:hover:not(:disabled) { background: rgba(2, 181, 187, 0.1); }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
     }
 
     &__form {

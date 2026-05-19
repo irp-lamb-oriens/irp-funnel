@@ -139,12 +139,33 @@
     {/if}
   </div>
 
+  <!-- ── Quick-prompt chips (ops team shortcut) ───────────────────────── -->
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="crm-lily__chips">
+    {#each [
+      { label: '📅 Dates',         text: "What important dates were discussed in this client's call? Include move date, estimated arrival, and any other deadlines." },
+      { label: '📦 Items',         text: "What items, furniture, or special goods did the client mention shipping? Include vehicles, artwork, fragile or unusual items." },
+      { label: '💬 Concerns',      text: "What were the main concerns or hesitations this client expressed? What questions did they ask?" },
+      { label: '💰 Budget',        text: "What budget did the client mention? Were any pricing expectations, comparisons, or concerns discussed?" },
+      { label: '🏠 Move scope',    text: "Summarize the full scope: origin, destination, property types, number of rooms, packing preference, and estimated volume." },
+    ] as chip}
+      <button
+        type="button"
+        class="crm-lily__chip"
+        disabled={loading}
+        on:click={() => { input = chip.text; }}
+        title={chip.text}
+      >{chip.label}</button>
+    {/each}
+  </div>
+
   <form class="crm-lily__form" on:submit={handleSubmit}>
     <textarea
       class="crm-lily__input"
       bind:value={input}
       on:keydown={handleKeydown}
-      placeholder="Ask Lily about this client…"
+      placeholder="Ask Lily about this client… e.g. 'What dates were discussed?' or 'Was a wooden crate for artwork mentioned?'"
       rows="2"
       disabled={loading}
     ></textarea>
@@ -255,6 +276,8 @@
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .crm-lily__time {
@@ -263,6 +286,33 @@
     opacity: 0.45;
     margin-top: 3px;
     text-align: right;
+  }
+
+  /* Quick-prompt chips */
+  .crm-lily__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.4rem 0 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .crm-lily__chip {
+    padding: 4px 10px;
+    border: 1px solid rgba(2,181,187,0.35);
+    border-radius: 20px;
+    background: transparent;
+    color: #02b5bb;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    &:hover:not(:disabled) {
+      background: rgba(2,181,187,0.12);
+    }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
   }
 
   .crm-lily__form {

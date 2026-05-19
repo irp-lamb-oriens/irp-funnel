@@ -41,7 +41,7 @@
     font-size: 13px;
     font-weight: 600;
     &.success { background: rgba($success, 0.08); color: $success; border: 1px solid rgba($success, 0.2); }
-    &.fail { background: rgba($danger, 0.08); color: $danger; border: 1px solid rgba($danger, 0.2); }
+    &.fail    { background: rgba($danger,  0.08); color: $danger;  border: 1px solid rgba($danger,  0.2); }
   }
 }
 
@@ -54,7 +54,7 @@
   align-items: center;
   padding: $sp-3 0;
   border-bottom: 1px solid rgba($border, 0.3);
-  &__key { font-size: 13px; font-weight: 600; color: $text-muted; }
+  &__key   { font-size: 13px; font-weight: 600; color: $text-muted; }
   &__value { font-size: 13px; color: $text; font-weight: 500; }
 }
 
@@ -72,7 +72,7 @@
     font-family: $font;
     outline: none;
     transition: border-color $t-fast;
-    &:focus { border-color: $accent; }
+    &:focus       { border-color: $accent; }
     &::placeholder { color: $text-dim; }
   }
   button {
@@ -87,7 +87,7 @@
     font-family: $font;
     transition: all $t-fast;
     &:hover:not(:disabled) { background: $accent-hover; }
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:disabled             { opacity: 0.4; cursor: not-allowed; }
   }
 }
 
@@ -99,3 +99,132 @@
   font-weight: 500;
 }
 
+/* ── Scheduled drip-email queue (operator control panel) ─────────────────── */
+/* Token audit (all verified against _tokens.scss):
+   $surface        — #ffffff   (base white card)
+   $surface-2      — #f8f9fa   (slightly off-white header/hint rows)
+   $text           — #181818
+   $text-muted     — #495057
+   $text-dim       — #868e96
+   $border         — rgba(0,0,0,0.08)
+   $accent         — #02b5bb
+   $accent-hover   — #02999e
+   $danger         — #c62426
+   $sp-2...$sp-5   — 8px...20px
+   $r-sm           — 8px
+   $t-fast         — 150ms ease-out
+   $font           — var(--font-paragraph, 'Jost'), ...
+*/
+.detail-emails {
+  &__queue-loading {
+    display: flex;
+    align-items: center;
+    gap: $sp-2;
+    font-size: 12px;
+    color: $text-muted;
+    padding: $sp-4 0;
+  }
+
+  &__queue {
+    margin-bottom: $sp-5;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    overflow: hidden;
+  }
+
+  &__queue-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: $text;
+    margin: 0;
+    padding: $sp-3 $sp-4;
+    background: $surface-2;
+    border-bottom: 1px solid $border;
+  }
+
+  &__queue-hint {
+    font-size: 11px;
+    color: $text-muted;
+    margin: 0;
+    padding: $sp-2 $sp-4;
+    background: $surface-2;
+    border-bottom: 1px solid $border;
+  }
+
+  &__queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  &__queue-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $sp-3;
+    padding: $sp-3 $sp-4;
+    background: $surface;
+    border-bottom: 1px solid $border;
+    transition: background $t-fast;
+    &:last-child { border-bottom: none; }
+    &:hover      { background: $surface-2; }
+  }
+
+  &__queue-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__queue-item-type {
+    font-size: 13px;
+    font-weight: 600;
+    color: $text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__queue-item-time {
+    font-size: 11px;
+    color: $text-muted;
+    font-variant-numeric: tabular-nums;
+    &--overdue { color: #ef4444; font-weight: 700; }
+  }
+
+  &__queue-item-actions {
+    display: flex;
+    gap: $sp-2;
+    flex-shrink: 0;
+  }
+
+  &__queue-btn {
+    padding: 4px 10px;
+    border: none;
+    border-radius: $r-sm;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: $font;
+    cursor: pointer;
+    transition: all $t-fast;
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    &--send {
+      background: $accent;
+      color: #fff;
+      &:hover:not(:disabled) { background: $accent-hover; }
+    }
+
+    &--cancel {
+      background: transparent;
+      color: $danger;
+      border: 1px solid rgba($danger, 0.25);
+      &:hover:not(:disabled) {
+        background: rgba($danger, 0.06);
+        border-color: $danger;
+      }
+    }
+  }
+}

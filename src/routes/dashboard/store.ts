@@ -320,7 +320,17 @@ export const EMAIL_TYPES = [
   { value: 'nurture_youtube', label: 'Nurture: YouTube' },
   { value: 'quote_recap', label: 'Quote Recap' },
   { value: 'quote_checkin', label: 'Quote Check-in' },
-  { value: 'quote_proposal_feedback', label: 'Quote Proposal Feedback' },
+  { value: 'quote_proposal_feedback',   label: 'Quote Proposal Feedback' },
+  // Ops stage emails (additive — match renderEmail.ts EMAIL_SUBJECTS)
+  { value: 'ops_provider_date_request', label: '📦 Provider Date Request (Ops)' },
+  { value: 'ops_arrival_confirmation',  label: '🚢 Arrival Confirmation (Ops)' },
+  // ETA confirmation loop
+  { value: 'ops_etd_provider_request',  label: '📧 ETD/ETA Request → Provider' },
+  { value: 'ops_etd_ops_escalation',    label: '⚠️ ETA Escalation → Ops' },
+  { value: 'ops_etd_sales_escalation',  label: '🚨 ETA Escalation → Sales' },
+  { value: 'ops_eta_client_update',     label: '✅ ETA Confirmed → Client' },
+  // Follow-up
+  { value: 'followup_no_reply',         label: '👋 Follow-up — No Reply' },
 ];
 
 /**
@@ -372,6 +382,22 @@ export const FIELD_LABEL: Record<string, string> = {
   dripEnabled: 'Drip Email Active',
   dripEmail: 'Drip Email Address',
   consultations: 'Consultations',
+  // ── Shipment & Logistics (ops)
+  shippingMethod: 'Shipping Method',
+  serviceScope: 'Service Scope',
+  estimatedVolumeCBM: 'Est. Volume (m³)',
+  confirmedVolumeCBM: 'Confirmed Volume (m³)',
+  confirmedShippingMethod: 'Confirmed Shipping Method',
+  packingDate: 'Packing Start Date',
+  loadingDate: 'Loading / Pickup Date',
+  moveDate: 'Move Date',
+  etd: 'ETD — Est. Departure Date',
+  transitTimeDays: 'Transit Time (days)',
+  eta: 'ETA — Est. Arrival Date',
+  etdConfirmedAt: 'ETD Confirmed At',
+  etaConfirmedAt: 'ETA Confirmed At',
+  originAgentEmail: 'Origin Agent Email',
+  destinationAgentEmail: 'Destination Agent Email',
 };
 
 /** Best-effort humanizer for any field path the dashboard renders. */
@@ -426,7 +452,7 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'vendors'>('board');
 export const detailPanelOpen = writable<boolean>(false);
 
 /**
@@ -765,6 +791,16 @@ export async function initDashboardSocket() {
     dashboardSocket.on('connect', () => {
       console.log('[DASHBOARD SOCKET] Connected');
       dashboardSocket.emit('dashboard_register', { email, token });
+    });
+
+    dashboardSocket.on('pending_emails_updated', (data: any) => {
+      const { consultationDocId } = data || {};
+      if (!consultationDocId) return;
+      // Refresh pending emails for this client if they're currently open
+      const current = get(selectedClient);
+      if (current && current.id === consultationDocId) {
+        fetchPendingEmails(consultationDocId);
+      }
     });
 
     dashboardSocket.on('db_update', (data: any) => {
@@ -1248,6 +1284,70 @@ export async function triggerEmailWithEdit(
       ...(suggestionId ? { suggestionId } : {}),
     }),
   });
+}
+
+// ─── Pending drip-email queue (operator control) ─────────────────────────────
+
+/**
+ * A single item from the `emailQueue` Firestore collection that is still
+ * pending (not yet sent, cancelled, or failed).
+ */
+export interface PendingQueueItem {
+  /** Firestore document id of the emailQueue doc */
+  id: string;
+  type: string;
+  status: 'pending' | 'sent' | 'failed' | 'cancelled';
+  scheduledAt: string;
+  clientEmail: string;
+  consultationDocId: string;
+  evoSubjectVariant?: string;
+  evoBodyVariant?: string;
+  retryCount?: number;
+}
+
+/**
+ * Map of clientId → pending emailQueue items.
+ * Populated on-demand when the Detail Panel's Emails tab loads or when the
+ * socket emits `pending_emails_updated` for the currently-open client.
+ */
+export const pendingEmailsForClient = writable<Record<string, PendingQueueItem[]>>({});
+
+/** Fetch pending queue items for a specific client and store them. */
+export async function fetchPendingEmails(clientId: string): Promise<PendingQueueItem[]> {
+  try {
+    const data = await apiFetch(`/api/dashboard/clients/${clientId}/pending-emails`);
+    const items: PendingQueueItem[] = data.items ?? [];
+    pendingEmailsForClient.update(m => ({ ...m, [clientId]: items }));
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+/** Cancel a scheduled drip email (operator clicks "Don't send"). */
+export async function cancelPendingEmail(queueId: string, clientId: string, reason?: string): Promise<void> {
+  await apiFetch(`/api/dashboard/email-queue/${queueId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ consultationDocId: clientId, reason: reason ?? '' }),
+  });
+  // Optimistically remove from local store
+  pendingEmailsForClient.update(m => ({
+    ...m,
+    [clientId]: (m[clientId] ?? []).filter(i => i.id !== queueId),
+  }));
+}
+
+/** Force-send a scheduled drip email immediately (operator clicks "Send now"). */
+export async function sendPendingEmailNow(queueId: string, clientId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/email-queue/${queueId}/send-now`, {
+    method: 'POST',
+    body: JSON.stringify({ consultationDocId: clientId }),
+  });
+  // Mark as sent in local store
+  pendingEmailsForClient.update(m => ({
+    ...m,
+    [clientId]: (m[clientId] ?? []).filter(i => i.id !== queueId),
+  }));
 }
 
 // ─── Email suggestion dismissal ───────────────────────────────────────────

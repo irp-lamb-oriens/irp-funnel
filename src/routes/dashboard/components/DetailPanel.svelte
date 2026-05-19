@@ -14,6 +14,10 @@
     dismissEmailSuggestion,
     extractInsights,
     triggerConversationRefetch,
+    pendingEmailsForClient,
+    fetchPendingEmails,
+    cancelPendingEmail,
+    sendPendingEmailNow,
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
@@ -23,6 +27,8 @@
   import TranscriptPaster from './TranscriptPaster.svelte';
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
+  import ShipmentTrackingCard from './ShipmentTrackingCard.svelte';
+  import VendorMatchCard from './VendorMatchCard.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
 
   export let stageChanging: boolean;
@@ -130,6 +136,59 @@
   let emailPreviewing = false;
   /** Track which suggestion is currently being dismissed (by id). */
   let dismissingId = '';
+
+  // ── Pending drip-email queue ───────────────────────────────────────────────
+  let pendingQueueLoading = false;
+  let pendingQueueAction: Record<string, boolean> = {};
+
+  /** Load the pending queue whenever the emails tab is opened for the current client. */
+  $: if (detailTab === 'emails' && $selectedClient) {
+    const cid = $selectedClient.id;
+    pendingQueueLoading = true;
+    fetchPendingEmails(cid).finally(() => { pendingQueueLoading = false; });
+  }
+
+  /** Pending queue items for the currently-open client (from the reactive store). */
+  $: pendingQueue = $pendingEmailsForClient[$selectedClient?.id ?? ''] ?? [];
+
+  async function handleCancelPendingEmail(queueId: string, clientId: string) {
+    pendingQueueAction = { ...pendingQueueAction, [queueId]: true };
+    try {
+      await cancelPendingEmail(queueId, clientId);
+      toasts.success('Scheduled email cancelled.');
+    } catch (err: any) {
+      toasts.error(`Cancel failed: ${err?.message ?? err}`);
+    } finally {
+      pendingQueueAction = { ...pendingQueueAction, [queueId]: false };
+    }
+  }
+
+  async function handleSendPendingNow(queueId: string, clientId: string) {
+    pendingQueueAction = { ...pendingQueueAction, [queueId]: true };
+    try {
+      await sendPendingEmailNow(queueId, clientId);
+      toasts.success('Email sent immediately!');
+    } catch (err: any) {
+      toasts.error(`Send failed: ${err?.message ?? err}`);
+    } finally {
+      pendingQueueAction = { ...pendingQueueAction, [queueId]: false };
+    }
+  }
+
+  function formatScheduledAt(iso: string): string {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const now = new Date();
+      const diffMs = d.getTime() - now.getTime();
+      if (diffMs <= 0) return 'overdue';
+      const h = Math.floor(diffMs / 3_600_000);
+      if (h < 1) return 'in <1 h';
+      if (h < 24) return `in ${h}h`;
+      const days = Math.floor(h / 24);
+      return `in ${days}d ${h % 24}h`;
+    } catch { return iso; }
+  }
 
   /**
    * Unified pre-send preview opener.
@@ -671,6 +730,11 @@
             </span>
           </div>
 
+          <!-- ── Shipment & Logistics summary card ── -->
+          <div class="detail-field detail-field--full">
+            <ShipmentTrackingCard client={$selectedClient} />
+          </div>
+
           <!-- ── Advanced fields (every other top-level Firestore key) ── -->
           <div class="detail-field detail-field--full">
             <button
@@ -1041,6 +1105,9 @@
               </button>
             </div>
           </div>
+
+          <!-- ── Vendor Match — additive, non-destructive ── -->
+          <VendorMatchCard clientId={$selectedClient.id} />
         </div>
 
       <!-- ── Actions Tab ──────────────────────────── -->
@@ -1228,7 +1295,7 @@
                         </div>
                         <div class="chat-bubble {msg.role === 'assistant' ? 'chat-bubble--assistant' : 'chat-bubble--user'}">
                           <span class="chat-bubble__role">{msg.role === 'assistant' ? 'Lili' : 'Client'}</span>
-                          <p class="chat-bubble__text">{msg.content}</p>
+                          <p class="chat-bubble__text" style="white-space: pre-wrap; word-break: break-word; margin: 0;">{msg.content}</p>
                         </div>
                       </div>
                     {/if}
@@ -1419,6 +1486,63 @@
               </ol>
             {/if}
           </div>
+
+          <!-- ── Scheduled Drip Queue ────────────────────────────────────────
+               Shows emailQueue items that are pending (not yet sent/cancelled).
+               Operators can cancel, force-send immediately, or do nothing
+               (the email auto-fires when its scheduled time arrives).
+          ─────────────────────────────────────────────────────────────────── -->
+          {#if pendingQueueLoading}
+            <div class="detail-emails__queue-loading">
+              <span class="actions-card__spinner"></span> Loading scheduled emails…
+            </div>
+          {:else if pendingQueue.filter(i => i.status === 'pending').length > 0}
+            <div class="detail-emails__queue">
+              <h4 class="detail-emails__queue-title">
+                ⏰ Scheduled drip emails ({pendingQueue.filter(i => i.status === 'pending').length})
+              </h4>
+              <p class="detail-emails__queue-hint">
+                These emails will send automatically unless you cancel or force-send them.
+              </p>
+              <div class="detail-emails__queue-list">
+                {#each pendingQueue.filter(i => i.status === 'pending') as item}
+                  {@const busy = !!pendingQueueAction[item.id]}
+                  <div class="detail-emails__queue-item">
+                    <div class="detail-emails__queue-item-info">
+                      <span class="detail-emails__queue-item-type">
+                        {(EMAIL_TYPES.find(t => t.value === item.type)?.label) || item.type}
+                      </span>
+                      <span
+                        class="detail-emails__queue-item-time"
+                        class:detail-emails__queue-item-time--overdue={formatScheduledAt(item.scheduledAt) === 'overdue'}
+                        title={item.scheduledAt}
+                      >
+                        {formatScheduledAt(item.scheduledAt)}
+                      </span>
+                    </div>
+                    <div class="detail-emails__queue-item-actions">
+                      <button
+                        class="detail-emails__queue-btn detail-emails__queue-btn--send"
+                        disabled={busy}
+                        title="Send this email right now"
+                        on:click={() => handleSendPendingNow(item.id, item.consultationDocId)}
+                      >
+                        {busy ? '…' : '⚡ Send now'}
+                      </button>
+                      <button
+                        class="detail-emails__queue-btn detail-emails__queue-btn--cancel"
+                        disabled={busy}
+                        title="Cancel — this email will not be sent"
+                        on:click={() => handleCancelPendingEmail(item.id, item.consultationDocId)}
+                      >
+                        {busy ? '…' : '🚫 Cancel'}
+                      </button>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
 
           <div class="detail-emails__send">
             <p class="detail-emails__desc">Send a new email from a template:</p>

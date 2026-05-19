@@ -19,6 +19,7 @@
   import EmailPreviewDrawer from './components/EmailPreviewDrawer.svelte';
   import MetricsView from './components/MetricsView.svelte';
   import EvoView from './components/evo/EvoView.svelte';
+  import VendorsView from './components/VendorsView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import './dashboard.scss';
 
@@ -165,7 +166,7 @@
     }
   }
 
-  async function switchView(view: 'board' | 'list' | 'metrics' | 'evo') {
+  async function switchView(view: 'board' | 'list' | 'metrics' | 'evo' | 'vendors') {
     activeView.set(view);
     if (view === 'metrics' && !$metrics) {
       await fetchMetrics();
@@ -360,6 +361,7 @@
           <button class:active={$activeView === 'list'} on:click={() => switchView('list')}>List</button>
           <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
           <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
+          <button class:active={$activeView === 'vendors'} on:click={() => switchView('vendors')} title="Vendor / shipping provider registry">Vendors</button>
         </nav>
       </div>
       <div class="topbar__right">
@@ -587,6 +589,10 @@
     <!-- ══════════════ EVO VIEW (UI evolution × sales attribution) ══════ -->
     {:else if $activeView === 'evo'}
       <EvoView />
+
+    <!-- ══════════════ VENDORS VIEW ══════════════ -->
+    {:else if $activeView === 'vendors'}
+      <VendorsView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->
