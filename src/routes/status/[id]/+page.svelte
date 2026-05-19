@@ -360,7 +360,7 @@
                   <span class="field__label">Vehicles to Ship</span>
                   <div class="field__tags">
                     {#each $project.vehicles as vehicle}
-                      <span class="tag-pill">{vehicle}</span>
+                      <span class="tag-pill">{typeof vehicle === 'object' && vehicle !== null ? [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') : vehicle}</span>
                     {/each}
                   </div>
                 </div>
