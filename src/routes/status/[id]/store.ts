@@ -125,3 +125,120 @@ export async function fetchProject(projectId: string) {
     loading.set(false);
   }
 }
+
+// ─── Lily Chat ─────────────────────────────────────────────────────────────
+
+export const lilyMessages = writable<any[]>([]);
+export const lilyLoading = writable(false);
+
+/** Load the existing Lily chat thread for this project (status scope). */
+export async function loadLilyHistory(projectId: string): Promise<void> {
+  try {
+    const data = await apiFetch(`/api/client-status/project/${projectId}/lily/history`);
+    lilyMessages.set(data.thread?.rawTail ?? []);
+  } catch { /* silent — empty thread is fine */ }
+}
+
+/** Send a message to Lily. Optimistically pushes the user bubble,
+ *  then replaces with the authoritative rawTail from the server. */
+export async function sendLilyMessage(projectId: string, message: string): Promise<void> {
+  const now = new Date().toISOString();
+  lilyMessages.update((msgs) => [
+    ...msgs,
+    { role: 'user', content: message, timestamp: now },
+  ]);
+  lilyLoading.set(true);
+  try {
+    const data = await apiFetch(`/api/client-status/project/${projectId}/lily`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+    lilyMessages.set(data.rawTail ?? []);
+  } catch {
+    lilyMessages.update((msgs) => [
+      ...msgs,
+      {
+        role: 'assistant',
+        content: "Sorry, I had trouble responding. Please try again.",
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  } finally {
+    lilyLoading.set(false);
+  }
+}
+
+// ─── Comments ────────────────────────────────────────────────────────────────
+
+export async function addComment(projectId: string, body: string): Promise<void> {
+  const data = await apiFetch(`/api/client-status/project/${projectId}/comment`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  });
+  if (data.comment) {
+    project.update((p) =>
+      p ? { ...p, statusComments: [...(p.statusComments ?? []), data.comment] } : p,
+    );
+  }
+}
+
+export async function editComment(
+  projectId: string,
+  commentId: string,
+  body: string,
+): Promise<void> {
+  const data = await apiFetch(
+    `/api/client-status/project/${projectId}/comment/${commentId}`,
+    { method: 'PATCH', body: JSON.stringify({ body }) },
+  );
+  if (data.comment) {
+    project.update((p) =>
+      p
+        ? {
+            ...p,
+            statusComments: (p.statusComments ?? []).map((c: any) =>
+              c.id === commentId ? data.comment : c,
+            ),
+          }
+        : p,
+    );
+  }
+}
+
+export async function deleteComment(projectId: string, commentId: string): Promise<void> {
+  await apiFetch(`/api/client-status/project/${projectId}/comment/${commentId}`, {
+    method: 'DELETE',
+  });
+  project.update((p) =>
+    p
+      ? {
+          ...p,
+          statusComments: (p.statusComments ?? []).filter((c: any) => c.id !== commentId),
+        }
+      : p,
+  );
+}
+
+// ─── Stage Ratings ────────────────────────────────────────────────────────────
+
+export async function submitStageRating(
+  projectId: string,
+  stageKey: string,
+  rating: number,
+  note?: string,
+): Promise<void> {
+  const data = await apiFetch(`/api/client-status/project/${projectId}/stage-rating`, {
+    method: 'POST',
+    body: JSON.stringify({ stageKey, rating, ...(note ? { note } : {}) }),
+  });
+  if (data.stageRating) {
+    project.update((p) =>
+      p
+        ? {
+            ...p,
+            stageRatings: { ...(p.stageRatings ?? {}), [stageKey]: data.stageRating },
+          }
+        : p,
+    );
+  }
+}

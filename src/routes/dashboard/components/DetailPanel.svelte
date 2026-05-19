@@ -22,6 +22,7 @@
   import EditableField from './EditableField.svelte';
   import TranscriptPaster from './TranscriptPaster.svelte';
   import PendingBadge from './PendingBadge.svelte';
+  import CrmLilyTab from './CrmLilyTab.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
 
   export let stageChanging: boolean;
@@ -40,7 +41,7 @@
   let emailSentMessage = '';
   let newFieldKey = '';
   let newFieldValue = '';
-  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' = 'overview';
+  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' = 'overview';
   let stageEntries = Object.entries(STAGE_LABELS);
 
   // ── Pipeline-stage chip + popover (replaces the giant emoji strip) ─────
@@ -477,6 +478,9 @@
       </button>
       <button class:active={detailTab === 'journey'} on:click={() => detailTab = 'journey'}>🛣 Journey</button>
       <button class:active={detailTab === 'insights'} on:click={() => detailTab = 'insights'}>📝 Insights</button>
+      <button class:active={detailTab === 'lily'} on:click={() => detailTab = 'lily'}>
+        🌿 Lily
+      </button>
       <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'}>
         ⚡ Actions
         <PendingBadge count={pendingTabCounts.actions ?? 0} variant="tab" />
@@ -1040,6 +1044,12 @@
         </div>
 
       <!-- ── Actions Tab ──────────────────────────── -->
+      {:else if detailTab === 'lily'}
+        <div class="lily-tab" style="padding: 1rem; display: flex; flex-direction: column; flex: 1; height: 100%;">
+          {#if $selectedClient}
+            <CrmLilyTab clientId={$selectedClient.id} />
+          {/if}
+        </div>
       {:else if detailTab === 'actions'}
         <div class="actions-tab">
           {#if actionsLoading}

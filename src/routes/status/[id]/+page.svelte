@@ -6,8 +6,12 @@
   import {
     isAuthenticated, isCheckingAuth, authEmail,
     project, loading, error, stages, stageLabels,
-    requestClientOTP, verifyClientOTP, checkClientAuth, logout, fetchProject
+    requestClientOTP, verifyClientOTP, checkClientAuth, logout, fetchProject,
+    loadLilyHistory,
   } from './store.ts';
+  import LilyChat from './LilyChat.svelte';
+  import CommentsThread from './CommentsThread.svelte';
+  import StageRating from './StageRating.svelte';
   import {
     irpStaffIsAuthenticated, irpStaffEmail,
     checkIrpStaff, clearIrpStaff,
@@ -34,13 +38,15 @@
       isAuthenticated.set(true);
       isCheckingAuth.set(false);
       await fetchProject(projectId);
+      await loadLilyHistory(projectId);
       return;
     }
 
-    // ─── 2. Existing end-customer flow ───────────────────────────────────
+    // ─── 2. Existing end-customer flow ───────────────────────────────
     const valid = await checkClientAuth();
     if (valid) {
       await fetchProject(projectId);
+      await loadLilyHistory(projectId);
     }
   });
 
@@ -64,6 +70,7 @@
     try {
       await verifyClientOTP(loginEmailInput, projectId, loginCode);
       await fetchProject(projectId);
+      await loadLilyHistory(projectId);
     } catch (err: any) {
       loginError = err.message;
     } finally {
@@ -284,23 +291,28 @@
         </div>
       </header>
 
-      <!-- PIPELINE STAGE -->
-      <section class="cp-dashboard__pipeline">
-        <h3>Current Status</h3>
-        <div style="overflow-x: auto; padding-bottom: 1rem;">
-          <div class="stepper">
-            {#each $stages as stageKey, idx}
-              <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
-                <div class="step__circle"></div>
-                <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
-                {#if getStageTime(stageKey)}
-                  <div class="step__date">{getStageTime(stageKey)}</div>
-                {/if}
+          <!-- PIPELINE STAGE -->
+          <section class="cp-dashboard__pipeline">
+            <h3>Current Status</h3>
+            <div style="overflow-x: auto; padding-bottom: 1rem;">
+              <div class="stepper">
+                {#each $stages as stageKey, idx}
+                  <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
+                    <div class="step__circle"></div>
+                    <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
+                    {#if getStageTime(stageKey)}
+                      <div class="step__date">{getStageTime(stageKey)}</div>
+                    {/if}
+                    {#if idx < currentStageIndex && !$irpStaffIsAuthenticated}
+                      <div class="step__rating">
+                        <StageRating {projectId} {stageKey} />
+                      </div>
+                    {/if}
+                  </div>
+                {/each}
               </div>
-            {/each}
-          </div>
-        </div>
-      </section>
+            </div>
+          </section>
 
       <div class="cp-dashboard__grid">
         <!-- DETAILS BOX -->
@@ -438,6 +450,16 @@
         </section>
       </div>
 
+      <!-- ── LILY CHAT ──────────────────────────────────────────────────── -->
+      <section class="cp-dashboard__lily">
+        <LilyChat {projectId} />
+      </section>
+
+      <!-- ── COMMENTS ──────────────────────────────────────────────────── -->
+      <section class="cp-dashboard__comments">
+        <CommentsThread {projectId} />
+      </section>
+
     </div>
   {/if}
 </div>
@@ -447,5 +469,18 @@
 <style>
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  :global(.cp-dashboard__lily),
+  :global(.cp-dashboard__comments) {
+    max-width: 960px;
+    margin: 0 auto 2rem;
+    padding: 0 1rem;
+  }
+
+  :global(.step__rating) {
+    margin-top: 6px;
+    display: flex;
+    justify-content: center;
   }
 </style>

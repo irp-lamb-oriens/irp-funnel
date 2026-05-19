@@ -172,6 +172,7 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  text-shadow: 0 0 0.1px BLACK;
 
   &:hover {
     color: #fff;
