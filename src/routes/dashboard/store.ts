@@ -1379,3 +1379,82 @@ export async function dismissEmailSuggestion(
   clients.update((list) => list.map((c) => patchSuggestions(c) ?? c));
   selectedClient.update((c) => patchSuggestions(c));
 }
+
+// ─── Scheduling (CRM-initiated) ──────────────────────────────────────────────
+
+/**
+ * Reschedule (or first-time schedule) a consultation call for an existing
+ * client from the CRM dashboard.  Calls POST /api/dashboard/clients/:id/reschedule.
+ *
+ * On success the backend:
+ *   • Books / moves the Google Calendar event via bookConsultation
+ *   • Appends a `call_rescheduled` activityLog entry with actor/source/oldSlot/newSlot/timestamp
+ *   • Broadcasts db_update over Socket.IO so all open tabs refresh
+ *
+ * Returns the server response which includes hangoutLink, htmlLink, oldSlot,
+ * newSlot, alreadyExisted, meetCode, etc.
+ */
+export async function rescheduleCall(
+  clientId: string,
+  startISO: string,
+): Promise<{
+  success: boolean;
+  hangoutLink?: string;
+  htmlLink?: string;
+  eventId?: string;
+  meetCode?: string;
+  newSlot: string;
+  oldSlot: string | null;
+  alreadyExisted?: boolean;
+}> {
+  return apiFetch(`/api/dashboard/clients/${clientId}/reschedule`, {
+    method: 'POST',
+    body: JSON.stringify({ startISO }),
+  });
+}
+
+export interface CreateClientPayload {
+  /** Required. */
+  email: string;
+  name?: string;
+  surname?: string;
+  phone?: string;
+  /** ISO string of the call slot. When present a Calendar event is also booked. */
+  startISO?: string;
+  destinationCountry?: string;
+  destinationCity?: string;
+  originCountry?: string;
+  originCity?: string;
+  budget?: string;
+  notes?: string[];
+}
+
+/**
+ * Create a brand-new client record from the CRM dashboard.
+ * Calls POST /api/dashboard/clients.
+ *
+ * If payload.startISO is present the server also books a consultation call via
+ * bookConsultation and returns hangoutLink / htmlLink / meetCode.
+ *
+ * On success the backend appends a `client_created_by_staff` activityLog entry
+ * with actor, channel:"crm_dashboard", and timestamp.
+ *
+ * Returns { success, docId, wasNew, hangoutLink?, htmlLink?, eventId?, meetCode? }
+ */
+export async function createClientFromCrm(payload: CreateClientPayload): Promise<{
+  success: boolean;
+  docId: string;
+  wasNew: boolean;
+  hangoutLink?: string;
+  htmlLink?: string;
+  eventId?: string;
+  meetCode?: string;
+}> {
+  const result = await apiFetch('/api/dashboard/clients', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  // Optimistically refresh the client list so the new card appears immediately
+  fetchClients().catch(() => {/* non-fatal */});
+  return result;
+}

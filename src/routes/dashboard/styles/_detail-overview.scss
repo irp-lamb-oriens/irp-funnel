@@ -168,3 +168,56 @@
     }
   }
 
+// ── Schedule row (Scheduled Call field in Overview tab) ───────────────────
+// Sits inside .detail-field alongside the label. Shows the ISO time (read-
+// only) plus a small "📅 Reschedule" / "📅 Schedule" action button inline.
+.detail-field__schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.detail-field__value--muted {
+  color: $text-muted;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.detail-field__reschedule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1.5px solid rgba($accent, 0.35);
+  background: rgba($accent, 0.07);
+  color: $accent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba($accent, 0.15);
+    border-color: $accent;
+  }
+
+  &:active {
+    background: rgba($accent, 0.22);
+  }
+
+  // The "Schedule" variant (no call yet) has a slightly different tone
+  &--schedule {
+    border-color: rgba($accent-hover, 0.4);
+    background: rgba($accent-hover, 0.07);
+    color: $accent-hover;
+
+    &:hover {
+      background: rgba($accent-hover, 0.14);
+      border-color: $accent-hover;
+    }
+  }
+}
+

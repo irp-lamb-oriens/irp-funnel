@@ -30,6 +30,10 @@
   import ShipmentTrackingCard from './ShipmentTrackingCard.svelte';
   import VendorMatchCard from './VendorMatchCard.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
+  import ScheduleCallModal from './ScheduleCallModal.svelte';
+
+  // ── Schedule / Reschedule modal state ────────────────────────────────────
+  let showScheduleModal = false;
 
   export let stageChanging: boolean;
   export let handleStageChange: (clientId: string, newStage: string) => Promise<void>;
@@ -672,14 +676,36 @@
             </div>
           {/if}
 
-          {#if $selectedClient.scheduling?.length}
-            <div class="detail-field">
-              <span class="detail-field__label">Scheduled Call</span>
-              <span class="detail-field__value detail-field__value--readonly" title="Set via Calendar — not editable here">
-                {formatDateTime($selectedClient.scheduling[0])}
-              </span>
-            </div>
-          {/if}
+          <div class="detail-field">
+            <span class="detail-field__label">Scheduled Call</span>
+            {#if $selectedClient.scheduling?.length}
+              <div class="detail-field__schedule-row">
+                <span class="detail-field__value detail-field__value--readonly" title={$selectedClient.scheduling[0]}>
+                  {formatDateTime($selectedClient.scheduling[0])}
+                </span>
+                <button
+                  type="button"
+                  class="detail-field__reschedule-btn"
+                  title="Reschedule this consultation call"
+                  on:click={() => { showScheduleModal = true; }}
+                >
+                  📅 Reschedule
+                </button>
+              </div>
+            {:else}
+              <div class="detail-field__schedule-row">
+                <span class="detail-field__value detail-field__value--muted">No call scheduled</span>
+                <button
+                  type="button"
+                  class="detail-field__reschedule-btn detail-field__reschedule-btn--schedule"
+                  title="Schedule a consultation call"
+                  on:click={() => { showScheduleModal = true; }}
+                >
+                  📅 Schedule
+                </button>
+              </div>
+            {/if}
+          </div>
 
           {#if $selectedClient.callOutcome}
             <div class="detail-field">
@@ -1578,5 +1604,15 @@
 
       {/if}
     </div>
+
+    <!-- ── Schedule / Reschedule modal (rendered inside <aside> so it stacks correctly) ── -->
+    {#if showScheduleModal}
+      <ScheduleCallModal
+        mode="reschedule"
+        client={$selectedClient}
+        onClose={() => { showScheduleModal = false; }}
+        onSuccess={() => { showScheduleModal = false; }}
+      />
+    {/if}
   </aside>
 {/if}
