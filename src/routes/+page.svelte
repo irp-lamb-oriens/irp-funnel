@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Header from '../components/Header/Header.svelte';
   import Footer from '../components/Footer/Footer.svelte';
   import HeroBanner from '../components/HeroBanner.svelte';
@@ -68,6 +69,42 @@
       answer: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated time of project completion for your documentation,<strong> please contact our Consulting Specialist.</strong>"
     }
   ];
+
+  // Custom eased scroll — deliberately slower than the browser's native
+  // smooth-scroll so the visitor can clearly see the page gliding to the CTA.
+  // Uses an easeInOutCubic curve over `duration` ms driven by rAF.
+  function smoothScrollTo(targetY: number, duration = 2400) {
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+    let startTime: number | null = null;
+
+    function easeInOutCubic(t: number): number {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function step(timestamp: number) {
+      if (startTime === null) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+      if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  // Auto-scroll to the hero form 1 second after the page loads so the CTA
+  // is always front-and-center regardless of where the visitor lands on the
+  // page (social proof gallery, video, etc. scroll past first).
+  onMount(() => {
+    setTimeout(() => {
+      const el = document.getElementById('hero-form');
+      if (el) {
+        const targetY = el.getBoundingClientRect().top + window.scrollY;
+        smoothScrollTo(targetY);
+      }
+    }, 1000);
+  });
 </script>
 
 <Header />
