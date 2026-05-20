@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import {
     selectedClient, detailPanelOpen,
-    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES,
+    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES, emailTypes, fetchEmailTypes,
     SHIPPING_MODE_LABEL, PACKING_TIER_LABEL,
     selectedSentEmailId,
     presendEmail,
@@ -31,6 +31,11 @@
   import VendorMatchCard from './VendorMatchCard.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
   import ScheduleCallModal from './ScheduleCallModal.svelte';
+
+  // Seed the reactive emailTypes store from the server on first mount.
+  // The store is already pre-seeded with the static EMAIL_TYPES fallback so
+  // the UI renders immediately; this call enriches it with categorised data.
+  onMount(() => { fetchEmailTypes(); });
 
   // ── Schedule / Reschedule modal state ────────────────────────────────────
   let showScheduleModal = false;
@@ -1421,7 +1426,7 @@
                       <span class="detail-emails__suggestion-icon">📬</span>
                       <div class="detail-emails__suggestion-info">
                         <div class="detail-emails__suggestion-type">
-                          {(EMAIL_TYPES.find(t => t.value === suggestion.emailType)?.label) || suggestion.emailType}
+                          {($emailTypes.find(t => t.value === suggestion.emailType)?.label) || suggestion.emailType}
                         </div>
                         <div class="detail-emails__suggestion-meta">
                           Suggested when moving to <strong>{STAGE_LABELS[suggestion.triggeredByStage] || suggestion.triggeredByStage}</strong>
@@ -1491,7 +1496,7 @@
                     <span class="detail-emails__history-icon">{isInferred ? '🔮' : '📧'}</span>
                     <div class="detail-emails__history-body">
                       <div class="detail-emails__history-type">
-                        {(EMAIL_TYPES.find(t => t.value === e.emailType)?.label) || e.emailType || 'Email'}
+                        {($emailTypes.find(t => t.value === e.emailType)?.label) || e.emailType || 'Email'}
                         {#if isInferred}
                           <span class="detail-emails__history-inferred-badge">inferred</span>
                         {/if}
@@ -1536,7 +1541,7 @@
                   <div class="detail-emails__queue-item">
                     <div class="detail-emails__queue-item-info">
                       <span class="detail-emails__queue-item-type">
-                        {(EMAIL_TYPES.find(t => t.value === item.type)?.label) || item.type}
+                        {($emailTypes.find(t => t.value === item.type)?.label) || item.type}
                       </span>
                       <span
                         class="detail-emails__queue-item-time"
@@ -1575,7 +1580,7 @@
             <div class="detail-emails__form">
               <select bind:value={selectedEmailType} class="detail-emails__select">
                 <option value="">Choose email type…</option>
-                {#each EMAIL_TYPES as et}
+                {#each $emailTypes as et}
                   <option value={et.value}>{et.label}</option>
                 {/each}
               </select>

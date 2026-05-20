@@ -311,6 +311,26 @@ export const STAGE_COLORS: Record<string, string> = {
   completed: '#059669',
 };
 
+// ─── Server-driven email type registry ──────────────────────────────────────
+//
+// EmailTypeDescriptor mirrors the shape returned by GET /api/dashboard/email-types.
+// The frontend no longer maintains an authoritative list of email types.
+// Instead:
+//   1. emailTypes is pre-seeded with the existing EMAIL_TYPES constant so the
+//      UI renders immediately on first load (no flicker, no empty dropdown).
+//   2. fetchEmailTypes() refreshes it from the server; called once on dashboard init.
+//   3. All components that previously iterated EMAIL_TYPES can switch to
+//      `$emailTypes` with no other logic changes — the data shape is identical.
+//
+export interface EmailTypeDescriptor {
+  value: string;
+  label: string;
+  subject?: string;
+  category?: 'sales' | 'ops' | 'followup';
+}
+
+// Static fallback — kept for backward compat (existing imports keep working).
+// Do NOT add new email types here; add them to renderEmail.ts EMAIL_LABELS instead.
 export const EMAIL_TYPES = [
   { value: 'pre_call_confirmation', label: 'Pre-Call Confirmation' },
   { value: 'pre_call_guide', label: 'Pre-Call Guide' },
@@ -1457,4 +1477,41 @@ export async function createClientFromCrm(payload: CreateClientPayload): Promise
   // Optimistically refresh the client list so the new card appears immediately
   fetchClients().catch(() => {/* non-fatal */});
   return result;
+}
+
+// ─── Server-driven email type store ──────────────────────────────────────────
+//
+// Reactive writable pre-seeded with the static EMAIL_TYPES fallback so the
+// dashboard renders immediately. `fetchEmailTypes()` is called once on init
+// and replaces the store contents with the live list from the server.
+// From that point on every component that reads `$emailTypes` gets the
+// authoritative server view — no rebuild, no deploy needed when types change.
+
+/**
+ * Reactive email type list. Pre-seeded with the static `EMAIL_TYPES` fallback
+ * so the dropdown is immediately usable before the server fetch completes.
+ *
+ * Use `$emailTypes` in Svelte templates instead of `EMAIL_TYPES` so the list
+ * stays in sync with the server automatically.
+ */
+export const emailTypes = writable<EmailTypeDescriptor[]>(EMAIL_TYPES);
+
+/**
+ * Fetch the authoritative email type list from GET /api/dashboard/email-types
+ * and refresh the `emailTypes` store. Should be called once on dashboard init
+ * (e.g. in the `onMount` of the dashboard root layout).
+ *
+ * Non-fatal on error — the store keeps its static fallback so the UI remains
+ * functional even if the fetch fails.
+ */
+export async function fetchEmailTypes(): Promise<void> {
+  try {
+    const data = await apiFetch('/api/dashboard/email-types');
+    const types: EmailTypeDescriptor[] = Array.isArray(data?.types) ? data.types : [];
+    if (types.length > 0) {
+      emailTypes.set(types);
+    }
+  } catch {
+    // Non-fatal: the static EMAIL_TYPES fallback stays in place.
+  }
 }
