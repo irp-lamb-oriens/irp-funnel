@@ -78,7 +78,10 @@
   // 'choice'  = channel picker (Lili / WhatsApp / Form)
   // 'chatbot' = inline chatbot
   // 'form'    = multi-step consultation form
-  type ViewState = 'cta' | 'email' | 'choice' | 'chatbot' | 'form';
+  // 'name' is the step inserted between 'email' and 'choice' where the visitor
+  // provides first name + surname before seeing the Lili/Form choice screen.
+  // All downstream paths ('choice', 'chatbot', 'form') are unchanged.
+  type ViewState = 'cta' | 'email' | 'name' | 'choice' | 'chatbot' | 'form';
   let view: ViewState = 'cta';
   let formStep = 0; // which step within the multi-step form (0-12)
 
@@ -187,7 +190,22 @@
         }),
       });
     } catch (err) { console.error('Email capture failed:', err); }
-    finally { isLoading = false; view = 'choice'; }
+    // Transition to the inline name/surname step before showing the
+    // Lili vs. Form choice screen. Backward-compatible: 'choice' is still
+    // reachable from handleNameSubmit and from all other code paths.
+    finally { isLoading = false; view = 'name'; await tick(); nameInput?.focus(); }
+  }
+
+  // ─── Name step (between email and choice) ────────────────────────────────
+  // Collects first name + surname so they are available to BOTH the chatbot
+  // (passed as initialContext) and the multi-step form (formStep 0 is
+  // auto-skipped via the existing openForm() logic since the fields are
+  // already filled when the user reaches the choice screen).
+  async function handleNameSubmit() {
+    errors = {};
+    if (!$formState.name.trim())    { errors.name    = 'Required'; await tick(); nameInput?.focus();    return; }
+    if (!$formState.surname.trim()) { errors.surname  = 'Required'; await tick(); surnameInput?.focus(); return; }
+    view = 'choice';
   }
 
   function openChatbot() { view = 'chatbot'; }
@@ -400,6 +418,26 @@
             <Email label="Your email address" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleEmailSubmit} bind:inputElement={emailInput} bind:valid={isEmailValid} />
             {#if emailError}<span class="error">{emailError}</span>{/if}
             <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={handleEmailSubmit} loading={isLoading} /></div>
+          </div>
+        {/if}
+
+        <!-- ═══════════ NAME ═══════════ -->
+        <!-- Collected between email capture and the Lili/Form choice screen so
+             that both paths (chatbot via initialContext, form via formStep
+             skip-logic) have name+surname available from the start. -->
+        {#if view === 'name'}
+          <div class="form-frame active">
+            <div class="back-bar">
+              <button class="back-btn" on:click={() => (view = 'email')}>← Back</button>
+            </div>
+            <h2>What's your name?</h2>
+            <PlainText label="First name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
+            {#if errors.name}<span class="error">{errors.name}</span>{/if}
+            <PlainText label="Last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={handleNameSubmit} bind:inputElement={surnameInput} />
+            {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={handleNameSubmit} loading={isLoading} />
+            </div>
           </div>
         {/if}
 
