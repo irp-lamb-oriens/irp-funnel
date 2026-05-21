@@ -70,24 +70,43 @@
     }
   ];
 
-  // Custom eased scroll — deliberately slower than the browser's native
-  // smooth-scroll so the visitor can clearly see the page gliding to the CTA.
-  // Uses an easeInOutCubic curve over `duration` ms driven by rAF.
-  function smoothScrollTo(targetY: number, duration = 2400) {
+  // Custom scroll — easeOutExpo: fast start, then a long exponential
+  // deceleration that asymptotically arrives at the target for a
+  // cinematic, butter-soft landing. Duration is longer so the tail-off
+  // is clearly visible rather than compressed.
+  function smoothScrollTo(targetY: number, duration = 2800) {
     const startY = window.scrollY;
     const distance = targetY - startY;
     let startTime: number | null = null;
+    let cancelled = false;
 
-    function easeInOutCubic(t: number): number {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // Any deliberate user gesture cancels the programmatic scroll immediately.
+    const cancel = () => { cancelled = true; cleanup(); };
+    const cleanup = () => {
+      window.removeEventListener('wheel',      cancel, { capture: true } as any);
+      window.removeEventListener('touchstart', cancel, { capture: true } as any);
+      window.removeEventListener('keydown',    cancel, { capture: true } as any);
+    };
+    window.addEventListener('wheel',      cancel, { passive: true, capture: true });
+    window.addEventListener('touchstart', cancel, { passive: true, capture: true });
+    window.addEventListener('keydown',    cancel, { capture: true });
+
+    // Starts at full speed, decelerates exponentially — very soft finish.
+    function easeOutExpo(t: number): number {
+      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
     }
 
     function step(timestamp: number) {
+      if (cancelled) return;
       if (startTime === null) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      window.scrollTo(0, startY + distance * easeInOutCubic(progress));
-      if (progress < 1) requestAnimationFrame(step);
+      window.scrollTo(0, startY + distance * easeOutExpo(progress));
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        cleanup(); // animation finished naturally — remove listeners
+      }
     }
 
     requestAnimationFrame(step);
