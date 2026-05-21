@@ -383,7 +383,7 @@
   <!-- <video autoplay muted loop playsinline class="bg-video" src="https://www.pexels.com/download/video/7855756/"></video> -->
   <Loader visible={isLoading} />
   <VideoBanner videoUrl={videoUrl} videoPoster={imageUrl} videoAlt={imageAlt}>
-    <div class="form-container">
+    <div class="form-container" id="hero-form-container">
       <div class="form-steps">
 
         <!-- ═══════════ CTA ═══════════ -->

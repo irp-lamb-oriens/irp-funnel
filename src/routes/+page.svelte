@@ -98,7 +98,7 @@
   // page (social proof gallery, video, etc. scroll past first).
   onMount(() => {
     setTimeout(() => {
-      const el = document.getElementById('hero-form');
+      const el = document.getElementById('hero-form-container');
       if (el) {
         const targetY = el.getBoundingClientRect().top + window.scrollY;
         smoothScrollTo(targetY);
