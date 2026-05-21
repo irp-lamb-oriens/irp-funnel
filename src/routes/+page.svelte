@@ -81,15 +81,19 @@
     let cancelled = false;
 
     // Any deliberate user gesture cancels the programmatic scroll immediately.
+    // NOTE: 'wheel' is intentionally excluded — it fires from our own
+    // window.scrollTo() calls on desktop (macOS inertia), which would
+    // cancel the animation before it finishes. pointerdown / touchstart /
+    // keydown only fire from real human input.
     const cancel = () => { cancelled = true; cleanup(); };
     const cleanup = () => {
-      window.removeEventListener('wheel',      cancel, { capture: true } as any);
-      window.removeEventListener('touchstart', cancel, { capture: true } as any);
-      window.removeEventListener('keydown',    cancel, { capture: true } as any);
+      window.removeEventListener('pointerdown', cancel, { capture: true } as any);
+      window.removeEventListener('touchstart',  cancel, { capture: true } as any);
+      window.removeEventListener('keydown',     cancel, { capture: true } as any);
     };
-    window.addEventListener('wheel',      cancel, { passive: true, capture: true });
-    window.addEventListener('touchstart', cancel, { passive: true, capture: true });
-    window.addEventListener('keydown',    cancel, { capture: true });
+    window.addEventListener('pointerdown', cancel, { capture: true });
+    window.addEventListener('touchstart',  cancel, { passive: true, capture: true });
+    window.addEventListener('keydown',     cancel, { capture: true });
 
     // Starts at full speed, decelerates exponentially — very soft finish.
     function easeOutExpo(t: number): number {
@@ -115,13 +119,18 @@
   // Auto-scroll to the hero form 1 second after the page loads so the CTA
   // is always front-and-center regardless of where the visitor lands on the
   // page (social proof gallery, video, etc. scroll past first).
+  //
+  // Guard: if the browser/SvelteKit already scrolled the page near the form
+  // (e.g. via an #hero-form anchor link from /consultation), skip the
+  // programmatic scroll entirely — no double-scroll.
   onMount(() => {
     setTimeout(() => {
       const el = document.getElementById('hero-form-container');
-      if (el) {
-        const targetY = el.getBoundingClientRect().top + window.scrollY;
-        smoothScrollTo(targetY);
-      }
+      if (!el) return;
+      const targetY = el.getBoundingClientRect().top + window.scrollY;
+      // Already within 120 px of the target — don't fire a second scroll.
+      if (Math.abs(window.scrollY - targetY) < 120) return;
+      smoothScrollTo(targetY);
     }, 1000);
   });
 </script>
