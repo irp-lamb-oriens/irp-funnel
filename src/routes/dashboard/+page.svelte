@@ -18,6 +18,7 @@
   import PendingBadge from './components/PendingBadge.svelte';
   import EmailPreviewDrawer from './components/EmailPreviewDrawer.svelte';
   import MetricsView from './components/MetricsView.svelte';
+  import BugReportModal from './components/BugReportModal.svelte';
   import EvoView from './components/evo/EvoView.svelte';
   import VendorsView from './components/VendorsView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
@@ -32,6 +33,9 @@
   let loginError = '';
   let loginLoading = false;
   $: loginEmail = loginUsername.trim().toLowerCase() + DOMAIN;
+
+  // ─── Bug report modal ────────────────────────────────────────────────────
+  let bugReportOpen = false;
 
   // ─── Detail Panel State ─────────────────────────────────────────────────
   let newNote = '';
@@ -609,7 +613,132 @@
   </div>
 {/if}
 
+<!-- ── Floating bug-report FAB (visible only when authenticated) ─────────── -->
+{#if $isAuthenticated}
+  <button
+    class="bug-fab"
+    on:click={() => (bugReportOpen = true)}
+    title="Report a bug"
+    aria-label="Report a bug"
+  >
+    <span class="bug-fab__ring" aria-hidden="true"></span>
+    <span class="bug-fab__inner" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- bug icon: body + legs -->
+        <path d="M12 12c-2.5 0-4 1.5-4 4s1.5 4 4 4 4-1.5 4-4-1.5-4-4-4z"/>
+        <path d="M12 12V8"/>
+        <path d="M8 16H4M16 16h4"/>
+        <path d="M7 13L4 10M17 13l3-3"/>
+        <path d="M7 19l-3 2M17 19l3 2"/>
+        <path d="M10 8c0-1.1.9-2 2-2s2 .9 2 2"/>
+      </svg>
+    </span>
+    <span class="bug-fab__label">Bug</span>
+  </button>
+  <BugReportModal bind:open={bugReportOpen} />
+{/if}
+
 <EmailPreviewDrawer />
 
 <ToastContainer />
 <Footer />
+
+<style>
+  /* ══ Bug FAB ══════════════════════════════════════════════════════════════ */
+  .bug-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 8000;
+    outline: none;
+  }
+
+  /* pulsing outer ring */
+  .bug-fab__ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(99, 102, 241, 0.45);
+    pointer-events: none;
+    animation: fab-pulse 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes fab-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1);    }
+    50%       { opacity: 0;   transform: scale(1.35); }
+  }
+
+  /* main circle */
+  .bug-fab__inner {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(148, 163, 184, 0.85);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255,255,255,0.04),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+  .bug-fab__inner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.12), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* label below the circle */
+  .bug-fab__label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(100, 116, 139, 0.55);
+    transition: color 0.2s;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  /* hover state */
+  .bug-fab:hover .bug-fab__inner {
+    background: linear-gradient(135deg, rgba(99,102,241,0.9) 0%, rgba(79,70,229,0.95) 100%);
+    border-color: rgba(99, 102, 241, 0.8);
+    color: #fff;
+    transform: scale(1.1) translateY(-2px);
+    box-shadow:
+      0 8px 32px rgba(99, 102, 241, 0.45),
+      0 0 0 1px rgba(99,102,241,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .bug-fab:hover .bug-fab__ring {
+    animation: none;
+    border-color: rgba(99, 102, 241, 0.7);
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  .bug-fab:hover .bug-fab__label {
+    color: rgba(165, 180, 252, 0.9);
+  }
+
+  /* active / press */
+  .bug-fab:active .bug-fab__inner {
+    transform: scale(0.96) translateY(0);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+  }
+</style>
