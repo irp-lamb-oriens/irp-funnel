@@ -52,6 +52,9 @@
     'currentEmailQueueAttempt',
     'lastChatbotInteraction',
     'lastBookConsultationContext',
+    // 'email' is already shown in the detail panel header — suppress the
+    // duplicate ✉️ entry that would otherwise appear alongside 'dripEmail'.
+    'email',
   ]);
 
   // ── friendly icons + tones for top-level keys (operators recognise these) ─
