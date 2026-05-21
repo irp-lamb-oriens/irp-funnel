@@ -5,37 +5,81 @@
   import { fade, slide } from "svelte/transition";
   import fuzzysort from "fuzzysort";
 
-  // Type definitions
+  // ─── Types ────────────────────────────────────────────────────────────────
   interface Vehicle {
     year: string;
     make: string;
     model: string;
   }
 
-  interface Make {
-    make_id: string;
-    make_display: string;
-    make_is_common: string;
-    make_country: string;
-  }
-
-  interface Model {
-    model_name: string;
-    model_make_id: string;
-  }
-
-  // Props
+  // ─── Props ────────────────────────────────────────────────────────────────
   export let vehicles: Vehicle[] = [];
   export let onUpdate: (vehicles: Vehicle[]) => void = () => {};
 
-  // State for each vehicle row to manage dropdowns
-  let vehicleStates: any[] = [];
+  // ─── Module-level cache (shared across all instances / rows) ─────────────
+  // Fetched once on first component mount; subsequent rows reuse the same data.
+  // Cascade: primary → fallback → manual (empty object → user types freely).
+
+  const _PRIMARY_URL =
+    "https://raw.githubusercontent.com/DanielKohut/car-data/refs/heads/main/car_data.json";
+  const _FALLBACK_URL =
+    "https://raw.githubusercontent.com/LuisArmando-TestCoder/car-data/refs/heads/main/car_data.json";
+
+  let _carDataCache: Record<string, string[]> | null = null;
+  let _carDataPromise: Promise<Record<string, string[]>> | null = null;
+
+  /** Fixes a common authoring bug: missing comma between array-value properties.
+   *  ]\n    "NextKey"  →  ],\n    "NextKey"
+   *  Safe no-op when the JSON is already valid.
+   */
+  function _repairJson(raw: string): Record<string, string[]> {
+    const fixed = raw.replace(/\]\s*\n(\s*")/g, "],\n$1");
+    const parsed = JSON.parse(fixed) as { brands: Record<string, string[]> };
+    return parsed.brands;
+  }
+
+  async function _fetchAndRepair(url: string): Promise<Record<string, string[]>> {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const raw = await r.text();
+    return _repairJson(raw);
+  }
+
+  function getCarData(): Promise<Record<string, string[]>> {
+    if (_carDataCache) return Promise.resolve(_carDataCache);
+    if (!_carDataPromise) {
+      _carDataPromise = _fetchAndRepair(_PRIMARY_URL)
+        .catch(() => _fetchAndRepair(_FALLBACK_URL))
+        .then((brands) => {
+          _carDataCache = brands;
+          return brands;
+        })
+        .catch(() => {
+          // Both sources failed — resolve to empty so user types manually.
+          _carDataCache = {};
+          return {} as Record<string, string[]>;
+        });
+    }
+    return _carDataPromise;
+  }
+
+  // ─── Per-row UI state ─────────────────────────────────────────────────────
+  let vehicleStates: {
+    makes: string[];
+    models: string[];
+    loadingMakes: boolean;
+    loadingModels: boolean;
+    showMakeDropdown: boolean;
+    showModelDropdown: boolean;
+    makeSearch: string;
+    modelSearch: string;
+    error: string | null;
+  }[] = [];
+
   let inputElements: HTMLInputElement[] = [];
 
   // Initialize first vehicle if empty
-  if (vehicles.length === 0) {
-    addVehicle();
-  }
+  if (vehicles.length === 0) addVehicle();
 
   function addVehicle() {
     vehicles = [...vehicles, { year: "", make: "", model: "" }];
@@ -64,89 +108,36 @@
     }
   }
 
-  // JSONP Helper
-  function jsonp(url: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
-      const script = document.createElement("script");
-      
-      // Append callback parameter
-      const delimiter = url.indexOf("?") === -1 ? "?" : "&";
-      script.src = `${url}${delimiter}callback=${callbackName}`;
-      script.async = true;
+  // ─── Data loading ─────────────────────────────────────────────────────────
 
-      (window as any)[callbackName] = (data: any) => {
-        resolve(data);
-        document.body.removeChild(script);
-        delete (window as any)[callbackName];
-      };
+  // Eagerly pre-fetch so the dropdown is instant when the user opens it.
+  onMount(() => { getCarData().catch(() => {}); });
 
-      script.onerror = () => {
-        reject(new Error("JSONP request failed"));
-        document.body.removeChild(script);
-        delete (window as any)[callbackName];
-      };
-
-      document.body.appendChild(script);
-    });
-  }
-
-  async function fetchMakes(index: number) {
-    const year = vehicles[index].year;
-    if (!year || year.length < 4) return;
-
+  async function loadMakes(index: number) {
+    if (vehicleStates[index].makes.length > 0) return; // already loaded
     vehicleStates[index].loadingMakes = true;
     vehicleStates[index].error = null;
-    vehicleStates[index].makes = [];
-
     try {
-      const response = await jsonp(
-        `https://www.carqueryapi.com/api/0.3/?cmd=getMakes&year=${year}`
-      );
-      if (response && response.Makes) {
-        vehicleStates[index].makes = response.Makes;
-      }
-    } catch (e) {
-      console.error("Failed to fetch makes", e);
+      const brands = await getCarData();
+      vehicleStates[index].makes = Object.keys(brands).sort();
+    } catch {
       vehicleStates[index].error = "Could not load vehicle brands. Please type manually.";
     } finally {
       vehicleStates[index].loadingMakes = false;
-      // Force reactivity
       vehicleStates = [...vehicleStates];
     }
   }
 
-  async function fetchModels(index: number) {
-    const year = vehicles[index].year;
+  async function loadModels(index: number) {
     const make = vehicles[index].make;
-    
-    if (!year || !make) return;
-
-    // Find make ID if possible, otherwise use name (API takes ID usually lowercase slug)
-    // The API returns make_id which is usually lowercase
-    const selectedMakeObj = vehicleStates[index].makes.find(
-        (m: Make) => m.make_display.toLowerCase() === make.toLowerCase()
-    );
-    const makeId = selectedMakeObj ? selectedMakeObj.make_id : make.toLowerCase().replace(/ /g, '-');
-
+    if (!make) return;
     vehicleStates[index].loadingModels = true;
     vehicleStates[index].error = null;
     vehicleStates[index].models = [];
-
     try {
-      const response = await jsonp(
-        `https://www.carqueryapi.com/api/0.3/?cmd=getModels&make=${makeId}&year=${year}`
-      );
-      if (response && response.Models) {
-        vehicleStates[index].models = response.Models;
-      }
-      
-      if (vehicleStates[index].models.length === 0) {
-         vehicleStates[index].error = "No models found for this year/brand combination. Please type manually.";
-      }
-
-    } catch (e) {
-      console.error("Failed to fetch models", e);
+      const brands = await getCarData();
+      vehicleStates[index].models = (brands[make] ?? []).slice().sort();
+    } catch {
       vehicleStates[index].error = "Could not load models. Please type manually.";
     } finally {
       vehicleStates[index].loadingModels = false;
@@ -154,60 +145,58 @@
     }
   }
 
+  // ─── Event handlers ───────────────────────────────────────────────────────
+
   function handleYearChange(index: number, val: string) {
     vehicles[index].year = val;
     vehicles[index].make = "";
     vehicles[index].model = "";
     vehicleStates[index].makes = [];
     vehicleStates[index].models = [];
-    
-    if (val.length === 4 && !isNaN(Number(val))) {
-        fetchMakes(index);
-    }
+    vehicleStates[index].makeSearch = "";
+    vehicleStates[index].modelSearch = "";
     onUpdate(vehicles);
+    // Start loading makes when a plausible year is typed
+    if (val.length >= 4 && !isNaN(Number(val))) {
+      loadMakes(index);
+    }
   }
 
-  function selectMake(index: number, make: Make) {
-    vehicles[index].make = make.make_display;
+  function selectMake(index: number, make: string) {
+    vehicles[index].make = make;
     vehicles[index].model = "";
     vehicleStates[index].showMakeDropdown = false;
     vehicleStates[index].makeSearch = "";
-    fetchModels(index);
+    loadModels(index);
     onUpdate(vehicles);
   }
 
-  function selectModel(index: number, model: Model) {
-    vehicles[index].model = model.model_name;
+  function selectModel(index: number, model: string) {
+    vehicles[index].model = model;
     vehicleStates[index].showModelDropdown = false;
     vehicleStates[index].modelSearch = "";
     onUpdate(vehicles);
   }
-  
-  // Helper to close dropdowns on click outside
-  function handleClickOutside(event: MouseEvent) {
-    // Implementation simplified: relies on blur/focus management or simple overlay for now
-    // For robust dropdowns, we use a backdrop or specific refs. 
-    // Here we'll use a simple logic: if click target is not in the dropdown, close it.
-  }
 
-  // Filtered lists
-  function getFilteredMakes(index: number) {
-    const term = vehicleStates[index].makeSearch.toLowerCase();
+  // ─── Filtered lists ───────────────────────────────────────────────────────
+
+  function getFilteredMakes(index: number): string[] {
+    const term = vehicleStates[index].makeSearch.trim();
     if (!term) return vehicleStates[index].makes;
-    return fuzzysort.go(term, vehicleStates[index].makes, { key: 'make_display' }).map(r => r.obj);
+    return fuzzysort.go(term, vehicleStates[index].makes).map((r) => r.target);
   }
 
-  function getFilteredModels(index: number) {
-    const term = vehicleStates[index].modelSearch.toLowerCase();
+  function getFilteredModels(index: number): string[] {
+    const term = vehicleStates[index].modelSearch.trim();
     if (!term) return vehicleStates[index].models;
-    return fuzzysort.go(term, vehicleStates[index].models, { key: 'model_name' }).map(r => r.obj);
+    return fuzzysort.go(term, vehicleStates[index].models).map((r) => r.target);
   }
 </script>
 
 <div class="vehicles-container">
   {#each vehicles as vehicle, i}
     <div class="vehicle-row" in:slide|local>
-      
+
       <!-- Year Input -->
       <div class="input-group year-group">
         <PlainText
@@ -221,94 +210,94 @@
       <!-- Make Input -->
       {#if vehicle.year.trim() !== ""}
         <div class="input-group make-group" in:fade>
-             <div class="custom-select">
-                <input 
-                    type="text" 
-                    placeholder="Brand / Make" 
-                    bind:value={vehicles[i].make} 
-                    on:focus={() => vehicleStates[i].showMakeDropdown = true}
-                    on:input={(e) => {
-                        vehicles[i].make = e.currentTarget.value;
-                        vehicleStates[i].makeSearch = e.currentTarget.value;
-                        vehicleStates[i].showMakeDropdown = true;
-                        onUpdate(vehicles);
-                    }}
-                    class="control-input"
-                />
-                {#if vehicleStates[i].loadingMakes}
-                    <div class="spinner"></div>
-                {/if}
-                {#if vehicleStates[i].showMakeDropdown && vehicleStates[i].makes.length > 0}
-                    <ul class="dropdown-list" transition:slide>
-                        {#each getFilteredMakes(i) as make}
-                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <li class="dropdown-item" on:click={() => selectMake(i, make)}>
-                                {make.make_display}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-                 <!-- Overlay to close dropdown -->
-                 {#if vehicleStates[i].showMakeDropdown}
-                    <div class="backdrop" on:click={() => vehicleStates[i].showMakeDropdown = false}></div>
-                {/if}
-             </div>
+          <div class="custom-select">
+            <input
+              type="text"
+              placeholder="Brand / Make"
+              bind:value={vehicles[i].make}
+              on:focus={() => { loadMakes(i); vehicleStates[i].showMakeDropdown = true; }}
+              on:input={(e) => {
+                vehicles[i].make = e.currentTarget.value;
+                vehicleStates[i].makeSearch = e.currentTarget.value;
+                vehicleStates[i].showMakeDropdown = true;
+                onUpdate(vehicles);
+              }}
+              class="control-input"
+            />
+            {#if vehicleStates[i].loadingMakes}
+              <div class="spinner"></div>
+            {/if}
+            {#if vehicleStates[i].showMakeDropdown && vehicleStates[i].makes.length > 0}
+              <ul class="dropdown-list" transition:slide>
+                {#each getFilteredMakes(i) as make}
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <li class="dropdown-item" on:click={() => selectMake(i, make)}>
+                    {make}
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+            {#if vehicleStates[i].showMakeDropdown}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="backdrop" on:click={() => vehicleStates[i].showMakeDropdown = false}></div>
+            {/if}
+          </div>
         </div>
       {/if}
 
       <!-- Model Input -->
       {#if vehicle.make.trim() !== ""}
-         <div class="input-group model-group" in:fade>
-             <div class="custom-select">
-                <input 
-                    type="text" 
-                    placeholder="Model" 
-                    bind:value={vehicles[i].model}
-                    on:focus={() => vehicleStates[i].showModelDropdown = true}
-                    on:input={(e) => {
-                        vehicles[i].model = e.currentTarget.value;
-                        vehicleStates[i].modelSearch = e.currentTarget.value;
-                        vehicleStates[i].showModelDropdown = true;
-                        onUpdate(vehicles);
-                    }} 
-                    class="control-input"
-                />
-                {#if vehicleStates[i].loadingModels}
-                    <div class="spinner"></div>
-                {/if}
-                 {#if vehicleStates[i].showModelDropdown && vehicleStates[i].models.length > 0}
-                    <ul class="dropdown-list" transition:slide>
-                        {#each getFilteredModels(i) as model}
-                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <li class="dropdown-item" on:click={() => selectModel(i, model)}>
-                                {model.model_name}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-                 <!-- Overlay to close dropdown -->
-                 {#if vehicleStates[i].showModelDropdown}
-                    <div class="backdrop" on:click={() => vehicleStates[i].showModelDropdown = false}></div>
-                {/if}
-             </div>
-         </div>
+        <div class="input-group model-group" in:fade>
+          <div class="custom-select">
+            <input
+              type="text"
+              placeholder="Model"
+              bind:value={vehicles[i].model}
+              on:focus={() => vehicleStates[i].showModelDropdown = true}
+              on:input={(e) => {
+                vehicles[i].model = e.currentTarget.value;
+                vehicleStates[i].modelSearch = e.currentTarget.value;
+                vehicleStates[i].showModelDropdown = true;
+                onUpdate(vehicles);
+              }}
+              class="control-input"
+            />
+            {#if vehicleStates[i].loadingModels}
+              <div class="spinner"></div>
+            {/if}
+            {#if vehicleStates[i].showModelDropdown && vehicleStates[i].models.length > 0}
+              <ul class="dropdown-list" transition:slide>
+                {#each getFilteredModels(i) as model}
+                  <!-- svelte-ignore a11y-click-events-have-key-events -->
+                  <li class="dropdown-item" on:click={() => selectModel(i, model)}>
+                    {model}
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+            {#if vehicleStates[i].showModelDropdown}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="backdrop" on:click={() => vehicleStates[i].showModelDropdown = false}></div>
+            {/if}
+          </div>
+        </div>
       {/if}
 
       <!-- Remove Button -->
       {#if vehicles.length > 1}
         <div class="remove-btn">
-             <IconButton src="./icons/trash.svg" callback={() => removeVehicle(i)} />
+          <IconButton src="./icons/trash.svg" callback={() => removeVehicle(i)} />
         </div>
       {/if}
     </div>
-    
+
     {#if vehicleStates[i].error}
-        <div class="error-msg" in:slide>{vehicleStates[i].error}</div>
+      <div class="error-msg" in:slide>{vehicleStates[i].error}</div>
     {/if}
   {/each}
 
   <div class="add-btn-wrapper">
-      <IconButton src="./icons/plus.svg" callback={addVehicle} label="Add Another Vehicle" />
+    <IconButton src="./icons/plus.svg" callback={addVehicle} label="Add Another Vehicle" />
   </div>
 </div>
 
@@ -343,8 +332,8 @@
   }
 
   .custom-select {
-      position: relative;
-      width: 100%;
+    position: relative;
+    width: 100%;
   }
 
   .control-input {
@@ -388,13 +377,8 @@
     padding: 0.5rem;
     list-style: none;
 
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-    }
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
   }
 
   .dropdown-item {
@@ -411,51 +395,43 @@
   }
 
   .backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 40;
-      background: transparent;
-  }
-  
-  .custom-select .dropdown-list {
-      z-index: 51; /* Above backdrop */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 40;
+    background: transparent;
   }
 
-  .remove-btn {
-      align-self: flex-end;
-  }
+  .custom-select .dropdown-list { z-index: 51; }
+
+  .remove-btn { align-self: flex-end; }
 
   .error-msg {
-      color: #ef4444;
-      font-size: 0.85rem;
-      font-weight: 500;
-      margin-top: 0.25rem;
-      padding-left: 1rem;
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    padding-left: 1rem;
   }
 
   .spinner {
-      position: absolute;
-      right: 1.25rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 1.25rem;
-      height: 1.25rem;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-top-color: var(--color-highlight-2);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--color-highlight-2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
 
-  @keyframes spin {
-      to { transform: translateY(-50%) rotate(360deg); }
-  }
-  
+  @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
   .add-btn-wrapper {
-      display: flex;
-      justify-content: center;
-      margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
   }
 </style>

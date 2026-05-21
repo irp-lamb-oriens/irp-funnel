@@ -48,10 +48,9 @@
       {/if}
     {/each}
     <!-- Uncategorised (older static entries without a category field) -->
-    {@const uncat = $emailTypes.filter(t => !t.category)}
-    {#if uncat.length > 0}
+    {#if $emailTypes.filter(t => !t.category).length > 0}
       <optgroup label="Other">
-        {#each uncat as et}
+        {#each $emailTypes.filter(t => !t.category) as et}
           <option value={et.value}>{et.label}</option>
         {/each}
       </optgroup>
