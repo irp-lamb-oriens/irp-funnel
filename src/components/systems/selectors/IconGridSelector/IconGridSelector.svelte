@@ -47,7 +47,7 @@
 <style lang="scss">
   .icon-grid-selector {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 1.25rem;
     max-width: 500px;
     margin: auto;
