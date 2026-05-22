@@ -639,7 +639,6 @@
         <path d="M10 8c0-1.1.9-2 2-2s2 .9 2 2"/>
       </svg>
     </span>
-    <span class="bug-fab__label">Bug</span>
   </button>
   <BugReportModal bind:open={bugReportOpen} />
 {/if}
