@@ -210,6 +210,7 @@ export const STAGE_LABELS: Record<string, string> = {
   sales_pricing_quote: 'Pricing Quote',
   sales_quote_acceptance: 'Quote Acceptance',
   sales_initial_payment: 'Initial Payment',
+  sale_dropped: 'Sale Dropped',
   // Ops — Origin
   ops_self_packing: 'Self Packing',
   ops_full_packing: 'Full Packing',
@@ -249,6 +250,7 @@ export const STAGE_ICONS: Record<string, string> = {
   sales_pricing_quote: '💰',
   sales_quote_acceptance: '✅',
   sales_initial_payment: '💳',
+  sale_dropped: '💔',
   // Ops — Origin
   ops_self_packing: '📦',
   ops_full_packing: '📋',
@@ -288,6 +290,7 @@ export const STAGE_COLORS: Record<string, string> = {
   sales_pricing_quote: '#8b5cf6',
   sales_quote_acceptance: '#7c3aed',
   sales_initial_payment: '#6d28d9',
+  sale_dropped: '#dc2626',
   // Ops Origin — blues/cyans
   ops_self_packing: '#3b82f6',
   ops_full_packing: '#2563eb',
