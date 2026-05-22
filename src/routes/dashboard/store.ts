@@ -122,6 +122,13 @@ export interface Client {
    */
   pendingActions?: PendingAction[];
   /**
+   * ISO timestamp of when the Pricing Summary email was last dispatched
+   * to pricing@internationalrelocationpartner.com for this client.
+   * `null` or `undefined` means it has never been sent.
+   * Used to hide/show the "Send to Pricing" banner in the Overview tab.
+   */
+  pricingSentAt?: string | null;
+  /**
    * Full Firestore document (server strips a few large branches before
    * sending). Front-end uses this to show every key on the card and let
    * operators edit any field via the schema-agnostic PATCH endpoint.

@@ -221,3 +221,94 @@
   }
 }
 
+
+
+// ── Pricing Summary banner (shown when transcript ready but not yet sent) ───
+.detail-overview__pricing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  grid-column: 1 / -1;
+
+  &-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  &-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 2px;
+  }
+
+  &-desc {
+    font-size: 11px;
+    color: #3b82f6;
+    line-height: 1.4;
+  }
+}
+
+.detail-overview__pricing-btn {
+  flex-shrink: 0;
+  padding: 7px 13px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+// ── "Sent" confirmation row ────────────────────────────────────────────────
+.detail-overview__pricing-sent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #166534;
+  font-weight: 500;
+  grid-column: 1 / -1;
+
+  &-time {
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 400;
+  }
+}

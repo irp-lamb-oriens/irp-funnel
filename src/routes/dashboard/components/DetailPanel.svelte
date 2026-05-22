@@ -578,6 +578,44 @@
       -->
       {#if detailTab === 'overview'}
         <div class="detail-overview detail-fields">
+          <!-- ── Pricing banner ──────────────────────────────────────────
+               Shown only when:
+                 • the client has some transcript/meeting-notes text (call happened)
+                 • the pricing summary has NOT been sent yet (pricingSentAt is null)
+               Uses the existing openEmailPreview() function — no new code paths.
+          ─────────────────────────────────────────────────────────────── -->
+          {#if ($selectedClient.transcript || $selectedClient.meetingNotes?.text)}
+            {#if !$selectedClient.pricingSentAt}
+              <div class="detail-overview__pricing-banner">
+                <div class="detail-overview__pricing-banner-body">
+                  <span class="detail-overview__pricing-banner-icon">📤</span>
+                  <div>
+                    <div class="detail-overview__pricing-banner-title">Transcript ready — send to pricing</div>
+                    <div class="detail-overview__pricing-banner-desc">Preview &amp; send a full summary (client data + AI insights) to pricing@internationalrelocationpartner.com</div>
+                  </div>
+                </div>
+                <button
+                  class="detail-overview__pricing-btn"
+                  disabled={emailPreviewing}
+                  on:click={() => openEmailPreview('pricing_summary')}
+                >
+                  {#if emailPreviewing}
+                    <span class="actions-card__spinner"></span> Loading…
+                  {:else}
+                    Preview &amp; Send to Pricing
+                  {/if}
+                </button>
+              </div>
+            {:else}
+              <div class="detail-overview__pricing-sent">
+                <span>✓ Pricing summary sent</span>
+                <span class="detail-overview__pricing-sent-time" title={$selectedClient.pricingSentAt}>
+                  {relativeTime($selectedClient.pricingSentAt)}
+                </span>
+              </div>
+            {/if}
+          {/if}
+
           <!-- Name + Surname — top-level fields, editable inline -->
           <div class="detail-field">
             <span class="detail-field__label">First Name</span>
