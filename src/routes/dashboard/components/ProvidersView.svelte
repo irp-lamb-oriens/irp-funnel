@@ -21,9 +21,10 @@
   // ── Constants ────────────────────────────────────────────────────────────
 
   const SERVICE_CATEGORY_OPTIONS = [
-    { value: 'full_service',      label: 'Full Service (empaque completo)' },
-    { value: 'diy_no_loading',    label: 'DIY — No Loading Assistance'     },
-    { value: 'self_pack_loading', label: 'Self Pack with Loading'           },
+    { value: 'full_service',      label: 'A — Full Service (empaque completo)' },
+    { value: 'diy_no_loading',    label: 'B — DIY — No Loading Assistance'     },
+    { value: 'self_pack_loading', label: 'C — Self Pack with Loading'           },
+    { value: 'external',          label: 'D — External / Custom Partner'        },
   ];
 
   const SHIPPING_MODALITY_OPTIONS = [
@@ -36,6 +37,7 @@
     full_service:      '🛡️',
     diy_no_loading:    '👤',
     self_pack_loading: '👥',
+    external:          '🤝',
   };
 
   const MODALITY_EMOJI: Record<string, string> = {
@@ -77,6 +79,8 @@
     contactPerson?: string;
     serviceCategories: string[];
     shippingModalities: string[];
+    /** Free-form custom fields; keys are globally tracked via field-schema. */
+    customFields?: Record<string, string>;
     originRegions?: string[];
     destinationRegions?: string[];
     notes?: string;
@@ -99,6 +103,22 @@
   // Form state
   let showForm = false;
   let editingId: string | null = null;
+
+  /**
+   * Globally known custom field names — fetched from /field-schema.
+   * Every new field name ever added to any provider appears here so the
+   * form can pre-render all known fields (blank) on every provider.
+   */
+  let knownCustomFieldNames: string[] = [];
+
+  /**
+   * Current form's custom field values.
+   * Keys come from knownCustomFieldNames + any pre-existing provider fields.
+   */
+  let formCustomFields: Record<string, string> = {};
+
+  /** Label for the "Add field" UI — the new field name being typed. */
+  let newCustomFieldName = '';
 
   // Form fields
   let form = emptyForm();
@@ -130,8 +150,21 @@
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   onMount(async () => {
-    await loadProviders();
+    await Promise.all([loadProviders(), loadFieldSchema()]);
   });
+
+  async function loadFieldSchema() {
+    try {
+      const data = await apiFetch('/api/dashboard/providers/field-schema');
+      knownCustomFieldNames = data.fields ?? [];
+      // Seed formCustomFields with blank values for all known fields
+      for (const name of knownCustomFieldNames) {
+        if (!(name in formCustomFields)) formCustomFields[name] = '';
+      }
+    } catch {
+      // non-fatal — field schema is enhancement, not required
+    }
+  }
 
   async function loadProviders() {
     loading = true;
@@ -157,6 +190,12 @@
     if (form.serviceCategories.length === 0) { error = 'Select at least one service category.'; return; }
     if (form.shippingModalities.length === 0) { error = 'Select at least one shipping modality.'; return; }
 
+    // Collect non-empty custom fields
+    const customFieldsPayload: Record<string, string> = {};
+    for (const [k, v] of Object.entries(formCustomFields)) {
+      if (k.trim() && v.trim()) customFieldsPayload[k.trim()] = v.trim();
+    }
+
     const payload: Record<string, any> = {
       name: form.name.trim(),
       email: form.email.trim(),
@@ -172,6 +211,7 @@
       destinationRegions: form.destinationRegions
         ? form.destinationRegions.split(',').map((s: string) => s.trim()).filter(Boolean)
         : undefined,
+      ...(Object.keys(customFieldsPayload).length > 0 ? { customFields: customFieldsPayload } : {}),
     };
 
     try {
@@ -212,6 +252,12 @@
       destinationRegions: (p.destinationRegions || []).join(', '),
       notes: p.notes || '',
     };
+    // Merge: start with blanks for all known fields, then fill in provider's actual values
+    formCustomFields = {};
+    for (const name of knownCustomFieldNames) formCustomFields[name] = '';
+    for (const [k, v] of Object.entries(p.customFields ?? {})) {
+      formCustomFields[k] = String(v);
+    }
     showForm = true;
     error = '';
     success = '';
@@ -221,7 +267,23 @@
     showForm = false;
     editingId = null;
     form = emptyForm();
+    // Reset custom fields to blank stubs for known names
+    formCustomFields = {};
+    for (const name of knownCustomFieldNames) formCustomFields[name] = '';
+    newCustomFieldName = '';
     error = '';
+  }
+
+  function addCustomFieldRow() {
+    const name = newCustomFieldName.trim();
+    if (!name) return;
+    formCustomFields[name] = '';
+    formCustomFields = { ...formCustomFields }; // trigger reactivity
+    // Add to known names locally so all rows stay in sync
+    if (!knownCustomFieldNames.includes(name)) {
+      knownCustomFieldNames = [...knownCustomFieldNames, name].sort();
+    }
+    newCustomFieldName = '';
   }
 
   async function toggleActive(p: Provider) {
@@ -350,6 +412,39 @@
         <div class="form-field form-field--full">
           <label>Internal Notes</label>
           <textarea bind:value={form.notes} rows="3" placeholder="E.g. preferred for LCL, slow response times for ocean FCL…"></textarea>
+        </div>
+
+        <!-- Custom Fields ─ grow organically; every key ever added appears on all future providers -->
+        <div class="form-field form-field--full">
+          <label>
+            Additional Fields
+            <span class="hint"> — any field added here becomes available on all providers</span>
+          </label>
+          {#if Object.keys(formCustomFields).length > 0}
+            <div class="custom-fields-grid">
+              {#each Object.keys(formCustomFields) as fieldName (fieldName)}
+                <div class="custom-field-row">
+                  <span class="custom-field-name">{fieldName}</span>
+                  <input
+                    bind:value={formCustomFields[fieldName]}
+                    placeholder="(leave blank to skip)"
+                    class="custom-field-input"
+                  />
+                </div>
+              {/each}
+            </div>
+          {/if}
+          <div class="custom-field-add-row">
+            <input
+              bind:value={newCustomFieldName}
+              placeholder="New field name (e.g. Port of Origin)"
+              class="custom-field-name-input"
+              on:keydown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomFieldRow())}
+            />
+            <button type="button" class="btn-add-field" on:click={addCustomFieldRow} disabled={!newCustomFieldName.trim()}>
+              + Add Field
+            </button>
+          </div>
         </div>
       </div>
 
@@ -764,4 +859,74 @@
     border: 1px dashed #e5e7eb;
     border-radius: 12px;
   }
+
+  /* ── Custom fields ────────────────────────────────────────── */
+  .custom-fields-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .custom-field-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+  .custom-field-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 9px 0 9px 4px;
+  }
+  .custom-field-input {
+    padding: 9px 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    color: #111 !important;
+    background: #fafafa !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .custom-field-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .custom-field-name-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 9px 12px;
+    border: 1px dashed #6366f1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #111;
+    background: #f5f3ff;
+    outline: none;
+  }
+  .custom-field-name-input:focus {
+    border-style: solid;
+    border-color: #6366f1;
+    background: #fff;
+  }
+  .btn-add-field {
+    background: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s;
+  }
+  .btn-add-field:hover:not(:disabled) { background: #e0e7ff; }
+  .btn-add-field:disabled { opacity: 0.45; cursor: not-allowed; }
 </style>
