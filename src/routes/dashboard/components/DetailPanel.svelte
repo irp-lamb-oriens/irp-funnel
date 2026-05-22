@@ -790,7 +790,7 @@
             <span class="detail-field__label">Phone</span>
             <EditableField
               clientId={$selectedClient.id}
-              path={`phone`}
+              path={`consultations.${latestIdx}.phone`}
               value={$selectedClient.phone}
               label="Phone"
               placeholder="—"
