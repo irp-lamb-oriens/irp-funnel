@@ -616,12 +616,12 @@
             {/if}
           {/if}
 
-          <!-- Name + Surname — top-level fields, editable inline -->
+          <!-- Name + Surname — stored inside consultations[] like all other fields -->
           <div class="detail-field">
             <span class="detail-field__label">First Name</span>
             <EditableField
               clientId={$selectedClient.id}
-              path="name"
+              path={`consultations.${latestIdx}.name`}
               value={$selectedClient.name}
               label="First Name"
               placeholder="—"
@@ -632,7 +632,7 @@
             <span class="detail-field__label">Surname</span>
             <EditableField
               clientId={$selectedClient.id}
-              path="surname"
+              path={`consultations.${latestIdx}.surname`}
               value={$selectedClient.surname}
               label="Surname"
               placeholder="—"
