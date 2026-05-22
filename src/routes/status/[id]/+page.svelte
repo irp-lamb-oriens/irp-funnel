@@ -163,6 +163,9 @@
   }
 
   $: currentStageIndex = $project ? $stages.indexOf($project.stage) : -1;
+
+  // ─── Lily FAB state ─────────────────────────────────────────────────────
+  let lilyOpen = false;
 </script>
 
 <svelte:head>
@@ -291,7 +294,7 @@
         </div>
       </header>
 
-          <!-- PIPELINE STAGE -->
+          <!-- PIPELINE STAGE + INLINE COMMENTS ────────────────────────────── -->
           <section class="cp-dashboard__pipeline">
             <h3>Current Status</h3>
             <div style="overflow-x: auto; padding-bottom: 1rem;">
@@ -312,6 +315,14 @@
                 {/each}
               </div>
             </div>
+
+            <!-- Comments sit right below the stage timeline so feedback lives
+                 in the same spatial context as the progress indicator. -->
+            {#if !$irpStaffIsAuthenticated}
+              <div class="cp-dashboard__inline-comments">
+                <CommentsThread {projectId} />
+              </div>
+            {/if}
           </section>
 
       <div class="cp-dashboard__grid">
@@ -450,17 +461,47 @@
         </section>
       </div>
 
-      <!-- ── LILY CHAT ──────────────────────────────────────────────────── -->
-      <section class="cp-dashboard__lily">
-        <LilyChat {projectId} />
-      </section>
-
-      <!-- ── COMMENTS ──────────────────────────────────────────────────── -->
-      <section class="cp-dashboard__comments">
-        <CommentsThread {projectId} />
-      </section>
-
     </div>
+
+    <!-- ── LILY FAB — floating bottom-left ───────────────────────────────── -->
+    <!-- Only rendered when the user is authenticated and a project is loaded. -->
+    {#if !$irpStaffIsAuthenticated}
+      <button
+        class="lily-fab"
+        class:lily-fab--open={lilyOpen}
+        on:click={() => lilyOpen = !lilyOpen}
+        aria-label="Chat with Lily"
+        aria-expanded={lilyOpen}
+      >
+        {#if lilyOpen}
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        {/if}
+        <span class="lily-fab__label">{lilyOpen ? 'Close' : 'Ask Lily'}</span>
+      </button>
+
+      <!-- Drawer panel — slides up from the bottom-left -->
+      <div class="lily-drawer" class:lily-drawer--open={lilyOpen} aria-hidden={!lilyOpen}>
+        <div class="lily-drawer__header">
+          <div class="lily-drawer__header-title">
+            <span class="lily-drawer__header-dot"></span>
+            <span>Lily — Your Relocation Assistant</span>
+          </div>
+          <button class="lily-drawer__close" on:click={() => lilyOpen = false} aria-label="Close Lily chat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="lily-drawer__body">
+          <LilyChat {projectId} />
+        </div>
+      </div>
+
+      {#if lilyOpen}
+        <!-- Backdrop: click outside to close on mobile -->
+        <div class="lily-drawer-backdrop" on:click={() => lilyOpen = false} aria-hidden="true"></div>
+      {/if}
+    {/if}
   {/if}
 </div>
 
@@ -471,16 +512,131 @@
     to { transform: rotate(360deg); }
   }
 
-  :global(.cp-dashboard__lily),
-  :global(.cp-dashboard__comments) {
-    max-width: 960px;
-    margin: 0 auto 2rem;
-    padding: 0 1rem;
+  /* ── Inline comments (below pipeline stepper) ─────────────────────────── */
+  :global(.cp-dashboard__inline-comments) {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
   }
 
   :global(.step__rating) {
     margin-top: 6px;
     display: flex;
     justify-content: center;
+  }
+
+  /* ── Lily FAB ─────────────────────────────────────────────────────────── */
+  .lily-fab {
+    position: fixed;
+    bottom: 1.75rem;
+    left: 1.75rem;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.1rem 0.65rem 0.9rem;
+    background: #0f172a;
+    color: #f8fafc;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.22), 0 0 0 2px rgba(74, 222, 128, 0.35);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .lily-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.3), 0 0 0 2px rgba(74, 222, 128, 0.55);
+  }
+  .lily-fab--open {
+    background: #1e293b;
+  }
+  .lily-fab__label {
+    white-space: nowrap;
+  }
+
+  /* ── Lily Drawer ──────────────────────────────────────────────────────── */
+  .lily-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1100;
+    width: min(420px, 100vw);
+    height: min(72vh, 640px);
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .lily-drawer--open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .lily-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    background: #0f172a;
+    color: #f8fafc;
+    flex-shrink: 0;
+  }
+  .lily-drawer__header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .lily-drawer__header-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .lily-drawer__close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .lily-drawer__close:hover {
+    color: #f8fafc;
+    background: rgba(255,255,255,0.1);
+  }
+  .lily-drawer__body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Backdrop (mobile / narrow screens) ──────────────────────────────── */
+  .lily-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: rgba(0,0,0,0.35);
+    /* Only visible on narrow screens where the drawer overlaps content */
+  }
+  @media (min-width: 480px) {
+    .lily-drawer-backdrop {
+      display: none;
+    }
   }
 </style>
