@@ -653,7 +653,7 @@
   .bug-fab {
     position: fixed;
     bottom: 28px;
-    right: 28px;
+    left: 28px;
     display: flex;
     flex-direction: column;
     align-items: center;
