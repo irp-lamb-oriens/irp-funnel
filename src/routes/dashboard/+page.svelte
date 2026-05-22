@@ -21,6 +21,7 @@
   import BugReportModal from './components/BugReportModal.svelte';
   import EvoView from './components/evo/EvoView.svelte';
   import VendorsView from './components/VendorsView.svelte';
+  import ProvidersView from './components/ProvidersView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import './dashboard.scss';
 
@@ -170,7 +171,7 @@
     }
   }
 
-  async function switchView(view: 'board' | 'list' | 'metrics' | 'evo' | 'vendors') {
+  async function switchView(view: 'board' | 'list' | 'metrics' | 'evo' | 'vendors' | 'providers') {
     activeView.set(view);
     if (view === 'metrics' && !$metrics) {
       await fetchMetrics();
@@ -366,6 +367,7 @@
           <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
           <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
           <button class:active={$activeView === 'vendors'} on:click={() => switchView('vendors')} title="Vendor / shipping provider registry">Vendors</button>
+          <button class:active={$activeView === 'providers'} on:click={() => switchView('providers')} title="Shipping & relocation provider registry">Providers</button>
         </nav>
       </div>
       <div class="topbar__right">
@@ -597,6 +599,10 @@
     <!-- ══════════════ VENDORS VIEW ══════════════ -->
     {:else if $activeView === 'vendors'}
       <VendorsView />
+
+    <!-- ══════════════ PROVIDERS VIEW ══════════════ -->
+    {:else if $activeView === 'providers'}
+      <ProvidersView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

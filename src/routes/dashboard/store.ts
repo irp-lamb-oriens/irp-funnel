@@ -472,7 +472,7 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'vendors'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'vendors' | 'providers'>('board');
 export const detailPanelOpen = writable<boolean>(false);
 
 /**

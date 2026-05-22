@@ -578,6 +578,29 @@
       -->
       {#if detailTab === 'overview'}
         <div class="detail-overview detail-fields">
+          <!-- Name + Surname — top-level fields, editable inline -->
+          <div class="detail-field">
+            <span class="detail-field__label">First Name</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path="name"
+              value={$selectedClient.name}
+              label="First Name"
+              placeholder="—"
+            />
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field__label">Surname</span>
+            <EditableField
+              clientId={$selectedClient.id}
+              path="surname"
+              value={$selectedClient.surname}
+              label="Surname"
+              placeholder="—"
+            />
+          </div>
+
           <!-- Route is two values; render them as a pair of editable chips. -->
           <div class="detail-field detail-field--full">
             <span class="detail-field__label">Route</span>
