@@ -74,9 +74,14 @@
   // deceleration that asymptotically arrives at the target for a
   // cinematic, butter-soft landing. Duration is longer so the tail-off
   // is clearly visible rather than compressed.
-  function smoothScrollTo(targetY: number, duration = 2800) {
+  //
+  // RACE-CONDITION FIX: targetY is now passed as a live getter (function)
+  // so each rAF step re-evaluates the element's real position. This means
+  // images or sections that load and shift the layout during the 2800 ms
+  // animation no longer cause an undershoot / overshoot glitch — the scroll
+  // always homes in on the true current position of the element.
+  function smoothScrollTo(getTargetY: () => number, duration = 2800) {
     const startY = window.scrollY;
-    const distance = targetY - startY;
     let startTime: number | null = null;
     let cancelled = false;
 
@@ -105,7 +110,13 @@
       if (startTime === null) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
+
+      // Re-evaluate target every frame so layout-shift during the animation
+      // doesn't leave us scrolled to the wrong position.
+      const targetY = getTargetY();
+      const distance = targetY - startY;
       window.scrollTo(0, startY + distance * easeOutExpo(progress));
+
       if (progress < 1) {
         requestAnimationFrame(step);
       } else {
@@ -120,17 +131,34 @@
   // is always front-and-center regardless of where the visitor lands on the
   // page (social proof gallery, video, etc. scroll past first).
   //
-  // Guard: if the browser/SvelteKit already scrolled the page near the form
-  // (e.g. via an #hero-form anchor link from /consultation), skip the
-  // programmatic scroll entirely — no double-scroll.
+  // Race-condition guards:
+  //  1. Hash guard — if the URL already targets #hero-form (e.g. from the
+  //     /consultation redirect), the browser handles the anchor scroll
+  //     natively; skip the programmatic scroll entirely so they don't race.
+  //  2. The targetY measurement is wrapped in a rAF inside the timeout so
+  //     it runs after the first browser paint (settled layout), not before.
+  //  3. The 120 px proximity guard is kept as a final safety net.
   onMount(() => {
+    // Guard 1: native anchor scroll already in progress — bail out.
+    if (window.location.hash === '#hero-form') return;
+
     setTimeout(() => {
       const el = document.getElementById('hero-form-container');
       if (!el) return;
-      const targetY = el.getBoundingClientRect().top + window.scrollY;
-      // Already within 120 px of the target — don't fire a second scroll.
-      if (Math.abs(window.scrollY - targetY) < 120) return;
-      smoothScrollTo(targetY);
+
+      // Guard 2: measure after the browser has painted the initial layout so
+      // lazy-loaded images / sections above the form don't give a stale offset.
+      requestAnimationFrame(() => {
+        const getTargetY = () =>
+          (document.getElementById('hero-form-container')?.getBoundingClientRect().top ?? 0)
+          + window.scrollY;
+
+        const targetY = getTargetY();
+        // Guard 3: already within 120 px of the target — skip.
+        if (Math.abs(window.scrollY - targetY) < 120) return;
+
+        smoothScrollTo(getTargetY);
+      });
     }, 1000);
   });
 </script>
