@@ -75,13 +75,14 @@
   // cinematic, butter-soft landing. Duration is longer so the tail-off
   // is clearly visible rather than compressed.
   //
-  // RACE-CONDITION FIX: targetY is now passed as a live getter (function)
-  // so each rAF step re-evaluates the element's real position. This means
-  // images or sections that load and shift the layout during the 2800 ms
-  // animation no longer cause an undershoot / overshoot glitch — the scroll
-  // always homes in on the true current position of the element.
-  function smoothScrollTo(getTargetY: () => number, duration = 2800) {
+  // targetY is measured ONCE after the layout is stable (post window.onload)
+  // so images/sections above the form are fully rendered before we sample
+  // the offset. Per-frame re-evaluation is intentionally avoided because a
+  // mid-animation layout shift would cause a jump discontinuity in the
+  // eased curve (startY is fixed; recomputing distance mid-flight = glitch).
+  function smoothScrollTo(targetY: number, duration = 2800) {
     const startY = window.scrollY;
+    const distance = targetY - startY;
     let startTime: number | null = null;
     let cancelled = false;
 
@@ -110,13 +111,7 @@
       if (startTime === null) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
-
-      // Re-evaluate target every frame so layout-shift during the animation
-      // doesn't leave us scrolled to the wrong position.
-      const targetY = getTargetY();
-      const distance = targetY - startY;
       window.scrollTo(0, startY + distance * easeOutExpo(progress));
-
       if (progress < 1) {
         requestAnimationFrame(step);
       } else {
@@ -127,39 +122,48 @@
     requestAnimationFrame(step);
   }
 
-  // Auto-scroll to the hero form 1 second after the page loads so the CTA
-  // is always front-and-center regardless of where the visitor lands on the
-  // page (social proof gallery, video, etc. scroll past first).
+  // Measure the hero-form's position and trigger the scroll.
+  // Called only after the layout is guaranteed stable (window.onload or
+  // equivalent — all images above the form are fully loaded and rendered).
+  function triggerHeroScroll() {
+    const el = document.getElementById('hero-form-container');
+    if (!el) return;
+    // One extra rAF after load to let the browser finish its final layout pass
+    // before we sample getBoundingClientRect — this is what causes the last
+    // few pixels of jitter when relying purely on the load event timestamp.
+    requestAnimationFrame(() => {
+      const targetY = el.getBoundingClientRect().top + window.scrollY;
+      // Already within 120 px — user scrolled or anchor handled it; skip.
+      if (Math.abs(window.scrollY - targetY) < 120) return;
+      smoothScrollTo(targetY);
+    });
+  }
+
+  // Auto-scroll to the hero form once the page is fully loaded so the CTA
+  // is always front-and-center regardless of where the visitor lands.
   //
   // Race-condition guards:
   //  1. Hash guard — if the URL already targets #hero-form (e.g. from the
   //     /consultation redirect), the browser handles the anchor scroll
-  //     natively; skip the programmatic scroll entirely so they don't race.
-  //  2. The targetY measurement is wrapped in a rAF inside the timeout so
-  //     it runs after the first browser paint (settled layout), not before.
-  //  3. The 120 px proximity guard is kept as a final safety net.
+  //     natively; skip entirely so they don't race.
+  //  2. Wait for window.onload (not a fixed timeout) — guarantees ALL images
+  //     and resources above the form are loaded and the layout is stable
+  //     before we measure targetY. A fixed 1-second timeout was unreliable
+  //     on slow connections (layout still shifting) and over-eager on fast
+  //     ones (fired before above-fold images pushed the form to its real Y).
+  //  3. 120 px proximity guard kept as a final safety net.
   onMount(() => {
     // Guard 1: native anchor scroll already in progress — bail out.
     if (window.location.hash === '#hero-form') return;
 
-    setTimeout(() => {
-      const el = document.getElementById('hero-form-container');
-      if (!el) return;
-
-      // Guard 2: measure after the browser has painted the initial layout so
-      // lazy-loaded images / sections above the form don't give a stale offset.
-      requestAnimationFrame(() => {
-        const getTargetY = () =>
-          (document.getElementById('hero-form-container')?.getBoundingClientRect().top ?? 0)
-          + window.scrollY;
-
-        const targetY = getTargetY();
-        // Guard 3: already within 120 px of the target — skip.
-        if (Math.abs(window.scrollY - targetY) < 120) return;
-
-        smoothScrollTo(getTargetY);
-      });
-    }, 1000);
+    // Guard 2: wait for full page load (all resources) for a stable layout.
+    if (document.readyState === 'complete') {
+      // Already fully loaded (e.g. SvelteKit client-side navigation).
+      // Small delay so any post-load JS (font swaps, lazy images) can settle.
+      setTimeout(triggerHeroScroll, 300);
+    } else {
+      window.addEventListener('load', () => setTimeout(triggerHeroScroll, 300), { once: true });
+    }
   });
 </script>
 
