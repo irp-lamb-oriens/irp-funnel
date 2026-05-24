@@ -306,9 +306,9 @@
                     {#if getStageTime(stageKey)}
                       <div class="step__date">{getStageTime(stageKey)}</div>
                     {/if}
-                    {#if idx < currentStageIndex && !$irpStaffIsAuthenticated}
+                    {#if idx < currentStageIndex}
                       <div class="step__rating">
-                        <StageRating {projectId} {stageKey} />
+                        <StageRating {projectId} {stageKey} readonly={$irpStaffIsAuthenticated} />
                       </div>
                     {/if}
                   </div>
@@ -466,34 +466,28 @@
     <!-- ── LILY FAB — floating bottom-left ───────────────────────────────── -->
     <!-- Only rendered when the user is authenticated and a project is loaded. -->
     {#if !$irpStaffIsAuthenticated}
-      <button
-        class="lily-fab"
-        class:lily-fab--open={lilyOpen}
-        on:click={() => lilyOpen = !lilyOpen}
-        aria-label="Chat with Lily"
-        aria-expanded={lilyOpen}
-      >
-        {#if lilyOpen}
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        {:else}
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        {/if}
-        <span class="lily-fab__label">{lilyOpen ? 'Close' : 'Ask Lily'}</span>
-      </button>
-
-      <!-- Drawer panel — slides up from the bottom-left -->
-      <div class="lily-drawer" class:lily-drawer--open={lilyOpen} aria-hidden={!lilyOpen}>
-        <div class="lily-drawer__header">
-          <div class="lily-drawer__header-title">
-            <span class="lily-drawer__header-dot"></span>
-            <span>Lily — Your Relocation Assistant</span>
+      {#if !lilyOpen}
+        <button
+          class="lily-fab"
+          on:click={() => lilyOpen = true}
+          aria-label="Chat with Lily"
+          aria-expanded={lilyOpen}
+        >
+          <!-- Lili avatar in FAB — × in chat header handles closing -->
+          <div class="lily-fab__avatar-wrap">
+            <img src="/lili.png" alt="Lily" class="lily-fab__avatar" />
+            <span class="lily-fab__online-dot"></span>
           </div>
-          <button class="lily-drawer__close" on:click={() => lilyOpen = false} aria-label="Close Lily chat">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
+          <span class="lily-fab__label">Chat with Lily</span>
+        </button>
+      {/if}
+
+      <!-- Drawer panel — slides up from the bottom-left, no separate header
+           since LilyChat itself now has a beautiful dark-glass header. -->
+      <div class="lily-drawer" class:lily-drawer--open={lilyOpen} aria-hidden={!lilyOpen}>
         <div class="lily-drawer__body">
-          <LilyChat {projectId} />
+          <!-- groupChat shows participants bar; fillContainer fills the drawer height -->
+          <LilyChat {projectId} groupChat={true} fillContainer={true} onClose={() => lilyOpen = false} />
         </div>
       </div>
 
@@ -519,10 +513,43 @@
     border-top: 1px solid rgba(148, 163, 184, 0.2);
   }
 
+  :global(.step) {
+    position: relative;
+    cursor: default;
+    flex-direction: column;
+    align-items: center;
+  }
+  :global(.step.completed) {
+    cursor: pointer;
+  }
   :global(.step__rating) {
-    margin-top: 6px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    margin-top: 0;
+  }
+  :global(.step.completed:hover .step__rating) {
+    max-height: 56px;
+    opacity: 1;
+    pointer-events: auto;
+    margin-top: 5px;
+  }
+  :global(.step__rating-label) {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  :global(.stepper) {
+    padding-bottom: 0.5rem;
+    overflow: visible;
   }
 
   /* ── Lily FAB ─────────────────────────────────────────────────────────── */
@@ -533,27 +560,60 @@
     z-index: 1200;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.65rem 1.1rem 0.65rem 0.9rem;
-    background: #0f172a;
+    gap: 0.6rem;
+    padding: 0.5rem 1.1rem 0.5rem 0.5rem;
+    background: var(--chat-glass-header, #08080f);
     color: #f8fafc;
-    border: none;
+    border: 1px solid var(--chat-glass-border-glow, rgba(2,181,187,0.3));
     border-radius: 9999px;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.22), 0 0 0 2px rgba(74, 222, 128, 0.35);
+    box-shadow:
+      0 4px 24px rgba(0,0,0,0.4),
+      0 0 0 1px rgba(2,181,187,0.15),
+      0 0 20px rgba(2,181,187,0.08);
     transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   }
   .lily-fab:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(0,0,0,0.3), 0 0 0 2px rgba(74, 222, 128, 0.55);
-  }
-  .lily-fab--open {
-    background: #1e293b;
+    box-shadow:
+      0 6px 32px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(2,181,187,0.3),
+      0 0 30px rgba(2,181,187,0.14);
   }
   .lily-fab__label {
     white-space: nowrap;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  /* FAB avatar (shown when closed) */
+  .lily-fab__avatar-wrap {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+  .lily-fab__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid rgba(2,181,187,0.4);
+    display: block;
+  }
+  .lily-fab__online-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #4ade80;
+    border: 2px solid var(--chat-glass-header, #08080f);
+    box-shadow: 0 0 6px rgba(74,222,128,0.7);
   }
 
   /* ── Lily Drawer ──────────────────────────────────────────────────────── */
@@ -562,15 +622,18 @@
     bottom: 0;
     left: 0;
     z-index: 1100;
-    width: min(420px, 100vw);
-    height: min(72vh, 640px);
-    background: #fff;
+    width: min(460px, 100vw);
+    height: min(76vh, 660px);
+    /* LilyChat renders its own dark glass — drawer is just the shell */
+    background: transparent;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+    box-shadow:
+      0 -8px 48px rgba(0,0,0,0.6),
+      0 0 0 1px rgba(2,181,187,0.12);
     display: flex;
     flex-direction: column;
     transform: translateY(100%);
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     overflow: hidden;
     pointer-events: none;
   }
@@ -578,52 +641,13 @@
     transform: translateY(0);
     pointer-events: auto;
   }
-  .lily-drawer__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.85rem 1.25rem;
-    background: #0f172a;
-    color: #f8fafc;
-    flex-shrink: 0;
-  }
-  .lily-drawer__header-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .lily-drawer__header-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #4ade80;
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-  .lily-drawer__close {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    transition: color 0.15s, background 0.15s;
-  }
-  .lily-drawer__close:hover {
-    color: #f8fafc;
-    background: rgba(255,255,255,0.1);
-  }
   .lily-drawer__body {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    /* LilyChat in fillContainer mode stretches to fill this */
+    min-height: 0;
   }
 
   /* ── Backdrop (mobile / narrow screens) ──────────────────────────────── */
@@ -631,8 +655,8 @@
     position: fixed;
     inset: 0;
     z-index: 1050;
-    background: rgba(0,0,0,0.35);
-    /* Only visible on narrow screens where the drawer overlaps content */
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(2px);
   }
   @media (min-width: 480px) {
     .lily-drawer-backdrop {

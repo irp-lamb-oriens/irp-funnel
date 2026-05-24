@@ -971,25 +971,27 @@ export async function addNote(id: string, text: string): Promise<Note> {
   return note;
 }
 
-export async function fetchConversations(id: string, email?: string): Promise<any[]> {
+export async function fetchConversations(
+  id: string,
+  email?: string,
+): Promise<{ conversations: any[]; statusChatThread: any[] }> {
   console.log(`[CLIENT FETCH] Starting fetchConversations for client ID: ${id}`);
   console.log(`[CLIENT FETCH] Provided email param: ${email}`);
   const params = email ? `?email=${encodeURIComponent(email)}` : '';
   const endpoint = `/api/dashboard/clients/${id}/conversations${params}`;
   console.log(`[CLIENT FETCH] Full relative endpoint: ${endpoint}`);
-  
+
   try {
     const data = await apiFetch(endpoint);
     console.log(`[CLIENT FETCH] Response SUCCESS from server!`);
     console.log(`[CLIENT FETCH] Raw data parsed from JSON:`, data);
-    
-    if (data && data.conversations) {
-      console.log(`[CLIENT FETCH] Returning array of length ${data.conversations.length}`);
-      return data.conversations;
-    } else {
-      console.warn(`[CLIENT FETCH] data.conversations is missing or undefined! Returned data:`, data);
-      return [];
-    }
+
+    return {
+      conversations: Array.isArray(data?.conversations) ? data.conversations : [],
+      // statusChatThread is the status-page Lily thread — new optional field,
+      // falls back to [] for older server versions (backward compatible).
+      statusChatThread: Array.isArray(data?.statusChatThread) ? data.statusChatThread : [],
+    };
   } catch (error) {
     console.error(`[CLIENT FETCH] ERROR fetching conversations for ${id}:`, error);
     throw error;

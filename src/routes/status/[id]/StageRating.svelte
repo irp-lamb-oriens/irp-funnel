@@ -3,6 +3,9 @@
 
   export let stageKey: string;
   export let projectId: string;
+  // When true (IRP staff view) the widget is fully read-only:
+  // ratings are displayed but cannot be submitted or modified.
+  export let readonly = false;
 
   let hovered = 0;
   let noteInput = '';
@@ -45,7 +48,25 @@
 </script>
 
 <div class="stage-rating">
-  {#if alreadyRated}
+  <!-- ── READ-ONLY mode (IRP staff viewing the client portal) ─────────────── -->
+  {#if readonly}
+    {#if alreadyRated}
+      <div class="stage-rating__done">
+        <span class="stage-rating__stars">
+          {#each [1,2,3,4,5] as n}
+            <span class="stage-rating__star stage-rating__star--{n <= existingRating.rating ? 'filled' : 'empty'}">★</span>
+          {/each}
+        </span>
+        {#if existingRating.note}
+          <span class="stage-rating__note">"{existingRating.note}"</span>
+        {/if}
+      </div>
+    {:else}
+      <span class="stage-rating__pending">Not yet rated</span>
+    {/if}
+
+  <!-- ── INTERACTIVE mode (end-customer) ──────────────────────────────── -->
+  {:else if alreadyRated}
     <div class="stage-rating__done">
       <span class="stage-rating__stars">
         {#each [1,2,3,4,5] as n}
@@ -72,7 +93,7 @@
             on:mouseleave={() => { if (!showNoteField) hovered = 0; }}
             type="button"
             aria-label="Rate {n} star{n > 1 ? 's' : ''}"
-          >★</button>
+          >{n <= hovered ? '★' : '☆'}</button>
         {/each}
       </span>
 
@@ -127,23 +148,41 @@
     gap: 2px;
   }
 
+  /* ── Static star spans (read-only display) ─── */
   .stage-rating__star {
     font-size: 1.15rem;
     line-height: 1;
     color: #d1d5db;
     transition: color 0.12s;
+  }
+  .stage-rating__star--filled {
+    color: #f59e0b;
+  }
+  .stage-rating__star--empty {
+    color: rgba(255,255,255,0.25);
+  }
 
-    &--filled { color: #f59e0b; }
-    &--empty { color: #d1d5db; }
-
-    &--btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      color: #d1d5db;
-      &:hover, &.stage-rating__star--active { color: #f59e0b; }
-    }
+  /* ── Interactive star buttons ─── */
+  .stage-rating__star--btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 1px 2px;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: rgba(255,255,255,0.2);
+    transition: color 0.1s ease, transform 0.1s ease;
+    display: inline-block;
+  }
+  .stage-rating__star--btn:hover {
+    color: #fbbf24;
+    transform: scale(1.15);
+  }
+  .stage-rating__star--active {
+    color: #f59e0b;
+  }
+  .stage-rating__star--btn.stage-rating__star--active {
+    color: #f59e0b;
   }
 
   .stage-rating__done {
@@ -165,6 +204,12 @@
     font-weight: 600;
   }
 
+  .stage-rating__pending {
+    font-size: 0.72rem;
+    color: #cbd5e1;
+    font-style: italic;
+  }
+
   .stage-rating__extras {
     display: flex;
     align-items: center;
@@ -178,7 +223,11 @@
     padding: 3px 8px;
     outline: none;
     width: 160px;
-    &:focus { border-color: #02b5bb; }
+    background: rgba(255,255,255,0.05);
+    color: #f1f5f9;
+  }
+  .stage-rating__note-input:focus {
+    border-color: #02b5bb;
   }
 
   .stage-rating__submit {
@@ -190,7 +239,10 @@
     padding: 4px 10px;
     cursor: pointer;
     font-weight: 600;
-    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+  .stage-rating__submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .stage-rating__cancel {
@@ -200,6 +252,8 @@
     cursor: pointer;
     color: #94a3b8;
     line-height: 1;
-    &:hover { color: #475569; }
+  }
+  .stage-rating__cancel:hover {
+    color: #475569;
   }
 </style>

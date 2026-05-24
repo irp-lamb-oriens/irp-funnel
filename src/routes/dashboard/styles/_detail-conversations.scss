@@ -206,6 +206,13 @@
       .chat-bubble__role { color: $accent-hover; }
     }
 
+    // Status-page Lily — teal tint to visually distinguish from HeroForm Lily
+    &--status {
+      background: rgba(#0d9488, 0.10);
+      border: 1px solid rgba(#0d9488, 0.22);
+      .chat-bubble__role { color: #0d9488; }
+    }
+
     &--user {
       background: $surface-2;
       border: 1px solid $border;
@@ -235,6 +242,169 @@
       word-break: break-word;
       min-width: 0;
     }
+
+    &__ts {
+      display: block;
+      font-size: 10px;
+      color: $text-dim;
+      margin-top: 4px;
+      text-align: right;
+    }
+  }
+}
+
+/* ── Status thread header variant ─────────────────────────────────────────── */
+.detail-thread--status {
+  border-color: rgba(#0d9488, 0.3);
+  .detail-thread__header {
+    background: rgba(#0d9488, 0.07);
+    border-bottom-color: rgba(#0d9488, 0.18);
+  }
+}
+.detail-thread__id--teal {
+  color: #0d9488;
+  font-weight: 600;
+}
+
+/* ── Conversation source-selector bar ─────────────────────────────────────── */
+.conv-source-bar {
+  display: flex;
+  align-items: center;
+  gap: $sp-2;
+  padding: $sp-2;
+  background: $surface-2;
+  border-radius: $r-lg;
+  border: 1px solid $border;
+  // Subtle inner glow to float it above the rest of the card
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.conv-source-pill {
+  display: flex;
+  align-items: center;
+  gap: $sp-2;
+  padding: 6px $sp-3;
+  border-radius: $r-md;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $text-2;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+
+  &:hover:not(&--active) {
+    background: $surface-3;
+    color: $text;
+  }
+
+  &--active {
+    background: rgba($accent, 0.14);
+    border-color: rgba($accent, 0.35);
+    color: $accent-hover;
+    box-shadow: 0 0 0 3px rgba($accent, 0.08);
+  }
+
+  // Status pill with data gets a teal active glow
+  &--active.conv-source-pill--has-data {
+    background: rgba(#0d9488, 0.13);
+    border-color: rgba(#0d9488, 0.35);
+    color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(#0d9488, 0.09);
+  }
+
+  &__icon {
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  &__label {
+    white-space: nowrap;
+  }
+
+  &__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba($accent, 0.18);
+    color: $accent-hover;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+
+    &--teal {
+      background: rgba(#0d9488, 0.2);
+      color: #0d9488;
+    }
+  }
+
+  &__empty {
+    font-size: 10px;
+    font-weight: 600;
+    color: $text-dim;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
+}
+
+.conv-source-reload {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: $r-md;
+  border: 1px solid $border;
+  background: transparent;
+  color: $text-dim;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.2s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: $surface-3;
+    color: $text;
+    transform: rotate(30deg);
+  }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+/* ── Empty state for a conversation source ────────────────────────────────── */
+.conv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $sp-8 $sp-5;
+  gap: $sp-2;
+  text-align: center;
+
+  &__icon {
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: $sp-1;
+    filter: grayscale(0.3) opacity(0.7);
+  }
+
+  &__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: $text-2;
+    margin: 0;
+  }
+
+  &__desc {
+    font-size: 13px;
+    color: $text-dim;
+    margin: 0;
+    max-width: 320px;
+    line-height: 1.5;
   }
 }
 

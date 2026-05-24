@@ -120,6 +120,8 @@
   }
 
   let conversations: any[] = [];
+  let statusChatThread: any[] = [];
+  let convSource: 'consultation' | 'status' = 'consultation';
   let conversationsLoading = false;
   let currentSessionId = '';
 
@@ -312,12 +314,14 @@
 
   async function loadConversations(targetId: string, targetEmail?: string, isBackgroundRefresh = false) {
     if (!isBackgroundRefresh) conversationsLoading = true;
-    currentSessionId = targetId; 
+    currentSessionId = targetId;
     try {
       const result = await fetchConversations(targetId, targetEmail);
-      conversations = [...result]; 
+      conversations = [...result.conversations];
+      statusChatThread = [...(result.statusChatThread ?? [])];
     } catch (err: any) {
       conversations = [];
+      statusChatThread = [];
       if (err.message && (err.message.includes('Session expired') || err.message.includes('Authentication'))) {
         closeDetail();
       }
@@ -1351,50 +1355,117 @@
       <!-- ── Conversations Tab ─────────────────────────── -->
       {:else if detailTab === 'conversations'}
         <div class="detail-conversations">
-          <div style="margin-bottom: 16px; padding: 12px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <p style="margin: 0 0 4px 0; font-weight: bold; color: #3730a3; font-size: 13px;">Debug Logs Active (F12)</p>
-              <p style="margin: 0; font-size: 12px; color: #4f46e5;">Array Length: {conversations.length}</p>
-            </div>
-            <button on:click={forceManualLoad} disabled={conversationsLoading} style="padding: 6px 12px; background: #4f46e5; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600;">
-              {conversationsLoading ? 'Fetching...' : 'Force Manual Fetch'}
+
+          <!-- ── Source Selector ──────────────────────────────────────────── -->
+          <div class="conv-source-bar">
+            <button
+              class="conv-source-pill"
+              class:conv-source-pill--active={convSource === 'consultation'}
+              on:click={() => (convSource = 'consultation')}
+            >
+              <span class="conv-source-pill__icon">🤖</span>
+              <span class="conv-source-pill__label">Consultation</span>
+              <span class="conv-source-pill__count">{conversations.length}</span>
+            </button>
+            <button
+              class="conv-source-pill"
+              class:conv-source-pill--active={convSource === 'status'}
+              class:conv-source-pill--has-data={statusChatThread.length > 0}
+              on:click={() => (convSource = 'status')}
+            >
+              <span class="conv-source-pill__icon">💬</span>
+              <span class="conv-source-pill__label">Status Chat</span>
+              {#if statusChatThread.length > 0}
+                <span class="conv-source-pill__count conv-source-pill__count--teal">{statusChatThread.length}</span>
+              {:else}
+                <span class="conv-source-pill__empty">none</span>
+              {/if}
+            </button>
+            <button
+              class="conv-source-reload"
+              on:click={forceManualLoad}
+              disabled={conversationsLoading}
+              title="Reload conversations"
+            >
+              {conversationsLoading ? '…' : '↺'}
             </button>
           </div>
 
           {#if conversationsLoading}
-            <div class="dashboard__loading">
+            <div class="dashboard__loading" style="padding: 2rem 0;">
               <div class="spinner" style="width: 24px; height: 24px; border-width: 2px;"></div>
-              <p style="margin-top: 8px;">Loading conversations...</p>
+              <p style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8;">Loading conversations…</p>
             </div>
-          {:else if conversations.length === 0}
-            <p class="detail-empty">No conversations found.</p>
+
+          {:else if convSource === 'consultation'}
+            <!-- ── Consultation (HeroForm Lily) ── -->
+            {#if conversations.length === 0}
+              <div class="conv-empty">
+                <span class="conv-empty__icon">🤖</span>
+                <p class="conv-empty__title">No HeroForm sessions found</p>
+                <p class="conv-empty__desc">This client hasn't completed a chatbot consultation yet, or the session wasn't linked to this email.</p>
+              </div>
+            {:else}
+              {#each conversations as thread}
+                <div class="detail-thread">
+                  <div class="detail-thread__header">
+                    <div class="detail-thread__info">
+                      <h3 class="detail-thread__title">Session</h3>
+                      <span class="detail-thread__id">{thread.sessionId}</span>
+                    </div>
+                    <span class="detail-thread__date">{formatDateTime(thread.updatedAt || thread.createdAt)}</span>
+                  </div>
+                  <div class="chat-history modern-chat">
+                    {#each thread.messages || [] as msg}
+                      {#if msg.role !== 'system' && !String(msg.content || '').startsWith('[SYSTEM COMMAND]')}
+                        <div class="chat-bubble-wrapper {msg.role === 'assistant' ? 'chat-bubble-wrapper--left' : 'chat-bubble-wrapper--right'}">
+                          <div class="chat-bubble__avatar">{msg.role === 'assistant' ? '🤖' : '👤'}</div>
+                          <div class="chat-bubble {msg.role === 'assistant' ? 'chat-bubble--assistant' : 'chat-bubble--user'}">
+                            <span class="chat-bubble__role">{msg.role === 'assistant' ? 'Lili' : 'Client'}</span>
+                            <p class="chat-bubble__text" style="white-space: pre-wrap; word-break: break-word; margin: 0;">{msg.content}</p>
+                          </div>
+                        </div>
+                      {/if}
+                    {/each}
+                  </div>
+                </div>
+              {/each}
+            {/if}
+
           {:else}
-            {#each conversations as thread, i}
-              <div class="detail-thread">
+            <!-- ── Status Chat (Lily on the /status page) ── -->
+            {#if statusChatThread.length === 0}
+              <div class="conv-empty">
+                <span class="conv-empty__icon">💬</span>
+                <p class="conv-empty__title">No status-page chat yet</p>
+                <p class="conv-empty__desc">This client hasn't started a conversation with Lily on their status portal yet.</p>
+              </div>
+            {:else}
+              <div class="detail-thread detail-thread--status">
                 <div class="detail-thread__header">
                   <div class="detail-thread__info">
-                    <h3 class="detail-thread__title">Session</h3>
-                    <span class="detail-thread__id">{thread.sessionId}</span>
+                    <h3 class="detail-thread__title">Status Portal Chat</h3>
+                    <span class="detail-thread__id detail-thread__id--teal">{statusChatThread.length} messages</span>
                   </div>
-                  <span class="detail-thread__date">{formatDateTime(thread.updatedAt || thread.createdAt)}</span>
                 </div>
                 <div class="chat-history modern-chat">
-                  {#each thread.messages || [] as msg}
+                  {#each statusChatThread as msg}
                     {#if msg.role !== 'system' && !String(msg.content || '').startsWith('[SYSTEM COMMAND]')}
                       <div class="chat-bubble-wrapper {msg.role === 'assistant' ? 'chat-bubble-wrapper--left' : 'chat-bubble-wrapper--right'}">
-                        <div class="chat-bubble__avatar">
-                          {msg.role === 'assistant' ? '🤖' : '👤'}
-                        </div>
-                        <div class="chat-bubble {msg.role === 'assistant' ? 'chat-bubble--assistant' : 'chat-bubble--user'}">
-                          <span class="chat-bubble__role">{msg.role === 'assistant' ? 'Lili' : 'Client'}</span>
+                        <div class="chat-bubble__avatar">{msg.role === 'assistant' ? '🌿' : '👤'}</div>
+                        <div class="chat-bubble {msg.role === 'assistant' ? 'chat-bubble--assistant chat-bubble--status' : 'chat-bubble--user'}">
+                          <span class="chat-bubble__role">{msg.role === 'assistant' ? (msg.author ?? 'Lily') : 'Client'}</span>
                           <p class="chat-bubble__text" style="white-space: pre-wrap; word-break: break-word; margin: 0;">{msg.content}</p>
+                          {#if msg.timestamp}
+                            <span class="chat-bubble__ts">{formatDateTime(msg.timestamp)}</span>
+                          {/if}
                         </div>
                       </div>
                     {/if}
                   {/each}
                 </div>
               </div>
-            {/each}
+            {/if}
           {/if}
         </div>
 

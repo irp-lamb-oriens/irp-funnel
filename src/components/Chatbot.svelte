@@ -12,6 +12,9 @@
   export let onErrorFallback: () => void;
   export let onChannelSelect: (channel: string) => void;
   export let preferredLanguage: string = 'en';
+  /** When true (default) shows the Lili avatar pip + "Lily" label beside
+   *  each assistant bubble — consistent with the group-chat design. */
+  export let showAuthorPip: boolean = true;
 
   // ─── Evo — Chatbot is the 2nd Evo-registered component ──────────────────
   // Variants here drive the welcome-message prompt we send to the LLM.

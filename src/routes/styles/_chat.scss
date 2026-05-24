@@ -1,0 +1,93 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _chat.scss — IRP Shared Chat / Lily UI Token Layer
+   ───────────────────────────────────────────────────────────────────────────
+   Single source of truth for every chat-UI colour, animation, and layout
+   token used across all three Lily surfaces:
+     • Chatbot.svelte          (HeroForm — dark glass)
+     • LilyChat.svelte         (Status page FAB — dark glass, group-chat)
+     • CrmLilyTab.svelte       (Dashboard detail panel — dark glass)
+
+   HOW IT WORKS
+   ─────────────
+   All tokens are emitted as CSS custom properties on :root so they are
+   available to Svelte scoped <style> blocks (which cannot @import SCSS
+   partials from other directories without Vite config changes). Components
+   use var(--chat-*) — no hardcoded hex values anywhere.
+
+   The --chat-glass-* family provides the dark frosted backdrop.
+   The --chat-color-* family provides per-participant accent colours for
+   the group-chat mode in LilyChat.svelte.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:global(:root) {
+  // ── Glass backdrop ─────────────────────────────────────────────────────────
+  --chat-glass-bg:          rgba(10, 12, 20, 0.97);
+  --chat-glass-bg-soft:     rgba(14, 17, 28, 0.92);
+  --chat-glass-border:      rgba(255, 255, 255, 0.07);
+  --chat-glass-border-glow: rgba(2, 181, 187, 0.25);
+  --chat-glass-header:      rgba(8, 10, 18, 0.99);
+  --chat-glass-input-bg:    rgba(255, 255, 255, 0.05);
+  --chat-glass-input-focus: rgba(2, 181, 187, 0.3);
+
+  // ── Message bubbles ────────────────────────────────────────────────────────
+  --chat-bubble-lily:         rgba(255, 255, 255, 0.06);
+  --chat-bubble-lily-border:  rgba(2, 181, 187, 0.18);
+  --chat-bubble-user:         var(--color-highlight-2, #02b5bb);
+  --chat-bubble-user-dark:    #019fa4;
+  --chat-bubble-staff:        rgba(245, 158, 11, 0.18);
+  --chat-bubble-staff-border: rgba(245, 158, 11, 0.3);
+  --chat-bubble-client:       rgba(99, 102, 241, 0.2);
+  --chat-bubble-client-border:rgba(99, 102, 241, 0.35);
+
+  // ── Per-participant accent colours (group-chat) ────────────────────────────
+  --chat-color-lily:    var(--color-highlight-2, #02b5bb);   // teal — AI
+  --chat-color-staff:   #f59e0b;                              // amber — IRP team
+  --chat-color-client:  #818cf8;                              // violet — client
+
+  // ── Typography inside chat ─────────────────────────────────────────────────
+  --chat-text-primary:   rgba(255, 255, 255, 0.92);
+  --chat-text-secondary: rgba(255, 255, 255, 0.55);
+  --chat-text-dim:       rgba(255, 255, 255, 0.35);
+
+  // ── Chips / quick-prompts ─────────────────────────────────────────────────
+  --chat-chip-border:   rgba(2, 181, 187, 0.32);
+  --chat-chip-text:     var(--color-highlight-2, #02b5bb);
+  --chat-chip-hover-bg: rgba(2, 181, 187, 0.12);
+
+  // ── Send button ───────────────────────────────────────────────────────────
+  --chat-send-bg:    var(--color-highlight-2, #02b5bb);
+  --chat-send-hover: #019fa4;
+
+  // ── Scrollbar ─────────────────────────────────────────────────────────────
+  --chat-scrollbar-thumb: rgba(2, 181, 187, 0.25);
+  --chat-scrollbar-track: transparent;
+
+  // ── Layout sizing defaults (overridable per callsite) ────────────────────
+  --chat-container-height:   500px;
+  --chat-messages-max-h:     none;   // 'none' = grow with flex, set px to cap
+}
+
+/* ── Shared keyframe animations — defined once, used everywhere ────────────
+   Svelte component styles reference these by name. Since keyframes defined
+   in a :global {} block are globally registered, there is no duplication.
+   ─────────────────────────────────────────────────────────────────────────── */
+:global {
+  @keyframes chat-dot-bounce {
+    0%, 60%, 100% { transform: translateY(0);    opacity: 0.35; }
+    30%           { transform: translateY(-5px);  opacity: 1; }
+  }
+
+  @keyframes chat-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes chat-bubble-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)  scale(1); }
+  }
+
+  @keyframes chat-header-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(2, 181, 187, 0.4); }
+    50%       { opacity: 0.6; box-shadow: 0 0 0 4px rgba(2, 181, 187, 0); }
+  }
+}

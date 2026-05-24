@@ -39,6 +39,9 @@
 // ── 1. Design tokens (SCSS vars + :root CSS --irp-* vars) ────────────────────
 @import './styles/tokens';
 
+// ── 1b. Shared chat UI tokens (--chat-* CSS vars + global keyframes) ─────────
+@import '../styles/chat';
+
 // ── 2. Foundation reset ──────────────────────────────────────────────────────
 @import './styles/foundation';
 

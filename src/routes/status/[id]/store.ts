@@ -29,6 +29,13 @@ export const error = writable('');
 export const stages = writable<string[]>([]);
 export const stageLabels = writable<Record<string, string>>({});
 
+// ─── Lily Chat stores (declared early so fetchProject can reference them) ───
+export const lilyMessages = writable<any[]>([]);
+export const lilyLoading = writable(false);
+/** Cached HeroForm prefix. Set by loadLilyHistory; used by sendLilyMessage to
+ *  re-apply the prefix after the server returns an updated rawTail. */
+let _heroPrefix: any[] = [];
+
 // Generic fetch wrapper. Injects two tokens when available:
 //   - `x-client-token`     — the end-customer's client-portal session
 //   - `x-dashboard-token`  — the IRP staff dashboard session (for staff bypass)
@@ -119,6 +126,26 @@ export async function fetchProject(projectId: string) {
     project.set(data.project);
     stages.set(data.stages || []);
     stageLabels.set(data.stageLabels || {});
+
+    // Pre-seed Lily chat from the HeroForm conversation so the client sees
+    // their initial consultation immediately when they open the drawer —
+    // no second API call required, no async timing gap.
+    // `loadLilyHistory` will later overwrite with the real statusChatThread
+    // if one already exists (i.e. the client has chatted before).
+    const heroHistory: Array<{ role: string; content: string }> =
+      data.project?.heroFormChatHistory ?? [];
+    if (heroHistory.length > 0 && get(lilyMessages).length === 0) {
+      const now = Date.now();
+      lilyMessages.set(
+        heroHistory.map((m, i, arr) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          author: m.role === 'assistant' ? 'Lily' : undefined,
+          authorType: (m.role === 'assistant' ? 'lily' : 'client') as any,
+          timestamp: new Date(now - (arr.length - i) * 3_000).toISOString(),
+        })),
+      );
+    }
   } catch (err: any) {
     error.set(err.message);
   } finally {
@@ -128,19 +155,74 @@ export async function fetchProject(projectId: string) {
 
 // ─── Lily Chat ─────────────────────────────────────────────────────────────
 
-export const lilyMessages = writable<any[]>([]);
-export const lilyLoading = writable(false);
-
-/** Load the existing Lily chat thread for this project (status scope). */
+/** Load the existing Lily chat thread for this project (status scope).
+ *
+ *  Always merges heroFormChatHistory as a read-only prefix so the client
+ *  sees their initial consultation conversation at the top, followed by any
+ *  messages they've sent via the status-page chat.
+ *
+ *  Deduplication: if rawTail already starts with the HeroForm content (thread
+ *  was seeded on server before first user message), we use rawTail as-is.
+ */
 export async function loadLilyHistory(projectId: string): Promise<void> {
   try {
     const data = await apiFetch(`/api/client-status/project/${projectId}/lily/history`);
-    lilyMessages.set(data.thread?.rawTail ?? []);
+    const rawTail: any[] = data.thread?.rawTail ?? [];
+    const heroHistory: Array<{ role: string; content: string }> =
+      data.heroFormChatHistory ?? [];
+    const now = Date.now();
+
+    if (rawTail.length === 0 && heroHistory.length === 0) {
+      lilyMessages.set([]);
+      return;
+    }
+
+    // Build evenly-spaced HeroForm messages as a static prefix
+    const makeHeroMessages = (offset: number) =>
+      heroHistory.map((m, i, arr) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        author: m.role === 'assistant' ? 'Lily' : undefined,
+        authorType: (m.role === 'assistant' ? 'lily' : 'client') as any,
+        timestamp: new Date(now - (arr.length + offset - i) * 3_000).toISOString(),
+      }));
+
+    if (rawTail.length === 0) {
+      // First-time visitor — show only HeroForm; cache for sendLilyMessage
+      const msgs = makeHeroMessages(0);
+      _heroPrefix = msgs;
+      lilyMessages.set(msgs);
+      return;
+    }
+
+    if (heroHistory.length === 0) {
+      // No HeroForm conversation — show status thread as-is
+      _heroPrefix = [];
+      lilyMessages.set(rawTail);
+      return;
+    }
+
+    // Both exist. Check if rawTail was already seeded with HeroForm content
+    // (i.e. the thread was built by chatWithLily after seeding). If rawTail[0]
+    // content matches heroHistory[0] content the seeding is already there.
+    const alreadySeeded = rawTail[0]?.content?.trim() === heroHistory[0]?.content?.trim();
+    if (alreadySeeded) {
+      // rawTail already includes the HeroForm prefix — no separate prefix needed
+      _heroPrefix = [];
+      lilyMessages.set(rawTail);
+    } else {
+      // Returning user whose thread existed before the seeding feature —
+      // prepend HeroForm prefix to the existing status messages.
+      const prefix = makeHeroMessages(rawTail.length);
+      _heroPrefix = prefix;
+      lilyMessages.set([...prefix, ...rawTail]);
+    }
   } catch { /* silent — empty thread is fine */ }
 }
 
 /** Send a message to Lily. Optimistically pushes the user bubble,
- *  then replaces with the authoritative rawTail from the server. */
+ *  then replaces with the authoritative rawTail from the server.
+ *  Re-applies _heroPrefix so the HeroForm context stays visible. */
 export async function sendLilyMessage(projectId: string, message: string): Promise<void> {
   const now = new Date().toISOString();
   lilyMessages.update((msgs) => [
@@ -153,7 +235,14 @@ export async function sendLilyMessage(projectId: string, message: string): Promi
       method: 'POST',
       body: JSON.stringify({ message }),
     });
-    lilyMessages.set(data.rawTail ?? []);
+    const rawTail: any[] = data.rawTail ?? [];
+    // Re-apply the HeroForm prefix if it exists and isn't already seeded in rawTail
+    if (_heroPrefix.length > 0) {
+      const alreadySeeded = rawTail[0]?.content?.trim() === _heroPrefix[0]?.content?.trim();
+      lilyMessages.set(alreadySeeded ? rawTail : [..._heroPrefix, ...rawTail]);
+    } else {
+      lilyMessages.set(rawTail);
+    }
   } catch {
     lilyMessages.update((msgs) => [
       ...msgs,
