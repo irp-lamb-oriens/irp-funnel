@@ -70,100 +70,15 @@
     }
   ];
 
-  // Custom scroll — easeOutExpo: fast start, then a long exponential
-  // deceleration that asymptotically arrives at the target for a
-  // cinematic, butter-soft landing. Duration is longer so the tail-off
-  // is clearly visible rather than compressed.
-  //
-  // targetY is measured ONCE after the layout is stable (post window.onload)
-  // so images/sections above the form are fully rendered before we sample
-  // the offset. Per-frame re-evaluation is intentionally avoided because a
-  // mid-animation layout shift would cause a jump discontinuity in the
-  // eased curve (startY is fixed; recomputing distance mid-flight = glitch).
-  function smoothScrollTo(targetY: number, duration = 2800) {
-    const startY = window.scrollY;
-    const distance = targetY - startY;
-    let startTime: number | null = null;
-    let cancelled = false;
-
-    // Any deliberate user gesture cancels the programmatic scroll immediately.
-    // NOTE: 'wheel' is intentionally excluded — it fires from our own
-    // window.scrollTo() calls on desktop (macOS inertia), which would
-    // cancel the animation before it finishes. pointerdown / touchstart /
-    // keydown only fire from real human input.
-    const cancel = () => { cancelled = true; cleanup(); };
-    const cleanup = () => {
-      window.removeEventListener('pointerdown', cancel, { capture: true } as any);
-      window.removeEventListener('touchstart',  cancel, { capture: true } as any);
-      window.removeEventListener('keydown',     cancel, { capture: true } as any);
-    };
-    window.addEventListener('pointerdown', cancel, { capture: true });
-    window.addEventListener('touchstart',  cancel, { passive: true, capture: true });
-    window.addEventListener('keydown',     cancel, { capture: true });
-
-    // Starts at full speed, decelerates exponentially — very soft finish.
-    function easeOutExpo(t: number): number {
-      return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
-    }
-
-    function step(timestamp: number) {
-      if (cancelled) return;
-      if (startTime === null) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      window.scrollTo(0, startY + distance * easeOutExpo(progress));
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
-        cleanup(); // animation finished naturally — remove listeners
-      }
-    }
-
-    requestAnimationFrame(step);
-  }
-
-  // Measure the hero-form's position and trigger the scroll.
-  // Called only after the layout is guaranteed stable (window.onload or
-  // equivalent — all images above the form are fully loaded and rendered).
-  function triggerHeroScroll() {
+  // Native scroll — let the browser handle the animation.
+  // If the URL already contains #hero-form the browser scrolls natively
+  // on its own; otherwise we use scrollIntoView (smooth) once the layout
+  // is stable so there's no race condition or custom easing to maintain.
+  onMount(() => {
+    if (window.location.hash === '#hero-form') return;
     const el = document.getElementById('hero-form-container');
     if (!el) return;
-    // One extra rAF after load to let the browser finish its final layout pass
-    // before we sample getBoundingClientRect — this is what causes the last
-    // few pixels of jitter when relying purely on the load event timestamp.
-    requestAnimationFrame(() => {
-      const targetY = el.getBoundingClientRect().top + window.scrollY;
-      // Already within 120 px — user scrolled or anchor handled it; skip.
-      if (Math.abs(window.scrollY - targetY) < 120) return;
-      smoothScrollTo(targetY);
-    });
-  }
-
-  // Auto-scroll to the hero form once the page is fully loaded so the CTA
-  // is always front-and-center regardless of where the visitor lands.
-  //
-  // Race-condition guards:
-  //  1. Hash guard — if the URL already targets #hero-form (e.g. from the
-  //     /consultation redirect), the browser handles the anchor scroll
-  //     natively; skip entirely so they don't race.
-  //  2. Wait for window.onload (not a fixed timeout) — guarantees ALL images
-  //     and resources above the form are loaded and the layout is stable
-  //     before we measure targetY. A fixed 1-second timeout was unreliable
-  //     on slow connections (layout still shifting) and over-eager on fast
-  //     ones (fired before above-fold images pushed the form to its real Y).
-  //  3. 120 px proximity guard kept as a final safety net.
-  onMount(() => {
-    // Guard 1: native anchor scroll already in progress — bail out.
-    if (window.location.hash === '#hero-form') return;
-
-    // Guard 2: wait for full page load (all resources) for a stable layout.
-    if (document.readyState === 'complete') {
-      // Already fully loaded (e.g. SvelteKit client-side navigation).
-      // Small delay so any post-load JS (font swaps, lazy images) can settle.
-      setTimeout(triggerHeroScroll, 300);
-    } else {
-      window.addEventListener('load', () => setTimeout(triggerHeroScroll, 300), { once: true });
-    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 </script>
 
