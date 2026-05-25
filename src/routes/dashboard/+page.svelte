@@ -495,6 +495,11 @@
                   </div>
 
                   <div class="card__meta">
+                    {#if client.rawDoc?.source === 'country-guide-gate'}
+                      <span class="card__source-badge" title="Lead from country guide gate — not a consultation submission">
+                        🌍 Guide Lead
+                      </span>
+                    {/if}
                     {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
                     {#if client.scheduling?.length}
                       <span class="card__date">{formatDate(client.scheduling[0])}</span>

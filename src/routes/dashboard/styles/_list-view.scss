@@ -179,6 +179,26 @@
     white-space: nowrap;
   }
 
+  // ── Guide-gate lead indicator ─────────────────────────────────────────
+  // Shown on cards that entered the CRM via the country-guide modal, not
+  // through a full consultation form submission.
+  // Uses $success (green) — the semantic partner of $warning (notes) and
+  // $accent (budget tags) — to communicate "organic content-driven lead".
+  &__source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: $r-full;
+    background: rgba($success, 0.1);
+    color: $success;
+    border: 1px solid rgba($success, 0.25);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
   &__date {
     font-size: 10px;
     color: $text-dim;

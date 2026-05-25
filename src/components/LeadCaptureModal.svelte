@@ -10,10 +10,13 @@
 
   const dispatch = createEventDispatcher();
   
+  let nameValue = "";
   let emailValue = "";
   let isEmailValid = false;
   let isLoading = false;
   let emailInputRef: HTMLInputElement;
+
+  $: isFormValid = nameValue.trim().length > 0 && isEmailValid && emailValue.trim().length > 0;
 
   function handleEmailChange(newValue: string) {
     // Only update validity flag. bind:value handles the raw string.
@@ -21,7 +24,7 @@
   }
 
   async function handleSubmit() {
-    if (!isEmailValid || !emailValue.trim()) return;
+    if (!isFormValid) return;
     
     isLoading = true;
     try {
@@ -31,7 +34,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: emailValue.trim(),
-          name: "Guide Reader",
+          name: nameValue.trim(),
           topCountries: destinationCountry ? [destinationCountry, "Unknown", "Unknown"] : ["Unknown", "Unknown", "Unknown"],
           funnelType: "country-guide-gate",
           timestamp: new Date().toISOString()
@@ -70,6 +73,19 @@
       </p>
 
       <div class="form-wrapper">
+        <div class="name-field">
+          <label class="name-field__label" for="guide-name">Your First Name</label>
+          <input
+            id="guide-name"
+            type="text"
+            class="name-field__input"
+            placeholder="e.g. Maria"
+            bind:value={nameValue}
+            on:keydown={(e) => e.key === 'Enter' && handleSubmit()}
+            autocomplete="given-name"
+          />
+        </div>
+
         <Email 
           bind:value={emailValue} 
           onChange={handleEmailChange} 
@@ -84,7 +100,7 @@
             label="Read Guide Now"
             callback={handleSubmit}
             loading={isLoading}
-            disabled={!isEmailValid}
+            disabled={!isFormValid}
           />
         </div>
       </div>
@@ -168,6 +184,42 @@
     font-size: 1.05rem;
     line-height: 1.5;
     margin-bottom: 2rem;
+  }
+
+  .name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-align: left;
+
+    &__label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    &__input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      box-sizing: border-box;
+
+      &::placeholder { color: #555; }
+
+      &:focus {
+        border-color: var(--color-highlight-2);
+        background: rgba(255, 255, 255, 0.08);
+      }
+    }
   }
 
   .form-wrapper {
