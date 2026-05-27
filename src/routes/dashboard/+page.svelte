@@ -23,6 +23,7 @@
   import ProvidersView from './components/ProvidersView.svelte';
   import PostsView from './components/PostsView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
+  import AddClientModal from './components/AddClientModal.svelte';
   import './dashboard.scss';
 
   // ─── Login State ────────────────────────────────────────────────────────
@@ -37,6 +38,17 @@
 
   // ─── Bug report modal ────────────────────────────────────────────────────
   let bugReportOpen = false;
+
+  // ─── Add Client modal ────────────────────────────────────────────────────
+  let addClientOpen = false;
+
+  async function handleClientCreated(event: CustomEvent<{ docId: string }>) {
+    addClientOpen = false;
+    await fetchClients();
+    // Open the newly-created client detail
+    const newClient = $clients.find(c => c.id === event.detail.docId);
+    if (newClient) openClientDetail(newClient);
+  }
 
   // ─── Detail Panel State ─────────────────────────────────────────────────
   let newNote = '';
@@ -379,6 +391,9 @@
         <div class="topbar__search">
           <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
         </div>
+        <button class="topbar__add-client" on:click={() => (addClientOpen = true)} title="Add client manually">
+          ➕ Add Client
+        </button>
         <span class="topbar__user">{$authEmail?.split('@')[0]}</span>
         <button class="topbar__logout" on:click={handleLogout}>Logout</button>
       </div>
@@ -648,12 +663,35 @@
   <BugReportModal bind:open={bugReportOpen} />
 {/if}
 
+{#if addClientOpen}
+  <AddClientModal
+    on:created={handleClientCreated}
+    on:close={() => (addClientOpen = false)}
+  />
+{/if}
+
 <EmailPreviewDrawer />
 
 <ToastContainer />
 <Footer />
 
 <style>
+  /* ══ Add Client button ══════════════════════════════════════════════════ */
+  .topbar__add-client {
+    padding: 0.35rem 0.85rem;
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .topbar__add-client:hover { background: #6d28d9; }
+
   /* ══ Bug FAB ══════════════════════════════════════════════════════════════ */
   .bug-fab {
     position: fixed;
