@@ -229,13 +229,13 @@
 
   function backToChoice() { view = 'choice'; }
   
-  function formBack() {
+  async function formBack() {
     if (formStep <= 0) { backToChoice(); return; }
     formStep--;
     // Skip optional steps when going back
     if (formStep === 13 && !showYoutubeVideoStep) formStep--;
     if (formStep === 12 && !showReferrerStep) formStep--;
-    focusFormInput(formStep);
+    await focusFormInput(formStep);
   }
 
   // ─── Chatbot callbacks ────────────────────────────────────────────────────
@@ -282,7 +282,7 @@
   }
 
   // ─── Form navigation ─────────────────────────────────────────────────────
-  function formNext() {
+  async function formNext() {
     if (validateFormStep(formStep)) {
       formStep++;
       if (formStep === 12 && !showReferrerStep) {
@@ -294,7 +294,7 @@
           submitForm();
         }
       }
-      focusFormInput(formStep);
+      await focusFormInput(formStep);
     }
   }
 
@@ -369,7 +369,12 @@
       0: nameInput, 1: destinationCountryInput, 2: originCountryInput,
       3: phoneInput, 4: budgetInput, 7: sizeInput, 9: immigrationStatusInput, 10: notesInput, 12: referrerInput, 13: youtubeVideoInput,
     };
-    map[step]?.focus?.();
+    // preventScroll: true stops the browser from auto-scrolling to the newly
+    // focused element while the .form-frame CSS transition (opacity 0→1 +
+    // translateY 16px→0, 500ms) is still running. Without this, focus() fires
+    // mid-animation and the browser scrolls to a position that immediately
+    // shifts, producing the auto-scroll glitch / race condition.
+    map[step]?.focus?.({ preventScroll: true });
   }
 
   // ─── Pre-fill indicator ───────────────────────────────────────────────────

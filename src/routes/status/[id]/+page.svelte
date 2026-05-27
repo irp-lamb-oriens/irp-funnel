@@ -465,8 +465,7 @@
 
     <!-- ── LILY FAB — floating bottom-left ───────────────────────────────── -->
     <!-- Only rendered when the user is authenticated and a project is loaded. -->
-    {#if !$irpStaffIsAuthenticated}
-      {#if !lilyOpen}
+    {#if !lilyOpen}
         <button
           class="lily-fab"
           on:click={() => lilyOpen = true}
@@ -495,7 +494,6 @@
         <!-- Backdrop: click outside to close on mobile -->
         <div class="lily-drawer-backdrop" on:click={() => lilyOpen = false} aria-hidden="true"></div>
       {/if}
-    {/if}
   {/if}
 </div>
 
