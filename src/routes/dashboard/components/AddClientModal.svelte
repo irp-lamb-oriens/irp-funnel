@@ -95,9 +95,13 @@
     rawTranscript = await dictation.stop();
     dictation    = null;
     interimText  = '';
+    // Fallback: engine may return empty if abort() cut off the last segment
+    if (!rawTranscript.trim() && committedText.trim()) {
+      rawTranscript = committedText;
+    }
     if (!rawTranscript.trim()) return; // nothing spoken
     step = 'structuring';
-    await runExtraction(rawTranscript || committedText);
+    await runExtraction(rawTranscript);
   }
 
   async function runExtraction(transcript: string) {
@@ -475,7 +479,15 @@
             ← Re-record
           </button>
           <button class="btn-create" on:click={handleSubmit} disabled={submitting || !email.trim()}>
-            {submitting ? '⏳ Creating…' : '✅ Create Client'}
+            {#if submitting}
+              <span class="btn-spin"></span>
+              <span>Creating…</span>
+            {:else}
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Create Client</span>
+            {/if}
           </button>
         </div>
 
@@ -515,11 +527,11 @@
   .acm-x {
     position: absolute; top: .9rem; right: .9rem; z-index: 10;
     background: rgba(255,255,255,.07); border: 1px solid #3a3a5c;
-    color: #777; width: 30px; height: 30px; border-radius: 50%;
+    color: #9090b0; width: 30px; height: 30px; border-radius: 50%;
     font-size: .8rem; cursor: pointer; display: flex;
     align-items: center; justify-content: center; line-height: 1;
   }
-  .acm-x:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .acm-x:hover { background: rgba(255,255,255,.14); color: #fff; }
 
   /* ══════════ CAPTURE STEP ══════════ */
   .capture-wrap {
@@ -531,7 +543,7 @@
 
   .capture-title { text-align: center; }
   .capture-title h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #e2e2f0; }
-  .capture-sub { margin: .3rem 0 0; font-size: .87rem; color: #666; }
+  .capture-sub { margin: .3rem 0 0; font-size: .87rem; color: #8c8caa; }
 
   /* Orb */
   .orb-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
@@ -616,11 +628,11 @@
   .btn-structure:hover { background: #6d28d9; }
   .btn-skip {
     background: none; border: none;
-    color: #555; font-size: .8rem;
+    color: #7878a0; font-size: .8rem;
     cursor: pointer; text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .btn-skip:hover { color: #888; }
+  .btn-skip:hover { color: #aaaacc; }
 
   /* ══════════ STRUCTURING STEP ══════════ */
   .structuring-wrap {
@@ -650,7 +662,7 @@
   @keyframes s-spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
   .structuring-title { margin: 0; font-size: 1.4rem; font-weight: 700; color: #e2e2f0; }
-  .structuring-sub   { margin: 0; font-size: .85rem; color: #666; }
+  .structuring-sub   { margin: 0; font-size: .85rem; color: #8c8caa; }
   .structuring-transcript {
     margin-top: .5rem;
     max-width: 340px;
@@ -658,7 +670,7 @@
     border: 1px solid #2a2a3e;
     border-radius: 8px;
     padding: .6rem .9rem;
-    font-size: .8rem; color: #555;
+    font-size: .8rem; color: #8c8caa;
     text-align: center; line-height: 1.5;
     font-style: italic;
   }
@@ -679,17 +691,17 @@
     flex-shrink: 0;
   }
   .review-header h2 { margin: 0; font-size: 1.1rem; color: #e2e2f0; }
-  .review-sub { margin: .2rem 0 0; font-size: .8rem; color: #666; }
+  .review-sub { margin: .2rem 0 0; font-size: .8rem; color: #8c8caa; }
   .review-sub strong { color: #a78bfa; }
   .review-sub-err { color: #f87171; }
 
   .transcript-details summary {
-    font-size: .75rem; color: #555; cursor: pointer;
+    font-size: .75rem; color: #8c8caa; cursor: pointer;
   }
-  .transcript-details[open] summary { color: #888; }
+  .transcript-details[open] summary { color: #aaaac8; }
   .transcript-detail-body {
     margin-top: .4rem;
-    font-size: .78rem; color: #666; line-height: 1.55;
+    font-size: .78rem; color: #9090b0; line-height: 1.55;
     max-height: 120px; overflow-y: auto;
   }
 
@@ -714,7 +726,7 @@
 
   label {
     display: flex; flex-direction: column; gap: .28rem;
-    font-size: .73rem; color: #666; font-weight: 600;
+    font-size: .73rem; color: #9696b8; font-weight: 600;
     text-transform: uppercase; letter-spacing: .04em;
   }
   label.acm-required { color: #c4b5fd; }
@@ -754,7 +766,7 @@
     justify-content: space-between;
   }
   .custom-fields-label {
-    font-size: .73rem; color: #555; font-weight: 600;
+    font-size: .73rem; color: #8c8caa; font-weight: 600;
     text-transform: uppercase; letter-spacing: .04em;
   }
   .cf-row { display: flex; gap: .45rem; align-items: center; }
@@ -770,8 +782,8 @@
   }
   .cf-del:hover { background: rgba(248,113,113,.2); }
   .btn-add-cf {
-    background: none; border: 1px dashed #3a3a5c;
-    color: #555; border-radius: 6px;
+    background: none; border: 1px dashed #4a4a70;
+    color: #8c8caa; border-radius: 6px;
     padding: .3rem .8rem; font-size: .78rem;
     cursor: pointer; width: fit-content;
     transition: border-color .15s, color .15s;
@@ -789,19 +801,45 @@
   }
   .rfoot-error { flex: 1; font-size: .78rem; color: #f87171; }
   .btn-back {
-    padding: .48rem .9rem;
-    background: #1a1a2e; border: 1px solid #3a3a5c;
-    color: #777; border-radius: 8px; cursor: pointer;
-    font-size: .82rem; transition: background .15s;
+    padding: .48rem 1rem;
+    background: rgba(255,255,255,.04); border: 1px solid #3a3a5c;
+    color: #9696b8; border-radius: 10px; cursor: pointer;
+    font-size: .83rem; font-weight: 500;
+    transition: background .15s, border-color .15s;
   }
-  .btn-back:hover { background: #252540; }
+  .btn-back:hover { background: rgba(255,255,255,.08); border-color: #5a5a80; color: #c4c4e0; }
+
+  /* ── Ultra-modern Create button ── */
   .btn-create {
-    padding: .52rem 1.3rem;
-    background: #7c3aed; color: #fff;
-    border: none; border-radius: 8px;
-    font-size: .9rem; font-weight: 700;
-    cursor: pointer; transition: background .15s;
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .58rem 1.5rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 60%, #4c1d95 100%);
+    color: #fff;
+    border: 1px solid rgba(167,139,250,.25);
+    border-radius: 10px;
+    font-size: .88rem; font-weight: 700;
+    letter-spacing: .025em;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    transition: box-shadow .2s, transform .1s, filter .2s;
   }
-  .btn-create:hover:not(:disabled) { background: #6d28d9; }
-  .btn-create:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-create:hover:not(:disabled) {
+    box-shadow: 0 6px 28px rgba(124,58,237,.55), inset 0 1px 0 rgba(255,255,255,.15);
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+  .btn-create:active:not(:disabled) { transform: translateY(0); filter: brightness(.95); }
+  .btn-create:disabled { opacity: .45; cursor: not-allowed; filter: none; box-shadow: none; }
+
+  /* Spinner for loading state */
+  .btn-spin {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: btn-rotate .65s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes btn-rotate { to { transform: rotate(360deg); } }
 </style>
