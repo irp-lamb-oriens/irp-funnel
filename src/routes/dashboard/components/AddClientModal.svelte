@@ -1,118 +1,161 @@
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy } from 'svelte';
   import { authToken } from '../store.ts';
-  import {
-    createDictation,
-    type DictationHandle,
-    type DictationState,
-  } from '../../../lib/voice/liveDictation.js';
   import { extractClientFields, type ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
 
-  const dispatch = createEventDispatcher<{
-    created: { docId: string };
-    close: void;
-  }>();
+  const dispatch = createEventDispatcher<{ created: { docId: string }; close: void }>();
 
-  const API_URL  = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const GEM_KEY  = import.meta.env.VITE_GEMINI_API_KEY as string;
-  const GEM_URL  = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEM_KEY}`;
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const GEM_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
+  const MODEL   = 'gemini-flash-latest';
+  const REST_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEM_KEY}`;
+  const PROMPT  = 'Transcribe the audio verbatim. Output ONLY the spoken words with natural punctuation and capitalization. No commentary, no filler.';
 
-  // ─── Step machine ──────────────────────────────────────────────────────────
+  // ─── Step machine ─────────────────────────────────────────────────────────
   type Step = 'capture' | 'structuring' | 'review';
   let step: Step = 'capture';
 
-  // ─── Dictation ─────────────────────────────────────────────────────────────
-  let dictation: DictationHandle | null = null;
-  let dictState: DictationState = 'idle';
-  let committedText = '';   // final words from STT
-  let interimText   = '';   // live partial words
-  let rawTranscript = '';   // full raw for voiceTranscript field
+  // ─── Recording (Mode A — 3-second additive slices, same as voice-test) ────
+  type RecState = 'idle' | 'recording';
+  let recState: RecState = 'idle';
 
-  $: displayTranscript = committedText + (interimText ? ` ${interimText}` : '');
+  let mr:       MediaRecorder | null = null;
+  let stream:   MediaStream   | null = null;
+  let chunks:   Blob[]               = [];
+  let mimeType  = '';
+  let transcript    = '';   // builds up additively in real-time
+  let rawTranscript = '';   // snapshot used for extraction
 
-  // ─── Extraction results ────────────────────────────────────────────────────
+  // ─── Extraction ───────────────────────────────────────────────────────────
   let extracted: ClientFieldExtraction | null = null;
   let extractError = '';
-  // Which standard fields were set by AI (for highlight animation)
   let aiFilledFields: Set<string> = new Set();
 
-  // ─── Form fields ───────────────────────────────────────────────────────────
-  let name          = '';
-  let surname       = '';
-  let email         = '';
-  let phone         = '';
-  let originCountry = '';
-  let originCity    = '';
-  let destinationCountry = '';
-  let destinationCity    = '';
-  let budget        = '';
-  let size          = '';
-  let immigrationStatus = '';
-  let notes         = '';
+  // ─── Form fields ──────────────────────────────────────────────────────────
+  let name = '', surname = '', email = '', phone = '';
+  let originCountry = '', originCity = '';
+  let destinationCountry = '', destinationCity = '';
+  let budget = '', size = '', immigrationStatus = '', notes = '';
   let customFieldRows: { key: string; value: string }[] = [];
 
-  // ─── Submission ────────────────────────────────────────────────────────────
+  // ─── Submission ───────────────────────────────────────────────────────────
   let submitting  = false;
   let submitError = '';
 
-  // ─── Waveform bars ─────────────────────────────────────────────────────────
+  // ─── Waveform ─────────────────────────────────────────────────────────────
   const BARS = 18;
   let waveHeights: number[] = Array.from({ length: BARS }, () => 20);
   let waveTimer: ReturnType<typeof setInterval> | null = null;
 
   function startWave() {
     waveTimer = setInterval(() => {
-      waveHeights = Array.from({ length: BARS }, () =>
-        dictState === 'listening' ? 20 + Math.random() * 60 : 20
-      );
+      waveHeights = Array.from({ length: BARS }, () => 20 + Math.random() * 60);
     }, 80);
   }
-
   function stopWave() {
     if (waveTimer) { clearInterval(waveTimer); waveTimer = null; }
     waveHeights = Array.from({ length: BARS }, () => 20);
   }
 
-  // ─── Dictation helpers ─────────────────────────────────────────────────────
-  async function startRecording() {
-    dictation = createDictation({
-      geminiUrl: GEM_URL,
-      onState:  (s: DictationState) => {
-        dictState = s;
-        if (s === 'listening')    startWave();
-        else if (s === 'idle')    stopWave();
-      },
-      onInterim:           (t: string) => { interimText = t; },
-      onFinal:             (s: string) => { committedText += s; interimText = ''; },
-      onTranscriptReplace: (t: string) => { committedText = t; interimText = ''; },
-      onError:             (m: string) => console.warn('[dictation]', m),
+  // ─── Audio helpers ────────────────────────────────────────────────────────
+  function pickMime() {
+    for (const t of ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'])
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    return '';
+  }
+
+  async function sliceToText(blob: Blob): Promise<string> {
+    if (blob.size < 1000) return '';
+    const ab = await blob.arrayBuffer();
+    const bytes = new Uint8Array(ab);
+    let bin = ''; const C = 65536;
+    for (let i = 0; i < bytes.length; i += C)
+      bin += String.fromCharCode(...bytes.subarray(i, i + C));
+    const b64 = btoa(bin);
+    const res = await fetch(REST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: PROMPT }, { inlineData: { mimeType: blob.type, data: b64 } }] }],
+        generationConfig: { temperature: 0 }
+      })
     });
-    await dictation.start();
+    const json = await res.json();
+    if (!res.ok) return '';
+    return ((json?.candidates?.[0]?.content?.parts?.[0]?.text) || '').trim();
+  }
+
+  function appendText(text: string) {
+    if (!text) return;
+    if (transcript && !transcript.endsWith(' ')) transcript += ' ';
+    transcript += text;
+  }
+
+  // Factory that creates an onstop handler — exactly as in voice-test Mode A
+  const makeOnStop = () => async () => {
+    const b = new Blob(chunks, { type: mimeType });
+    chunks = [];
+    try { appendText(await sliceToText(b)); } catch {}
+    if (recState === 'recording') {
+      const newMr = new MediaRecorder(stream!, { mimeType });
+      newMr.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data); };
+      newMr.onstop = makeOnStop();
+      mr = newMr;
+      mr.start();
+      setTimeout(() => { if (recState === 'recording') mr?.stop(); }, 3000);
+    }
+  };
+
+  async function startRecording() {
+    if (recState !== 'idle') return;
+    transcript = '';
+    chunks = [];
+    try {
+      stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mimeType = pickMime();
+      mr       = new MediaRecorder(stream, { mimeType });
+      mr.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data); };
+      mr.onstop = makeOnStop();
+      mr.start();
+      recState = 'recording';
+      startWave();
+      setTimeout(() => { if (recState === 'recording') mr?.stop(); }, 3000);
+    } catch (e: any) {
+      console.error('Mic error:', e);
+    }
   }
 
   async function stopAndStructure() {
-    if (!dictation) return;
-    rawTranscript = await dictation.stop();
-    dictation    = null;
-    interimText  = '';
-    // Fallback: engine may return empty if abort() cut off the last segment
-    if (!rawTranscript.trim() && committedText.trim()) {
-      rawTranscript = committedText;
+    if (recState === 'idle') return;
+    // Set idle FIRST — onstop checks this and won't restart
+    recState = 'idle';
+    stopWave();
+    // Grab any partial chunks before stopping
+    const finalChunks = [...chunks];
+    chunks = [];  // clear so onstop sees empty blob (won't try to retranscribe)
+    try { mr?.stop(); } catch {}
+    stream?.getTracks().forEach(t => t.stop());
+    mr = null;
+    stream = null;
+    // Transcribe the remaining partial slice directly
+    if (finalChunks.length > 0) {
+      const blob = new Blob(finalChunks, { type: mimeType });
+      try { appendText(await sliceToText(blob)); } catch {}
     }
-    if (!rawTranscript.trim()) return; // nothing spoken
+    rawTranscript = transcript;
+    if (!rawTranscript.trim()) return;
     step = 'structuring';
     await runExtraction(rawTranscript);
   }
 
-  async function runExtraction(transcript: string) {
+  async function runExtraction(text: string) {
     extractError = '';
     try {
-      extracted = await extractClientFields(transcript, GEM_URL);
+      extracted = await extractClientFields(text, REST_URL);
       fillFormFromExtraction(extracted);
       step = 'review';
     } catch (e: any) {
       extractError = e.message;
-      // Still show the review form — user can fill manually
       step = 'review';
     }
   }
@@ -199,22 +242,31 @@
     }
   }
 
-  // ─── Skip to manual form ───────────────────────────────────────────────────
+  // ─── Skip to manual form ─────────────────────────────────────────────────
   function skipToManual() {
-    if (dictation) { dictation.stop().catch(() => {}); dictation = null; }
+    recState = 'idle';
+    try { mr?.stop(); } catch {}
+    stream?.getTracks().forEach(t => t.stop());
+    mr = null; stream = null;
     stopWave();
     step = 'review';
   }
 
-  // ─── Close ─────────────────────────────────────────────────────────────────
+  // ─── Close ───────────────────────────────────────────────────────────────
   function closeModal() {
-    if (dictation) { dictation.stop().catch(() => {}); dictation = null; }
+    recState = 'idle';
+    try { mr?.stop(); } catch {}
+    stream?.getTracks().forEach(t => t.stop());
+    mr = null; stream = null;
     stopWave();
     dispatch('close');
   }
 
   onDestroy(() => {
-    if (dictation) { try { dictation.stop(); } catch {} dictation = null; }
+    recState = 'idle';
+    try { mr?.stop(); } catch {}
+    stream?.getTracks().forEach(t => t.stop());
+    mr = null; stream = null;
     stopWave();
   });
 </script>
@@ -240,20 +292,20 @@
 
         <!-- Record orb -->
         <div class="orb-wrap"
-          class:orb-idle={dictState === 'idle' || dictState === 'starting'}
-          class:orb-listening={dictState === 'listening'}
+          class:orb-idle={recState === 'idle'}
+          class:orb-listening={recState === 'recording'}
         >
-          {#if dictState === 'listening'}
+          {#if recState === 'recording'}
             <div class="orb-ring ring-1"></div>
             <div class="orb-ring ring-2"></div>
           {/if}
           <button
             class="orb-btn"
-            class:orb-btn-recording={dictState === 'listening'}
-            on:click={dictState === 'idle' || dictState === 'starting' ? startRecording : stopAndStructure}
-            aria-label={dictState === 'listening' ? 'Stop recording' : 'Start recording'}
+            class:orb-btn-recording={recState === 'recording'}
+            on:click={() => recState === 'idle' ? startRecording() : stopAndStructure()}
+            aria-label={recState === 'recording' ? 'Stop recording' : 'Start recording'}
           >
-            {#if dictState === 'idle' || dictState === 'starting'}
+            {#if recState === 'idle'}
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z" fill="currentColor"/>
                 <path d="M19 10a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
@@ -271,7 +323,7 @@
         </div>
 
         <!-- Waveform -->
-        {#if dictState === 'listening'}
+        {#if recState === 'recording'}
           <div class="waveform" aria-hidden="true">
             {#each waveHeights as h}
               <div class="wave-bar" style="height:{h}%"></div>
@@ -286,11 +338,10 @@
         {/if}
 
         <!-- Live transcript -->
-        <div class="capture-transcript" class:has-text={displayTranscript.length > 0}>
-          {#if displayTranscript}
-            <span class="transcript-committed">{committedText}</span><!--
-            -->{#if interimText}<span class="transcript-interim"> {interimText}</span>{/if}
-          {:else if dictState === 'idle'}
+        <div class="capture-transcript" class:has-text={transcript.length > 0}>
+          {#if transcript}
+            <span class="transcript-committed">{transcript}</span>
+          {:else if recState === 'idle'}
             <span class="transcript-placeholder">
               Say something like: "New client, John Smith, moving from Texas to Costa Rica in October,
               budget around fifteen thousand, looking at residency…"
@@ -302,7 +353,7 @@
 
         <!-- Actions -->
         <div class="capture-actions">
-          {#if dictState === 'listening' && committedText.trim()}
+          {#if recState === 'recording' && transcript.trim()}
             <button class="btn-structure" on:click={stopAndStructure}>
               Stop &amp; Structure →
             </button>
@@ -329,8 +380,8 @@
         <h2 class="structuring-title">Structuring your client…</h2>
         <p class="structuring-sub">Reading between the lines</p>
 
-        {#if committedText}
-          <div class="structuring-transcript">{committedText.slice(0, 160)}{committedText.length > 160 ? '…' : ''}</div>
+        {#if rawTranscript}
+          <div class="structuring-transcript">{rawTranscript.slice(0, 160)}{rawTranscript.length > 160 ? '…' : ''}</div>
         {/if}
       </div>
     {/if}
@@ -475,7 +526,7 @@
           {#if submitError}
             <div class="rfoot-error">{submitError}</div>
           {/if}
-          <button class="btn-back" on:click={() => { step = 'capture'; committedText = ''; interimText = ''; rawTranscript = ''; }}>
+          <button class="btn-back" on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
             ← Re-record
           </button>
           <button class="btn-create" on:click={handleSubmit} disabled={submitting || !email.trim()}>
@@ -484,7 +535,7 @@
               <span>Creating…</span>
             {:else}
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <span>Create Client</span>
             {/if}
@@ -832,34 +883,36 @@
   }
   .btn-back:hover { background: #eaeaf5; border-color: #b8b8e0; color: #12122a; }
 
-  /* ── Ultra-modern Create button ── */
+  /* ── Create button — light theme ── */
   .btn-create {
     display: inline-flex; align-items: center; gap: .45rem;
     padding: .58rem 1.5rem;
-    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 60%, #4c1d95 100%);
-    color: #fff;
-    border: 1px solid rgba(124,58,237,.4);
+    background: #ffffff;
+    color: #5b21b6;
+    border: 1.5px solid #7c3aed;
     border-radius: 10px;
     font-size: .88rem; font-weight: 700;
     letter-spacing: .025em;
     cursor: pointer;
-    box-shadow: 0 4px 18px rgba(124,58,237,.3), inset 0 1px 0 rgba(255,255,255,.15);
-    transition: box-shadow .2s, transform .1s, filter .2s;
+    box-shadow: 0 2px 10px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,.8);
+    transition: background .15s, box-shadow .2s, transform .1s, border-color .15s, color .15s;
   }
   .btn-create:hover:not(:disabled) {
-    box-shadow: 0 6px 28px rgba(124,58,237,.45), inset 0 1px 0 rgba(255,255,255,.2);
-    filter: brightness(1.08);
+    background: #f3effe;
+    border-color: #5b21b6;
+    color: #4c1d95;
+    box-shadow: 0 4px 18px rgba(124,58,237,.25);
     transform: translateY(-1px);
   }
-  .btn-create:active:not(:disabled) { transform: translateY(0); filter: brightness(.96); }
-  .btn-create:disabled { opacity: .4; cursor: not-allowed; filter: none; box-shadow: none; }
+  .btn-create:active:not(:disabled) { transform: translateY(0); background: #ece4fd; }
+  .btn-create:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 
   /* Spinner for loading state */
   .btn-spin {
     display: inline-block;
     width: 13px; height: 13px;
-    border: 2px solid rgba(255,255,255,.35);
-    border-top-color: #fff;
+    border: 2px solid rgba(124,58,237,.25);
+    border-top-color: #7c3aed;
     border-radius: 50%;
     animation: btn-rotate .65s linear infinite;
     flex-shrink: 0;
