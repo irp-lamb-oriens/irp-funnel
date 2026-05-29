@@ -140,7 +140,7 @@
       bin += String.fromCharCode(...bytes.subarray(i, i + C));
     const b64 = btoa(bin);
 
-    console.log('[ACM] POST voice-transcribe — bytes:', bytes.length);
+    console.log('[ACM] POST voice-transcribe — bytes:', bytes.length, 'mime:', blob.type);
     const res = await fetch(TRANSCRIBE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-dashboard-token': $authToken || '' },
@@ -148,11 +148,15 @@
     });
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
+      // Surface the full OpenAI error detail so it appears in DevTools console
+      const detail = (e as any).detail;
+      if (detail) console.error('[ACM] Whisper reject detail:', typeof detail === 'string' ? detail : JSON.stringify(detail));
       throw new Error((e as any).error || `Transcription failed (HTTP ${res.status})`);
     }
     const data = await res.json();
     console.log('[ACM] transcript chars:', (data.transcript || '').length);
     return (data.transcript || '').trim();
+
   }
 
 
