@@ -152,15 +152,20 @@
     try {
       stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
       mimeType = pickMime();
+      console.log('[ACM] startRecording — mimeType:', mimeType);
       mr       = new MediaRecorder(stream, { mimeType });
-      mr.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data); };
-      // No onstop that restarts — just plain accumulation
-      mr.start();
+      mr.ondataavailable = (e: any) => {
+        console.log('[ACM] ondataavailable — size:', e.data?.size);
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+      // Use 250ms timeslice so chunks arrive continuously + final flush on stop
+      mr.start(250);
       recState = 'recording';
+      console.log('[ACM] MediaRecorder started, state:', mr.state);
       startVisualizer(stream);
       startLivePreview();
     } catch (e: any) {
-      console.error('Mic error:', e);
+      console.error('[ACM] Mic error:', e);
     }
   }
 
@@ -170,31 +175,65 @@
     stopVisualizer();
     stopLivePreview();
 
-    // Capture insert position BEFORE any async work
+    // Snapshot cursor BEFORE async work
     const pos = insertPos;
-    const allChunks = [...chunks];
-    chunks = [];
+    console.log('[ACM] stopRecording — chunks so far:', chunks.length, '| insertPos:', pos);
 
-    try { mr?.stop(); } catch {}
+    if (!mr || mr.state === 'inactive') {
+      console.warn('[ACM] MediaRecorder already inactive — nothing to process');
+      stream?.getTracks().forEach(t => t.stop());
+      mr = null; stream = null;
+      return;
+    }
+
+    transcribing = true;
+
+    // Wrap mr.stop() in a Promise so we wait for the final ondataavailable+onstop
+    const finalBlob = await new Promise<Blob | null>((resolve) => {
+      const collected = [...chunks];   // grab what arrived during recording
+      const mime      = mimeType;
+
+      mr!.ondataavailable = (e: any) => {
+        console.log('[ACM] final ondataavailable — size:', e.data?.size);
+        if (e.data && e.data.size > 0) collected.push(e.data);
+      };
+      mr!.onstop = () => {
+        console.log('[ACM] onstop — total chunks:', collected.length);
+        chunks = [];
+        if (collected.length === 0) { resolve(null); return; }
+        const blob = new Blob(collected, { type: mime });
+        console.log('[ACM] final blob size:', blob.size, 'type:', blob.type);
+        resolve(blob);
+      };
+
+      try { mr!.stop(); } catch (err) {
+        console.error('[ACM] mr.stop() threw:', err);
+        resolve(null);
+      }
+    });
+
     stream?.getTracks().forEach(t => t.stop());
     mr = null; stream = null;
 
-    if (allChunks.length === 0) return;
+    if (!finalBlob || finalBlob.size < 1000) {
+      console.warn('[ACM] blob too small or null — skipping transcription, size:', finalBlob?.size);
+      transcribing = false;
+      return;
+    }
 
-    transcribing = true;
     try {
-      const blob = new Blob(allChunks, { type: mimeType });
-      const text = (await sliceToText(blob)).trim();
+      console.log('[ACM] calling sliceToText…');
+      const text = (await sliceToText(finalBlob)).trim();
+      console.log('[ACM] transcribed text:', JSON.stringify(text));
       if (text) {
-        // Insert at cursor position, preserving content before and after
-        const before = padText.slice(0, pos);
-        const after  = padText.slice(pos);
+        const before      = padText.slice(0, pos);
+        const after       = padText.slice(pos);
         const spaceBefore = before.length > 0 && !/[\s\n]$/.test(before) ? ' ' : '';
         const spaceAfter  = after.length  > 0 && !/^[\s\n]/.test(after)  ? ' ' : '';
         padText = before + spaceBefore + text + spaceAfter + after;
-        const newCursor = pos + spaceBefore.length + text.length;
+        const newCursor   = pos + spaceBefore.length + text.length;
+        console.log('[ACM] padText updated, length:', padText.length, '| newCursor:', newCursor);
 
-        // Move textarea cursor to end of inserted text
         await tick();
         if (padTextareaEl) {
           padTextareaEl.selectionStart = newCursor;
@@ -203,7 +242,9 @@
           insertPos = newCursor;
         }
       }
-    } catch {}
+    } catch (err) {
+      console.error('[ACM] sliceToText error:', err);
+    }
     transcribing = false;
   }
 
