@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onDestroy } from 'svelte';
+  import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import { authToken } from '../store.ts';
   import { extractClientFields, type ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
 
@@ -13,12 +13,13 @@
 
   // ─────────────────────────────────────────────────────────────────────────
   // STEP MACHINE
+  // capture+transcript merged → 'dictate'
   // ─────────────────────────────────────────────────────────────────────────
-  type Step = 'capture' | 'transcript' | 'structuring' | 'review';
-  let step: Step = 'capture';
+  type Step = 'dictate' | 'structuring' | 'review';
+  let step: Step = 'dictate';
 
   // ─────────────────────────────────────────────────────────────────────────
-  // RECORDING — Mode A: 3-second additive slices (Gemini accurate)
+  // RECORDING — continuous single-take (no 3-second slicing)
   // ─────────────────────────────────────────────────────────────────────────
   type RecState = 'idle' | 'recording';
   let recState: RecState = 'idle';
@@ -28,16 +29,18 @@
   let chunks:   Blob[]               = [];
   let mimeType  = '';
 
-  // Two-layer transcript:
-  //   transcript     — Gemini-quality, updates every ~3 s
-  //   interimPreview — Web Speech instant display (italic grey)
-  let transcript     = '';   // confirmed Gemini text
-  let interimPreview = '';   // live Web Speech interim
+  // Dictation pad — persistent editable textarea that accumulates all takes
+  let padText        = '';          // the persistent text content
+  let insertPos      = 0;           // cursor position in padText (tracked on blur/keyup)
+  let transcribing   = false;       // true while Gemini call is in flight after stop
+  let padTextareaEl: HTMLTextAreaElement;
+
+  // Web Speech interim ghost caption (not stored, purely visual)
+  let interimPreview = '';
   let speechRec: any = null;
 
-  // For transcript-review step
-  let rawTranscript      = '';
-  let editableTranscript = '';
+  // rawTranscript fed into extraction step
+  let rawTranscript = '';
 
   // ─────────────────────────────────────────────────────────────────────────
   // WEB AUDIO — Real-frequency visualizer via AnalyserNode
@@ -58,12 +61,12 @@
       analyser.smoothingTimeConstant = 0.78;
       freqBuf = new Uint8Array(analyser.frequencyBinCount);
       src.connect(analyser);
-      tick();
+      rafTick();
     } catch {}
   }
 
-  function tick() {
-    animId = requestAnimationFrame(tick);
+  function rafTick() {
+    animId = requestAnimationFrame(rafTick);
     if (!analyser) return;
     analyser.getByteFrequencyData(freqBuf);
     // bins 2–29 cover roughly 100–3400 Hz (speech range)
@@ -81,7 +84,7 @@
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // WEB SPEECH — Live interim word streaming
+  // WEB SPEECH — Live interim ghost caption only (discarded on stop)
   // ─────────────────────────────────────────────────────────────────────────
   function startLivePreview() {
     const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -139,70 +142,77 @@
     return ((json?.candidates?.[0]?.content?.parts?.[0]?.text) || '').trim();
   }
 
-  function appendText(text: string) {
-    if (!text) return;
-    if (transcript && !transcript.endsWith(' ')) transcript += ' ';
-    transcript += text;
-  }
-
-  // Onstop factory — identical to voice-test Mode A
-  const makeOnStop = () => async () => {
-    const b = new Blob(chunks, { type: mimeType });
-    chunks = [];
-    try { appendText(await sliceToText(b)); } catch {}
-    if (recState === 'recording') {
-      const newMr = new MediaRecorder(stream!, { mimeType });
-      newMr.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data); };
-      newMr.onstop = makeOnStop();
-      mr = newMr;
-      mr.start();
-      setTimeout(() => { if (recState === 'recording') mr?.stop(); }, 3000);
-    }
-  };
-
+  // ─────────────────────────────────────────────────────────────────────────
+  // RECORDING CONTROLS — continuous single-take, no slicing
+  // ─────────────────────────────────────────────────────────────────────────
   async function startRecording() {
     if (recState !== 'idle') return;
-    transcript = ''; interimPreview = '';
+    interimPreview = '';
     chunks = [];
     try {
       stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
       mimeType = pickMime();
       mr       = new MediaRecorder(stream, { mimeType });
       mr.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data); };
-      mr.onstop = makeOnStop();
+      // No onstop that restarts — just plain accumulation
       mr.start();
       recState = 'recording';
       startVisualizer(stream);
       startLivePreview();
-      setTimeout(() => { if (recState === 'recording') mr?.stop(); }, 3000);
     } catch (e: any) {
       console.error('Mic error:', e);
     }
   }
 
-  // Stop recording → go to transcript review step
   async function stopRecording() {
     if (recState === 'idle') return;
     recState = 'idle';
     stopVisualizer();
     stopLivePreview();
-    const finalChunks = [...chunks];
+
+    // Capture insert position BEFORE any async work
+    const pos = insertPos;
+    const allChunks = [...chunks];
     chunks = [];
+
     try { mr?.stop(); } catch {}
     stream?.getTracks().forEach(t => t.stop());
     mr = null; stream = null;
-    if (finalChunks.length > 0) {
-      const blob = new Blob(finalChunks, { type: mimeType });
-      try { appendText(await sliceToText(blob)); } catch {}
-    }
-    rawTranscript      = transcript;
-    editableTranscript = rawTranscript;
-    if (!rawTranscript.trim()) return;
-    step = 'transcript';
+
+    if (allChunks.length === 0) return;
+
+    transcribing = true;
+    try {
+      const blob = new Blob(allChunks, { type: mimeType });
+      const text = (await sliceToText(blob)).trim();
+      if (text) {
+        // Insert at cursor position, preserving content before and after
+        const before = padText.slice(0, pos);
+        const after  = padText.slice(pos);
+        const spaceBefore = before.length > 0 && !/[\s\n]$/.test(before) ? ' ' : '';
+        const spaceAfter  = after.length  > 0 && !/^[\s\n]/.test(after)  ? ' ' : '';
+        padText = before + spaceBefore + text + spaceAfter + after;
+        const newCursor = pos + spaceBefore.length + text.length;
+
+        // Move textarea cursor to end of inserted text
+        await tick();
+        if (padTextareaEl) {
+          padTextareaEl.selectionStart = newCursor;
+          padTextareaEl.selectionEnd   = newCursor;
+          padTextareaEl.focus();
+          insertPos = newCursor;
+        }
+      }
+    } catch {}
+    transcribing = false;
+  }
+
+  function trackCursor() {
+    if (padTextareaEl) insertPos = padTextareaEl.selectionStart ?? padText.length;
   }
 
   async function goStructure() {
-    rawTranscript = editableTranscript.trim();
+    rawTranscript = padText.trim();
     if (!rawTranscript) return;
     step = 'structuring';
     await runExtraction(rawTranscript);
@@ -289,7 +299,7 @@
   let budget = '', size = '', immigrationStatus = '', notes = '';
   let customFieldRows: { key: string; value: string }[] = [];
 
-  function addCustomField()         { customFieldRows = [...customFieldRows, { key: '', value: '' }]; }
+  function addCustomField()             { customFieldRows = [...customFieldRows, { key: '', value: '' }]; }
   function removeCustomField(i: number) { customFieldRows = customFieldRows.filter((_, x) => x !== i); }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -353,7 +363,7 @@
      OVERLAY
 ════════════════════════════════════════════════════════ -->
 <div class="acm-overlay" on:click|self={closeModal} role="dialog" aria-modal="true">
-  <div class="acm-shell" class:capture-mode={step === 'capture' || step === 'transcript'}>
+  <div class="acm-shell" class:dictate-mode={step === 'dictate'}>
 
     <button class="acm-x" on:click={closeModal} aria-label="Close">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -362,14 +372,14 @@
     </button>
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 1 · CAPTURE
+         STEP 1 · DICTATE  (voice capture + editable pad in one)
     ═══════════════════════════════════════════════════ -->
-    {#if step === 'capture'}
-      <div class="capture-wrap">
+    {#if step === 'dictate'}
+      <div class="dictate-wrap">
 
-        <div class="capture-title">
+        <div class="dictate-title">
           <h2>New Client</h2>
-          <p class="capture-sub">Speak naturally — AI will structure it</p>
+          <p class="dictate-sub">Speak — AI transcribes directly into the pad below</p>
         </div>
 
         <!-- Orb -->
@@ -414,68 +424,57 @@
           {/each}
         </div>
 
-        <!-- Live transcript (Gemini chunks + Web Speech interim) -->
-        <div class="capture-transcript">
-          {#if transcript || interimPreview}
-            <span class="t-gemini">{transcript}</span><!--
-            -->{#if interimPreview}<span class="t-interim"> {interimPreview}</span>{/if}
-          {:else if recState === 'recording'}
-            <span class="t-hint">Listening… speak naturally</span>
-          {:else}
-            <span class="t-hint">
-              e.g. "New client, John Smith, moving from Texas to Costa Rica
-              in October, budget around fifteen thousand…"
-            </span>
-          {/if}
+        <!-- Ghost caption: Web Speech interim (italic, dim — visual feedback only) -->
+        {#if interimPreview && recState === 'recording'}
+          <div class="ghost-caption" aria-hidden="true">{interimPreview}</div>
+        {/if}
+
+        <!-- Dictation pad: persistent editable textarea, accumulates all takes -->
+        <div class="pad-wrap">
+          <textarea
+            bind:this={padTextareaEl}
+            bind:value={padText}
+            class="pad-editor"
+            rows="6"
+            spellcheck="true"
+            placeholder={recState === 'recording'
+              ? 'Recording… speak naturally'
+              : 'e.g. "New client, John Smith, moving from Texas to Costa Rica in October, budget around fifteen thousand…"'}
+            on:blur={trackCursor}
+            on:keyup={trackCursor}
+            on:click={trackCursor}
+            on:mouseup={trackCursor}
+          ></textarea>
+          <div class="pad-meta">
+            {#if transcribing}
+              <span class="pad-transcribing">
+                <span class="trans-dot"></span>Transcribing…
+              </span>
+            {:else}
+              <span class="pad-char">{padText.length} chars</span>
+            {/if}
+          </div>
         </div>
 
-        <!-- Actions -->
-        <div class="capture-actions">
-          {#if recState === 'recording' && transcript.trim()}
-            <button class="btn-send-transcript" on:click={stopRecording}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Footer actions -->
+        <div class="dictate-footer">
+          <button class="btn-skip" on:click={skipToManual}>✏️ Skip — type manually</button>
+          {#if padText.trim()}
+            <button class="btn-structure-now" on:click={goStructure} disabled={transcribing}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              Send transcript
+              Structure with AI
             </button>
           {/if}
-          <button class="btn-skip" on:click={skipToManual}>✏️ Skip — type manually</button>
         </div>
 
       </div>
     {/if}
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 2 · TRANSCRIPT REVIEW
-    ═══════════════════════════════════════════════════ -->
-    {#if step === 'transcript'}
-      <div class="ts-wrap">
-        <div class="ts-header">
-          <h2>Your Recording</h2>
-          <p class="ts-sub">Edit or correct before the AI structures it</p>
-        </div>
-        <div class="ts-body">
-          <textarea class="ts-editor" bind:value={editableTranscript} rows="7" spellcheck="true" />
-          <p class="ts-char">{editableTranscript.length} chars</p>
-        </div>
-        <div class="ts-footer">
-          <button class="btn-back"
-            on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
-            ← Re-record
-          </button>
-          <button class="btn-structure-now" on:click={goStructure} disabled={!editableTranscript.trim()}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Structure with AI
-          </button>
-        </div>
-      </div>
-    {/if}
-
-    <!-- ═══════════════════════════════════════════════════
-         STEP 3 · STRUCTURING (AI processing)
+         STEP 2 · STRUCTURING (AI processing)
     ═══════════════════════════════════════════════════ -->
     {#if step === 'structuring'}
       <div class="structuring-wrap">
@@ -496,7 +495,7 @@
     {/if}
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 4 · REVIEW FORM (with type-in animation)
+         STEP 3 · REVIEW FORM (with type-in animation)
     ═══════════════════════════════════════════════════ -->
     {#if step === 'review'}
       <div class="review-wrap">
@@ -619,7 +618,7 @@
             <div class="rfoot-error">{submitError}</div>
           {/if}
           <button class="btn-back"
-            on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
+            on:click={() => { step = 'dictate'; rawTranscript = ''; }}>
             ← Re-record
           </button>
           <button class="btn-create" on:click={handleSubmit} disabled={submitting || !email.trim()}>
@@ -667,7 +666,7 @@
     position: relative;
     transition: max-width .35s cubic-bezier(.4,0,.2,1);
   }
-  .capture-mode { max-width: 480px; }
+  .dictate-mode { max-width: 520px; }
 
   /* Close */
   .acm-x {
@@ -679,17 +678,18 @@
   }
   .acm-x:hover { background: #eaeaf5; color: #12122a; transform: scale(1.1); }
 
-  /* ═══ CAPTURE ══════════════════════════════════════════════════════ */
-  .capture-wrap {
+  /* ═══ DICTATE ══════════════════════════════════════════════════════ */
+  .dictate-wrap {
     display: flex; flex-direction: column; align-items: center;
-    padding: 2.75rem 2rem 2rem; gap: 1.4rem;
-    min-height: 520px; background: #ffffff;
+    padding: 2.5rem 1.8rem 1.8rem; gap: 1.2rem;
+    background: #ffffff;
+    overflow-y: auto;
   }
 
-  .capture-title { text-align: center; }
-  .capture-title h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #12122a;
+  .dictate-title { text-align: center; }
+  .dictate-title h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #12122a;
                       letter-spacing: -.02em; }
-  .capture-sub { margin: .3rem 0 0; font-size: .88rem; color: #6666a0; }
+  .dictate-sub { margin: .3rem 0 0; font-size: .88rem; color: #6666a0; }
 
   /* Orb */
   .orb-wrap {
@@ -757,81 +757,50 @@
     background: #a78bfa !important;
   }
 
-  /* Live transcript box */
-  .capture-transcript {
-    width: 100%; max-width: 400px;
-    min-height: 76px; max-height: 150px; overflow-y: auto;
-    background: #f9f9fd; border: 1px solid #e2e2ee; border-radius: 12px;
-    padding: .8rem 1rem;
-    font-size: .92rem; line-height: 1.68; color: #12122a;
+  /* Ghost caption — Web Speech interim (visual feedback only) */
+  .ghost-caption {
+    width: 100%; max-width: 420px;
+    font-size: .86rem; line-height: 1.55; color: #a0a0c8;
+    font-style: italic; text-align: center;
+    min-height: 1.6em;
+    padding: 0 .5rem;
+    animation: fade-in .15s ease;
   }
-  .t-gemini  { color: #12122a; }
-  .t-interim { color: #9090c0; font-style: italic; }
-  .t-hint    { color: #c0c0da; font-size: .82rem; line-height: 1.6; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-  /* Capture actions */
-  .capture-actions {
-    display: flex; flex-direction: column; align-items: center; gap: .55rem;
-    width: 100%; max-width: 340px;
-  }
-
-  /* Send transcript button — ultra-modern */
-  .btn-send-transcript {
-    width: 100%;
-    display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
-    padding: .78rem 1.6rem;
-    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 55%, #4c1d95 100%);
-    color: #fff;
-    border: 1px solid rgba(167,139,250,.3);
-    border-radius: 14px;
-    font-size: .96rem; font-weight: 800; letter-spacing: .03em;
-    cursor: pointer;
-    box-shadow: 0 6px 24px rgba(124,58,237,.38), inset 0 1px 0 rgba(255,255,255,.18);
-    transition: box-shadow .2s, transform .12s, filter .15s;
-  }
-  .btn-send-transcript:hover {
-    box-shadow: 0 10px 36px rgba(124,58,237,.55);
-    filter: brightness(1.1);
-    transform: translateY(-2px);
-  }
-  .btn-send-transcript:active { transform: translateY(0); filter: brightness(.96); }
-
-  .btn-skip {
-    background: none; border: none;
-    color: #9090b8; font-size: .8rem;
-    cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
-  }
-  .btn-skip:hover { color: #5555a0; }
-
-  /* ═══ TRANSCRIPT REVIEW ════════════════════════════════════════════ */
-  .ts-wrap {
-    display: flex; flex-direction: column;
-    background: #ffffff;
-  }
-  .ts-header {
-    padding: 1.4rem 1.6rem 1rem;
-    border-bottom: 1px solid #e8e8f2;
-    background: #fafafe;
-  }
-  .ts-header h2 { margin: 0; font-size: 1.2rem; font-weight: 800; color: #12122a; }
-  .ts-sub { margin: .25rem 0 0; font-size: .82rem; color: #6666a0; }
-  .ts-body {
-    padding: 1.2rem 1.6rem; flex: 1;
-  }
-  .ts-editor {
+  /* Dictation pad */
+  .pad-wrap { width: 100%; max-width: 440px; }
+  .pad-editor {
     width: 100%; resize: vertical;
-    background: #f9f9fd; border: 1px solid #d8d8ec; border-radius: 10px;
-    color: #12122a; padding: .8rem 1rem; font-size: .92rem; line-height: 1.7;
-    font-family: inherit; outline: none;
+    background: #f9f9fd; border: 1px solid #d8d8ec; border-radius: 12px;
+    color: #12122a; padding: .85rem 1rem; font-size: .92rem; line-height: 1.7;
+    font-family: inherit; outline: none; box-sizing: border-box;
     transition: border-color .15s, box-shadow .15s;
   }
-  .ts-editor:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
-  .ts-char { margin: .3rem 0 0; font-size: .72rem; color: #a0a0c0; text-align: right; }
-  .ts-footer {
-    display: flex; align-items: center; justify-content: flex-end; gap: .65rem;
-    padding: 1rem 1.6rem 1.4rem;
-    border-top: 1px solid #e8e8f2;
-    background: #fafafe;
+  .pad-editor:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+  .pad-meta {
+    display: flex; align-items: center; gap: .4rem;
+    margin-top: .28rem; min-height: 1.2em;
+  }
+  .pad-char { font-size: .72rem; color: #a0a0c0; margin-left: auto; }
+
+  /* Transcribing spinner */
+  .pad-transcribing {
+    display: inline-flex; align-items: center; gap: .42rem;
+    font-size: .78rem; color: #7c3aed; font-weight: 700;
+    margin-left: auto;
+  }
+  .trans-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border: 1.5px solid rgba(124,58,237,.3); border-top-color: #7c3aed;
+    border-radius: 50%; animation: btn-rotate .65s linear infinite; flex-shrink: 0;
+  }
+
+  /* Dictate footer */
+  .dictate-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .8rem; width: 100%; max-width: 440px;
+    flex-wrap: wrap;
   }
 
   /* Structure with AI — hero CTA */
@@ -854,6 +823,13 @@
   }
   .btn-structure-now:active:not(:disabled) { transform: translateY(0); }
   .btn-structure-now:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; filter: none; }
+
+  .btn-skip {
+    background: none; border: none;
+    color: #9090b8; font-size: .8rem;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
+  }
+  .btn-skip:hover { color: #5555a0; }
 
   /* ═══ STRUCTURING ══════════════════════════════════════════════════ */
   .structuring-wrap {
