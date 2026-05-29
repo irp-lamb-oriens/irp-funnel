@@ -678,7 +678,7 @@
           <div class="custom-fields-section">
             <div class="custom-fields-header">
               <span class="custom-fields-label">Custom Fields</span>
-              <button class="btn-add-cf" on:click={addCustomField}>+ Add field</button>
+              <!-- <button class="btn-add-cf" on:click={addCustomField}>+ Add field</button> -->
             </div>
             {#each customFieldRows as row, i}
               <div class="cf-row">
