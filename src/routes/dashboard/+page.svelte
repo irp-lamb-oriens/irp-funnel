@@ -392,7 +392,13 @@
           <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
         </div>
         <button class="topbar__add-client" on:click={() => (addClientOpen = true)} title="Add client manually">
-          ➕ Add Client
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+                  fill="currentColor"/>
+            <circle cx="20" cy="6" r="3.5" fill="currentColor"/>
+            <path d="M20 4.5v3M18.5 6h3" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          New Client
         </button>
         <span class="topbar__user">{$authEmail?.split('@')[0]}</span>
         <button class="topbar__logout" on:click={handleLogout}>Logout</button>
@@ -676,21 +682,33 @@
 <Footer />
 
 <style>
-  /* ══ Add Client button ══════════════════════════════════════════════════ */
+  /* ══ Add Client button — ultra-modern ══════════════════════════════════ */
   .topbar__add-client {
-    padding: 0.35rem 0.85rem;
-    background: #7c3aed;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    padding: 0.38rem 1rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 60%, #4c1d95 100%);
     color: #fff;
-    border: none;
-    border-radius: 6px;
+    border: 1px solid rgba(167,139,250,.3);
+    border-radius: 10px;
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 800;
+    letter-spacing: 0.03em;
     cursor: pointer;
     white-space: nowrap;
-    transition: background 0.15s;
-    letter-spacing: 0.01em;
+    box-shadow: 0 3px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.15);
+    transition: box-shadow .2s, transform .12s, filter .15s;
   }
-  .topbar__add-client:hover { background: #6d28d9; }
+  .topbar__add-client:hover {
+    box-shadow: 0 6px 22px rgba(124,58,237,.52);
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+  .topbar__add-client:active {
+    transform: translateY(0);
+    filter: brightness(.96);
+  }
 
   /* ══ Bug FAB ══════════════════════════════════════════════════════════════ */
   .bug-fab {

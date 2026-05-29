@@ -5,17 +5,21 @@
 
   const dispatch = createEventDispatcher<{ created: { docId: string }; close: void }>();
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const GEM_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
-  const MODEL   = 'gemini-flash-latest';
+  const API_URL  = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const GEM_KEY  = import.meta.env.VITE_GEMINI_API_KEY as string;
+  const MODEL    = 'gemini-flash-latest';
   const REST_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEM_KEY}`;
-  const PROMPT  = 'Transcribe the audio verbatim. Output ONLY the spoken words with natural punctuation and capitalization. No commentary, no filler.';
+  const PROMPT   = 'Transcribe the audio verbatim. Output ONLY the spoken words with natural punctuation and capitalization. No commentary, no filler.';
 
-  // ─── Step machine ─────────────────────────────────────────────────────────
-  type Step = 'capture' | 'structuring' | 'review';
+  // ─────────────────────────────────────────────────────────────────────────
+  // STEP MACHINE
+  // ─────────────────────────────────────────────────────────────────────────
+  type Step = 'capture' | 'transcript' | 'structuring' | 'review';
   let step: Step = 'capture';
 
-  // ─── Recording (Mode A — 3-second additive slices, same as voice-test) ────
+  // ─────────────────────────────────────────────────────────────────────────
+  // RECORDING — Mode A: 3-second additive slices (Gemini accurate)
+  // ─────────────────────────────────────────────────────────────────────────
   type RecState = 'idle' | 'recording';
   let recState: RecState = 'idle';
 
@@ -23,41 +27,91 @@
   let stream:   MediaStream   | null = null;
   let chunks:   Blob[]               = [];
   let mimeType  = '';
-  let transcript    = '';   // builds up additively in real-time
-  let rawTranscript = '';   // snapshot used for extraction
 
-  // ─── Extraction ───────────────────────────────────────────────────────────
-  let extracted: ClientFieldExtraction | null = null;
-  let extractError = '';
-  let aiFilledFields: Set<string> = new Set();
+  // Two-layer transcript:
+  //   transcript     — Gemini-quality, updates every ~3 s
+  //   interimPreview — Web Speech instant display (italic grey)
+  let transcript     = '';   // confirmed Gemini text
+  let interimPreview = '';   // live Web Speech interim
+  let speechRec: any = null;
 
-  // ─── Form fields ──────────────────────────────────────────────────────────
-  let name = '', surname = '', email = '', phone = '';
-  let originCountry = '', originCity = '';
-  let destinationCountry = '', destinationCity = '';
-  let budget = '', size = '', immigrationStatus = '', notes = '';
-  let customFieldRows: { key: string; value: string }[] = [];
+  // For transcript-review step
+  let rawTranscript      = '';
+  let editableTranscript = '';
 
-  // ─── Submission ───────────────────────────────────────────────────────────
-  let submitting  = false;
-  let submitError = '';
+  // ─────────────────────────────────────────────────────────────────────────
+  // WEB AUDIO — Real-frequency visualizer via AnalyserNode
+  // ─────────────────────────────────────────────────────────────────────────
+  const BARS = 28;
+  let waveHeights: number[] = Array(BARS).fill(4);
+  let audioCtx:  AudioContext | null = null;
+  let analyser:  AnalyserNode | null = null;
+  let freqBuf:   Uint8Array;
+  let animId     = 0;
 
-  // ─── Waveform ─────────────────────────────────────────────────────────────
-  const BARS = 18;
-  let waveHeights: number[] = Array.from({ length: BARS }, () => 20);
-  let waveTimer: ReturnType<typeof setInterval> | null = null;
-
-  function startWave() {
-    waveTimer = setInterval(() => {
-      waveHeights = Array.from({ length: BARS }, () => 20 + Math.random() * 60);
-    }, 80);
+  function startVisualizer(micStream: MediaStream) {
+    try {
+      audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(micStream);
+      analyser  = audioCtx.createAnalyser();
+      analyser.fftSize               = 128;  // 64 bins
+      analyser.smoothingTimeConstant = 0.78;
+      freqBuf = new Uint8Array(analyser.frequencyBinCount);
+      src.connect(analyser);
+      tick();
+    } catch {}
   }
-  function stopWave() {
-    if (waveTimer) { clearInterval(waveTimer); waveTimer = null; }
-    waveHeights = Array.from({ length: BARS }, () => 20);
+
+  function tick() {
+    animId = requestAnimationFrame(tick);
+    if (!analyser) return;
+    analyser.getByteFrequencyData(freqBuf);
+    // bins 2–29 cover roughly 100–3400 Hz (speech range)
+    const raw = Array.from(freqBuf).slice(2, 2 + BARS);
+    waveHeights = raw.map(v => 5 + (v / 255) * 95);
   }
 
-  // ─── Audio helpers ────────────────────────────────────────────────────────
+  function stopVisualizer() {
+    cancelAnimationFrame(animId);
+    animId = 0;
+    try { audioCtx?.close(); } catch {}
+    audioCtx = null;
+    analyser = null;
+    waveHeights = Array(BARS).fill(4);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // WEB SPEECH — Live interim word streaming
+  // ─────────────────────────────────────────────────────────────────────────
+  function startLivePreview() {
+    const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!Ctor) return;
+    speechRec = new Ctor();
+    speechRec.continuous     = true;
+    speechRec.interimResults = true;
+    speechRec.lang           = 'en-US';
+    speechRec.onresult = (e: any) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (!e.results[i].isFinal) interim += e.results[i][0].transcript;
+      }
+      interimPreview = interim;
+    };
+    speechRec.onend = () => {
+      if (recState === 'recording') { try { speechRec?.start(); } catch {} }
+    };
+    try { speechRec.start(); } catch {}
+  }
+
+  function stopLivePreview() {
+    try { speechRec?.stop(); } catch {}
+    speechRec = null;
+    interimPreview = '';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AUDIO HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
   function pickMime() {
     for (const t of ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'])
       if (MediaRecorder.isTypeSupported(t)) return t;
@@ -91,7 +145,7 @@
     transcript += text;
   }
 
-  // Factory that creates an onstop handler — exactly as in voice-test Mode A
+  // Onstop factory — identical to voice-test Mode A
   const makeOnStop = () => async () => {
     const b = new Blob(chunks, { type: mimeType });
     chunks = [];
@@ -108,7 +162,7 @@
 
   async function startRecording() {
     if (recState !== 'idle') return;
-    transcript = '';
+    transcript = ''; interimPreview = '';
     chunks = [];
     try {
       stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -118,257 +172,311 @@
       mr.onstop = makeOnStop();
       mr.start();
       recState = 'recording';
-      startWave();
+      startVisualizer(stream);
+      startLivePreview();
       setTimeout(() => { if (recState === 'recording') mr?.stop(); }, 3000);
     } catch (e: any) {
       console.error('Mic error:', e);
     }
   }
 
-  async function stopAndStructure() {
+  // Stop recording → go to transcript review step
+  async function stopRecording() {
     if (recState === 'idle') return;
-    // Set idle FIRST — onstop checks this and won't restart
     recState = 'idle';
-    stopWave();
-    // Grab any partial chunks before stopping
+    stopVisualizer();
+    stopLivePreview();
     const finalChunks = [...chunks];
-    chunks = [];  // clear so onstop sees empty blob (won't try to retranscribe)
+    chunks = [];
     try { mr?.stop(); } catch {}
     stream?.getTracks().forEach(t => t.stop());
-    mr = null;
-    stream = null;
-    // Transcribe the remaining partial slice directly
+    mr = null; stream = null;
     if (finalChunks.length > 0) {
       const blob = new Blob(finalChunks, { type: mimeType });
       try { appendText(await sliceToText(blob)); } catch {}
     }
-    rawTranscript = transcript;
+    rawTranscript      = transcript;
+    editableTranscript = rawTranscript;
     if (!rawTranscript.trim()) return;
+    step = 'transcript';
+  }
+
+  async function goStructure() {
+    rawTranscript = editableTranscript.trim();
+    if (!rawTranscript) return;
     step = 'structuring';
     await runExtraction(rawTranscript);
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TYPE-IN ANIMATION
+  // ─────────────────────────────────────────────────────────────────────────
+  async function typeIn(setter: (v: string) => void, text: string, ms = 16): Promise<void> {
+    setter('');
+    for (let i = 1; i <= text.length; i++) {
+      await new Promise<void>(r => setTimeout(r, ms));
+      setter(text.slice(0, i));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXTRACTION + FORM FILL
+  // ─────────────────────────────────────────────────────────────────────────
+  let extracted: ClientFieldExtraction | null = null;
+  let extractError = '';
+  let aiFilledFields: Set<string> = new Set();
 
   async function runExtraction(text: string) {
     extractError = '';
     try {
       extracted = await extractClientFields(text, REST_URL);
-      fillFormFromExtraction(extracted);
-      step = 'review';
+      step = 'review';                         // show form first
+      await fillFormAnimated(extracted);       // then type-in
     } catch (e: any) {
-      extractError = e.message;
+      extractError = (e as Error).message;
       step = 'review';
     }
   }
 
-  function fillFormFromExtraction(f: ClientFieldExtraction) {
+  async function fillFormAnimated(f: ClientFieldExtraction) {
     aiFilledFields = new Set();
-    const fill = (field: string, val: string | undefined) => {
-      if (val && val.trim()) {
+    const STAGGER = 70;
+    const CHAR_MS = 14;
+
+    type Entry = { field: string; setter: (v: string) => void; val: string };
+    const rows: Entry[] = [];
+
+    const q = (field: string, setter: (v: string) => void, val: string | undefined) => {
+      if (val?.trim()) {
         aiFilledFields = new Set([...aiFilledFields, field]);
-        return val.trim();
+        rows.push({ field, setter, val: val.trim() });
       }
-      return '';
     };
-    name               = fill('name',               f.name);
-    surname            = fill('surname',             f.surname);
-    email              = fill('email',               f.email);
-    phone              = fill('phone',               f.phone);
-    originCountry      = fill('originCountry',       f.originCountry);
-    originCity         = fill('originCity',          f.originCity);
-    destinationCountry = fill('destinationCountry',  f.destinationCountry);
-    destinationCity    = fill('destinationCity',     f.destinationCity);
-    budget             = fill('budget',              f.budget);
-    size               = fill('size',                f.size);
-    immigrationStatus  = fill('immigrationStatus',   f.immigrationStatus);
-    notes              = fill('notes',               f.notes);
-    customFieldRows    = (Object.entries(f.customFields || {}) as [string, string][]).map(([key, value]) => ({ key, value }));
+
+    q('name',               (v) => (name = v),               f.name);
+    q('surname',            (v) => (surname = v),             f.surname);
+    q('email',              (v) => (email = v),               f.email);
+    q('phone',              (v) => (phone = v),               f.phone);
+    q('originCountry',      (v) => (originCountry = v),       f.originCountry);
+    q('originCity',         (v) => (originCity = v),          f.originCity);
+    q('destinationCountry', (v) => (destinationCountry = v),  f.destinationCountry);
+    q('destinationCity',    (v) => (destinationCity = v),     f.destinationCity);
+    q('budget',             (v) => (budget = v),              f.budget);
+    q('size',               (v) => (size = v),                f.size);
+    q('immigrationStatus',  (v) => (immigrationStatus = v),   f.immigrationStatus);
+    q('notes',              (v) => (notes = v),               f.notes);
+
+    await Promise.all(
+      rows.map(({ setter, val }, i) =>
+        new Promise<void>(async (res) => {
+          await new Promise<void>(r => setTimeout(r, i * STAGGER));
+          await typeIn(setter, val, CHAR_MS);
+          res();
+        })
+      )
+    );
+
+    customFieldRows = (Object.entries(f.customFields || {}) as [string, string][])
+      .map(([key, value]) => ({ key, value }));
   }
 
-  // ─── Custom field rows ─────────────────────────────────────────────────────
-  function addCustomField() {
-    customFieldRows = [...customFieldRows, { key: '', value: '' }];
-  }
-  function removeCustomField(i: number) {
-    customFieldRows = customFieldRows.filter((_, idx) => idx !== i);
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // FORM STATE
+  // ─────────────────────────────────────────────────────────────────────────
+  let name = '', surname = '', email = '', phone = '';
+  let originCountry = '', originCity = '';
+  let destinationCountry = '', destinationCity = '';
+  let budget = '', size = '', immigrationStatus = '', notes = '';
+  let customFieldRows: { key: string; value: string }[] = [];
 
-  // ─── Submit ────────────────────────────────────────────────────────────────
-  function getHeaders() {
-    return { 'Content-Type': 'application/json', 'x-dashboard-token': $authToken || '' };
-  }
+  function addCustomField()         { customFieldRows = [...customFieldRows, { key: '', value: '' }]; }
+  function removeCustomField(i: number) { customFieldRows = customFieldRows.filter((_, x) => x !== i); }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SUBMIT
+  // ─────────────────────────────────────────────────────────────────────────
+  let submitting  = false;
+  let submitError = '';
 
   async function handleSubmit() {
     if (!email.trim()) { submitError = 'Email is required.'; return; }
-    submitting  = true;
-    submitError = '';
-    const builtCustomFields: Record<string, string> = {};
-    for (const row of customFieldRows) {
-      const k = row.key.trim();
-      const v = row.value.trim();
-      if (k && v) builtCustomFields[k] = v;
-    }
+    submitting = true; submitError = '';
+    const cf: Record<string, string> = {};
+    for (const { key, value } of customFieldRows)
+      if (key.trim() && value.trim()) cf[key.trim()] = value.trim();
     try {
       const res = await fetch(`${API_URL}/api/dashboard/clients/manual`, {
         method: 'POST',
-        headers: getHeaders(),
+        headers: { 'Content-Type': 'application/json', 'x-dashboard-token': $authToken || '' },
         body: JSON.stringify({
-          name:               name.trim(),
-          surname:            surname.trim(),
-          email:              email.trim().toLowerCase(),
-          phone:              phone.trim(),
-          originCountry:      originCountry.trim(),
-          originCity:         originCity.trim(),
-          destinationCountry: destinationCountry.trim(),
-          destinationCity:    destinationCity.trim(),
-          budget:             budget.trim(),
-          size:               size.trim(),
-          immigrationStatus:  immigrationStatus.trim(),
-          notes:              notes.trim(),
-          voiceTranscript:    rawTranscript || undefined,
-          customFields:       Object.keys(builtCustomFields).length
-                                ? builtCustomFields : undefined,
+          name: name.trim(), surname: surname.trim(),
+          email: email.trim().toLowerCase(), phone: phone.trim(),
+          originCountry: originCountry.trim(), originCity: originCity.trim(),
+          destinationCountry: destinationCountry.trim(), destinationCity: destinationCity.trim(),
+          budget: budget.trim(), size: size.trim(),
+          immigrationStatus: immigrationStatus.trim(), notes: notes.trim(),
+          voiceTranscript: rawTranscript || undefined,
+          customFields: Object.keys(cf).length ? cf : undefined,
         }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || 'Failed to create client.');
+        const e = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(e.error || 'Failed to create client.');
       }
       const data = await res.json();
       dispatch('created', { docId: data.docId });
     } catch (err: any) {
-      submitError = err.message;
+      submitError = (err as Error).message;
     } finally {
       submitting = false;
     }
   }
 
-  // ─── Skip to manual form ─────────────────────────────────────────────────
-  function skipToManual() {
+  // ─────────────────────────────────────────────────────────────────────────
+  // CLEANUP
+  // ─────────────────────────────────────────────────────────────────────────
+  function cleanup() {
     recState = 'idle';
+    stopVisualizer();
+    stopLivePreview();
     try { mr?.stop(); } catch {}
     stream?.getTracks().forEach(t => t.stop());
     mr = null; stream = null;
-    stopWave();
-    step = 'review';
   }
 
-  // ─── Close ───────────────────────────────────────────────────────────────
-  function closeModal() {
-    recState = 'idle';
-    try { mr?.stop(); } catch {}
-    stream?.getTracks().forEach(t => t.stop());
-    mr = null; stream = null;
-    stopWave();
-    dispatch('close');
-  }
-
-  onDestroy(() => {
-    recState = 'idle';
-    try { mr?.stop(); } catch {}
-    stream?.getTracks().forEach(t => t.stop());
-    mr = null; stream = null;
-    stopWave();
-  });
+  function skipToManual() { cleanup(); step = 'review'; }
+  function closeModal()   { cleanup(); dispatch('close'); }
+  onDestroy(cleanup);
 </script>
 
-<!-- ─────────────────────────────── OVERLAY ─────────────────────────────────── -->
+<!-- ════════════════════════════════════════════════════════
+     OVERLAY
+════════════════════════════════════════════════════════ -->
 <div class="acm-overlay" on:click|self={closeModal} role="dialog" aria-modal="true">
-  <div class="acm-shell" class:capture-mode={step === 'capture'}>
+  <div class="acm-shell" class:capture-mode={step === 'capture' || step === 'transcript'}>
 
-    <!-- ╔═══ CLOSE button always visible ═══╗ -->
-    <button class="acm-x" on:click={closeModal} aria-label="Close">✕</button>
+    <button class="acm-x" on:click={closeModal} aria-label="Close">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
 
-    <!-- ══════════════════════════════════════════════════════ -->
-    <!--  STEP 1 — CAPTURE                                     -->
-    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════
+         STEP 1 · CAPTURE
+    ═══════════════════════════════════════════════════ -->
     {#if step === 'capture'}
       <div class="capture-wrap">
 
-        <!-- Title -->
         <div class="capture-title">
           <h2>New Client</h2>
-          <p class="capture-sub">Speak naturally — we'll structure it for you</p>
+          <p class="capture-sub">Speak naturally — AI will structure it</p>
         </div>
 
-        <!-- Record orb -->
-        <div class="orb-wrap"
-          class:orb-idle={recState === 'idle'}
-          class:orb-listening={recState === 'recording'}
-        >
+        <!-- Orb -->
+        <div class="orb-wrap">
           {#if recState === 'recording'}
             <div class="orb-ring ring-1"></div>
             <div class="orb-ring ring-2"></div>
+            <div class="orb-ring ring-3"></div>
           {/if}
           <button
             class="orb-btn"
             class:orb-btn-recording={recState === 'recording'}
-            on:click={() => recState === 'idle' ? startRecording() : stopAndStructure()}
-            aria-label={recState === 'recording' ? 'Stop recording' : 'Start recording'}
+            on:click={() => recState === 'idle' ? startRecording() : stopRecording()}
+            aria-label={recState === 'recording' ? 'Stop' : 'Record'}
           >
             {#if recState === 'idle'}
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z" fill="currentColor"/>
-                <path d="M19 10a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-                <line x1="12" y1="17" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/>
+                <path d="M19 10a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <line x1="12" y1="17" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="9" y1="22" x2="15" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
               <span class="orb-label">Record</span>
             {:else}
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2.5"/>
               </svg>
               <span class="orb-label">Stop</span>
             {/if}
           </button>
         </div>
 
-        <!-- Waveform -->
-        {#if recState === 'recording'}
-          <div class="waveform" aria-hidden="true">
-            {#each waveHeights as h}
-              <div class="wave-bar" style="height:{h}%"></div>
-            {/each}
-          </div>
-        {:else}
-          <div class="waveform waveform-idle" aria-hidden="true">
-            {#each waveHeights as _}
-              <div class="wave-bar"></div>
-            {/each}
-          </div>
-        {/if}
+        <!-- Real-frequency spectrum visualizer -->
+        <div class="spectrum" class:spectrum-active={recState === 'recording'} aria-hidden="true">
+          {#each waveHeights as h, i}
+            <div
+              class="spec-bar"
+              style="height:{h}%;
+                     background: hsl({260 + i * 2},{60 + (h/100)*30}%,{55 + (h/100)*15}%);
+                     opacity:{recState === 'recording' ? 0.85 + (h/100)*0.15 : 0.15}"
+            ></div>
+          {/each}
+        </div>
 
-        <!-- Live transcript -->
-        <div class="capture-transcript" class:has-text={transcript.length > 0}>
-          {#if transcript}
-            <span class="transcript-committed">{transcript}</span>
-          {:else if recState === 'idle'}
-            <span class="transcript-placeholder">
-              Say something like: "New client, John Smith, moving from Texas to Costa Rica in October,
-              budget around fifteen thousand, looking at residency…"
-            </span>
+        <!-- Live transcript (Gemini chunks + Web Speech interim) -->
+        <div class="capture-transcript">
+          {#if transcript || interimPreview}
+            <span class="t-gemini">{transcript}</span><!--
+            -->{#if interimPreview}<span class="t-interim"> {interimPreview}</span>{/if}
+          {:else if recState === 'recording'}
+            <span class="t-hint">Listening… speak naturally</span>
           {:else}
-            <span class="transcript-placeholder">Listening…</span>
+            <span class="t-hint">
+              e.g. "New client, John Smith, moving from Texas to Costa Rica
+              in October, budget around fifteen thousand…"
+            </span>
           {/if}
         </div>
 
         <!-- Actions -->
         <div class="capture-actions">
           {#if recState === 'recording' && transcript.trim()}
-            <button class="btn-structure" on:click={stopAndStructure}>
-              Stop &amp; Structure →
+            <button class="btn-send-transcript" on:click={stopRecording}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Send transcript
             </button>
           {/if}
-          <button class="btn-skip" on:click={skipToManual}>
-            ✏️ Skip — I'll type it
-          </button>
+          <button class="btn-skip" on:click={skipToManual}>✏️ Skip — type manually</button>
         </div>
 
       </div>
     {/if}
 
-    <!-- ══════════════════════════════════════════════════════ -->
-    <!--  STEP 2a — STRUCTURING                                -->
-    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════
+         STEP 2 · TRANSCRIPT REVIEW
+    ═══════════════════════════════════════════════════ -->
+    {#if step === 'transcript'}
+      <div class="ts-wrap">
+        <div class="ts-header">
+          <h2>Your Recording</h2>
+          <p class="ts-sub">Edit or correct before the AI structures it</p>
+        </div>
+        <div class="ts-body">
+          <textarea class="ts-editor" bind:value={editableTranscript} rows="7" spellcheck="true" />
+          <p class="ts-char">{editableTranscript.length} chars</p>
+        </div>
+        <div class="ts-footer">
+          <button class="btn-back"
+            on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
+            ← Re-record
+          </button>
+          <button class="btn-structure-now" on:click={goStructure} disabled={!editableTranscript.trim()}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Structure with AI
+          </button>
+        </div>
+      </div>
+    {/if}
+
+    <!-- ═══════════════════════════════════════════════════
+         STEP 3 · STRUCTURING (AI processing)
+    ═══════════════════════════════════════════════════ -->
     {#if step === 'structuring'}
       <div class="structuring-wrap">
         <div class="structuring-orb">
@@ -379,83 +487,74 @@
         </div>
         <h2 class="structuring-title">Structuring your client…</h2>
         <p class="structuring-sub">Reading between the lines</p>
-
         {#if rawTranscript}
-          <div class="structuring-transcript">{rawTranscript.slice(0, 160)}{rawTranscript.length > 160 ? '…' : ''}</div>
+          <div class="structuring-transcript">
+            {rawTranscript.slice(0, 180)}{rawTranscript.length > 180 ? '…' : ''}
+          </div>
         {/if}
       </div>
     {/if}
 
-    <!-- ══════════════════════════════════════════════════════ -->
-    <!--  STEP 2b — REVIEW FORM                               -->
-    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════
+         STEP 4 · REVIEW FORM (with type-in animation)
+    ═══════════════════════════════════════════════════ -->
     {#if step === 'review'}
       <div class="review-wrap">
 
-        <!-- Header -->
         <div class="review-header">
           <div>
-            <h2>Review & Create</h2>
+            <h2>Review &amp; Create</h2>
             {#if extracted && !extractError}
-              <p class="review-sub">✨ AI filled <strong>{aiFilledFields.size}</strong> field{aiFilledFields.size !== 1 ? 's' : ''} — edit anything you like</p>
+              <p class="review-sub">✨ AI filled <strong>{aiFilledFields.size}</strong> field{aiFilledFields.size !== 1 ? 's' : ''}</p>
             {:else if extractError}
-              <p class="review-sub review-sub-err">Extraction had an issue — fill manually</p>
+              <p class="review-sub review-sub-err">AI issue — fill manually</p>
             {:else}
               <p class="review-sub">Fill in the client details</p>
             {/if}
           </div>
           {#if rawTranscript}
-            <details class="transcript-details">
+            <details class="ts-details">
               <summary>📝 Transcript</summary>
-              <div class="transcript-detail-body">{rawTranscript}</div>
+              <div class="ts-detail-body">{rawTranscript}</div>
             </details>
           {/if}
         </div>
 
-        <!-- Form -->
         <div class="review-body">
 
           <div class="acm-row" style="--i:0">
             <label class:ai-filled={aiFilledFields.has('name')}>
-              First Name
-              <input bind:value={name} placeholder="John" />
+              First Name <input bind:value={name} placeholder="John" />
             </label>
             <label class:ai-filled={aiFilledFields.has('surname')}>
-              Surname
-              <input bind:value={surname} placeholder="Smith" />
+              Surname <input bind:value={surname} placeholder="Smith" />
             </label>
           </div>
 
           <div class="acm-row" style="--i:1">
             <label class="acm-required" class:ai-filled={aiFilledFields.has('email')}>
-              Email *
-              <input type="email" bind:value={email} placeholder="john@example.com" />
+              Email * <input type="email" bind:value={email} placeholder="john@example.com" />
             </label>
             <label class:ai-filled={aiFilledFields.has('phone')}>
-              Phone
-              <input bind:value={phone} placeholder="+1 555 123 4567" />
+              Phone <input bind:value={phone} placeholder="+1 555 123 4567" />
             </label>
           </div>
 
           <div class="acm-row" style="--i:2">
             <label class:ai-filled={aiFilledFields.has('originCountry')}>
-              Origin Country
-              <input bind:value={originCountry} placeholder="United States" />
+              Origin Country <input bind:value={originCountry} placeholder="United States" />
             </label>
             <label class:ai-filled={aiFilledFields.has('originCity')}>
-              Origin City
-              <input bind:value={originCity} placeholder="Austin, TX" />
+              Origin City <input bind:value={originCity} placeholder="Austin, TX" />
             </label>
           </div>
 
           <div class="acm-row" style="--i:3">
             <label class:ai-filled={aiFilledFields.has('destinationCountry')}>
-              Destination Country
-              <input bind:value={destinationCountry} placeholder="Costa Rica" />
+              Destination Country <input bind:value={destinationCountry} placeholder="Costa Rica" />
             </label>
             <label class:ai-filled={aiFilledFields.has('destinationCity')}>
-              Destination City
-              <input bind:value={destinationCity} placeholder="San José" />
+              Destination City <input bind:value={destinationCity} placeholder="San José" />
             </label>
           </div>
 
@@ -464,12 +563,9 @@
               Budget
               <select bind:value={budget}>
                 <option value="">Unknown</option>
-                <option>Under $5k</option>
-                <option>$5-10k</option>
-                <option>$10-15k</option>
-                <option>$15-20k</option>
-                <option>$20-30k</option>
-                <option>Over $30k</option>
+                <option>Under $5k</option><option>$5-10k</option>
+                <option>$10-15k</option><option>$15-20k</option>
+                <option>$20-30k</option><option>Over $30k</option>
               </select>
             </label>
             <label class:ai-filled={aiFilledFields.has('size')}>
@@ -497,45 +593,42 @@
             </label>
           </div>
 
-          <!-- Custom fields -->
-          {#if customFieldRows.length > 0 || true}
-            <div class="custom-fields-section" style="--i:7">
-              <div class="custom-fields-header">
-                <span class="custom-fields-label">Custom Fields</span>
-                <button class="btn-add-cf" on:click={addCustomField}>+ Add field</button>
-              </div>
-              {#each customFieldRows as row, i}
-                <div class="cf-row">
-                  <input class="cf-key" bind:value={row.key} placeholder="Field name" />
-                  <input class="cf-val" bind:value={row.value} placeholder="Value" />
-                  <button class="cf-del" on:click={() => removeCustomField(i)} aria-label="Remove">×</button>
-                </div>
-              {/each}
-              {#if customFieldRows.length === 0}
-                <button class="btn-add-cf btn-add-cf-empty" on:click={addCustomField}>
-                  + Add a custom field
-                </button>
-              {/if}
+          <div class="custom-fields-section" style="--i:7">
+            <div class="custom-fields-header">
+              <span class="custom-fields-label">Custom Fields</span>
+              <button class="btn-add-cf" on:click={addCustomField}>+ Add field</button>
             </div>
-          {/if}
+            {#each customFieldRows as row, i}
+              <div class="cf-row">
+                <input class="cf-key" bind:value={row.key} placeholder="Field name" />
+                <input class="cf-val" bind:value={row.value} placeholder="Value" />
+                <button class="cf-del" on:click={() => removeCustomField(i)} aria-label="Remove">×</button>
+              </div>
+            {/each}
+            {#if customFieldRows.length === 0}
+              <button class="btn-add-cf btn-add-cf-empty" on:click={addCustomField}>
+                + Add a custom field
+              </button>
+            {/if}
+          </div>
 
         </div><!-- .review-body -->
 
-        <!-- Footer -->
         <div class="review-footer">
           {#if submitError}
             <div class="rfoot-error">{submitError}</div>
           {/if}
-          <button class="btn-back" on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
+          <button class="btn-back"
+            on:click={() => { step = 'capture'; transcript = ''; rawTranscript = ''; }}>
             ← Re-record
           </button>
           <button class="btn-create" on:click={handleSubmit} disabled={submitting || !email.trim()}>
             {#if submitting}
-              <span class="btn-spin"></span>
-              <span>Creating…</span>
+              <span class="btn-spin"></span><span>Creating…</span>
             {:else}
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <span>Create Client</span>
             {/if}
@@ -548,316 +641,353 @@
   </div>
 </div>
 
-<!-- ─────────────────────────────── STYLES ──────────────────────────────────── -->
+<!-- ════════════════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════════════ -->
 <style>
-  /* ── Design tokens (light theme) ── */
-  /* bg:           #ffffff / #f9f9fd  */
-  /* surface-2:    #f3f3fa            */
-  /* border:       #e2e2ee            */
-  /* text-primary: #12122a            */
-  /* text-muted:   #6666a0            */
-  /* text-hint:    #a0a0c0            */
-  /* brand:        #7c3aed            */
-
   /* ── Overlay ── */
   .acm-overlay {
     position: fixed; inset: 0;
-    background: rgba(20,10,50,.45);
+    background: rgba(15, 8, 40, 0.55);
     z-index: 1000;
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
   }
 
   .acm-shell {
     background: #ffffff;
     border: 1px solid #e2e2ee;
-    border-radius: 20px;
-    width: 100%; max-width: 680px;
+    border-radius: 22px;
+    width: 100%; max-width: 700px;
     max-height: 92vh;
     display: flex; flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(20,10,50,.18), 0 2px 8px rgba(20,10,50,.08);
+    box-shadow: 0 24px 72px rgba(15,8,40,.2), 0 2px 10px rgba(15,8,40,.08);
     position: relative;
-    transition: max-width .3s;
+    transition: max-width .35s cubic-bezier(.4,0,.2,1);
   }
-  .capture-mode { max-width: 460px; }
+  .capture-mode { max-width: 480px; }
 
-  /* ── Close ── */
+  /* Close */
   .acm-x {
-    position: absolute; top: .9rem; right: .9rem; z-index: 10;
+    position: absolute; top: 1rem; right: 1rem; z-index: 10;
     background: #f3f3fa; border: 1px solid #e2e2ee;
-    color: #8888b0; width: 30px; height: 30px; border-radius: 50%;
-    font-size: .8rem; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; line-height: 1;
-    transition: background .15s, color .15s;
+    color: #8888b0; width: 32px; height: 32px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, transform .15s;
   }
-  .acm-x:hover { background: #eaeaf5; color: #12122a; }
+  .acm-x:hover { background: #eaeaf5; color: #12122a; transform: scale(1.1); }
 
-  /* ══════════ CAPTURE STEP ══════════ */
+  /* ═══ CAPTURE ══════════════════════════════════════════════════════ */
   .capture-wrap {
     display: flex; flex-direction: column; align-items: center;
-    padding: 2.5rem 2rem 2rem;
-    gap: 1.25rem;
-    min-height: 480px;
-    background: #ffffff;
+    padding: 2.75rem 2rem 2rem; gap: 1.4rem;
+    min-height: 520px; background: #ffffff;
   }
 
   .capture-title { text-align: center; }
-  .capture-title h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #12122a; }
-  .capture-sub { margin: .3rem 0 0; font-size: .87rem; color: #6666a0; }
+  .capture-title h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #12122a;
+                      letter-spacing: -.02em; }
+  .capture-sub { margin: .3rem 0 0; font-size: .88rem; color: #6666a0; }
 
   /* Orb */
-  .orb-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+  .orb-wrap {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
 
   .orb-ring {
     position: absolute; border-radius: 50%;
-    border: 1.5px solid rgba(124,58,237,.3);
+    border: 1.5px solid rgba(124,58,237,.28);
     animation: orb-ring-pulse 2s ease-out infinite;
     pointer-events: none;
   }
-  .ring-1 { width: 130px; height: 130px; animation-delay: 0s; }
-  .ring-2 { width: 170px; height: 170px; animation-delay: .7s; }
+  .ring-1 { width: 126px; height: 126px; animation-delay: 0s; }
+  .ring-2 { width: 162px; height: 162px; animation-delay: .65s; }
+  .ring-3 { width: 198px; height: 198px; animation-delay: 1.3s; }
   @keyframes orb-ring-pulse {
-    0%   { transform: scale(.85); opacity: .7; }
-    100% { transform: scale(1.15); opacity: 0; }
+    0%   { transform: scale(.82); opacity: .75; }
+    100% { transform: scale(1.18); opacity: 0; }
   }
 
   .orb-btn {
     position: relative; z-index: 1;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    border: 2px solid #d4c4fb;
-    background: #f3effe;
+    width: 108px; height: 108px; border-radius: 50%;
+    border: 2.5px solid #d4c4fb;
+    background: linear-gradient(145deg, #f5f0ff 0%, #ece4fd 100%);
     color: #7c3aed;
     cursor: pointer;
     display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: .25rem;
+    justify-content: center; gap: .28rem;
+    box-shadow: 0 6px 20px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,.9);
     transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
   }
-  .orb-btn:hover { background: #ece4fd; border-color: #7c3aed; transform: scale(1.04); }
+  .orb-btn:hover {
+    background: linear-gradient(145deg, #ece4fd 0%, #ddd2fb 100%);
+    border-color: #7c3aed;
+    box-shadow: 0 10px 32px rgba(124,58,237,.28);
+    transform: scale(1.05);
+  }
   .orb-btn:active { transform: scale(.97); }
   .orb-btn-recording {
-    background: #fff1f1;
+    background: linear-gradient(145deg, #fff6f6 0%, #ffe4e4 100%);
     border-color: #f87171;
     color: #dc2626;
-    box-shadow: 0 0 24px rgba(248,113,113,.2);
+    box-shadow: 0 6px 24px rgba(248,113,113,.25), inset 0 1px 0 rgba(255,255,255,.9);
   }
-  .orb-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .orb-label {
+    font-size: .68rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .07em;
+  }
 
-  /* Waveform */
-  .waveform {
-    display: flex; align-items: center; justify-content: center;
-    gap: 2.5px; height: 54px; width: 100%;
-    max-width: 260px;
+  /* ── Real-frequency spectrum visualizer ── */
+  .spectrum {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 2px; width: 100%; max-width: 320px; height: 64px;
   }
-  .wave-bar {
-    flex-shrink: 0; width: 3px; min-height: 4px;
-    background: linear-gradient(to top, #7c3aed, #a78bfa);
-    border-radius: 2px;
-    transition: height .07s ease;
-    opacity: .8;
+  .spec-bar {
+    width: 6px; border-radius: 3px 3px 2px 2px;
+    transition: height .05s linear, opacity .1s;
+    min-height: 3px;
   }
-  .waveform-idle .wave-bar { height: 4px !important; opacity: .18; }
+  .spectrum:not(.spectrum-active) .spec-bar {
+    height: 4px !important;
+    opacity: .12 !important;
+    background: #a78bfa !important;
+  }
 
-  /* Transcript */
+  /* Live transcript box */
   .capture-transcript {
-    width: 100%; max-width: 380px;
-    min-height: 80px; max-height: 160px;
-    overflow-y: auto;
-    background: #f9f9fd;
-    border: 1px solid #e2e2ee;
-    border-radius: 10px;
-    padding: .75rem 1rem;
-    font-size: .93rem; line-height: 1.65;
-    color: #12122a;
+    width: 100%; max-width: 400px;
+    min-height: 76px; max-height: 150px; overflow-y: auto;
+    background: #f9f9fd; border: 1px solid #e2e2ee; border-radius: 12px;
+    padding: .8rem 1rem;
+    font-size: .92rem; line-height: 1.68; color: #12122a;
   }
-  .transcript-committed { color: #12122a; }
-  .transcript-interim   { color: #9090c0; font-style: italic; }
-  .transcript-placeholder { color: #c0c0da; font-size: .82rem; line-height: 1.6; }
+  .t-gemini  { color: #12122a; }
+  .t-interim { color: #9090c0; font-style: italic; }
+  .t-hint    { color: #c0c0da; font-size: .82rem; line-height: 1.6; }
 
+  /* Capture actions */
   .capture-actions {
-    display: flex; flex-direction: column; align-items: center; gap: .5rem;
-    width: 100%; max-width: 320px;
+    display: flex; flex-direction: column; align-items: center; gap: .55rem;
+    width: 100%; max-width: 340px;
   }
-  .btn-structure {
-    width: 100%; padding: .7rem 1.2rem;
-    background: #7c3aed; color: #fff;
-    border: none; border-radius: 10px;
-    font-size: .95rem; font-weight: 700;
-    cursor: pointer; transition: background .15s;
-    box-shadow: 0 3px 12px rgba(124,58,237,.3);
+
+  /* Send transcript button — ultra-modern */
+  .btn-send-transcript {
+    width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+    padding: .78rem 1.6rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 55%, #4c1d95 100%);
+    color: #fff;
+    border: 1px solid rgba(167,139,250,.3);
+    border-radius: 14px;
+    font-size: .96rem; font-weight: 800; letter-spacing: .03em;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(124,58,237,.38), inset 0 1px 0 rgba(255,255,255,.18);
+    transition: box-shadow .2s, transform .12s, filter .15s;
   }
-  .btn-structure:hover { background: #6d28d9; }
+  .btn-send-transcript:hover {
+    box-shadow: 0 10px 36px rgba(124,58,237,.55);
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+  .btn-send-transcript:active { transform: translateY(0); filter: brightness(.96); }
+
   .btn-skip {
     background: none; border: none;
     color: #9090b8; font-size: .8rem;
-    cursor: pointer; text-decoration: underline;
-    text-underline-offset: 3px;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
   }
   .btn-skip:hover { color: #5555a0; }
 
-  /* ══════════ STRUCTURING STEP ══════════ */
-  .structuring-wrap {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 3.5rem 2rem;
-    gap: 1.25rem; min-height: 400px;
-    justify-content: center;
+  /* ═══ TRANSCRIPT REVIEW ════════════════════════════════════════════ */
+  .ts-wrap {
+    display: flex; flex-direction: column;
     background: #ffffff;
   }
+  .ts-header {
+    padding: 1.4rem 1.6rem 1rem;
+    border-bottom: 1px solid #e8e8f2;
+    background: #fafafe;
+  }
+  .ts-header h2 { margin: 0; font-size: 1.2rem; font-weight: 800; color: #12122a; }
+  .ts-sub { margin: .25rem 0 0; font-size: .82rem; color: #6666a0; }
+  .ts-body {
+    padding: 1.2rem 1.6rem; flex: 1;
+  }
+  .ts-editor {
+    width: 100%; resize: vertical;
+    background: #f9f9fd; border: 1px solid #d8d8ec; border-radius: 10px;
+    color: #12122a; padding: .8rem 1rem; font-size: .92rem; line-height: 1.7;
+    font-family: inherit; outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .ts-editor:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+  .ts-char { margin: .3rem 0 0; font-size: .72rem; color: #a0a0c0; text-align: right; }
+  .ts-footer {
+    display: flex; align-items: center; justify-content: flex-end; gap: .65rem;
+    padding: 1rem 1.6rem 1.4rem;
+    border-top: 1px solid #e8e8f2;
+    background: #fafafe;
+  }
 
+  /* Structure with AI — hero CTA */
+  .btn-structure-now {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .72rem 1.8rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 55%, #4c1d95 100%);
+    color: #fff;
+    border: 1px solid rgba(167,139,250,.35);
+    border-radius: 14px;
+    font-size: .95rem; font-weight: 800; letter-spacing: .03em;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.18);
+    transition: box-shadow .2s, transform .12s, filter .15s;
+  }
+  .btn-structure-now:hover:not(:disabled) {
+    box-shadow: 0 10px 36px rgba(124,58,237,.52);
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+  }
+  .btn-structure-now:active:not(:disabled) { transform: translateY(0); }
+  .btn-structure-now:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; filter: none; }
+
+  /* ═══ STRUCTURING ══════════════════════════════════════════════════ */
+  .structuring-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4rem 2rem; gap: 1.3rem; min-height: 420px;
+    justify-content: center; background: #ffffff;
+  }
   .structuring-orb {
-    position: relative; width: 90px; height: 90px;
+    position: relative; width: 96px; height: 96px;
     display: flex; align-items: center; justify-content: center;
   }
   .s-ring {
     position: absolute; border-radius: 50%;
-    border: 1.5px solid rgba(124,58,237,.25);
-    animation: s-expand 1.8s ease-out infinite;
+    border: 1.5px solid rgba(124,58,237,.22);
+    animation: s-expand 2s ease-out infinite;
   }
-  .s-ring-1 { width: 90px;  height: 90px;  animation-delay: 0s; }
-  .s-ring-2 { width: 120px; height: 120px; animation-delay: .5s; }
-  .s-ring-3 { width: 150px; height: 150px; animation-delay: 1s; }
+  .s-ring-1 { width: 96px;  height: 96px;  animation-delay: 0s; }
+  .s-ring-2 { width: 128px; height: 128px; animation-delay: .6s; }
+  .s-ring-3 { width: 160px; height: 160px; animation-delay: 1.2s; }
   @keyframes s-expand {
     0%   { transform: scale(.7); opacity: .8; }
-    100% { transform: scale(1.2); opacity: 0; }
+    100% { transform: scale(1.25); opacity: 0; }
   }
-  .s-icon { font-size: 2.5rem; position: relative; z-index: 1; animation: s-spin 3s linear infinite; }
-  @keyframes s-spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
-
-  .structuring-title { margin: 0; font-size: 1.4rem; font-weight: 700; color: #12122a; }
-  .structuring-sub   { margin: 0; font-size: .85rem; color: #6666a0; }
+  .s-icon { font-size: 2.6rem; z-index: 1; animation: s-spin 3s linear infinite; }
+  @keyframes s-spin { to { transform: rotate(360deg); } }
+  .structuring-title { margin: 0; font-size: 1.45rem; font-weight: 800; color: #12122a; }
+  .structuring-sub   { margin: 0; font-size: .86rem; color: #6666a0; }
   .structuring-transcript {
-    margin-top: .5rem;
-    max-width: 340px;
-    background: #f3f3fa;
-    border: 1px solid #e2e2ee;
-    border-radius: 8px;
-    padding: .6rem .9rem;
-    font-size: .8rem; color: #6666a0;
-    text-align: center; line-height: 1.5;
-    font-style: italic;
+    max-width: 360px; background: #f3f3fa; border: 1px solid #e2e2ee;
+    border-radius: 10px; padding: .65rem 1rem;
+    font-size: .8rem; color: #6666a0; text-align: center; line-height: 1.55; font-style: italic;
   }
 
-  /* ══════════ REVIEW STEP ══════════ */
+  /* ═══ REVIEW FORM ══════════════════════════════════════════════════ */
   .review-wrap {
-    display: flex; flex-direction: column;
-    max-height: 92vh;
-    overflow: hidden;
+    display: flex; flex-direction: column; max-height: 92vh; overflow: hidden;
     background: #ffffff;
   }
-
   .review-header {
-    display: flex; align-items: flex-start;
-    justify-content: space-between; flex-wrap: wrap;
-    gap: .5rem;
-    padding: 1.25rem 1.5rem;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: .5rem;
+    padding: 1.3rem 1.6rem;
     border-bottom: 1px solid #e8e8f2;
-    flex-shrink: 0;
-    background: #fafafe;
+    background: #fafafe; flex-shrink: 0;
   }
-  .review-header h2 { margin: 0; font-size: 1.1rem; color: #12122a; font-weight: 700; }
+  .review-header h2 { margin: 0; font-size: 1.15rem; font-weight: 800; color: #12122a; }
   .review-sub { margin: .2rem 0 0; font-size: .8rem; color: #6666a0; }
   .review-sub strong { color: #7c3aed; }
   .review-sub-err { color: #dc2626; }
 
-  .transcript-details summary {
-    font-size: .75rem; color: #9090b8; cursor: pointer;
-  }
-  .transcript-details[open] summary { color: #6666a0; }
-  .transcript-detail-body {
-    margin-top: .4rem;
-    font-size: .78rem; color: #6666a0; line-height: 1.55;
-    max-height: 120px; overflow-y: auto;
+  .ts-details summary { font-size: .75rem; color: #9090b8; cursor: pointer; }
+  .ts-details[open] summary { color: #6666a0; }
+  .ts-detail-body {
+    margin-top: .4rem; font-size: .78rem; color: #6666a0; line-height: 1.55;
+    max-height: 110px; overflow-y: auto;
   }
 
   .review-body {
     overflow-y: auto; flex: 1;
-    padding: 1rem 1.5rem;
-    display: flex; flex-direction: column; gap: .65rem;
+    padding: 1.1rem 1.6rem; display: flex; flex-direction: column; gap: .7rem;
     background: #ffffff;
   }
 
-  /* Staggered row animation */
+  /* Grid rows with stagger animation */
   .acm-row {
-    display: grid; grid-template-columns: 1fr 1fr; gap: .65rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: .7rem;
     animation: row-in .35s ease both;
-    animation-delay: calc(var(--i, 0) * 55ms);
+    animation-delay: calc(var(--i, 0) * 50ms);
   }
   .acm-row-full { grid-template-columns: 1fr; }
   @media (max-width: 480px) { .acm-row { grid-template-columns: 1fr; } }
   @keyframes row-in {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
   label {
-    display: flex; flex-direction: column; gap: .28rem;
-    font-size: .72rem; color: #5555a0; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .05em;
+    display: flex; flex-direction: column; gap: .3rem;
+    font-size: .71rem; font-weight: 800; color: #5555a0;
+    text-transform: uppercase; letter-spacing: .055em;
   }
   label.acm-required { color: #7c3aed; }
 
-  /* AI-filled highlight */
+  /* AI type-in green glow */
   label.ai-filled input,
   label.ai-filled select,
   label.ai-filled textarea {
     border-color: #059669;
     background: #f0fdf8;
-    animation: ai-glow .8s ease both;
+    animation: ai-glow .9s ease both;
   }
   @keyframes ai-glow {
-    0%   { box-shadow: 0 0 0 3px rgba(5,150,105,.2); }
+    0%   { box-shadow: 0 0 0 3px rgba(5,150,105,.22); }
     100% { box-shadow: none; }
   }
 
   input, select, textarea {
-    background: #f9f9fd;
-    border: 1px solid #d8d8ec;
-    border-radius: 8px; color: #12122a;
-    padding: .46rem .72rem; font-size: .88rem;
-    outline: none; transition: border-color .15s, box-shadow .15s;
-    font-family: inherit;
+    background: #f9f9fd; border: 1px solid #d8d8ec; border-radius: 8px;
+    color: #12122a; padding: .48rem .76rem; font-size: .88rem;
+    outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
   }
-  input::placeholder, textarea::placeholder { color: #b0b0cc; }
+  input::placeholder, textarea::placeholder { color: #b8b8d0; }
   input:focus, select:focus, textarea:focus {
     border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124,58,237,.12);
+    box-shadow: 0 0 0 3px rgba(124,58,237,.11);
   }
-  textarea { resize: vertical; min-height: 70px; }
+  textarea { resize: vertical; min-height: 72px; }
 
   /* Custom fields */
   .custom-fields-section {
     animation: row-in .35s ease both;
-    animation-delay: calc(var(--i, 7) * 55ms);
-    display: flex; flex-direction: column; gap: .45rem;
-    padding-top: .25rem;
+    animation-delay: calc(var(--i, 7) * 50ms);
+    display: flex; flex-direction: column; gap: .48rem; padding-top: .25rem;
   }
-  .custom-fields-header {
-    display: flex; align-items: center;
-    justify-content: space-between;
-  }
+  .custom-fields-header { display: flex; align-items: center; justify-content: space-between; }
   .custom-fields-label {
-    font-size: .72rem; color: #9090b8; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .05em;
+    font-size: .71rem; font-weight: 800; color: #9090b8;
+    text-transform: uppercase; letter-spacing: .055em;
   }
-  .cf-row { display: flex; gap: .45rem; align-items: center; }
+  .cf-row { display: flex; gap: .48rem; align-items: center; }
   .cf-key { flex: 1; min-width: 0; }
   .cf-val { flex: 2; min-width: 0; }
   .cf-del {
-    flex-shrink: 0; width: 28px; height: 28px;
-    background: #fff5f5;
-    border: 1px solid #fecaca;
-    border-radius: 8px; color: #dc2626;
+    flex-shrink: 0; width: 28px; height: 28px; background: #fff5f5;
+    border: 1px solid #fecaca; border-radius: 7px; color: #dc2626;
     font-size: 1rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background .15s;
   }
   .cf-del:hover { background: #fee2e2; }
   .btn-add-cf {
-    background: none; border: 1px dashed #c8c8e8;
-    color: #9090b8; border-radius: 8px;
-    padding: .3rem .9rem; font-size: .78rem;
+    background: none; border: 1px dashed #c8c8e8; color: #9090b8;
+    border-radius: 8px; padding: .3rem .9rem; font-size: .78rem;
     cursor: pointer; width: fit-content;
     transition: border-color .15s, color .15s;
   }
@@ -866,56 +996,45 @@
 
   /* Footer */
   .review-footer {
-    display: flex; align-items: center;
-    justify-content: flex-end; gap: .65rem;
-    padding: .9rem 1.5rem;
+    display: flex; align-items: center; justify-content: flex-end; gap: .7rem;
+    padding: 1rem 1.6rem;
     border-top: 1px solid #e8e8f2;
-    background: #fafafe;
-    flex-shrink: 0;
+    background: #fafafe; flex-shrink: 0;
   }
   .rfoot-error { flex: 1; font-size: .78rem; color: #dc2626; }
+
   .btn-back {
-    padding: .48rem 1rem;
+    padding: .5rem 1.1rem;
     background: #f3f3fa; border: 1px solid #d8d8ec;
     color: #5555a0; border-radius: 10px; cursor: pointer;
-    font-size: .83rem; font-weight: 600;
+    font-size: .83rem; font-weight: 700;
     transition: background .15s, border-color .15s;
   }
   .btn-back:hover { background: #eaeaf5; border-color: #b8b8e0; color: #12122a; }
 
-  /* ── Create button — light theme ── */
+  /* Create Client — light theme */
   .btn-create {
     display: inline-flex; align-items: center; gap: .45rem;
     padding: .58rem 1.5rem;
-    background: #ffffff;
-    color: #5b21b6;
-    border: 1.5px solid #7c3aed;
-    border-radius: 10px;
-    font-size: .88rem; font-weight: 700;
-    letter-spacing: .025em;
+    background: #ffffff; color: #5b21b6;
+    border: 1.5px solid #7c3aed; border-radius: 10px;
+    font-size: .88rem; font-weight: 800; letter-spacing: .025em;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,.8);
+    box-shadow: 0 2px 10px rgba(124,58,237,.15);
     transition: background .15s, box-shadow .2s, transform .1s, border-color .15s, color .15s;
   }
   .btn-create:hover:not(:disabled) {
-    background: #f3effe;
-    border-color: #5b21b6;
-    color: #4c1d95;
+    background: #f3effe; border-color: #5b21b6; color: #4c1d95;
     box-shadow: 0 4px 18px rgba(124,58,237,.25);
     transform: translateY(-1px);
   }
   .btn-create:active:not(:disabled) { transform: translateY(0); background: #ece4fd; }
   .btn-create:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
 
-  /* Spinner for loading state */
   .btn-spin {
-    display: inline-block;
-    width: 13px; height: 13px;
-    border: 2px solid rgba(124,58,237,.25);
-    border-top-color: #7c3aed;
-    border-radius: 50%;
-    animation: btn-rotate .65s linear infinite;
-    flex-shrink: 0;
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid rgba(124,58,237,.25); border-top-color: #7c3aed;
+    border-radius: 50%; animation: btn-rotate .65s linear infinite; flex-shrink: 0;
   }
   @keyframes btn-rotate { to { transform: rotate(360deg); } }
 </style>
