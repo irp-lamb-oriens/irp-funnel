@@ -42,7 +42,25 @@
   // ─── Add Client modal ────────────────────────────────────────────────────
   let addClientOpen = false;
 
+  // Pre-flight the microphone permission BEFORE opening the modal. Browsers
+  // only prompt once per origin, so granting here means the modal's
+  // auto-record starts the stream instantly (no jarring in-modal prompt).
+  // If the user denies (or there's no mic) we still open the modal — it
+  // gracefully falls back to manual typing.
+  async function openAddClient() {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+        probe.getTracks().forEach((t) => t.stop()); // release; modal re-acquires
+      } catch (err) {
+        console.warn('[dashboard] mic permission not granted — opening in manual mode:', err);
+      }
+    }
+    addClientOpen = true;
+  }
+
   async function handleClientCreated(event: CustomEvent<{ docId: string }>) {
+
     addClientOpen = false;
     await fetchClients();
     // Open the newly-created client detail
@@ -391,7 +409,8 @@
         <div class="topbar__search">
           <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
         </div>
-        <button class="topbar__add-client" on:click={() => (addClientOpen = true)} title="Add client manually">
+        <button class="topbar__add-client" on:click={openAddClient} title="Add client manually">
+
           <!-- group_add: 2 heads + 2 bodies + strokes-based plus — no extra circles -->
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M8 10H5V7H3v3H0v2h3v3h2v-3h3zm10 1c1.66 0 2.99-1.34 2.99-3S19.66 5 18 5c-.32 0-.63.05-.91.14.57.81.9 1.79.9 2.86s-.34 2.05-.9 2.86c.28.09.59.14.91.14zm-5 0c1.66 0 2.99-1.34 2.99-3S14.66 5 13 5s-3 1.34-3 3 1.34 3 3 3zm6.62 2.16c.83.73 1.38 1.66 1.38 2.84V18h3v-2c0-1.54-2.37-2.49-4.38-2.84zM13 13c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3z"/>

@@ -744,12 +744,13 @@ export async function resolvePendingAction(
 }
 
 // ─── API helper ─────────────────────────────────────────────────────────────
-function getApiUrl(): string {
+export function getApiUrl(): string {
   if (browser && window.location.origin.startsWith('http://localhost')) {
     return 'http://localhost:8000';
   }
   return 'https://irp-funnel-server.onrender.com';
 }
+
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
   const token = get(authToken);

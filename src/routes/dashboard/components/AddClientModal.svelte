@@ -1,17 +1,20 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
-  import { authToken } from '../store.ts';
+  import { authToken, getApiUrl } from '../store.ts';
   import type { ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
 
 
   const dispatch = createEventDispatcher<{ created: { docId: string }; close: void }>();
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  // Canonical API base — localhost:8000 in dev, irp-funnel-server.onrender.com
+  // in prod. Shared with the rest of the dashboard via store.ts/getApiUrl().
+  const API_URL = getApiUrl();
 
   // Transcription + extraction both run server-side via the dashboard API
   // (no CORS, keys stay on the server, OpenRouter→Gemini→scraper fallback).
   const TRANSCRIBE_URL = `${API_URL}/api/dashboard/voice-transcribe`;
   const EXTRACT_URL    = `${API_URL}/api/dashboard/extract-client-fields`;
+
 
 
   // ── Field schema — single source of truth ────────────────────────────
