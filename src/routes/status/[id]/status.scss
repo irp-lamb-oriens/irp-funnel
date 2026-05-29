@@ -684,3 +684,14 @@
     }
   }
 }
+
+// ─── FULL-WIDTH SECTIONS (QuotePanel, RegulationsLanding) ────────────────────
+// These sections live outside the .cp-dashboard__grid 2-column layout and
+// stretch the full content width, styled consistently with the pipeline section.
+.cp-dashboard__full-width-section {
+  padding: 0 1.5rem 0;
+
+  @media (min-width: 768px) {
+    padding: 0 2rem 0;
+  }
+}

@@ -331,3 +331,91 @@ export async function submitStageRating(
     );
   }
 }
+
+// ─── Quotes ───────────────────────────────────────────────────────────────────
+
+/** Shape of a quote as returned by GET /api/client-status/project/:id/quotes */
+export interface ClientQuote {
+  quoteId:          string;
+  id?:              string;
+  consultationId:   string;
+  providerId:       string | null;
+  providerName:     string;
+  providerEmail:    string;
+  amount:           number | null;
+  currency:         string;
+  validUntil:       string | null;
+  serviceCategory:  string | null;
+  shippingModality: string | null;
+  notes:            string | null;
+  /** 'received' | 'accepted' | 'rejected' — pending not shown to client */
+  status:           'received' | 'accepted' | 'rejected';
+  requestedAt:      string;
+  receivedAt:       string | null;
+}
+
+export const quotes         = writable<ClientQuote[]>([]);
+export const quotesLoading  = writable(false);
+export const quotesError    = writable('');
+export const acceptingQuote = writable(false);
+export const acceptError    = writable('');
+
+/** Load received/accepted quotes for the status page quote panel. */
+export async function loadQuotes(projectId: string): Promise<void> {
+  quotesLoading.set(true);
+  quotesError.set('');
+  try {
+    const data = await apiFetch(`/api/client-status/project/${projectId}/quotes`);
+    quotes.set(data.quotes ?? []);
+  } catch (err: any) {
+    quotesError.set(err.message ?? 'Failed to load quotes.');
+  } finally {
+    quotesLoading.set(false);
+  }
+}
+
+/**
+ * Accept a quote.  If quoteId is omitted the server auto-selects the sole
+ * received quote (returns 400 if there are multiple).
+ *
+ * On success:
+ *  • Updates the local `project` store stage to 'sales_quote_acceptance'.
+ *  • Updates the accepted quote's status in the local `quotes` store.
+ */
+export async function acceptQuote(
+  projectId: string,
+  quoteId?: string,
+): Promise<{ success: boolean; error?: string }> {
+  acceptingQuote.set(true);
+  acceptError.set('');
+  try {
+    const data = await apiFetch(`/api/client-status/project/${projectId}/accept-quote`, {
+      method: 'POST',
+      body: JSON.stringify(quoteId ? { quoteId } : {}),
+    });
+
+    // Mirror the stage update locally so the UI reacts instantly
+    project.update((p) =>
+      p ? { ...p, stage: data.newStage ?? 'sales_quote_acceptance' } : p,
+    );
+
+    // Mark the accepted quote in the local list
+    if (data.quoteId) {
+      quotes.update((qs) =>
+        qs.map((q) =>
+          (q.quoteId ?? q.id) === data.quoteId
+            ? { ...q, status: 'accepted' as const }
+            : q,
+        ),
+      );
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    const msg = err.message ?? 'Quote acceptance failed.';
+    acceptError.set(msg);
+    return { success: false, error: msg };
+  } finally {
+    acceptingQuote.set(false);
+  }
+}

@@ -20,11 +20,20 @@
 
   // ── Constants ────────────────────────────────────────────────────────────
 
+  // ── Service category options ─────────────────────────────────────────────
+  // Original values first (A–D), then extended values.
+  // Labels are English and match providersRouter.ts SERVICE_CATEGORY_LABELS.
   const SERVICE_CATEGORY_OPTIONS = [
-    { value: 'full_service',      label: 'A — Full Service (empaque completo)' },
-    { value: 'diy_no_loading',    label: 'B — DIY — No Loading Assistance'     },
-    { value: 'self_pack_loading', label: 'C — Self Pack with Loading'           },
-    { value: 'external',          label: 'D — External / Custom Partner'        },
+    // Original
+    { value: 'full_service',      label: 'A — Full Service (full professional pack & load)' },
+    { value: 'diy_no_loading',    label: 'B — DIY — No Loading Assistance'                  },
+    { value: 'self_pack_loading', label: 'C — Self Pack with Loading'                        },
+    { value: 'external',          label: 'D — External / Custom Partner'                     },
+    // Extended (additive — backward-compatible)
+    { value: 'freight_only',      label: 'FLETE — Freight Only (sea / road)'                 },
+    { value: 'customs_brokerage', label: 'Aduanas — Customs Brokerage'                       },
+    { value: 'packing_only',      label: 'Packing & Delivery (destination-side)'             },
+    { value: 'inland_transport',  label: 'Inland Transport (local / regional)'               },
   ];
 
   const SHIPPING_MODALITY_OPTIONS = [
@@ -34,10 +43,16 @@
   ];
 
   const CATEGORY_EMOJI: Record<string, string> = {
+    // Original
     full_service:      '🛡️',
     diy_no_loading:    '👤',
     self_pack_loading: '👥',
     external:          '🤝',
+    // Extended
+    freight_only:      '🚢',
+    customs_brokerage: '🛃',
+    packing_only:      '📦',
+    inland_transport:  '🚛',
   };
 
   const MODALITY_EMOJI: Record<string, string> = {
@@ -95,9 +110,10 @@
   let error = '';
   let success = '';
 
-  // Filters
-  let filterCategory = '';
-  let filterModality = '';
+  // ── Search + Filters ─────────────────────────────────────────────────────
+  let searchQuery      = '';
+  let filterCategory   = '';
+  let filterModality   = '';
   let filterActiveOnly = true;
 
   // Form state
@@ -140,12 +156,26 @@
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
-  $: filteredProviders = providers.filter(p => {
-    if (filterActiveOnly && !p.active) return false;
-    if (filterCategory && !(p.serviceCategories || []).includes(filterCategory)) return false;
-    if (filterModality && !(p.shippingModalities || []).includes(filterModality)) return false;
-    return true;
-  });
+  $: filteredProviders = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    return providers.filter(p => {
+      if (filterActiveOnly && !p.active) return false;
+      if (filterCategory && !(p.serviceCategories || []).includes(filterCategory)) return false;
+      if (filterModality && !(p.shippingModalities || []).includes(filterModality)) return false;
+      if (!q) return true;
+      // search across name, email, contactPerson, origin regions, notes and custom-field values
+      const haystack = [
+        p.name,
+        p.email,
+        p.contactPerson,
+        ...(p.originRegions ?? []),
+        ...(p.destinationRegions ?? []),
+        p.notes,
+        ...Object.values(p.customFields ?? {}),
+      ].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  })();
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -457,6 +487,36 @@
     </div>
   {/if}
 
+  <!-- Search bar -->
+  <div class="providers-search-wrap">
+    <div class="providers-search-inner" class:has-value={searchQuery.length > 0}>
+      <!-- magnifying glass -->
+      <svg class="providers-search-icon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        class="providers-search-input"
+        type="search"
+        bind:value={searchQuery}
+        placeholder="Search providers — name, email, contact, region…"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      {#if searchQuery}
+        <button
+          class="providers-search-clear"
+          type="button"
+          title="Clear search"
+          on:click={() => searchQuery = ''}
+          aria-label="Clear search"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      {/if}
+    </div>
+  </div>
+
   <!-- Filters -->
   <div class="providers-filters">
     <label class="filter-toggle">
@@ -644,6 +704,85 @@
   }
   .alert-error   { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
   .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+  /* ── Search bar ──────────────────────────────────────────── */
+  .providers-search-wrap {
+    margin-bottom: 14px;
+  }
+
+  .providers-search-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0 14px;
+    height: 46px;
+    gap: 10px;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .providers-search-inner:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .providers-search-inner.has-value {
+    border-color: #a5b4fc;
+  }
+
+  .providers-search-icon {
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: color 0.18s;
+    pointer-events: none;
+  }
+  .providers-search-inner:focus-within .providers-search-icon {
+    color: #6366f1;
+  }
+
+  .providers-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14.5px;
+    color: #111;
+    outline: none;
+    padding: 0;
+    min-width: 0;
+    font-family: inherit;
+    /* suppress browser default search cancel button */
+  }
+  .providers-search-input::placeholder {
+    color: #b0b7c3;
+    font-weight: 400;
+  }
+  /* remove browser-native ✕ from <input type="search"> */
+  .providers-search-input::-webkit-search-cancel-button,
+  .providers-search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    display: none;
+  }
+
+  .providers-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+  .providers-search-clear:hover {
+    background: #e5e7eb;
+    color: #111;
+  }
 
   /* ── Form card ───────────────────────────────────────────── */
   .providers-form-card {

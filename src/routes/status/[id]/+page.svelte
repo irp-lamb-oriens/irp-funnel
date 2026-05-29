@@ -12,10 +12,13 @@
   import LilyChat from './LilyChat.svelte';
   import CommentsThread from './CommentsThread.svelte';
   import StageRating from './StageRating.svelte';
+  import QuotePanel from './QuotePanel.svelte';
+  import RegulationsLanding from './RegulationsLanding.svelte';
   import {
     irpStaffIsAuthenticated, irpStaffEmail,
     checkIrpStaff, clearIrpStaff,
   } from '../../../lib/auth/irpStaff.ts';
+  import { sendLilyMessage } from './store.ts';
   import './status.scss';
 
   $: projectId = $page.params.id;
@@ -166,6 +169,18 @@
 
   // ─── Lily FAB state ─────────────────────────────────────────────────────
   let lilyOpen = false;
+
+  /**
+   * Opens the Lily drawer and auto-sends a deep-link prompt.
+   * Called by RegulationsLanding "Ask Lily →" buttons.
+   */
+  function handleLilyDeepLink(prompt: string) {
+    lilyOpen = true;
+    // Give the drawer 400 ms to animate in before sending the message
+    setTimeout(() => {
+      sendLilyMessage(projectId, prompt);
+    }, 400);
+  }
 </script>
 
 <svelte:head>
@@ -324,6 +339,20 @@
               </div>
             {/if}
           </section>
+
+      <!-- ── QUOTE PANEL ─────────────────────────────────────────────────── -->
+      <!-- Shows received/accepted quotes + Accept CTA. Self-hides when empty -->
+      <div class="cp-dashboard__full-width-section">
+        <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
+      </div>
+
+      <!-- ── REGULATIONS & COMPLIANCE LANDING ──────────────────────────── -->
+      <div class="cp-dashboard__full-width-section">
+        <RegulationsLanding
+          destinationCountry={$project.destinationCountry ?? ''}
+          onOpenLily={handleLilyDeepLink}
+        />
+      </div>
 
       <div class="cp-dashboard__grid">
         <!-- DETAILS BOX -->
