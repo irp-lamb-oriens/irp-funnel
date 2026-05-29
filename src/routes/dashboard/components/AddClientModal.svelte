@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, tick } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { authToken } from '../store.ts';
   import { extractClientFields, type ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
 
@@ -13,13 +13,12 @@
 
   // ─────────────────────────────────────────────────────────────────────────
   // STEP MACHINE
-  // capture+transcript merged → 'dictate'
   // ─────────────────────────────────────────────────────────────────────────
   type Step = 'dictate' | 'structuring' | 'review';
   let step: Step = 'dictate';
 
   // ─────────────────────────────────────────────────────────────────────────
-  // RECORDING — continuous single-take (no 3-second slicing)
+  // RECORDING — continuous single-take (no slicing)
   // ─────────────────────────────────────────────────────────────────────────
   type RecState = 'idle' | 'recording';
   let recState: RecState = 'idle';
@@ -29,21 +28,28 @@
   let chunks:   Blob[]               = [];
   let mimeType  = '';
 
-  // Dictation pad — persistent editable textarea that accumulates all takes
-  let padText        = '';          // the persistent text content
-  let insertPos      = 0;           // cursor position in padText (tracked on blur/keyup)
-  let transcribing   = false;       // true while Gemini call is in flight after stop
+  // Dictation pad
+  let padText        = '';
+  let insertPos      = 0;
+  let transcribing   = false;
+  let showPadManual  = false;   // discrete toggle during transcribing phase
   let padTextareaEl: HTMLTextAreaElement;
 
-  // Web Speech interim ghost caption (not stored, purely visual)
+  // Web Speech interim ghost caption
   let interimPreview = '';
   let speechRec: any = null;
 
-  // rawTranscript fed into extraction step
   let rawTranscript = '';
 
   // ─────────────────────────────────────────────────────────────────────────
-  // WEB AUDIO — Real-frequency visualizer via AnalyserNode
+  // AUTO-START: begin recording the moment the modal mounts
+  // ─────────────────────────────────────────────────────────────────────────
+  onMount(() => {
+    startRecording();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // WEB AUDIO — real-frequency visualizer
   // ─────────────────────────────────────────────────────────────────────────
   const BARS = 28;
   let waveHeights: number[] = Array(BARS).fill(4);
@@ -57,7 +63,7 @@
       audioCtx = new AudioContext();
       const src = audioCtx.createMediaStreamSource(micStream);
       analyser  = audioCtx.createAnalyser();
-      analyser.fftSize               = 128;  // 64 bins
+      analyser.fftSize               = 128;
       analyser.smoothingTimeConstant = 0.78;
       freqBuf = new Uint8Array(analyser.frequencyBinCount);
       src.connect(analyser);
@@ -69,7 +75,6 @@
     animId = requestAnimationFrame(rafTick);
     if (!analyser) return;
     analyser.getByteFrequencyData(freqBuf);
-    // bins 2–29 cover roughly 100–3400 Hz (speech range)
     const raw = Array.from(freqBuf).slice(2, 2 + BARS);
     waveHeights = raw.map(v => 5 + (v / 255) * 95);
   }
@@ -84,7 +89,7 @@
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // WEB SPEECH — Live interim ghost caption only (discarded on stop)
+  // WEB SPEECH — live interim ghost caption (discarded on stop)
   // ─────────────────────────────────────────────────────────────────────────
   function startLivePreview() {
     const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -143,11 +148,12 @@
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // RECORDING CONTROLS — continuous single-take, no slicing
+  // RECORDING CONTROLS
   // ─────────────────────────────────────────────────────────────────────────
   async function startRecording() {
     if (recState !== 'idle') return;
     interimPreview = '';
+    showPadManual  = false;
     chunks = [];
     try {
       stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -158,7 +164,6 @@
         console.log('[ACM] ondataavailable — size:', e.data?.size);
         if (e.data && e.data.size > 0) chunks.push(e.data);
       };
-      // Use 250ms timeslice so chunks arrive continuously + final flush on stop
       mr.start(250);
       recState = 'recording';
       console.log('[ACM] MediaRecorder started, state:', mr.state);
@@ -175,22 +180,22 @@
     stopVisualizer();
     stopLivePreview();
 
-    // Snapshot cursor BEFORE async work
     const pos = insertPos;
     console.log('[ACM] stopRecording — chunks so far:', chunks.length, '| insertPos:', pos);
 
     if (!mr || mr.state === 'inactive') {
-      console.warn('[ACM] MediaRecorder already inactive — nothing to process');
+      console.warn('[ACM] MediaRecorder already inactive');
       stream?.getTracks().forEach(t => t.stop());
       mr = null; stream = null;
       return;
     }
 
     transcribing = true;
+    showPadManual = false;
 
-    // Wrap mr.stop() in a Promise so we wait for the final ondataavailable+onstop
+    // Wait for final ondataavailable + onstop before building blob
     const finalBlob = await new Promise<Blob | null>((resolve) => {
-      const collected = [...chunks];   // grab what arrived during recording
+      const collected = [...chunks];
       const mime      = mimeType;
 
       mr!.ondataavailable = (e: any) => {
@@ -205,7 +210,6 @@
         console.log('[ACM] final blob size:', blob.size, 'type:', blob.type);
         resolve(blob);
       };
-
       try { mr!.stop(); } catch (err) {
         console.error('[ACM] mr.stop() threw:', err);
         resolve(null);
@@ -216,7 +220,7 @@
     mr = null; stream = null;
 
     if (!finalBlob || finalBlob.size < 1000) {
-      console.warn('[ACM] blob too small or null — skipping transcription, size:', finalBlob?.size);
+      console.warn('[ACM] blob too small or null — skipping, size:', finalBlob?.size);
       transcribing = false;
       return;
     }
@@ -281,8 +285,8 @@
     extractError = '';
     try {
       extracted = await extractClientFields(text, REST_URL);
-      step = 'review';                         // show form first
-      await fillFormAnimated(extracted);       // then type-in
+      step = 'review';
+      await fillFormAnimated(extracted);
     } catch (e: any) {
       extractError = (e as Error).message;
       step = 'review';
@@ -293,17 +297,14 @@
     aiFilledFields = new Set();
     const STAGGER = 70;
     const CHAR_MS = 14;
-
     type Entry = { field: string; setter: (v: string) => void; val: string };
     const rows: Entry[] = [];
-
     const q = (field: string, setter: (v: string) => void, val: string | undefined) => {
       if (val?.trim()) {
         aiFilledFields = new Set([...aiFilledFields, field]);
         rows.push({ field, setter, val: val.trim() });
       }
     };
-
     q('name',               (v) => (name = v),               f.name);
     q('surname',            (v) => (surname = v),             f.surname);
     q('email',              (v) => (email = v),               f.email);
@@ -316,7 +317,6 @@
     q('size',               (v) => (size = v),                f.size);
     q('immigrationStatus',  (v) => (immigrationStatus = v),   f.immigrationStatus);
     q('notes',              (v) => (notes = v),               f.notes);
-
     await Promise.all(
       rows.map(({ setter, val }, i) =>
         new Promise<void>(async (res) => {
@@ -326,7 +326,6 @@
         })
       )
     );
-
     customFieldRows = (Object.entries(f.customFields || {}) as [string, string][])
       .map(([key, value]) => ({ key, value }));
   }
@@ -413,109 +412,198 @@
     </button>
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 1 · DICTATE  (voice capture + editable pad in one)
+         STEP 1 · DICTATE
+         Three sub-phases: recording / transcribing / pad
     ═══════════════════════════════════════════════════ -->
     {#if step === 'dictate'}
-      <div class="dictate-wrap">
 
-        <div class="dictate-title">
-          <h2>New Client</h2>
-          <p class="dictate-sub">Speak — AI transcribes directly into the pad below</p>
-        </div>
+      <!-- ─── SUB-PHASE A: RECORDING ─────────────────── -->
+      {#if recState === 'recording'}
+        <div class="rec-phase">
 
-        <!-- Orb -->
-        <div class="orb-wrap">
-          {#if recState === 'recording'}
+          <div class="rec-badge">
+            <span class="rec-dot"></span>
+            <span>Recording</span>
+          </div>
+
+          <!-- Orb -->
+          <div class="orb-wrap">
             <div class="orb-ring ring-1"></div>
             <div class="orb-ring ring-2"></div>
             <div class="orb-ring ring-3"></div>
+            <button class="orb-btn orb-btn-recording" on:click={stopRecording} aria-label="Stop">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2.5"/>
+              </svg>
+              <span class="orb-label">Stop</span>
+            </button>
+          </div>
+
+          <!-- Spectrum -->
+          <div class="spectrum spectrum-active" aria-hidden="true">
+            {#each waveHeights as h, i}
+              <div class="spec-bar"
+                style="height:{h}%;
+                       background:hsl({260+i*2},{60+(h/100)*30}%,{55+(h/100)*15}%);
+                       opacity:{0.85+(h/100)*0.15}"
+              ></div>
+            {/each}
+          </div>
+
+          <!-- Ghost caption -->
+          {#if interimPreview}
+            <div class="ghost-caption" aria-hidden="true">{interimPreview}</div>
           {/if}
-          <button
-            class="orb-btn"
-            class:orb-btn-recording={recState === 'recording'}
-            on:click={() => recState === 'idle' ? startRecording() : stopRecording()}
-            aria-label={recState === 'recording' ? 'Stop' : 'Record'}
-          >
-            {#if recState === 'idle'}
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+
+          <!-- If already has text (2nd+ take), keep textarea visible -->
+          {#if padText.trim()}
+            <div class="pad-wrap">
+              <textarea
+                bind:this={padTextareaEl}
+                bind:value={padText}
+                class="pad-editor"
+                rows="5"
+                spellcheck="true"
+                placeholder="Speak naturally…"
+                on:blur={trackCursor}
+                on:keyup={trackCursor}
+                on:click={trackCursor}
+                on:mouseup={trackCursor}
+              ></textarea>
+              <div class="pad-meta">
+                <span class="pad-char">{padText.length} chars</span>
+              </div>
+            </div>
+          {:else}
+            <p class="rec-hint">Describe the new client naturally — name, origin, destination, budget…</p>
+          {/if}
+
+        </div><!-- .rec-phase -->
+
+      <!-- ─── SUB-PHASE B: TRANSCRIBING (cosmos spinner) ─ -->
+      {:else if transcribing}
+        <div class="transcribing-phase">
+
+          <div class="cosmos">
+            <div class="cosmos-orbit cosmos-orbit-1"></div>
+            <div class="cosmos-orbit cosmos-orbit-2"></div>
+            <div class="cosmos-orbit cosmos-orbit-3"></div>
+            <div class="cosmos-core">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/>
                 <path d="M19 10a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
                 <line x1="12" y1="17" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 <line x1="9" y1="22" x2="15" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
-              <span class="orb-label">Record</span>
+            </div>
+          </div>
+
+          <h2 class="transcribing-title">
+            Transcribing<span class="td-dot" style="--d:0">.</span><span
+              class="td-dot" style="--d:1">.</span><span class="td-dot" style="--d:2">.</span>
+          </h2>
+          <p class="transcribing-sub">Converting your voice to text</p>
+
+          {#if !showPadManual}
+            <button class="btn-manual-tiny" on:click={() => showPadManual = true}>
+              ✏️ Type manually instead
+            </button>
+          {:else}
+            <div class="pad-wrap" style="width:100%">
+              <textarea
+                bind:this={padTextareaEl}
+                bind:value={padText}
+                class="pad-editor"
+                rows="5"
+                spellcheck="true"
+                placeholder="Type while it processes…"
+                on:blur={trackCursor}
+                on:keyup={trackCursor}
+                on:click={trackCursor}
+                on:mouseup={trackCursor}
+              ></textarea>
+            </div>
+          {/if}
+
+        </div><!-- .transcribing-phase -->
+
+      <!-- ─── SUB-PHASE C: PAD (text ready) ─────────── -->
+      {:else}
+        <div class="pad-phase">
+
+          <div class="pad-phase-header">
+            <h2>New Client</h2>
+            {#if padText.trim()}
+              <p class="pad-sub">✅ Ready — edit, add more, or structure with AI</p>
             {:else}
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <rect x="5" y="5" width="14" height="14" rx="2.5"/>
-              </svg>
-              <span class="orb-label">Stop</span>
-            {/if}
-          </button>
-        </div>
-
-        <!-- Real-frequency spectrum visualizer -->
-        <div class="spectrum" class:spectrum-active={recState === 'recording'} aria-hidden="true">
-          {#each waveHeights as h, i}
-            <div
-              class="spec-bar"
-              style="height:{h}%;
-                     background: hsl({260 + i * 2},{60 + (h/100)*30}%,{55 + (h/100)*15}%);
-                     opacity:{recState === 'recording' ? 0.85 + (h/100)*0.15 : 0.15}"
-            ></div>
-          {/each}
-        </div>
-
-        <!-- Ghost caption: Web Speech interim (italic, dim — visual feedback only) -->
-        {#if interimPreview && recState === 'recording'}
-          <div class="ghost-caption" aria-hidden="true">{interimPreview}</div>
-        {/if}
-
-        <!-- Dictation pad: persistent editable textarea, accumulates all takes -->
-        <div class="pad-wrap">
-          <textarea
-            bind:this={padTextareaEl}
-            bind:value={padText}
-            class="pad-editor"
-            rows="6"
-            spellcheck="true"
-            placeholder={recState === 'recording'
-              ? 'Recording… speak naturally'
-              : 'e.g. "New client, John Smith, moving from Texas to Costa Rica in October, budget around fifteen thousand…"'}
-            on:blur={trackCursor}
-            on:keyup={trackCursor}
-            on:click={trackCursor}
-            on:mouseup={trackCursor}
-          ></textarea>
-          <div class="pad-meta">
-            {#if transcribing}
-              <span class="pad-transcribing">
-                <span class="trans-dot"></span>Transcribing…
-              </span>
-            {:else}
-              <span class="pad-char">{padText.length} chars</span>
+              <p class="pad-sub">Speak — AI transcribes directly into the pad</p>
             {/if}
           </div>
-        </div>
 
-        <!-- Footer actions -->
-        <div class="dictate-footer">
-          <button class="btn-skip" on:click={skipToManual}>✏️ Skip — type manually</button>
-          {#if padText.trim()}
-            <button class="btn-structure-now" on:click={goStructure} disabled={transcribing}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Small idle orb for "Record more" -->
+          <div class="orb-wrap">
+            <button class="orb-btn" on:click={startRecording} aria-label="Record">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/>
+                <path d="M19 10a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                <line x1="12" y1="17" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="9" y1="22" x2="15" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
-              Structure with AI
+              <span class="orb-label">{padText.trim() ? 'Record more' : 'Record'}</span>
             </button>
-          {/if}
-        </div>
+          </div>
 
-      </div>
-    {/if}
+          <!-- Inactive spectrum -->
+          <div class="spectrum" aria-hidden="true">
+            {#each waveHeights as h, i}
+              <div class="spec-bar"
+                style="height:4%; opacity:.12; background:#a78bfa"
+              ></div>
+            {/each}
+          </div>
+
+          <!-- Pad: revealed after transcription -->
+          {#if padText || padText === ''}
+            <div class="pad-wrap">
+              <textarea
+                bind:this={padTextareaEl}
+                bind:value={padText}
+                class="pad-editor pad-editor-reveal"
+                rows="6"
+                spellcheck="true"
+                placeholder='e.g. "New client, John Smith, moving from Texas to Costa Rica in October, budget around fifteen thousand…"'
+                on:blur={trackCursor}
+                on:keyup={trackCursor}
+                on:click={trackCursor}
+                on:mouseup={trackCursor}
+              ></textarea>
+              <div class="pad-meta">
+                <span class="pad-char">{padText.length} chars</span>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Footer -->
+          <div class="dictate-footer">
+            <button class="btn-skip" on:click={skipToManual}>✏️ Skip — type manually</button>
+            {#if padText.trim()}
+              <button class="btn-structure-now" on:click={goStructure}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Structure with AI
+              </button>
+            {/if}
+          </div>
+
+        </div><!-- .pad-phase -->
+      {/if}
+
+    {/if}<!-- step === dictate -->
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 2 · STRUCTURING (AI processing)
+         STEP 2 · STRUCTURING
     ═══════════════════════════════════════════════════ -->
     {#if step === 'structuring'}
       <div class="structuring-wrap">
@@ -536,7 +624,7 @@
     {/if}
 
     <!-- ═══════════════════════════════════════════════════
-         STEP 3 · REVIEW FORM (with type-in animation)
+         STEP 3 · REVIEW FORM
     ═══════════════════════════════════════════════════ -->
     {#if step === 'review'}
       <div class="review-wrap">
@@ -658,8 +746,7 @@
           {#if submitError}
             <div class="rfoot-error">{submitError}</div>
           {/if}
-          <button class="btn-back"
-            on:click={() => { step = 'dictate'; rawTranscript = ''; }}>
+          <button class="btn-back" on:click={() => { step = 'dictate'; rawTranscript = ''; }}>
             ← Re-record
           </button>
           <button class="btn-create" on:click={handleSubmit} disabled={submitting || !email.trim()}>
@@ -688,7 +775,7 @@
   /* ── Overlay ── */
   .acm-overlay {
     position: fixed; inset: 0;
-    background: rgba(15, 8, 40, 0.55);
+    background: rgba(15, 8, 40, 0.58);
     z-index: 1000;
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
@@ -719,25 +806,44 @@
   }
   .acm-x:hover { background: #eaeaf5; color: #12122a; transform: scale(1.1); }
 
-  /* ═══ DICTATE ══════════════════════════════════════════════════════ */
-  .dictate-wrap {
+  /* ══════════════════════════════════════════════
+     RECORDING PHASE
+  ══════════════════════════════════════════════ */
+  .rec-phase {
     display: flex; flex-direction: column; align-items: center;
-    padding: 2.5rem 1.8rem 1.8rem; gap: 1.2rem;
-    background: #ffffff;
-    overflow-y: auto;
+    padding: 2rem 1.8rem 1.8rem; gap: 1.2rem;
+    background: #ffffff; overflow-y: auto;
   }
 
-  .dictate-title { text-align: center; }
-  .dictate-title h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #12122a;
-                      letter-spacing: -.02em; }
-  .dictate-sub { margin: .3rem 0 0; font-size: .88rem; color: #6666a0; }
+  /* Recording badge */
+  .rec-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: #fff1f1; border: 1px solid #fecaca; border-radius: 20px;
+    padding: .28rem .9rem;
+    font-size: .72rem; font-weight: 800; color: #dc2626;
+    letter-spacing: .06em; text-transform: uppercase;
+  }
+  .rec-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #dc2626;
+    animation: rec-pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes rec-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .3; transform: scale(.7); }
+  }
 
-  /* Orb */
+  .rec-hint {
+    font-size: .84rem; color: #a0a0c0; text-align: center;
+    max-width: 340px; line-height: 1.55; margin: 0;
+  }
+
+  /* ══════════════════════════════════════════════
+     ORB (shared between phases)
+  ══════════════════════════════════════════════ */
   .orb-wrap {
     position: relative;
     display: flex; align-items: center; justify-content: center;
   }
-
   .orb-ring {
     position: absolute; border-radius: 50%;
     border: 1.5px solid rgba(124,58,237,.28);
@@ -773,8 +879,7 @@
   .orb-btn:active { transform: scale(.97); }
   .orb-btn-recording {
     background: linear-gradient(145deg, #fff6f6 0%, #ffe4e4 100%);
-    border-color: #f87171;
-    color: #dc2626;
+    border-color: #f87171; color: #dc2626;
     box-shadow: 0 6px 24px rgba(248,113,113,.25), inset 0 1px 0 rgba(255,255,255,.9);
   }
   .orb-label {
@@ -782,7 +887,7 @@
     text-transform: uppercase; letter-spacing: .07em;
   }
 
-  /* ── Real-frequency spectrum visualizer ── */
+  /* ── Spectrum ── */
   .spectrum {
     display: flex; align-items: flex-end; justify-content: center;
     gap: 2px; width: 100%; max-width: 320px; height: 64px;
@@ -792,24 +897,120 @@
     transition: height .05s linear, opacity .1s;
     min-height: 3px;
   }
-  .spectrum:not(.spectrum-active) .spec-bar {
-    height: 4px !important;
-    opacity: .12 !important;
-    background: #a78bfa !important;
-  }
 
-  /* Ghost caption — Web Speech interim (visual feedback only) */
+  /* Ghost caption */
   .ghost-caption {
     width: 100%; max-width: 420px;
     font-size: .86rem; line-height: 1.55; color: #a0a0c8;
     font-style: italic; text-align: center;
-    min-height: 1.6em;
-    padding: 0 .5rem;
+    min-height: 1.6em; padding: 0 .5rem;
     animation: fade-in .15s ease;
   }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-  /* Dictation pad */
+  /* ══════════════════════════════════════════════
+     TRANSCRIBING PHASE — ultra-modern cosmos spinner
+  ══════════════════════════════════════════════ */
+  .transcribing-phase {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 3.5rem 2rem 2.5rem; gap: 1.6rem;
+    background: #ffffff; min-height: 400px; justify-content: center;
+    overflow-y: auto;
+  }
+
+  /* Cosmos container */
+  .cosmos {
+    position: relative; width: 100px; height: 100px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Three orbital rings */
+  .cosmos-orbit {
+    position: absolute; border-radius: 50%; border: 2px solid transparent;
+  }
+  .cosmos-orbit-1 {
+    inset: 0;
+    border-top-color: #7c3aed;
+    border-right-color: rgba(124,58,237,.35);
+    animation: cosmos-cw 1.1s linear infinite;
+  }
+  .cosmos-orbit-2 {
+    inset: -11px;
+    border-top-color: rgba(167,139,250,.6);
+    border-left-color:  rgba(167,139,250,.3);
+    animation: cosmos-ccw 1.85s linear infinite;
+  }
+  .cosmos-orbit-3 {
+    inset: -24px;
+    border-top-color: rgba(196,181,253,.35);
+    border-bottom-color: rgba(196,181,253,.18);
+    animation: cosmos-cw 3.1s linear infinite;
+  }
+  .cosmos-core {
+    position: absolute; inset: 14px; border-radius: 50%;
+    background: radial-gradient(135deg, #f0ebff 0%, #e4d9fd 50%, #d0bbff 100%);
+    box-shadow:
+      0 0 20px rgba(124,58,237,.32),
+      0 0 44px rgba(124,58,237,.14),
+      inset 0 1px 0 rgba(255,255,255,.8);
+    display: flex; align-items: center; justify-content: center;
+    color: #7c3aed;
+    animation: cosmos-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cosmos-cw   { to { transform: rotate(360deg);  } }
+  @keyframes cosmos-ccw  { to { transform: rotate(-360deg); } }
+  @keyframes cosmos-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(124,58,237,.32), 0 0 44px rgba(124,58,237,.14), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(124,58,237,.52), 0 0 64px rgba(124,58,237,.22), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+  }
+
+  /* Transcribing label with bouncing dots */
+  .transcribing-title {
+    margin: 0; font-size: 1.25rem; font-weight: 800; color: #12122a; letter-spacing: -.01em;
+  }
+  .td-dot {
+    display: inline-block; color: #7c3aed;
+    animation: td-bounce .9s ease-in-out infinite;
+    animation-delay: calc(var(--d) * 0.18s);
+  }
+  @keyframes td-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%           { transform: translateY(-6px); }
+  }
+  .transcribing-sub {
+    margin: -.6rem 0 0; font-size: .84rem; color: #8888b0;
+  }
+
+  /* Discrete manual-type toggle */
+  .btn-manual-tiny {
+    background: none; border: none;
+    color: #b0b0cc; font-size: .78rem;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 4px;
+    transition: color .15s;
+    margin-top: .3rem;
+  }
+  .btn-manual-tiny:hover { color: #7c3aed; }
+
+  /* ══════════════════════════════════════════════
+     PAD PHASE
+  ══════════════════════════════════════════════ */
+  .pad-phase {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2.2rem 1.8rem 1.8rem; gap: 1.1rem;
+    background: #ffffff; overflow-y: auto;
+  }
+  .pad-phase-header { text-align: center; }
+  .pad-phase-header h2 {
+    margin: 0; font-size: 1.55rem; font-weight: 800; color: #12122a; letter-spacing: -.02em;
+  }
+  .pad-sub { margin: .3rem 0 0; font-size: .88rem; color: #6666a0; }
+
+  /* Pad textarea */
   .pad-wrap { width: 100%; max-width: 440px; }
   .pad-editor {
     width: 100%; resize: vertical;
@@ -819,32 +1020,29 @@
     transition: border-color .15s, box-shadow .15s;
   }
   .pad-editor:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+
+  /* Reveal animation after transcription */
+  .pad-editor-reveal {
+    animation: pad-reveal .5s cubic-bezier(.2,0,.4,1) both;
+  }
+  @keyframes pad-reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   .pad-meta {
     display: flex; align-items: center; gap: .4rem;
     margin-top: .28rem; min-height: 1.2em;
   }
   .pad-char { font-size: .72rem; color: #a0a0c0; margin-left: auto; }
 
-  /* Transcribing spinner */
-  .pad-transcribing {
-    display: inline-flex; align-items: center; gap: .42rem;
-    font-size: .78rem; color: #7c3aed; font-weight: 700;
-    margin-left: auto;
-  }
-  .trans-dot {
-    display: inline-block; width: 8px; height: 8px;
-    border: 1.5px solid rgba(124,58,237,.3); border-top-color: #7c3aed;
-    border-radius: 50%; animation: btn-rotate .65s linear infinite; flex-shrink: 0;
-  }
-
   /* Dictate footer */
   .dictate-footer {
     display: flex; align-items: center; justify-content: space-between;
-    gap: .8rem; width: 100%; max-width: 440px;
-    flex-wrap: wrap;
+    gap: .8rem; width: 100%; max-width: 440px; flex-wrap: wrap;
   }
 
-  /* Structure with AI — hero CTA */
+  /* Structure with AI CTA */
   .btn-structure-now {
     display: inline-flex; align-items: center; gap: .55rem;
     padding: .72rem 1.8rem;
@@ -872,7 +1070,9 @@
   }
   .btn-skip:hover { color: #5555a0; }
 
-  /* ═══ STRUCTURING ══════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════
+     STRUCTURING
+  ══════════════════════════════════════════════ */
   .structuring-wrap {
     display: flex; flex-direction: column; align-items: center;
     padding: 4rem 2rem; gap: 1.3rem; min-height: 420px;
@@ -904,7 +1104,9 @@
     font-size: .8rem; color: #6666a0; text-align: center; line-height: 1.55; font-style: italic;
   }
 
-  /* ═══ REVIEW FORM ══════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════
+     REVIEW FORM
+  ══════════════════════════════════════════════ */
   .review-wrap {
     display: flex; flex-direction: column; max-height: 92vh; overflow: hidden;
     background: #ffffff;
@@ -934,7 +1136,6 @@
     background: #ffffff;
   }
 
-  /* Grid rows with stagger animation */
   .acm-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: .7rem;
     animation: row-in .35s ease both;
@@ -954,12 +1155,10 @@
   }
   label.acm-required { color: #7c3aed; }
 
-  /* AI type-in green glow */
   label.ai-filled input,
   label.ai-filled select,
   label.ai-filled textarea {
-    border-color: #059669;
-    background: #f0fdf8;
+    border-color: #059669; background: #f0fdf8;
     animation: ai-glow .9s ease both;
   }
   @keyframes ai-glow {
@@ -980,7 +1179,6 @@
   }
   textarea { resize: vertical; min-height: 72px; }
 
-  /* Custom fields */
   .custom-fields-section {
     animation: row-in .35s ease both;
     animation-delay: calc(var(--i, 7) * 50ms);
@@ -1011,7 +1209,6 @@
   .btn-add-cf:hover { border-color: #7c3aed; color: #7c3aed; }
   .btn-add-cf-empty { width: 100%; text-align: center; padding: .5rem; }
 
-  /* Footer */
   .review-footer {
     display: flex; align-items: center; justify-content: flex-end; gap: .7rem;
     padding: 1rem 1.6rem;
@@ -1029,7 +1226,6 @@
   }
   .btn-back:hover { background: #eaeaf5; border-color: #b8b8e0; color: #12122a; }
 
-  /* Create Client — light theme */
   .btn-create {
     display: inline-flex; align-items: center; gap: .45rem;
     padding: .58rem 1.5rem;
