@@ -1,24 +1,18 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { authToken } from '../store.ts';
-  import { extractClientFields, type ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
+  import type { ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
+
 
   const dispatch = createEventDispatcher<{ created: { docId: string }; close: void }>();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const GEM_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
-  // ── Audio model cascade: tried in order until one succeeds ─────────────
-  // gemini-flash-latest now resolves to gemini-3.5-flash which rejects audio.
-  // These are all confirmed audio-capable on this key.
-  const AUDIO_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-001'];
-  const EXTRACT_MODEL = 'gemini-2.5-flash'; // text → JSON (confirmed 200)
+  // Transcription + extraction both run server-side via the dashboard API
+  // (no CORS, keys stay on the server, OpenRouter→Gemini→scraper fallback).
+  const TRANSCRIBE_URL = `${API_URL}/api/dashboard/voice-transcribe`;
+  const EXTRACT_URL    = `${API_URL}/api/dashboard/extract-client-fields`;
 
-  function makeGeminiUrl(model: string): string {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEM_KEY}`;
-  }
-  const EXTRACT_URL = makeGeminiUrl(EXTRACT_MODEL);
-  const PROMPT = 'Transcribe the audio verbatim. Output ONLY the spoken words with natural punctuation and capitalization. No commentary, no filler.';
 
   // ── Field schema — single source of truth ────────────────────────────
   type FieldDef = {
@@ -133,7 +127,7 @@
     return '';
   }
 
-  // Cascade through audio-capable models until one transcribes successfully
+  // Transcribe via the backend Whisper proxy (no CORS, key stays server-side)
   async function sliceToText(blob: Blob): Promise<string> {
     if (blob.size < 1000) return '';
     const ab = await blob.arrayBuffer();
@@ -142,33 +136,22 @@
     for (let i = 0; i < bytes.length; i += C)
       bin += String.fromCharCode(...bytes.subarray(i, i + C));
     const b64 = btoa(bin);
-    const reqBody = JSON.stringify({
-      contents: [{ parts: [{ text: PROMPT }, { inlineData: { mimeType: blob.type, data: b64 } }] }],
-      generationConfig: { temperature: 0 }
-    });
 
-    for (const model of AUDIO_MODELS) {
-      console.log(`[ACM] trying audio model: ${model}`);
-      try {
-        const res = await fetch(makeGeminiUrl(model), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: reqBody,
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const text = ((json?.candidates?.[0]?.content?.parts?.[0]?.text) || '').trim();
-          console.log(`[ACM] ${model} success → ${text.length} chars`);
-          return text;
-        }
-        const errBody = await res.json().catch(() => ({}));
-        console.warn(`[ACM] ${model} → ${res.status}`, (errBody as any)?.error?.message || '');
-      } catch (e: any) {
-        console.warn(`[ACM] ${model} network error:`, e.message);
-      }
+    console.log('[ACM] POST voice-transcribe — bytes:', bytes.length);
+    const res = await fetch(TRANSCRIBE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-dashboard-token': $authToken || '' },
+      body: JSON.stringify({ audioBase64: b64, mimeType: blob.type }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error((e as any).error || `Transcription failed (HTTP ${res.status})`);
     }
-    throw new Error(`All audio models failed (${AUDIO_MODELS.join(', ')})`);
+    const data = await res.json();
+    console.log('[ACM] transcript chars:', (data.transcript || '').length);
+    return (data.transcript || '').trim();
   }
+
 
   // ── Recording controls ────────────────────────────────────────────────
   async function startRecording() {
@@ -292,16 +275,30 @@
   async function runExtraction(text: string) {
     extractError = '';
     try {
-      extracted = await extractClientFields(text, EXTRACT_URL);
+      console.log('[ACM] POST extract-client-fields — chars:', text.length);
+      const res = await fetch(EXTRACT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dashboard-token': $authToken || '' },
+        body: JSON.stringify({ transcript: text }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e as any).error || `Extraction failed (HTTP ${res.status})`);
+      }
+      const data = await res.json();
+      extracted = (data.fields ?? EMPTY_EXTRACTION) as ClientFieldExtraction;
+      console.log('[ACM] extracted fields:', extracted);
       seedVisibleFields(extracted);
       step = 'review';
       await fillFormAnimated(extracted);
     } catch (e: any) {
+      console.error('[ACM] extraction error:', e?.message);
       extractError = (e as Error).message;
       seedVisibleFields(EMPTY_EXTRACTION);
       step = 'review';
     }
   }
+
 
   async function fillFormAnimated(f: ClientFieldExtraction) {
     aiFilledFields = new Set();
