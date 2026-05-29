@@ -392,11 +392,9 @@
           <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
         </div>
         <button class="topbar__add-client" on:click={() => (addClientOpen = true)} title="Add client manually">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
-                  fill="currentColor"/>
-            <circle cx="20" cy="6" r="3.5" fill="currentColor"/>
-            <path d="M20 4.5v3M18.5 6h3" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- group_add: 2 heads + 2 bodies + strokes-based plus — no extra circles -->
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 10H5V7H3v3H0v2h3v3h2v-3h3zm10 1c1.66 0 2.99-1.34 2.99-3S19.66 5 18 5c-.32 0-.63.05-.91.14.57.81.9 1.79.9 2.86s-.34 2.05-.9 2.86c.28.09.59.14.91.14zm-5 0c1.66 0 2.99-1.34 2.99-3S14.66 5 13 5s-3 1.34-3 3 1.34 3 3 3zm6.62 2.16c.83.73 1.38 1.66 1.38 2.84V18h3v-2c0-1.54-2.37-2.49-4.38-2.84zM13 13c-2 0-6 1-6 3v2h12v-2c0-2-4-3-6-3z"/>
           </svg>
           New Client
         </button>

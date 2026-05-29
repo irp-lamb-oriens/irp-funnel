@@ -394,6 +394,21 @@
     mr = null; stream = null;
   }
 
+  // Stop recording and go straight to the pad (no Gemini transcription)
+  function skipRecordingToPad() {
+    cleanup();      // recState → 'idle', mic off
+    transcribing = false;
+    // Stays in step = 'dictate' → falls through to pad sub-phase
+  }
+
+  // Stop recording immediately, discard audio, go straight to pad (no Gemini call)
+  function skipToPad() {
+    cleanup();
+    transcribing = false;
+    chunks = [];
+    // recState='idle' + transcribing=false → renders sub-phase C (pad)
+  }
+
   function skipToManual() { cleanup(); step = 'review'; }
   function closeModal()   { cleanup(); dispatch('close'); }
   onDestroy(cleanup);
@@ -477,6 +492,11 @@
           {:else}
             <p class="rec-hint">Describe the new client naturally — name, origin, destination, budget…</p>
           {/if}
+
+          <!-- Always-visible escape hatch: cuts recording short, goes to pad immediately -->
+          <button class="btn-manual-tiny" on:click={skipToPad}>
+            ✏️ Type manually instead
+          </button>
 
         </div><!-- .rec-phase -->
 
