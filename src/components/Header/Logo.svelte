@@ -27,7 +27,6 @@
 }
 .logo-img {
   display: block;
-  mix-blend-mode: screen;
   height: 62px;
   object-fit: cover;
 }

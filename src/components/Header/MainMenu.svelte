@@ -160,7 +160,7 @@
 }
 
 .main-menu a {
-  color: rgba(255, 255, 255, 0.7);
+  color: #c1c1c1b3;
   text-decoration: none;
   font-weight: 500;
   padding: 0.6rem 1rem;
@@ -172,10 +172,9 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  text-shadow: 0 0 0.1px BLACK;
 
   &:hover {
-    color: #fff;
+    color: #000000;
     // transform: translateY(-1px);
   }
 }
