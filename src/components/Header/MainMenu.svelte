@@ -160,7 +160,7 @@
 }
 
 .main-menu a {
-  color: #c1c1c1b3;
+  color: #474747;
   text-decoration: none;
   font-weight: 500;
   padding: 0.6rem 1rem;
