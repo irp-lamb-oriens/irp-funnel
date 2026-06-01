@@ -27,6 +27,7 @@
   import TranscriptPaster from './TranscriptPaster.svelte';
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
+  import QuotesTab from './QuotesTab.svelte';
   import ShipmentTrackingCard from './ShipmentTrackingCard.svelte';
   import VendorMatchCard from './VendorMatchCard.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
@@ -56,7 +57,7 @@
   let emailSentMessage = '';
   let newFieldKey = '';
   let newFieldValue = '';
-  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' = 'overview';
+  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' = 'overview';
   let stageEntries = Object.entries(STAGE_LABELS);
 
   // ── Pipeline-stage chip + popover (replaces the giant emoji strip) ─────
@@ -569,6 +570,10 @@
       <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>
         Emails
         <PendingBadge count={pendingTabCounts.emails ?? 0} variant="tab" />
+      </button>
+      <button class:active={detailTab === 'quotes'} on:click={() => detailTab = 'quotes'}>
+        💰 Quotes
+        <PendingBadge count={pendingTabCounts.quotes ?? 0} variant="tab" />
       </button>
     </nav>
 
@@ -1739,6 +1744,12 @@
           </div>
         </div>
 
+      {:else if detailTab === 'quotes'}
+        <section class="tab-content">
+          {#if $selectedClient}
+            <QuotesTab clientId={$selectedClient.id} />
+          {/if}
+        </section>
       {/if}
     </div>
 

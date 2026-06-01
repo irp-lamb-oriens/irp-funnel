@@ -546,7 +546,7 @@ export interface PendingAction {
    * Drives which tab receives a badge count and which section is highlighted
    * when the Panel opens. Also used by `pendingTabsByClient`.
    */
-  tab: 'emails' | 'actions' | 'notes' | 'overview' | 'activity';
+  tab: 'emails' | 'actions' | 'notes' | 'overview' | 'activity' | 'quotes';
   /** Short human-readable label shown in the badge tooltip + notification. */
   title: string;
   priority: 'high' | 'normal' | 'low';
@@ -1530,4 +1530,305 @@ export async function fetchEmailTypes(): Promise<void> {
   } catch {
     // Non-fatal: the static EMAIL_TYPES fallback stays in place.
   }
+}
+
+// ─── Admin: Live Access Config ─────────────────────────────────────────────
+
+/**
+ * Fetch the Firestore-persisted access config.
+ * Returns `null` if no live config has been saved yet (static fallback applies).
+ * Readable by ALL authenticated staff.
+ */
+export async function fetchLiveAccessConfig(): Promise<Record<string, string[]> | null> {
+  try {
+    const data = await apiFetch('/api/dashboard/admin/access-config');
+    return data?.config ?? null;
+  } catch {
+    // Non-fatal: caller falls back to the static map in access.ts.
+    return null;
+  }
+}
+
+/**
+ * Persist the access config to Firestore. Admin-only — the server will 403
+ * if the calling session is not luisarmando or pablo.
+ */
+export async function saveAccessConfig(config: Record<string, string[]>): Promise<void> {
+  await apiFetch('/api/dashboard/admin/access-config', {
+    method: 'PUT',
+    body: JSON.stringify({ config }),
+  });
+}
+
+// ─── Admin: Session Log ────────────────────────────────────────────────────
+
+export interface AdminSession {
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+  isActive: boolean;
+}
+
+/**
+ * Fetch all dashboard sessions. Admin-only — the server will 403 for
+ * non-admin callers.
+ */
+export async function fetchAdminSessions(): Promise<AdminSession[]> {
+  const data = await apiFetch('/api/dashboard/admin/sessions');
+  return (data?.sessions ?? []) as AdminSession[];
+}
+
+// ─── Admin: Per-User Activity Audit ───────────────────────────────────────
+
+/**
+ * A single activityLog entry enriched with the source client's identity.
+ * Returned by GET /api/dashboard/admin/user-activity?email=...
+ */
+export interface UserActivityEntry {
+  /** The action type (stage_change, note_added, email_triggered, field_edit, …) */
+  type: string;
+  /** ISO timestamp of the action */
+  timestamp: string;
+  /** The staff email that performed the action (always === the email queried) */
+  actor: string;
+  /** Firestore docId of the client this action was performed on */
+  _clientDocId: string;
+  /** Human-readable name for the client */
+  _clientDisplayName: string;
+  /** Email address of the client */
+  _clientEmail: string;
+  /** All other fields from the original activityLog entry */
+  [key: string]: unknown;
+}
+
+/**
+ * Fetch all activityLog entries across ALL consultations where `actor === email`.
+ * Admin-only — the server will 403 for non-admin callers.
+ * Returns a chronological (newest-first) list of UserActivityEntry.
+ */
+export async function fetchUserActivity(email: string): Promise<UserActivityEntry[]> {
+  const data = await apiFetch(
+    `/api/dashboard/admin/user-activity?email=${encodeURIComponent(email)}`
+  );
+  return (data?.entries ?? []) as UserActivityEntry[];
+}
+
+// ─── Quotes (Cotizaciones) ───────────────────────────────────────────────────
+//
+// Rich Quote model: title + line items + multi-provider + notes + changeLog.
+// Phase 2 adds: approval workflow, comments, send-to-client.
+// Phase 3 adds: client-portal visibility, acceptance → auto stage move.
+
+export interface QuoteLineItem {
+  lineId: string;
+  label: string;
+  amount: number;
+  currency: string;
+  providerId: string | null;
+  notes: string | null;
+}
+
+export interface QuoteChangeLogEntry {
+  changeId: string;
+  actor: string;
+  type: string;
+  summary: string;
+  timestamp: string;
+  addressesCommentId?: string | null;
+}
+
+export interface Quote {
+  quoteId: string;
+  consultationId: string;
+  title: string;
+  lineItems: QuoteLineItem[];
+  currency: string;
+  total: number;
+  providerIds: string[];
+  providerSnapshots: Array<{
+    id: string; name: string; country: string;
+    modality: string; serviceCategory: string;
+  }>;
+  notes: string | null;
+  /** Phase 1 statuses; Phase 2+ adds pending_approval, changes_requested, approved, sent_to_client, client_accepted */
+  status: 'draft' | 'pending_approval' | 'changes_requested' | 'approved' | 'sent_to_client' | 'client_accepted';
+  approvers: string[];
+  approvals: Array<{ approverEmail: string; decision: string; decidedAt: string }>;
+  comments: Array<{
+    commentId: string; authorEmail: string; text: string; createdAt: string;
+    resolved: boolean; resolvedBy: string | null; resolvedAt: string | null;
+  }>;
+  changeLog: QuoteChangeLogEntry[];
+  clientVisible: boolean;
+  sentToClientAt: string | null;
+  clientToken: string | null;
+  clientAcceptedAt: string | null;
+  clientAcceptedBy: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string | null;
+  // Legacy backward-compat
+  providerId?: string | null;
+  providerName?: string | null;
+  providerEmail?: string | null;
+  amount?: number | null;
+}
+
+export const QUOTE_STATUS_LABEL: Record<Quote['status'], { label: string; color: string }> = {
+  draft:            { label: 'Borrador',       color: '#94a3b8' },
+  pending_approval: { label: 'En revisión',    color: '#f59e0b' },
+  changes_requested:{ label: 'Cambios pedidos',color: '#ef4444' },
+  approved:         { label: 'Aprobada',       color: '#22c55e' },
+  sent_to_client:   { label: 'Enviada al cliente', color: '#3b82f6' },
+  client_accepted:  { label: 'Aceptada ✓',    color: '#16a34a' },
+};
+
+/** Fetch all quotes for a client (newest first). */
+export async function fetchQuotes(clientId: string): Promise<Quote[]> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/quotes`);
+  return (data.quotes ?? []) as Quote[];
+}
+
+/** Fetch a single quote by ID. */
+export async function fetchQuote(clientId: string, quoteId: string): Promise<Quote> {
+  return apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}`) as Promise<Quote>;
+}
+
+/** Create a new quote (defaults to status=draft). */
+export async function createQuote(clientId: string, payload: Partial<Quote>): Promise<Quote> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/quotes`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.quote as Quote;
+}
+
+/** Partially update a quote. Only supplied fields are changed. */
+export async function updateQuote(
+  clientId: string,
+  quoteId: string,
+  updates: Partial<Quote>,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Delete a quote permanently. */
+export async function deleteQuote(clientId: string, quoteId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}`, {
+    method: 'DELETE',
+  });
+}
+
+// ─── Phase 2: Quote approval workflow store functions ────────────────────────
+
+/** Submit a quote for approval. Sends email to approvers and creates PendingAction badge. */
+export async function submitQuoteForApproval(
+  clientId: string,
+  quoteId: string,
+  noteToApprovers?: string,
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/submit-for-approval`, {
+    method: 'POST',
+    body: JSON.stringify({ noteToApprovers: noteToApprovers?.trim() || null }),
+  });
+}
+
+/** Approve a quote. Caller must be a QUOTE_APPROVER (enforced server-side). */
+export async function approveQuote(clientId: string, quoteId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+/** Request changes on a pending-approval quote. Caller must be a QUOTE_APPROVER. */
+export async function requestQuoteChanges(
+  clientId: string,
+  quoteId: string,
+  comment: string,
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/request-changes`, {
+    method: 'POST',
+    body: JSON.stringify({ comment }),
+  });
+}
+
+/** Add a comment to a quote's comment thread. */
+export async function addQuoteComment(
+  clientId: string,
+  quoteId: string,
+  text: string,
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+}
+
+/** Resolve (close) a comment in a quote's thread. */
+export async function resolveQuoteComment(
+  clientId: string,
+  quoteId: string,
+  commentId: string,
+): Promise<void> {
+  await apiFetch(
+    `/api/dashboard/clients/${clientId}/quotes/${quoteId}/comments/${commentId}/resolve`,
+    { method: 'PATCH', body: JSON.stringify({}) },
+  );
+}
+
+/**
+ * Quote approvers as a Set — sourced from the canonical `access.ts` list.
+ * Using a Set preserves the `.has()` interface used by QuoteEditor.svelte.
+ * Edit the list in `access.ts`; this export stays in sync automatically.
+ */
+import { QUOTE_APPROVERS as _QUOTE_APPROVERS } from './access.ts';
+export const QUOTE_APPROVERS_EMAILS: ReadonlySet<string> = new Set(_QUOTE_APPROVERS);
+
+
+/** Send an approved quote to the client via email. Returns the client-visible link. */
+export async function sendQuoteToClient(
+  clientId: string,
+  quoteId: string,
+): Promise<{ success: boolean; clientToken: string; statusPageUrl: string }> {
+  return apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/send-to-client`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+/**
+ * Fetch a quote using only the client-visible token (public — no auth).
+ * Used by the status page when a quoteToken param is present in the URL.
+ */
+export async function fetchQuoteByToken(
+  consultationId: string,
+  token: string,
+): Promise<Quote | null> {
+  try {
+    const data = await apiFetch(
+      `/api/status/${consultationId}/quote?token=${encodeURIComponent(token)}`,
+    );
+    return (data.quote ?? null) as Quote | null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Accept a quote as the client (called from the public status page).
+ * No auth required — validated by clientToken on the server.
+ */
+export async function acceptQuoteAsClient(
+  consultationId: string,
+  token: string,
+  acceptedBy?: string,
+): Promise<{ success: boolean; status: string }> {
+  return apiFetch(`/api/status/${consultationId}/quote/accept`, {
+    method: 'POST',
+    body: JSON.stringify({ token, acceptedBy: acceptedBy?.trim() || '' }),
+  });
 }

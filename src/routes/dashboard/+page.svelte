@@ -11,9 +11,13 @@
     fetchClients, fetchClientDetail, updateClientStage,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
     initDashboardSocket, disconnectDashboardSocket,
-    pendingCountByClient,
+    pendingCountByClient, fetchLiveAccessConfig,
     type Client
   } from './store.ts';
+  import {
+    STATIC_SECTION_ACCESS, DEFAULT_ACCESS, ALL_VIEWS, ADMIN_EMAILS,
+    type DashView,
+  } from './access.ts';
   import DetailPanel from './components/DetailPanel.svelte';
   import PendingBadge from './components/PendingBadge.svelte';
   import EmailPreviewDrawer from './components/EmailPreviewDrawer.svelte';
@@ -22,6 +26,7 @@
   import EvoView from './components/evo/EvoView.svelte';
   import ProvidersView from './components/ProvidersView.svelte';
   import PostsView from './components/PostsView.svelte';
+  import AdminView from './components/AdminView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
   import './dashboard.scss';
@@ -94,9 +99,18 @@
     }
   });
 
+  // ─── Live access config (Firestore override) ─────────────────────────────
+  // Set on every login. Overrides STATIC_SECTION_ACCESS when non-null.
+  let liveAccessConfig: Record<string, string[]> | null = null;
+
   async function loadData() {
     initDashboardSocket();
-    await Promise.all([fetchClients(), fetchMetrics()]);
+    // Fetch live config in parallel — non-blocking, falls back to static if it fails
+    const [, liveConfig] = await Promise.all([
+      Promise.all([fetchClients(), fetchMetrics()]),
+      fetchLiveAccessConfig(),
+    ]);
+    liveAccessConfig = liveConfig;
   }
 
   // ─── Login Handlers ─────────────────────────────────────────────────────
@@ -201,8 +215,29 @@
     }
   }
 
-  async function switchView(view: 'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts') {
-    activeView.set(view);
+  // ─── Section Access Control ─────────────────────────────────────────────
+  // Source of truth is access.ts (STATIC_SECTION_ACCESS + DEFAULT_ACCESS).
+  // On every login, loadData() fetches the live Firestore override and stores
+  // it in `liveAccessConfig`. Live config takes precedence over the static map.
+
+  /**
+   * Reactive: which views the currently-authenticated user may see.
+   * Priority: live Firestore config → static fallback in access.ts → DEFAULT_ACCESS.
+   */
+  $: allowedViews = (() => {
+    const email = $authEmail ?? '';
+    const map = liveAccessConfig ?? STATIC_SECTION_ACCESS;
+    return ((map[email] ?? DEFAULT_ACCESS) as DashView[]);
+  })();
+
+  /** If the active view is not allowed, silently redirect to the first allowed view. */
+  $: if ($isAuthenticated && allowedViews.length && !allowedViews.includes($activeView as DashView)) {
+    activeView.set(allowedViews[0]);
+  }
+
+  async function switchView(view: DashView) {
+    if (!allowedViews.includes(view)) return; // guard
+    activeView.set(view as any);
     if (view === 'metrics' && !$metrics) {
       await fetchMetrics();
     }
@@ -392,12 +427,27 @@
         <span class="topbar__logo">🌍</span>
         <h1 class="topbar__title">IRP CRM</h1>
         <nav class="topbar__nav">
-          <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>
-          <button class:active={$activeView === 'list'} on:click={() => switchView('list')}>List</button>
-          <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
-          <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
-          <button class:active={$activeView === 'providers'} on:click={() => switchView('providers')} title="Shipping & relocation provider registry">Providers</button>
-          <button class:active={$activeView === 'posts'} on:click={() => switchView('posts')} title="Write and schedule broadcast posts to clients">Posts</button>
+          {#if allowedViews.includes('board')}
+            <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>
+          {/if}
+          {#if allowedViews.includes('list')}
+            <button class:active={$activeView === 'list'} on:click={() => switchView('list')}>List</button>
+          {/if}
+          {#if allowedViews.includes('metrics')}
+            <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
+          {/if}
+          {#if allowedViews.includes('evo')}
+            <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
+          {/if}
+          {#if allowedViews.includes('providers')}
+            <button class:active={$activeView === 'providers'} on:click={() => switchView('providers')} title="Shipping & relocation provider registry">Providers</button>
+          {/if}
+          {#if allowedViews.includes('posts')}
+            <button class:active={$activeView === 'posts'} on:click={() => switchView('posts')} title="Write and schedule broadcast posts to clients">Posts</button>
+          {/if}
+          {#if allowedViews.includes('admin')}
+            <button class:active={$activeView === 'admin'} on:click={() => switchView('admin')} title="Admin: manage staff access and view sessions" class="topbar__admin-btn">Admin</button>
+          {/if}
         </nav>
       </div>
       <div class="topbar__right">
@@ -646,6 +696,10 @@
     <!-- ══════════════ POSTS VIEW ══════════════ -->
     {:else if $activeView === 'posts'}
       <PostsView />
+
+    <!-- ══════════════ ADMIN VIEW (luisarmando + pablo only) ══════════════ -->
+    {:else if $activeView === 'admin'}
+      <AdminView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

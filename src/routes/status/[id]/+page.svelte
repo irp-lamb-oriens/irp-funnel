@@ -13,6 +13,7 @@
   import CommentsThread from './CommentsThread.svelte';
   import StageRating from './StageRating.svelte';
   import QuotePanel from './QuotePanel.svelte';
+  import QuoteView from './QuoteView.svelte';
   import RegulationsLanding from './RegulationsLanding.svelte';
   import {
     irpStaffIsAuthenticated, irpStaffEmail,
@@ -345,6 +346,13 @@
       <div class="cp-dashboard__full-width-section">
         <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
       </div>
+
+      <!-- Quote view: only shown when the URL has a ?quoteToken= param -->
+      {#if $page.url.searchParams.get('quoteToken')}
+        <div class="cp-dashboard__full-width-section">
+          <QuoteView consultationId={projectId} />
+        </div>
+      {/if}
 
       <!-- ── REGULATIONS & COMPLIANCE LANDING ──────────────────────────── -->
       <div class="cp-dashboard__full-width-section">

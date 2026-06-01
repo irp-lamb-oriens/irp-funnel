@@ -1,0 +1,77 @@
+// ─── Quotes (Cotizaciones) tab — global overrides ───────────────────────────
+// Scoped under .quotes-tab and .quote-editor.
+// Components use their own <style> blocks for most rules; this file provides
+// any cross-component or global overrides that can't be scoped.
+
+.quotes-tab {
+  // Ensure the tab fills available height inside the detail panel
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  &__list {
+    // Smooth scrollable list when overflow occurs
+    scrollbar-width: thin;
+    scrollbar-color: #374151 transparent;
+  }
+}
+
+.quote-list-item {
+  // Hover highlight that respects the dashboard dark theme
+  &:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 1px;
+  }
+}
+
+.quote-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 100px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.quote-editor {
+  // Allow the editor to scroll independently when it's tall
+  overflow-y: auto;
+  max-height: calc(100vh - 12rem);
+
+  &__header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+}
+
+.line-items-table {
+  // Horizontal scroll on small panels
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  table {
+    border-collapse: collapse;
+    min-width: 480px;
+  }
+}
+
+.provider-search {
+  // Results dropdown layered above other form elements
+  position: relative;
+
+  &__results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    z-index: 20;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
