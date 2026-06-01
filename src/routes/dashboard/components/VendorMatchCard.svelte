@@ -2,10 +2,11 @@
   /**
    * VendorMatchCard.svelte
    *
-   * Self-contained widget that hits /api/vendors/match/:clientId and renders
-   * the scored vendor list as a collapsible card inside the Insights tab.
+   * Self-contained widget that hits /api/dashboard/providers/match/:clientId
+   * and renders the scored provider list as a collapsible card inside the
+   * Insights tab.
    *
-   * Additive-only: if no vendors are registered in Firestore the card
+   * Additive-only: if no providers are registered in Firestore the card
    * simply shows an "empty" message and hides itself. No existing
    * functionality is changed.
    */
@@ -233,69 +234,77 @@
 </div>
 
 <style>
-  /* ── Card shell ────────────── */
+  /* ── Card shell — light theme ──────────────────────────────────────────── */
   .vmatch-card {
-    border: 1px solid #1e293b;
-    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     overflow: hidden;
-    background: #0f172a;
+    background: #ffffff;
     margin-top: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    transition: border-color 0.14s;
   }
   .vmatch-card--open {
-    border-color: rgba(14,165,233,0.3);
+    border-color: rgba(99,102,241,0.25);
   }
 
-  /* ── Header ────────────────── */
+  /* ── Header ────────────────────────────────────────────────────────────── */
   .vmatch-header {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.65rem 1rem;
-    background: transparent;
+    background: #f8fafc;
     border: none;
     cursor: pointer;
-    color: #94a3b8;
+    color: #475569;
     font-size: 0.82rem;
     font-weight: 600;
+    transition: background 0.12s, color 0.12s;
   }
-  .vmatch-header:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .vmatch-header:hover { background: #f1f5f9; color: #1e293b; }
   .vmatch-header__label {
     display: flex;
     align-items: center;
     gap: 0.4rem;
   }
   .vmatch-badge {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.45rem;
     border-radius: 999px;
-    background: rgba(100,116,139,0.2);
+    background: #f1f5f9;
     color: #64748b;
     font-size: 0.7rem;
     font-weight: 700;
+    border: 1px solid #e2e8f0;
   }
   .vmatch-badge--green {
-    background: rgba(34,197,94,0.15);
-    color: #86efac;
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #bbf7d0;
   }
   .vmatch-header__chevron {
     font-size: 1.2rem;
     font-weight: 300;
     transition: transform 0.2s;
     display: inline-block;
+    color: #94a3b8;
   }
   .vmatch-header__chevron.rotated { transform: rotate(90deg); }
 
-  /* ── Body ──────────────────── */
+  /* ── Body ───────────────────────────────────────────────────────────────── */
   .vmatch-body {
-    border-top: 1px solid #1e293b;
+    border-top: 1px solid #e2e8f0;
     padding: 0.75rem 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
+    background: #ffffff;
   }
 
-  /* ── Context pills ──────────── */
+  /* ── Context pills ───────────────────────────────────────────────────────── */
   .vmatch-context {
     display: flex;
     align-items: center;
@@ -304,73 +313,82 @@
     font-size: 0.75rem;
   }
   .vmatch-context__label {
-    color: #64748b;
+    color: #94a3b8;
     font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
-  /* ── Chips ─────────────────── */
+  /* ── Chips ───────────────────────────────────────────────────────────────── */
   .vmatch-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.2rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.55rem;
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
   }
   .vmatch-chip--sm { font-size: 0.68rem; padding: 0.15rem 0.4rem; }
-  .vmatch-chip--cat { background: rgba(99,102,241,0.12); color: #a5b4fc; }
-  .vmatch-chip--mod { background: rgba(14,165,233,0.12); color: #38bdf8; }
-  .vmatch-chip--route { background: rgba(100,116,139,0.12); color: #94a3b8; }
+  /* Dark-enough accent colours → readable on their light bg */
+  .vmatch-chip--cat   { background: rgba(99,102,241,0.1);  color: #4f46e5; border: 1px solid rgba(99,102,241,0.2); }
+  .vmatch-chip--mod   { background: rgba(14,165,233,0.08); color: #0284c7; border: 1px solid rgba(14,165,233,0.2); }
+  .vmatch-chip--route { background: #f1f5f9;               color: #475569; border: 1px solid #e2e8f0; }
 
-  /* ── States ────────────────── */
+  /* ── States ──────────────────────────────────────────────────────────────── */
   .vmatch-error {
     font-size: 0.78rem;
-    color: #fca5a5;
-    background: rgba(239,68,68,0.08);
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
     padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
+    border-radius: 8px;
+    font-weight: 600;
   }
   .vmatch-loading {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.8rem;
-    color: #64748b;
+    color: #64748b;   /* dark-on-white → readable */
     padding: 0.5rem 0;
   }
   .vmatch-empty {
     font-size: 0.78rem;
-    color: #64748b;
+    color: #64748b;   /* dark-on-white → readable */
     padding: 0.25rem 0;
   }
   .vmatch-empty a {
-    color: #38bdf8;
+    color: #6366f1;
     text-decoration: underline;
     cursor: pointer;
   }
+  .vmatch-empty a:hover { color: #4f46e5; }
 
-  /* ── Vendor list ───────────── */
+  /* ── Provider list ───────────────────────────────────────────────────────── */
   .vmatch-list {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
   .vmatch-item {
-    background: #1e293b;
-    border-radius: 0.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
     padding: 0.65rem 0.875rem;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    border: 1px solid transparent;
+    border: 1px solid #e2e8f0;
+    transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .vmatch-item:first-child { border-color: rgba(34,197,94,0.2); }
-  .vmatch-item--dim { opacity: 0.6; }
+  .vmatch-item:hover { border-color: #c7d2fe; box-shadow: 0 1px 4px rgba(99,102,241,0.08); }
+  .vmatch-item:first-child { border-color: #bbf7d0; background: #f0fdf4; }
+  .vmatch-item--dim { opacity: 0.55; }
 
   .vmatch-item__head {
     display: flex;
@@ -386,29 +404,27 @@
   .vmatch-company {
     font-weight: 700;
     font-size: 0.875rem;
-    color: #f1f5f9;
+    color: #0f172a;   /* dark on light-bg → high contrast */
     flex: 1;
   }
   .vmatch-site {
     font-size: 0.72rem;
-    color: #38bdf8;
+    color: #6366f1;
     text-decoration: none;
+    font-weight: 600;
   }
-  .vmatch-site:hover { text-decoration: underline; }
+  .vmatch-site:hover { text-decoration: underline; color: #4f46e5; }
 
   .vmatch-contact {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
     font-size: 0.78rem;
-    color: #94a3b8;
+    color: #475569;   /* dark on light-bg → readable */
   }
-  .vmatch-email {
-    color: #38bdf8;
-    text-decoration: none;
-  }
-  .vmatch-email:hover { text-decoration: underline; }
-  .vmatch-phone { color: #64748b; }
+  .vmatch-email { color: #6366f1; text-decoration: none; }
+  .vmatch-email:hover { text-decoration: underline; color: #4f46e5; }
+  .vmatch-phone { color: #94a3b8; }
 
   .vmatch-chips {
     display: flex;
@@ -418,19 +434,19 @@
 
   .vmatch-notes {
     font-size: 0.75rem;
-    color: #64748b;
+    color: #64748b;   /* dark on light-bg → readable */
     font-style: italic;
     line-height: 1.4;
     margin-top: 0.1rem;
   }
 
-  /* ── Spinner ───────────────── */
+  /* ── Spinner ─────────────────────────────────────────────────────────────── */
   .vmatch-spinner {
     display: inline-block;
     width: 12px;
     height: 12px;
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-top-color: #38bdf8;
+    border: 1.5px solid #e2e8f0;
+    border-top-color: #6366f1;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
