@@ -1784,9 +1784,82 @@ export async function resolveQuoteComment(
  * Quote approvers as a Set — sourced from the canonical `access.ts` list.
  * Using a Set preserves the `.has()` interface used by QuoteEditor.svelte.
  * Edit the list in `access.ts`; this export stays in sync automatically.
+ *
+ * NOTE: QUOTE_APPROVERS_EMAILS is kept as a STATIC FALLBACK.
+ * At runtime, canApproveQuotes (below) checks live Firestore data first.
  */
-import { QUOTE_APPROVERS as _QUOTE_APPROVERS } from './access.ts';
+import { QUOTE_APPROVERS as _QUOTE_APPROVERS, ADMIN_EMAILS as _ADMIN_EMAILS } from './access.ts';
 export const QUOTE_APPROVERS_EMAILS: ReadonlySet<string> = new Set(_QUOTE_APPROVERS);
+const _ADMIN_SET: ReadonlySet<string> = new Set(_ADMIN_EMAILS);
+
+// ─── Action-Level Permission System ──────────────────────────────────────────
+//
+// Stored in Firestore at  dashboard_config / action_permissions
+// Shape: { permissions: Record<email, Record<ActionKey, boolean>> }
+//
+// Backward compatibility:
+//   • liveActionPermissions starts as null (not yet fetched).
+//   • canApproveQuotes falls back to the static QUOTE_APPROVERS_EMAILS
+//     until Firestore data is loaded by any component calling
+//     fetchLiveActionPermissions().
+//   • Super-admins always get all permissions regardless of Firestore state.
+
+/**
+ * Writable store holding the live action-permissions map from Firestore.
+ * null  = not yet fetched (components should call fetchLiveActionPermissions()).
+ * {}    = fetched but empty (nobody has any special permissions configured yet).
+ */
+export const liveActionPermissions = writable<Record<string, Record<string, boolean>> | null>(null);
+
+/**
+ * Derived boolean: can the currently logged-in staff member approve quotes?
+ *
+ * Priority:
+ *   1. Super-admins (luisarmando, pablo) → always true
+ *   2. Live Firestore map loaded → use  permissions[email].can_approve_quotes
+ *   3. Firestore not loaded yet          → fall back to static QUOTE_APPROVERS list
+ */
+export const canApproveQuotes = derived(
+  [liveActionPermissions, authEmail],
+  ([$lap, $email]) => {
+    if (!$email) return false;
+    if (_ADMIN_SET.has($email)) return true;          // super-admins always can
+    if ($lap !== null) {
+      // Firestore data is loaded — use it as the single source of truth
+      return $lap[$email]?.can_approve_quotes === true;
+    }
+    // Firestore not fetched yet — fall back to static list (zero regression)
+    return QUOTE_APPROVERS_EMAILS.has($email);
+  },
+);
+
+/**
+ * Fetch the action-permissions config from the server.
+ * Readable by all authenticated staff (same policy as access-config).
+ * Returns null when the Firestore doc has never been saved (first run).
+ */
+export async function fetchLiveActionPermissions(): Promise<Record<string, Record<string, boolean>> | null> {
+  try {
+    const data = await apiFetch('/api/dashboard/admin/action-permissions');
+    return data?.permissions ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist the full action-permissions map to Firestore.
+ * Admin-only (enforced server-side).
+ * Shape: Record<email, Record<ActionKey, boolean>>
+ */
+export async function saveActionPermissions(
+  permissions: Record<string, Record<string, boolean>>,
+): Promise<void> {
+  await apiFetch('/api/dashboard/admin/action-permissions', {
+    method: 'PUT',
+    body: JSON.stringify({ permissions }),
+  });
+}
 
 
 /** Send an approved quote to the client via email. Returns the client-visible link. */

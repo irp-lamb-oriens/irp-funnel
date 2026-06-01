@@ -47,8 +47,8 @@ export const ADMIN_EMAILS: string[] = [
  * Quote approvers — staff who can approve / request-changes on cotizaciones.
  *
  * Source of truth for Phase 2 approval workflow.
- * Live override: Admin panel can set `quote_approvers` key in Firestore
- * dashboard_config/staff_access; that list takes precedence when present.
+ * Live override: Admin panel → Action Permissions tab → can_approve_quotes.
+ * That map takes precedence over this static list when present.
  *
  * Default (static): Marian, Pablo, and Luis.
  */
@@ -57,3 +57,37 @@ export const QUOTE_APPROVERS: string[] = [
   'pablo@internationalrelocationpartner.com',
   'luisarmando@internationalrelocationpartner.com',
 ];
+
+// ─── Granular Action Permission Keys ─────────────────────────────────────────
+//
+// Stored in Firestore at  dashboard_config / action_permissions
+// Shape: { permissions: Record<email, Record<ActionKey, boolean>> }
+//
+// Backward compatibility: when that doc is absent, the system falls back to
+// the STATIC_ACTION_PERMISSIONS seeds below — zero code breakage.
+
+/** Union of all action-level permission keys. Extend here as new gates are needed. */
+export type ActionKey = 'can_approve_quotes';
+
+/** Ordered list used for rendering permission tables in AdminView. */
+export const ALL_ACTION_KEYS: ActionKey[] = ['can_approve_quotes'];
+
+/** Human-readable label shown in the Admin UI. */
+export const ACTION_KEY_LABELS: Record<ActionKey, string> = {
+  can_approve_quotes: 'Aprobar cotizaciones',
+};
+
+/** One-line description shown as a tooltip / subtitle in the Admin UI. */
+export const ACTION_KEY_DESCRIPTIONS: Record<ActionKey, string> = {
+  can_approve_quotes:
+    'Puede aprobar o solicitar cambios en cotizaciones enviadas para aprobación.',
+};
+
+/**
+ * Static seed: which emails start with which action = true.
+ * Used to pre-populate the Admin UI when no Firestore doc has been saved yet.
+ * As soon as an admin saves, Firestore takes over completely.
+ */
+export const STATIC_ACTION_PERMISSIONS: Record<ActionKey, string[]> = {
+  can_approve_quotes: QUOTE_APPROVERS,
+};

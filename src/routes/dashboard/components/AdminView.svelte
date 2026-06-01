@@ -6,6 +6,9 @@
     saveAccessConfig,
     fetchAdminSessions,
     fetchUserActivity,
+    fetchLiveActionPermissions,
+    saveActionPermissions,
+    liveActionPermissions,
     type AdminSession,
     type UserActivityEntry,
   } from '../store.ts';
@@ -17,7 +20,7 @@
   } from '../access.ts';
 
   // ─── Tabs ─────────────────────────────────────────────────────────────────
-  let activeTab: 'access' | 'sessions' | 'activity' = 'access';
+  let activeTab: 'access' | 'sessions' | 'activity' | 'permissions' = 'access';
 
   // ─── Displayable view names (no 'admin' shown in the grid) ───────────────
   const GRID_VIEWS: DashView[] = ['board', 'list', 'metrics', 'evo', 'providers', 'posts'];
@@ -181,9 +184,80 @@
     return `${m}m`;
   }
 
+  // ─── Action Permissions State ─────────────────────────────────────────────
+  //
+  // Live action-permission grid: email → { can_approve_quotes: boolean, ... }
+  // Mirrors liveActionPermissions in store.ts. Admin edits here write through
+  // to Firestore via saveActionPermissions and update the shared reactive store.
+  //
+  // ACTION_KEYS enumerates every toggleable permission gate; add new entries
+  // here (and to canApproveQuotes etc. in store.ts) as new gates are created.
+  const ACTION_KEYS: Record<string, string> = {
+    can_approve_quotes: '✅ Approve Quotes',
+  };
+
+  let permMap: Map<string, Record<string, boolean>> = new Map();
+  let permSource: 'live' | 'empty' | 'loading' = 'loading';
+  let permSaving = false;
+  let permSaveMsg = '';
+  let permError = '';
+
+  async function loadPermissions() {
+    permSource = 'loading';
+    try {
+      const live = await fetchLiveActionPermissions();
+      const raw = live ?? {};
+      const map = new Map<string, Record<string, boolean>>();
+      // Seed from access map so every known staff member appears in the grid
+      for (const email of accessMap.keys()) {
+        map.set(email, { ...(raw[email] ?? {}) });
+      }
+      // Also include anyone who already has explicit permissions
+      for (const [email, perms] of Object.entries(raw)) {
+        if (!map.has(email)) map.set(email, { ...perms });
+      }
+      permMap = map;
+      permSource = live ? 'live' : 'empty';
+    } catch {
+      permSource = 'empty';
+    }
+  }
+
+  function togglePermission(email: string, key: string) {
+    const current = permMap.get(email) ?? {};
+    permMap.set(email, { ...current, [key]: !current[key] });
+    permMap = new Map(permMap);
+  }
+
+  async function handleSavePermissions() {
+    permSaving = true;
+    permSaveMsg = '';
+    permError = '';
+    try {
+      const serialised: Record<string, Record<string, boolean>> = {};
+      for (const [email, perms] of permMap.entries()) {
+        // Only persist rows that have at least one true permission
+        const hasAny = Object.values(perms).some(Boolean);
+        if (hasAny) serialised[email] = { ...perms };
+      }
+      await saveActionPermissions(serialised);
+      // Sync the shared reactive store immediately
+      liveActionPermissions.set(serialised);
+      permSource = 'live';
+      permSaveMsg = '✓ Action permissions saved — canApproveQuotes is now live for all users.';
+    } catch (err: any) {
+      permError = '✗ Save failed: ' + (err?.message ?? 'unknown error');
+    } finally {
+      permSaving = false;
+    }
+  }
+
   // ─── Init ──────────────────────────────────────────────────────────────────
   onMount(async () => {
     await Promise.all([loadConfig(), loadSessions()]);
+    // Permissions tab loads lazily when first opened — pre-warm here so
+    // the grid is ready before the user clicks the tab.
+    await loadPermissions();
   });
 
   $: tabSessions = sessions.filter(s => activeTab === 'sessions' || true);
@@ -234,6 +308,17 @@
 
   function activityIcon(type: string): string {
     return ACTION_ICONS[type] ?? '•';
+  }
+
+  /** Maps entry.type → a CSS category key for accent-colour theming */
+  function activityTypeCategory(type: string): string {
+    if (type === 'field_edit' || type === 'field_revert')     return 'edit';
+    if (type === 'stage_change')                               return 'stage';
+    if (type === 'email_triggered' || type === 'email_sent')  return 'email';
+    if (type === 'note_added')                                 return 'note';
+    if (type.startsWith('gemini') || type.startsWith('ai'))   return 'ai';
+    if (type === 'action_executed' || type === 'call_rescheduled' || type === 'pending_action_resolved') return 'action';
+    return 'default';
   }
 
   function activityLabel(entry: UserActivityEntry): string {
@@ -310,6 +395,13 @@
       on:click={() => (activeTab = 'activity')}
     >
       👣 Staff Activity
+    </button>
+    <button
+      class="admin-tab"
+      class:admin-tab--active={activeTab === 'permissions'}
+      on:click={() => { activeTab = 'permissions'; if (permSource === 'loading') loadPermissions(); }}
+    >
+      🛡️ Action Permissions
     </button>
   </div>
 
@@ -495,6 +587,98 @@
     </div>
   {/if}
 
+  <!-- ════════ ACTION PERMISSIONS TAB ════════ -->
+  <!--
+    Renders a checkbox grid:  email × ActionKey → boolean
+    Reads from the shared liveActionPermissions store (set in store.ts).
+    On save → PUT /api/dashboard/action-permissions (dashboardRouter.ts)
+               + liveActionPermissions.set(serialised)   ← reactive instantly
+    canApproveQuotes in store.ts re-evaluates automatically → QuoteEditor
+    shows/hides the Approve button without any page reload.
+  -->
+  {#if activeTab === 'permissions'}
+    <div class="admin-section">
+
+      {#if permSource === 'loading'}
+        <div class="admin-loading">Loading permissions…</div>
+      {:else}
+        <!-- Source indicator -->
+        <div class="config-source">
+          {#if permSource === 'live'}
+            <span class="badge badge--live">🟢 Live · Stored in Firestore</span>
+          {:else}
+            <span class="badge badge--static">🟡 No overrides saved — only static QUOTE_APPROVERS active</span>
+          {/if}
+          <span class="config-source__note">
+            Toggling a permission here updates the live store immediately for all open tabs after save.
+          </span>
+        </div>
+
+        <!-- Permissions grid: one row per staff member, one column per ActionKey -->
+        <div class="access-grid-wrapper">
+          <table class="access-grid perm-grid">
+            <thead>
+              <tr>
+                <th class="access-grid__email-col">Staff Email</th>
+                {#each Object.entries(ACTION_KEYS) as [key, label] (key)}
+                  <th class="access-grid__view-col perm-col-header" title={key}>{label}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each [...permMap.entries()] as [email, perms] (email)}
+                <tr class="access-row">
+                  <td class="access-grid__email-cell">
+                    <span class="email-tag">
+                      {email.split('@')[0]}
+                      <span class="email-tag__domain">@irp</span>
+                    </span>
+                  </td>
+                  {#each Object.keys(ACTION_KEYS) as key (key)}
+                    <td class="access-grid__check-cell">
+                      <button
+                        class="view-toggle"
+                        class:view-toggle--on={!!perms[key]}
+                        on:click={() => togglePermission(email, key)}
+                        title="{!!perms[key] ? 'Revoke' : 'Grant'} {ACTION_KEYS[key]} for {email}"
+                        aria-label="{ACTION_KEYS[key]}: {!!perms[key] ? 'granted' : 'revoked'}"
+                      >
+                        {!!perms[key] ? '✓' : '—'}
+                      </button>
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Save bar -->
+        {#if permSaveMsg}
+          <div class="save-msg save-msg--success">{permSaveMsg}</div>
+        {/if}
+        {#if permError}
+          <div class="save-msg save-msg--error">{permError}</div>
+        {/if}
+
+        <div class="save-bar">
+          <button class="save-btn" on:click={handleSavePermissions} disabled={permSaving}>
+            {permSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
+          </button>
+          <button class="reload-btn" on:click={loadPermissions} disabled={permSource === 'loading'}>
+            ↺ Reload
+          </button>
+        </div>
+
+        <p class="add-staff__hint" style="margin-top:0.6rem">
+          New permission gates (e.g. <code>can_send_quotes</code>) are added to
+          <code>ACTION_KEYS</code> in this file and to the corresponding <code>can*</code>
+          derived store in <code>store.ts</code> — zero Firestore schema migration needed.
+        </p>
+      {/if}
+    </div>
+  {/if}
+
   <!-- ════════ STAFF ACTIVITY TAB ════════ -->
   {#if activeTab === 'activity'}
     <div class="admin-section">
@@ -552,26 +736,29 @@
         <div class="activity-feed">
           {#each activityEntries as entry (entry._clientDocId + (entry.timestamp ?? Math.random()))}
             <div class="activity-entry">
-              <!-- LEFT: timeline connector -->
+              <!-- LEFT: timeline node + connector line -->
               <div class="activity-entry__connector">
-                <span class="activity-entry__icon">{activityIcon(entry.type)}</span>
+                <div class="activity-entry__icon-node">{activityIcon(entry.type)}</div>
                 <span class="activity-entry__line"></span>
               </div>
 
-              <!-- RIGHT: card -->
-              <div class="activity-entry__card">
+              <!-- RIGHT: premium card with type-specific accent border -->
+              <div class="activity-entry__card" data-atype={activityTypeCategory(entry.type)}>
                 <div class="activity-entry__top">
                   <span class="activity-entry__action">{activityLabel(entry)}</span>
                   <span class="activity-entry__ts">{formatActivityTs(entry.timestamp)}</span>
                 </div>
                 <div class="activity-entry__bottom">
                   <span class="activity-entry__client">
-                    <span class="activity-entry__client-icon">👤</span>
-                    {entry._clientDisplayName}
-                    <span class="activity-entry__client-email">({entry._clientEmail})</span>
+                    <span class="activity-entry__client-avatar">
+                      {entry._clientDisplayName?.slice(0,1)?.toUpperCase() ?? '?'}
+                    </span>
+                    <span class="activity-entry__client-name">{entry._clientDisplayName}</span>
+                    <span class="activity-entry__client-email">{entry._clientEmail}</span>
                   </span>
-                  <!-- Type chip -->
-                  <span class="activity-entry__type-chip">{entry.type.replace(/_/g,' ')}</span>
+                  <span class="activity-entry__type-chip" data-atype={activityTypeCategory(entry.type)}>
+                    {entry.type.replace(/_/g,' ')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -584,15 +771,16 @@
 
 <style>
   /* ─── Design tokens ──────────────────────────────────────────────────────── */
-  /* Root bg: #f8fafc | Card: #ffffff | Border: #e2e8f0 | Accent: #6366f1 */
+  /* Root bg: #f8fafc | Card: #ffffff | Border: #e2e8f0 | Accent: #02b5bb */
 
   /* ─── Root wrapper ───────────────────────────────────────────────────────── */
   .admin-view {
     padding: 2.5rem 2rem;
     max-width: 1140px;
     margin: 0 auto;
-    background: #f8fafc;
-    color: #0f172a;
+    background: var(--irp-bg, #fafbfc);
+    color: var(--irp-text, #181818);
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
     font-feature-settings: 'cv02','cv03','cv04','cv11';
   }
 
@@ -655,14 +843,14 @@
   }
 
   .admin-tab--active {
-    background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%);
-    color: #4f46e5;
-    border: 1px solid rgba(99,102,241,0.2);
-    box-shadow: 0 1px 3px rgba(99,102,241,0.12);
+    background: linear-gradient(135deg, rgba(2,181,187,0.12) 0%, rgba(139,92,246,0.08) 100%);
+    color: #02999e;
+    border: 1px solid rgba(2,181,187,0.20);
+    box-shadow: 0 1px 3px rgba(2,181,187,0.12);
   }
 
   .admin-tab__badge {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #02b5bb, #02999e);
     color: #fff;
     border-radius: 999px;
     font-size: 0.68rem;
@@ -778,10 +966,10 @@
   .access-row:hover { background: #fafbff; }
 
   .access-row--admin {
-    background: linear-gradient(90deg, rgba(99,102,241,0.05) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(2,181,187,0.06) 0%, transparent 100%);
   }
   .access-row--admin:hover {
-    background: linear-gradient(90deg, rgba(99,102,241,0.09) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(2,181,187,0.09) 0%, transparent 100%);
   }
 
   .access-row--self {
@@ -829,9 +1017,9 @@
   .admin-badge {
     font-size: 0.64rem;
     font-weight: 800;
-    background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
-    color: #4f46e5;
-    border: 1px solid rgba(99,102,241,0.25);
+    background: linear-gradient(135deg, rgba(2,181,187,0.12), rgba(139,92,246,0.08));
+    color: #02999e;
+    border: 1px solid rgba(2,181,187,0.25);
     border-radius: 5px;
     padding: 0.18em 0.55em;
     text-transform: uppercase;
@@ -961,8 +1149,8 @@
   }
 
   .add-staff__input-group:focus-within {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    border-color: rgba(2,181,187,0.48);
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.10);
   }
 
   .add-staff__input {
@@ -988,7 +1176,7 @@
   }
 
   .add-staff__btn {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #02b5bb, #02999e);
     color: #fff;
     border: none;
     padding: 0.52rem 1.1rem;
@@ -1023,7 +1211,7 @@
 
   .save-btn {
     padding: 0.6rem 1.5rem;
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
     border: none;
     border-radius: 10px;
     color: #fff;
@@ -1031,7 +1219,7 @@
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    box-shadow: 0 2px 8px rgba(2,181,187,0.30);
     transition:
       filter 0.14s cubic-bezier(0.4,0,0.2,1),
       transform 0.14s cubic-bezier(0.4,0,0.2,1),
@@ -1040,7 +1228,7 @@
   .save-btn:hover:not(:disabled) {
     filter: brightness(1.06);
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+    box-shadow: 0 4px 16px rgba(2,181,187,0.40);
   }
   .save-btn:active:not(:disabled) { transform: translateY(0); }
   .save-btn:disabled { opacity: 0.55; cursor: wait; }
@@ -1239,46 +1427,47 @@
     padding-right: 2.2rem;
   }
   .activity-select:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    border-color: rgba(2,181,187,0.48);
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.10);
   }
   .activity-select option { background: #ffffff; color: #0f172a; }
 
   .activity-count-badge {
     padding: 0.3em 0.9em;
-    background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.07));
-    border: 1px solid rgba(99,102,241,0.2);
+    background: linear-gradient(135deg, rgba(2,181,187,0.10), rgba(139,92,246,0.07));
+    border: 1px solid rgba(2,181,187,0.20);
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #4f46e5;
+    color: #02999e;
     letter-spacing: 0.03em;
     white-space: nowrap;
   }
 
-  /* ─── Activity timeline ──────────────────────────────────────────────────── */
+  /* ─── Activity timeline — ultra-premium ────────────────────────────────── */
   .activity-feed {
     display: flex;
     flex-direction: column;
-    gap: 0;
     max-height: 62vh;
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 0.125rem 0.5rem 0.25rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(2,181,187,0.18) transparent;
   }
-
   .activity-feed::-webkit-scrollbar { width: 4px; }
   .activity-feed::-webkit-scrollbar-track { background: transparent; }
   .activity-feed::-webkit-scrollbar-thumb {
-    background: rgba(99,102,241,0.2);
+    background: rgba(2,181,187,0.18);
     border-radius: 999px;
   }
+  .activity-feed:hover::-webkit-scrollbar-thumb { background: rgba(2,181,187,0.32); }
 
+  /* ── Each row ──────────────────────────────────────────────────────────── */
   .activity-entry {
     display: flex;
-    gap: 0.85rem;
-    min-height: 64px;
+    gap: 0.7rem;
     position: relative;
-    animation: entry-in 0.2s ease both;
+    animation: entry-in 0.18s cubic-bezier(0.4,0,0.2,1) both;
   }
 
   @keyframes entry-in {
@@ -1286,108 +1475,181 @@
     to   { opacity: 1; transform: translateX(0); }
   }
 
+  /* ── Timeline connector column ─────────────────────────────────────────── */
   .activity-entry__connector {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 28px;
+    width: 34px;
     flex-shrink: 0;
-    padding-top: 0.1rem;
+    padding-top: 0.15rem;
   }
 
-  .activity-entry__icon {
-    font-size: 1rem;
+  /* Premium icon node — circle with emoji inside */
+  .activity-entry__icon-node {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
     line-height: 1;
-    padding-top: 0.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.14s, box-shadow 0.14s;
+    position: relative;
+    z-index: 1;
+  }
+  .activity-entry:hover .activity-entry__icon-node {
+    border-color: rgba(2,181,187,0.22);
+    box-shadow: 0 2px 8px rgba(2,181,187,0.12);
   }
 
   .activity-entry__line {
     flex: 1;
-    width: 2px;
-    background: #e2e8f0;
-    margin: 0.3rem 0;
-    min-height: 16px;
+    width: 1.5px;
+    background: linear-gradient(to bottom, #e2e8f0 0%, rgba(226,232,240,0) 100%);
+    margin-top: 0.2rem;
+    min-height: 12px;
   }
-
   .activity-entry:last-child .activity-entry__line { display: none; }
 
+  /* ── Card ────────────────────────────────────────────────────────────────── */
   .activity-entry__card {
     flex: 1;
     background: #ffffff;
     border: 1px solid #e2e8f0;
+    border-left: 3px solid #e2e8f0;  /* overridden per [data-atype] */
     border-radius: 10px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.6rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.55rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.03);
     transition:
-      box-shadow 0.14s cubic-bezier(0.4,0,0.2,1),
-      border-color 0.14s cubic-bezier(0.4,0,0.2,1);
+      box-shadow    0.14s cubic-bezier(0.4,0,0.2,1),
+      transform     0.14s cubic-bezier(0.4,0,0.2,1),
+      border-color  0.14s cubic-bezier(0.4,0,0.2,1);
     cursor: default;
   }
   .activity-entry__card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-color: #cbd5e1;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 10px 28px rgba(0,0,0,0.04);
+    transform: translateX(2px);
   }
 
+  /* Type-specific left-border accents */
+  .activity-entry__card[data-atype="edit"]    { border-left-color: #8b5cf6; }
+  .activity-entry__card[data-atype="stage"]   { border-left-color: #f59e0b; }
+  .activity-entry__card[data-atype="email"]   { border-left-color: #0d9488; }
+  .activity-entry__card[data-atype="note"]    { border-left-color: #3b82f6; }
+  .activity-entry__card[data-atype="ai"]      { border-left-color: #02b5bb; }
+  .activity-entry__card[data-atype="action"]  { border-left-color: #10b981; }
+
+  /* ── Top row ─────────────────────────────────────────────────────────────── */
   .activity-entry__top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 0.5rem;
-    margin-bottom: 0.3rem;
-    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .activity-entry__action {
-    font-size: 0.84rem;
-    font-weight: 600;
+    font-size: 0.857rem;
+    font-weight: 700;
     color: #0f172a;
     line-height: 1.35;
+    letter-spacing: -0.01em;
   }
 
   .activity-entry__ts {
-    font-size: 0.73rem;
+    font-size: 0.69rem;
     color: #94a3b8;
     white-space: nowrap;
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 5px;
+    padding: 0.18em 0.52em;
+    line-height: 1.55;
+    margin-top: 0.06rem;
   }
 
+  /* ── Bottom row ──────────────────────────────────────────────────────────── */
   .activity-entry__bottom {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
     flex-wrap: wrap;
   }
 
+  /* Client pill: avatar + name + email */
   .activity-entry__client {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0.18em 0.65em 0.18em 0.28em;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .activity-entry__client:hover { background: #f1f5f9; border-color: rgba(2,181,187,0.22); }
+
+  /* Mini gradient avatar */
+  .activity-entry__client-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #02b5bb 0%, #8b5cf6 100%);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
   }
 
-  .activity-entry__client-icon { font-size: 0.7rem; }
+  .activity-entry__client-name {
+    font-weight: 600;
+    color: #334155;
+  }
 
   .activity-entry__client-email {
     color: #94a3b8;
-    font-family: 'SF Mono','Fira Code',monospace;
-    font-size: 0.68rem;
+    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 0.65rem;
+    opacity: 0.85;
   }
 
+  /* ── Type chip — colour-coded per category ───────────────────────────────── */
   .activity-entry__type-chip {
     margin-left: auto;
+    border-radius: 999px;
+    padding: 0.18em 0.65em;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    /* default */
     background: #f1f5f9;
     color: #64748b;
-    border-radius: 999px;
-    padding: 0.15em 0.6em;
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: none;
-    white-space: nowrap;
+    border-color: #e2e8f0;
   }
+  .activity-entry__type-chip[data-atype="edit"]   { background: #ede9fe; color: #7c3aed; border-color: #c4b5fd; }
+  .activity-entry__type-chip[data-atype="stage"]  { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+  .activity-entry__type-chip[data-atype="email"]  { background: #f0fdfa; color: #0d9488; border-color: #99f6e4; }
+  .activity-entry__type-chip[data-atype="note"]   { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+  .activity-entry__type-chip[data-atype="ai"]     { background: rgba(2,181,187,0.08); color: #02999e; border-color: rgba(2,181,187,0.22); }
+  .activity-entry__type-chip[data-atype="action"] { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
 
   /* ─── Scrollbar styling ──────────────────────────────────────────────────── */
   .access-grid-wrapper::-webkit-scrollbar,
@@ -1396,7 +1658,7 @@
   .sessions-table-wrapper::-webkit-scrollbar-track { background: transparent; }
   .access-grid-wrapper::-webkit-scrollbar-thumb,
   .sessions-table-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(99,102,241,0.2);
+    background: rgba(2,181,187,0.20);
     border-radius: 999px;
   }
 </style>
