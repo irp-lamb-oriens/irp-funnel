@@ -115,13 +115,26 @@
     providerSearchLoading = true;
     try {
       const token = get(authToken);
-      const url = `${getApiUrl()}/api/dashboard/providers?search=${encodeURIComponent(q)}`;
+      // Fetch all providers; filter client-side so a missing ?search= param
+      // doesn't silently return 0 results on the server.
+      const url = `${getApiUrl()}/api/dashboard/providers`;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-dashboard-token'] = token;
       const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      providerSearchResults = (data.providers ?? data ?? []).slice(0, 10);
+      const qLower = q.toLowerCase();
+      providerSearchResults = (data.providers ?? data ?? [])
+        .filter((p: any) => p.name?.toLowerCase().includes(qLower))
+        .slice(0, 10)
+        .map((p: any) => ({
+          id: p.id,
+          name: p.name ?? '',
+          // Normalize to the flat fields QuoteEditor template expects
+          country:         (p.originRegions?.[0] ?? p.destinationRegions?.[0] ?? ''),
+          modality:        (p.shippingModalities?.[0] ?? ''),
+          serviceCategory: (p.serviceCategories?.[0] ?? ''),
+        }));
     } catch (err: any) {
       providerSearchResults = [];
     } finally {

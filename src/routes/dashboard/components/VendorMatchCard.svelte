@@ -22,15 +22,15 @@
 
   interface MatchedVendor {
     id: string;
-    companyName: string;
-    contactName: string;
+    name: string;
+    contactPerson?: string;
     email: string;
     phone?: string;
     website?: string;
     serviceCategories: ServiceCategory[];
     shippingModalities: VendorShippingModality[];
-    originCountries: string[];
-    destinationCountries: string[];
+    originRegions?: string[];
+    destinationRegions?: string[];
     notes?: string;
     active: boolean;
     _matchScore: number;
@@ -40,7 +40,8 @@
     packingTier: string | null;
     shippingMode: string | null;
     wantedCategory: string | null;
-    effectiveModality: string | null;
+    /** renamed from effectiveModality in the new providers/match endpoint */
+    wantedModality: string | null;
     originCountry: string | null;
     destinationCountry: string | null;
   }
@@ -83,7 +84,7 @@
     error = '';
     try {
       const token = get(authToken);
-      const res = await fetch(`${getApiUrl()}/api/vendors/match/${clientId}`, {
+      const res = await fetch(`${getApiUrl()}/api/dashboard/providers/match/${clientId}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'x-dashboard-token': token } : {}),
@@ -91,7 +92,7 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-      vendors = data.vendors || [];
+      vendors = data.providers || [];
       clientContext = data.clientContext || null;
       hasFetched = true;
     } catch (err: any) {
@@ -147,15 +148,15 @@
   {#if isOpen}
     <div class="vmatch-body">
 
-      {#if clientContext && (clientContext.wantedCategory || clientContext.effectiveModality)}
+      {#if clientContext && (clientContext.wantedCategory || clientContext.wantedModality)}
         <div class="vmatch-context">
           <span class="vmatch-context__label">Matching for:</span>
           {#if clientContext.wantedCategory}
             {@const cat = SERVICE_CATEGORY_LABEL[clientContext.wantedCategory as ServiceCategory]}
             {#if cat}<span class="vmatch-chip vmatch-chip--cat">{cat.icon} {cat.label}</span>{/if}
           {/if}
-          {#if clientContext.effectiveModality}
-            {@const mod = MODALITY_LABEL[clientContext.effectiveModality as VendorShippingModality]}
+          {#if clientContext.wantedModality}
+            {@const mod = MODALITY_LABEL[clientContext.wantedModality as VendorShippingModality]}
             {#if mod}<span class="vmatch-chip vmatch-chip--mod">{mod.icon} {mod.label}</span>{/if}
           {/if}
           {#if clientContext.originCountry || clientContext.destinationCountry}
@@ -190,7 +191,7 @@
                   style="background: {scoreColor(v._matchScore)}"
                   title="Match score: {v._matchScore}/6"
                 ></span>
-                <span class="vmatch-company">{v.companyName}</span>
+                <span class="vmatch-company">{v.name}</span>
                 {#if v.website}
                   <a
                     class="vmatch-site"
@@ -203,7 +204,7 @@
 
               <!-- Contact -->
               <div class="vmatch-contact">
-                <span>{v.contactName}</span>
+                <span>{v.contactPerson || ''}</span>
                 <a href="mailto:{v.email}" class="vmatch-email">{v.email}</a>
                 {#if v.phone}<span class="vmatch-phone">{v.phone}</span>{/if}
               </div>
