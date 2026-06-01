@@ -957,7 +957,6 @@
     border-radius: 10px;
     overflow: hidden;
     flex: 1;
-    max-width: 360px;
     transition: border-color 0.14s cubic-bezier(0.4,0,0.2,1), box-shadow 0.14s cubic-bezier(0.4,0,0.2,1);
   }
 
