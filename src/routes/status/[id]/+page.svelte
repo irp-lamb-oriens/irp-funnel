@@ -310,6 +310,36 @@
         </div>
       </header>
 
+          <!-- ── CONSULTATION CALL BANNER ─────────────────────────────────── -->
+          <!-- Shown whenever a consultation is scheduled; highlights the       -->
+          <!-- portal as the client's central hub and offers a direct join CTA  -->
+          <!-- when a Google Meet link (hangoutLink / meetCode) is present.     -->
+          {#if $project.scheduling && $project.scheduling.length > 0}
+            <section class="cp-call-banner">
+              <div class="cp-call-banner__inner">
+                <div class="cp-call-banner__info">
+                  <span class="cp-call-banner__eyebrow">📅 Upcoming Consultation</span>
+                  <h2 class="cp-call-banner__title">Your consultation call is scheduled</h2>
+                  <p class="cp-call-banner__time">{formatDateTime($project.scheduling[0])}</p>
+                  <p class="cp-call-banner__subtitle">
+                    This is your <strong>Relocation Portal</strong> — your central hub throughout your entire international move.
+                  </p>
+                </div>
+                {#if $project.hangoutLink || $project.meetCode}
+                  <a
+                    href={$project.hangoutLink || `https://meet.google.com/${$project.meetCode}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="cp-call-banner__join-btn"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                    Join Consultation Call
+                  </a>
+                {/if}
+              </div>
+            </section>
+          {/if}
+
           <!-- PIPELINE STAGE + INLINE COMMENTS ────────────────────────────── -->
           <section class="cp-dashboard__pipeline">
             <h3>Current Status</h3>
@@ -585,6 +615,93 @@
   :global(.stepper) {
     padding-bottom: 0.5rem;
     overflow: visible;
+  }
+
+  /* ── Consultation Call Banner ────────────────────────────────────────── */
+  :global(.cp-call-banner) {
+    margin: 0 var(--cp-h-pad, 1.5rem) 0;
+    background: linear-gradient(135deg, #020d10 0%, #062028 60%, #04181f 100%);
+    border: 1px solid rgba(2, 182, 188, 0.28);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    box-shadow:
+      0 4px 32px rgba(0,0,0,0.35),
+      0 0 0 1px rgba(2,182,188,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  :global(.cp-call-banner__inner) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  :global(.cp-call-banner__info) {
+    flex: 1;
+    min-width: 0;
+  }
+  :global(.cp-call-banner__eyebrow) {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #02b6bc;
+    margin-bottom: 0.45rem;
+  }
+  :global(.cp-call-banner__title) {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #f8fafc;
+    margin: 0 0 0.25rem;
+    line-height: 1.3;
+  }
+  :global(.cp-call-banner__time) {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(2,182,188,0.9);
+    margin: 0 0 0.5rem;
+  }
+  :global(.cp-call-banner__subtitle) {
+    font-size: 0.82rem;
+    color: rgba(248,250,252,0.55);
+    margin: 0;
+    line-height: 1.5;
+  }
+  :global(.cp-call-banner__subtitle strong) {
+    color: rgba(248,250,252,0.85);
+    font-weight: 700;
+  }
+  :global(.cp-call-banner__join-btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    background: #02b6bc;
+    color: #020d10;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.875rem;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 16px rgba(2,182,188,0.35);
+    transition: background 0.18s ease, transform 0.16s ease, box-shadow 0.18s ease;
+  }
+  :global(.cp-call-banner__join-btn:hover) {
+    background: #01d4db;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 24px rgba(2,182,188,0.5);
+  }
+  @media (max-width: 520px) {
+    :global(.cp-call-banner__inner) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    :global(.cp-call-banner__join-btn) {
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   /* ── Lily FAB ─────────────────────────────────────────────────────────── */
