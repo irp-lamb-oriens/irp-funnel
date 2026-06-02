@@ -639,8 +639,10 @@ export const clientsByStage = derived(filteredClients, ($filtered) => {
 
   for (const c of $filtered) {
     const stage = c.stage || 'sales_opt_in_email';
-    if (grouped[stage]) grouped[stage].push(c);
-    else grouped['sales_opt_in_email'].push(c);
+    // Create the bucket on demand if the stage isn't in STAGE_LABELS yet
+    // (prevents unknown-stage clients silently falling into sales_opt_in_email).
+    if (!grouped[stage]) grouped[stage] = [];
+    grouped[stage].push(c);
   }
   return grouped;
 });
