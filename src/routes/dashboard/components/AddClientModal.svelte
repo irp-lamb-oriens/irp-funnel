@@ -2,9 +2,14 @@
   import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
   import { authToken, getApiUrl } from '../store.ts';
   import type { ClientFieldExtraction } from '../../../lib/voice/extractClientFields.js';
+  import AvailabilityPicker from '../../../components/systems/inputs/AvailabilityPicker/AvailabilityPicker.svelte';
 
 
   const dispatch = createEventDispatcher<{ created: { docId: string }; close: void }>();
+
+  // ── Scheduling slot + post-booking success state ─────────────────────
+  let selectedSlot = '';
+  let successData: Record<string, any> | null = null;
 
   // Canonical API base — localhost:8000 in dev, irp-funnel-server.onrender.com
   // in prod. Shared with the rest of the dashboard via store.ts/getApiUrl().
@@ -398,6 +403,7 @@
           immigrationStatus: getField('immigrationStatus').trim(), notes: getField('notes').trim(),
           voiceTranscript: rawTranscript || undefined,
           customFields: Object.keys(cf).length ? cf : undefined,
+          startISO: selectedSlot || undefined,
         }),
       });
       if (!res.ok) {
@@ -405,7 +411,12 @@
         throw new Error((e as any).error || 'Failed to create client.');
       }
       const data = await res.json();
-      dispatch('created', { docId: data.docId });
+      if (data.hangoutLink) {
+        // Call was booked — show success panel with the Meet link before closing.
+        successData = data;
+      } else {
+        dispatch('created', { docId: data.docId });
+      }
     } catch (err: any) {
       submitError = (err as Error).message;
     } finally {
@@ -611,6 +622,28 @@
     {#if step === 'review'}
       <div class="review-wrap">
 
+        {#if successData}
+          <!-- ── Booking success panel ─────────────────────────────── -->
+          <div class="acm-success">
+            <div class="acm-success-icon">✅</div>
+            <h3 class="acm-success-title">Client Created + Call Booked!</h3>
+            {#if successData.hangoutLink}
+              <a class="acm-meet-link" href={successData.hangoutLink} target="_blank" rel="noopener noreferrer">
+                🎥 Open Google Meet
+              </a>
+              {#if successData.htmlLink}
+                <a class="acm-cal-link" href={successData.htmlLink} target="_blank" rel="noopener noreferrer">
+                  📅 View Calendar Event
+                </a>
+              {/if}
+            {/if}
+            <button class="btn-done" type="button"
+              on:click={() => dispatch('created', { docId: successData?.docId })}>
+              Done — Open Client Card
+            </button>
+          </div>
+        {:else}
+
         <div class="review-header">
           <div>
             <h2>Review &amp; Create</h2>
@@ -696,6 +729,27 @@
 
         </div><!-- .review-body -->
 
+        <!-- ── Schedule a call (optional) ──────────────────────────────── -->
+        <div class="acm-schedule-section">
+          <p class="acm-schedule-label">
+            📅 Schedule a consultation call
+            <span class="acm-schedule-optional">(optional)</span>
+          </p>
+          <AvailabilityPicker
+            theme="light"
+            slotTheme="light"
+            onSelect={(iso) => { selectedSlot = iso; }}
+          />
+          {#if selectedSlot}
+            <p class="acm-slot-preview">
+              ✓ {new Date(selectedSlot).toLocaleString('en-US', {
+                weekday: 'short', month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit', timeZone: 'America/Costa_Rica',
+              })} (CR time)
+            </p>
+          {/if}
+        </div>
+
         <div class="review-footer">
           {#if submitError}<div class="rfoot-error">{submitError}</div>{/if}
           <button class="btn-back"
@@ -705,17 +759,19 @@
           <button class="btn-create" on:click={handleSubmit}
             disabled={submitting || !getField('email').trim()}>
             {#if submitting}
-              <span class="btn-spin"></span><span>Creating…</span>
+              <span class="btn-spin"></span>
+              <span>{selectedSlot ? 'Creating + Booking…' : 'Creating…'}</span>
             {:else}
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2"
                       stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <span>Create Client</span>
+              <span>{selectedSlot ? 'Create Client + Book Call' : 'Create Client'}</span>
             {/if}
           </button>
         </div>
 
+        {/if}
       </div>
     {/if}
 
@@ -1074,4 +1130,88 @@
     border-radius:50%; animation:btn-rotate .65s linear infinite; flex-shrink:0;
   }
   @keyframes btn-rotate { to{transform:rotate(360deg)} }
+  /* ── Scheduling section (Review & Create step) ────────────────────── */
+  .acm-schedule-section {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #f1f5f9;
+  }
+  .acm-schedule-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    margin: 0 0 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .acm-schedule-optional {
+    font-weight: 400;
+    color: #94a3b8;
+    font-style: italic;
+  }
+  .acm-slot-preview {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #02b5bb;
+  }
+
+  /* ── Booking success panel ─────────────────────────────────────────── */
+  .acm-success {
+    padding: 2.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    text-align: center;
+  }
+  .acm-success-icon { font-size: 2.5rem; }
+  .acm-success-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+  }
+  .acm-meet-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: #02b5bb;
+    color: #fff;
+    transition: background 0.15s;
+    &:hover { background: #019fa4; }
+  }
+  .acm-cal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: #f1f5f9;
+    color: #334155;
+    transition: background 0.15s;
+    &:hover { background: #e2e8f0; }
+  }
+  .btn-done {
+    margin-top: 0.25rem;
+    padding: 0.55rem 1.5rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    &:hover { background: #f8fafc; }
+  }
 </style>
