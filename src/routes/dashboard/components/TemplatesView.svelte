@@ -216,7 +216,7 @@
 
   // ─── Save / Delete ────────────────────────────────────────────────────────────
   async function handleSave() {
-    if (!editName.trim()) { saveError = 'El nombre del template es obligatorio.'; return; }
+    if (!editName.trim()) { saveError = 'Template name is required.'; return; }
     saving = true;
     saveMsg = '';
     saveError = '';
@@ -232,7 +232,7 @@
         await loadTemplates();
         // Refresh selectedTemplate reference
         selectedTemplate = templates.find(t => t.templateId === selectedTemplate!.templateId) ?? null;
-        saveMsg = `✓ Template "${editName.trim()}" guardado.`;
+        saveMsg = `✓ Template "${editName.trim()}" saved.`;
       }
       editing = false;
     } catch (err: any) {
@@ -244,7 +244,7 @@
 
   async function handleDelete() {
     if (!selectedTemplate) return;
-    if (!confirm(`¿Eliminar el template "${selectedTemplate.name}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`Delete template "${selectedTemplate.name}"? This action cannot be undone.`)) return;
     try {
       await deleteQuoteTemplate(selectedTemplate.templateId);
       selectedTemplate = null;
@@ -268,7 +268,7 @@
   }
 
   async function handleCreateNew() {
-    if (!newName.trim()) { saveError = 'El nombre del template es obligatorio.'; return; }
+    if (!newName.trim()) { saveError = 'Template name is required.'; return; }
     saving = true;
     saveMsg = '';
     saveError = '';
@@ -284,7 +284,7 @@
       creatingNew = false;
       // Auto-enter edit mode so the user can start adding blocks immediately
       startEdit();
-      saveMsg = `✓ Template "${created.name}" creado. Ahora agregá bloques.`;
+      saveMsg = `✓ Template "${created.name}" created. Now add some blocks.`;
     } catch (err: any) {
       saveError = '✗ ' + (err?.message ?? 'Create failed');
     } finally {
@@ -367,30 +367,30 @@
     {#if creatingNew}
       <div class="tv-panel">
         <div class="tv-panel__header">
-          <h3 class="tv-panel__title">✨ Nuevo Template</h3>
+          <h3 class="tv-panel__title">✨ New Template</h3>
           <button class="tv-btn tv-btn--ghost" on:click={() => { creatingNew = false; saveMsg = ''; saveError = ''; }}>Cancel</button>
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Nombre <span class="tv-required">*</span></label>
-          <input class="tv-input" bind:value={newName} placeholder="Ej.: Costa Rica — Standard FCL" />
+          <label class="tv-label">Name <span class="tv-required">*</span></label>
+          <input class="tv-input" bind:value={newName} placeholder="e.g. Costa Rica — Standard FCL" />
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Categoría</label>
-          <input class="tv-input" bind:value={newCategory} placeholder="Ej.: costa-rica, mexico-container…" />
+          <label class="tv-label">Category</label>
+          <input class="tv-input" bind:value={newCategory} placeholder="e.g. costa-rica, mexico-container…" />
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Descripción</label>
-          <textarea class="tv-textarea tv-textarea--sm" bind:value={newDescription} placeholder="Describe cuándo usar este template…" rows="2"></textarea>
+          <label class="tv-label">Description</label>
+          <textarea class="tv-textarea tv-textarea--sm" bind:value={newDescription} placeholder="Describe when to use this template…" rows="2"></textarea>
         </div>
 
         {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
 
         <div class="tv-save-bar">
           <button class="tv-btn tv-btn--primary" on:click={handleCreateNew} disabled={saving}>
-            {saving ? 'Creando…' : '✓ Crear Template'}
+            {saving ? 'Creating…' : '✓ Create Template'}
           </button>
         </div>
       </div>
@@ -399,11 +399,11 @@
     {:else if !selectedTemplate}
       <div class="tv-placeholder">
         <span class="tv-placeholder__icon">📄</span>
-        <p>Seleccioná un template de la lista o<br>creá uno nuevo con el botón <strong>+ New</strong>.</p>
+        <p>Select a template from the list or<br>create a new one with the <strong>+ New</strong> button.</p>
         <p class="tv-placeholder__hint">
-          Los templates son bloques de contenido reutilizables para propuestas tipo Qwilr.<br>
-          Se aplican sobre una cotización (quote) desde el QuoteEditor.
-        </p>
+            Templates are reusable content blocks for Qwilr-style proposals.<br>
+            They are applied to a quote from the QuoteEditor.
+          </p>
       </div>
 
     <!-- ── Edit Mode ────────────────────────────────────────────────────────── -->
@@ -412,7 +412,7 @@
         <div class="tv-panel__header">
           <div class="tv-panel__titles">
             <input class="tv-input tv-input--title" bind:value={editName} placeholder="Template name…" />
-            <input class="tv-input tv-input--sub" bind:value={editCategory} placeholder="Category (opcional)" />
+            <input class="tv-input tv-input--sub" bind:value={editCategory} placeholder="Category (optional)" />
           </div>
           <div class="tv-panel__actions">
             <button class="tv-btn tv-btn--ghost" on:click={cancelEdit} disabled={saving}>Cancel</button>
@@ -426,19 +426,19 @@
         {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
 
         <div class="tv-form-group">
-          <label class="tv-label">Descripción</label>
-          <input class="tv-input" bind:value={editDescription} placeholder="Descripción opcional…" />
+          <label class="tv-label">Description</label>
+          <input class="tv-input" bind:value={editDescription} placeholder="Optional description…" />
         </div>
 
         <!-- ── Block list ────────────────────────────────────────────────────── -->
         <div class="tv-blocks-section">
           <div class="tv-blocks-section__header">
-            <span class="tv-label">Bloques ({editBlocks.length})</span>
-            <span class="tv-blocks-section__hint">Arrastrá para reordenar · Los bloques se renderizan en orden en el status page</span>
+            <span class="tv-label">Blocks ({editBlocks.length})</span>
+            <span class="tv-blocks-section__hint">Drag to reorder · Blocks render in order on the status page</span>
           </div>
 
           {#if editBlocks.length === 0}
-            <div class="tv-blocks-empty">No hay bloques. Agregá uno desde el panel de abajo.</div>
+            <div class="tv-blocks-empty">No blocks yet. Add one from the panel below.</div>
           {:else}
             <div class="tv-blocks-list">
               {#each editBlocks as block, i (block.id)}
@@ -530,7 +530,7 @@
                     <div class="tv-block-card__body tv-block-card__body--info">
                       <span class="tv-block-card__auto-label">
                         {#if block.type === 'quoteTable'}📊 Renders the quote's line-items table automatically.{/if}
-                        {#if block.type === 'accept'}✅ Renders the "Aceptar cotización" CTA automatically.{/if}
+                        {#if block.type === 'accept'}✅ Renders the "Accept quote" CTA automatically.{/if}
                         {#if block.type === 'testimonials' || block.type === 'reviews' || block.type === 'partners'}🔧 Phase 3 block — renders as placeholder until implemented.{/if}
                       </span>
                     </div>
@@ -543,7 +543,7 @@
 
         <!-- ── Add Block Palette ──────────────────────────────────────────────── -->
         <div class="tv-palette">
-          <span class="tv-label">+ Agregar Bloque</span>
+          <span class="tv-label">+ Add Block</span>
           <div class="tv-palette__grid">
             {#each BLOCK_TYPES as bt (bt.type)}
               <button
@@ -590,7 +590,7 @@
 
         <!-- Block summary list -->
         {#if selectedTemplate.blocks.length === 0}
-          <div class="tv-blocks-empty">Este template no tiene bloques. Hacé click en Edit para añadir.</div>
+          <div class="tv-blocks-empty">This template has no blocks. Click Edit to add some.</div>
         {:else}
           <div class="tv-preview-list">
             {#each selectedTemplate.blocks as block, i (block.id)}
@@ -609,7 +609,7 @@
         {/if}
 
         <div class="tv-apply-hint">
-          💡 Para aplicar este template a una cotización, abrí el <strong>QuoteEditor</strong> → botón <em>"Usar Template"</em>.
+          💡 To apply this template to a quote, open the <strong>QuoteEditor</strong> → <em>"Use Template"</em> button.
         </div>
       </div>
     {/if}

@@ -102,7 +102,7 @@
       providerSnapshots = [...(q.providerSnapshots ?? [])];
       if (lineItems.length === 0) addLine();
     } catch (err: any) {
-      errorMsg = 'Error al cargar cotización: ' + (err?.message ?? err);
+      errorMsg = 'Error loading quote: ' + (err?.message ?? err);
     } finally {
       loadingQuote = false;
     }
@@ -183,7 +183,7 @@
 
   // ── Save ───────────────────────────────────────────────────────────────────
   async function handleSave() {
-    if (!title.trim()) { errorMsg = 'El título es obligatorio.'; return; }
+    if (!title.trim()) { errorMsg = 'Title is required.'; return; }
     saving = true;
     errorMsg = '';
     try {
@@ -204,7 +204,7 @@
       }
       dispatch('saved');
     } catch (err: any) {
-      errorMsg = 'Error al guardar: ' + (err?.message ?? err);
+      errorMsg = 'Error saving: ' + (err?.message ?? err);
     } finally {
       saving = false;
     }
@@ -220,7 +220,7 @@
       // Reload quote to reflect new status
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      errorMsg = e.message ?? 'Error al enviar para aprobación';
+      errorMsg = e.message ?? 'Error submitting for approval';
     } finally {
       saving = false;
     }
@@ -234,7 +234,7 @@
       await approveQuote(clientId, quote.quoteId);
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      errorMsg = e.message ?? 'Error al aprobar';
+      errorMsg = e.message ?? 'Error approving quote';
     } finally {
       saving = false;
     }
@@ -250,7 +250,7 @@
       showChangesRequest = false;
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      errorMsg = e.message ?? 'Error al solicitar cambios';
+      errorMsg = e.message ?? 'Error requesting changes';
     } finally {
       saving = false;
     }
@@ -265,7 +265,7 @@
       newCommentText = '';
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      errorMsg = e.message ?? 'Error al agregar comentario';
+      errorMsg = e.message ?? 'Error adding comment';
     } finally {
       saving = false;
     }
@@ -279,7 +279,7 @@
       await resolveQuoteComment(clientId, quote.quoteId, commentId);
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      errorMsg = e.message ?? 'Error al resolver comentario';
+      errorMsg = e.message ?? 'Error resolving comment';
     } finally {
       saving = false;
     }
@@ -294,7 +294,7 @@
       sentLink = result.statusPageUrl;
       if (quoteId) quote = await fetchQuote(clientId, quoteId);
     } catch (e: any) {
-      error = e.message ?? 'Error al enviar al cliente';
+      error = e.message ?? 'Error sending to client';
     } finally {
       saving = false;
     }
@@ -311,41 +311,41 @@
 
 <div class="quote-editor">
   <div class="quote-editor__header">
-    <h3 class="quote-editor__title">{quoteId ? 'Editar Cotización' : 'Nueva Cotización'}</h3>
+    <h3 class="quote-editor__title">{quoteId ? 'Edit Quote' : 'New Quote'}</h3>
   </div>
 
   {#if loadingQuote}
     <div class="quote-editor__loading">
       <div class="qe-spinner"></div>
-      <span>Cargando…</span>
+      <span>Loading…</span>
     </div>
   {:else}
     <div class="quote-editor__body">
 
       <!-- Title -->
       <div class="qe-field">
-        <label class="qe-label" for="qe-title">Título <span class="qe-required">*</span></label>
+        <label class="qe-label" for="qe-title">Title <span class="qe-required">*</span></label>
         <input
           id="qe-title"
           class="qe-input"
           type="text"
-          placeholder="Cotización Inicial"
+          placeholder="Initial Quote"
           bind:value={title}
         />
       </div>
 
       <!-- Line items -->
       <div class="qe-field">
-        <label class="qe-label">Líneas de cotización</label>
+        <label class="qe-label">Quote line items</label>
         {#if lineItems.length > 0}
           <div class="qe-lines-wrap">
             <table class="qe-lines-table">
               <thead>
                 <tr>
-                  <th>Descripción</th>
-                  <th class="qe-th-num">Monto</th>
-                  <th>Moneda</th>
-                  <th>Notas</th>
+                  <th>Description</th>
+                  <th class="qe-th-num">Amount</th>
+                  <th>Currency</th>
+                  <th>Notes</th>
                   <th></th>
                 </tr>
               </thead>
@@ -356,7 +356,7 @@
                       <input
                         class="qe-input qe-input--sm"
                         type="text"
-                        placeholder="Descripción"
+                        placeholder="Description"
                         value={li.label}
                         on:input={(e) => updateLine(li.lineId, 'label', (e.target as HTMLInputElement).value)}
                       />
@@ -388,7 +388,7 @@
                       <input
                         class="qe-input qe-input--sm"
                         type="text"
-                        placeholder="Nota opcional"
+                        placeholder="Optional note"
                         value={li.notes ?? ''}
                         on:input={(e) => updateLine(li.lineId, 'notes', (e.target as HTMLInputElement).value || null)}
                       />
@@ -397,7 +397,7 @@
                       <button
                         type="button"
                         class="qe-del-btn"
-                        title="Eliminar línea"
+                        title="Remove line"
                         on:click={() => removeLine(li.lineId)}
                       >✕</button>
                     </td>
@@ -408,19 +408,19 @@
           </div>
         {/if}
         <button type="button" class="qe-add-line-btn" on:click={addLine}>
-          + Agregar línea
+          + Add line
         </button>
       </div>
 
       <!-- Total display -->
       <div class="qe-field qe-field--total">
-        <span class="qe-label">Total estimado</span>
+        <span class="qe-label">Estimated total</span>
         <span class="qe-total">{totalBuckets.length ? formatTotalsLine(totalBuckets) : formatTotal(total)}</span>
       </div>
 
       <!-- Provider search -->
       <div class="qe-field">
-        <label class="qe-label" for="qe-prov-search">Proveedores (opcional)</label>
+        <label class="qe-label" for="qe-prov-search">Providers (optional)</label>
 
         <!-- Selected providers as tags -->
         {#if providerSnapshots.length > 0}
@@ -439,12 +439,12 @@
             id="qe-prov-search"
             class="qe-input"
             type="text"
-            placeholder="Buscar proveedor…"
+            placeholder="Search provider…"
             bind:value={providerSearchQuery}
             on:input={onProviderSearchInput}
           />
           {#if providerSearchLoading}
-            <span class="qe-provider-searching">Buscando…</span>
+            <span class="qe-provider-searching">Searching…</span>
           {/if}
           {#if providerSearchResults.length > 0}
             <div class="qe-provider-results">
@@ -466,11 +466,11 @@
 
       <!-- Notes -->
       <div class="qe-field">
-        <label class="qe-label" for="qe-notes">Nota interna</label>
+        <label class="qe-label" for="qe-notes">Internal note</label>
         <textarea
           id="qe-notes"
           class="qe-textarea"
-          placeholder="Nota interna…"
+          placeholder="Internal note…"
           rows="3"
           bind:value={notes}
         ></textarea>
@@ -486,7 +486,7 @@
         <div class="approval-section">
           <!-- Status banner -->
           <div class="status-banner status-{quote.status}">
-            <strong>Estado:</strong>
+            <strong>Status:</strong>
             {QUOTE_STATUS_LABEL[quote.status]?.label ?? quote.status}
             {#if quote.status === 'approved'}<span class="check">✓</span>{/if}
           </div>
@@ -495,24 +495,24 @@
           <!-- canApproveQuotes: uses live Firestore data when loaded, falls back to static QUOTE_APPROVERS list -->
           {#if quote.status === 'pending_approval' && $authEmail && $canApproveQuotes}
             <div class="approver-actions">
-              <p class="approver-hint">Sos aprobador/a — podés aprobar o pedir cambios:</p>
+              <p class="approver-hint">You're an approver — you can approve or request changes:</p>
               <div class="btn-row">
                 <button class="btn-approve" on:click={handleApprove} disabled={saving}>
-                  ✅ Aprobar cotización
+                  ✅ Approve quote
                 </button>
                 <button class="btn-changes" on:click={() => showChangesRequest = true} disabled={saving}>
-                  ✏️ Pedir cambios
+                  ✏️ Request changes
                 </button>
               </div>
               {#if showChangesRequest}
                 <div class="changes-request-box">
-                  <textarea bind:value={changesComment} placeholder="Describí qué cambios se necesitan..." rows="3"></textarea>
+                  <textarea bind:value={changesComment} placeholder="Describe what changes are needed..." rows="3"></textarea>
                   <div class="btn-row">
                     <button class="btn-changes" on:click={handleRequestChanges} disabled={!changesComment.trim() || saving}>
-                      Enviar solicitud de cambios
+                      Submit change request
                     </button>
                     <button class="btn-cancel-small" on:click={() => { showChangesRequest = false; changesComment = ''; }}>
-                      Cancelar
+                      Cancel
                     </button>
                   </div>
                 </div>
@@ -523,10 +523,10 @@
           <!-- Submit for approval button (visible to all when draft or changes_requested) -->
           {#if quote.status === 'draft' || quote.status === 'changes_requested'}
             <div class="submit-approval-section">
-              <label class="field-label">Nota para los aprobadores (opcional)</label>
-              <input type="text" bind:value={noteToApprovers} placeholder="Ej: Precios verificados, listo para aprobación" />
+              <label class="field-label">Note for approvers (optional)</label>
+              <input type="text" bind:value={noteToApprovers} placeholder="E.g. Prices verified, ready for approval" />
               <button class="btn-submit-approval" on:click={handleSubmitForApproval} disabled={saving}>
-                📨 Enviar para aprobación
+                📨 Submit for approval
               </button>
             </div>
           {/if}
@@ -536,18 +536,18 @@
             <div class="send-to-client-section">
               {#if quote.status === 'approved'}
                 <button class="btn-send-client" on:click={handleSendToClient} disabled={saving}>
-                  📤 Enviar cotización al cliente
+                  📤 Send quote to client
                 </button>
               {:else if quote.status === 'sent_to_client'}
                 <div class="sent-confirmation">
-                  <span class="sent-badge">📨 Enviada al cliente</span>
+                  <span class="sent-badge">📨 Sent to client</span>
                   {#if quote.sentToClientAt}
                     <span class="sent-date">{new Date(quote.sentToClientAt).toLocaleString('es')}</span>
                   {/if}
                 </div>
               {/if}
               {#if sentLink}
-                <p class="sent-link-label">Enlace del cliente:</p>
+                <p class="sent-link-label">Client link:</p>
                 <a href={sentLink} target="_blank" class="sent-link">{sentLink}</a>
               {/if}
             </div>
@@ -556,17 +556,17 @@
           <!-- Comments thread -->
           {#if Array.isArray(quote.comments) && quote.comments.length > 0}
             <div class="comments-section">
-              <h4 class="section-title">Comentarios</h4>
+              <h4 class="section-title">Comments</h4>
               {#each quote.comments as comment (comment.commentId)}
                 <div class="comment-item" class:resolved={comment.resolved}>
                   <div class="comment-header">
                     <strong>{comment.authorEmail}</strong>
                     <span class="comment-date">{new Date(comment.createdAt).toLocaleString('es')}</span>
                     {#if comment.resolved}
-                      <span class="resolved-badge">Resuelto ✓</span>
+                      <span class="resolved-badge">Resolved ✓</span>
                     {:else}
                       <button class="resolve-btn" on:click={() => handleResolveComment(comment.commentId)}>
-                        Marcar resuelto
+                        Mark as resolved
                       </button>
                     {/if}
                   </div>
@@ -578,7 +578,7 @@
 
           <!-- Add comment -->
           <div class="add-comment-section">
-            <input type="text" bind:value={newCommentText} placeholder="Agregar comentario..." on:keydown={e => e.key === 'Enter' && handleAddComment()} />
+            <input type="text" bind:value={newCommentText} placeholder="Add a comment..." on:keydown={e => e.key === 'Enter' && handleAddComment()} />
             <button class="btn-comment" on:click={handleAddComment} disabled={!newCommentText.trim() || saving}>
               💬
             </button>
@@ -587,7 +587,7 @@
           <!-- Change log (collapsible) -->
           {#if Array.isArray(quote.changeLog) && quote.changeLog.length > 0}
             <details class="changelog-section">
-              <summary>Historial de cambios ({quote.changeLog.length})</summary>
+              <summary>Change history ({quote.changeLog.length})</summary>
               {#each [...quote.changeLog].reverse() as entry (entry.changeId)}
                 <div class="log-entry">
                   <span class="log-actor">{entry.actor}</span>
@@ -609,9 +609,9 @@
           on:click={handleSave}
         >
           {#if saving}
-            <span class="qe-btn-spinner"></span> Guardando…
+            <span class="qe-btn-spinner"></span> Saving…
           {:else}
-            💾 Guardar borrador
+            💾 Save draft
           {/if}
         </button>
         <button
@@ -620,7 +620,7 @@
           disabled={saving}
           on:click={handleCancel}
         >
-          Cancelar
+          Cancel
         </button>
       </div>
     </div>

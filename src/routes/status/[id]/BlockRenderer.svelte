@@ -109,7 +109,7 @@
         <div class="br-block br-quote-table">
           {#if hasOptionalItems}
             <p class="br-optional-hint">
-              ☑ Marcá los servicios que querés incluir. Los servicios <strong>requeridos</strong> siempre se incluyen.
+              ☑ Check the services you'd like to include. <strong>Required</strong> services are always included.
             </p>
           {/if}
 
@@ -117,8 +117,8 @@
             <thead>
               <tr>
                 {#if hasOptionalItems}<th class="br-sel-col"></th>{/if}
-                <th>Servicio</th>
-                <th class="br-amt">Monto</th>
+                <th>Service</th>
+                <th class="br-amt">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -137,20 +137,20 @@
                           class="br-checkbox"
                           class:br-checkbox--checked={isSelected}
                           on:click|stopPropagation={() => toggleItem(item.lineId, true)}
-                          aria-label="{isSelected ? 'Quitar' : 'Agregar'} {item.label}"
-                          title="{item.isOptional ? 'Servicio opcional — hacé click para ' + (isSelected ? 'quitar' : 'agregar') : 'Servicio requerido'}"
+                          aria-label="{isSelected ? 'Remove' : 'Add'} {item.label}"
+                          title="{item.isOptional ? 'Optional service — click to ' + (isSelected ? 'remove' : 'add') : 'Required service'}"
                         >
                           {#if isSelected}✓{:else}&thinsp;{/if}
                         </button>
                       {:else}
-                        <span class="br-required-lock" title="Servicio requerido — siempre incluido">🔒</span>
+                        <span class="br-required-lock" title="Required service — always included">🔒</span>
                       {/if}
                     </td>
                   {/if}
                   <td>
                     <span class="br-item-label" class:br-item-label--dim={!!item.isOptional && !isSelected}>
                       {item.label}
-                      {#if item.isOptional && !isSelected}<span class="br-optional-tag">Opcional</span>{/if}
+                      {#if item.isOptional && !isSelected}<span class="br-optional-tag">Optional</span>{/if}
                     </span>
                     {#if item.notes}
                       <span class="br-item-notes">{item.notes}</span>
@@ -167,7 +167,7 @@
                 <tr class="br-total-row" class:br-total-row--first={i === 0}>
                   {#if hasOptionalItems}<td></td>{/if}
                   <td>
-                    <strong>{i === 0 ? 'Total seleccionado' : '\u00a0'}</strong>
+                    <strong>{i === 0 ? 'Selected total' : '\u00a0'}</strong>
                     {#if currencyBuckets.length > 1}
                       <span class="br-currency-badge">{bucket.currency}</span>
                     {/if}
@@ -178,7 +178,7 @@
               {#if currencyBuckets.length === 0}
                 <tr class="br-total-row">
                   {#if hasOptionalItems}<td></td>{/if}
-                  <td><strong>Total seleccionado</strong></td>
+                  <td><strong>Selected total</strong></td>
                   <td class="br-amt"><strong>$0.00</strong></td>
                 </tr>
               {/if}
@@ -187,7 +187,7 @@
 
           {#if Array.isArray(quote.providerSnapshots) && quote.providerSnapshots.length > 0}
             <div class="br-providers">
-              <p class="br-providers-label">Operadores asignados</p>
+              <p class="br-providers-label">Assigned operators</p>
               {#each quote.providerSnapshots as p}
                 <span class="br-provider-tag">{p.name} · {p.country}</span>
               {/each}
@@ -196,7 +196,7 @@
 
           {#if quote.notes}
             <div class="br-notes-card">
-              <p class="br-notes-label">Nota del equipo</p>
+              <p class="br-notes-label">Team note</p>
               <p class="br-notes-text">{quote.notes}</p>
             </div>
           {/if}
@@ -208,14 +208,14 @@
       <div class="br-block br-accept">
         {#if !accepted && quote.status !== 'client_accepted'}
           <p class="br-accept-intro">
-            Al hacer clic en <strong>Aceptar cotización</strong>, confirmás que revisaste
-            los precios y alcance aquí indicados y que estás de acuerdo con proceder.
+            By clicking <strong>Accept quote</strong>, you confirm that you have reviewed
+            the prices and scope listed here and agree to proceed.
           </p>
           <input
             class="br-name-input"
             type="text"
             bind:value={acceptedByInput}
-            placeholder="Tu nombre completo (opcional)"
+            placeholder="Your full name (optional)"
           />
           {#if acceptError}
             <p class="br-error-msg">{acceptError}</p>
@@ -225,13 +225,13 @@
             on:click={handleAcceptClick}
             disabled={accepting}
           >
-            {accepting ? 'Procesando...' : '✅ Aceptar cotización'}
+            {accepting ? 'Processing...' : '✅ Accept quote'}
           </button>
         {:else}
           <div class="br-accepted">
-            <p>🎉 <strong>¡Cotización aceptada!</strong></p>
+            <p>🎉 <strong>Quote accepted!</strong></p>
             <p class="br-accepted-sub">
-              Nuestro equipo se pondrá en contacto para coordinar los próximos pasos.
+              Our team will be in touch to coordinate next steps.
             </p>
           </div>
         {/if}

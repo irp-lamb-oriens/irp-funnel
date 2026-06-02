@@ -26,7 +26,7 @@
       const result = await fetchQuotes(clientId);
       quotes.set(result);
     } catch (err: any) {
-      error = err?.message ?? 'Error al cargar cotizaciones';
+      error = err?.message ?? 'Error loading quotes';
     } finally {
       loading = false;
     }
@@ -46,12 +46,12 @@
   }
 
   async function handleDelete(quote: Quote) {
-    if (!confirm(`¿Eliminar cotización "${quote.title}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`Delete quote "${quote.title}"? This action cannot be undone.`)) return;
     try {
       await deleteQuote(clientId, quote.quoteId);
       await loadQuotes();
     } catch (err: any) {
-      alert('Error al eliminar: ' + (err?.message ?? err));
+      alert('Error deleting: ' + (err?.message ?? err));
     }
   }
 
@@ -103,27 +103,27 @@
     />
   {:else}
     <div class="quotes-tab__toolbar">
-      <h3 class="quotes-tab__heading">Cotizaciones</h3>
+      <h3 class="quotes-tab__heading">Quotes</h3>
       <button class="quotes-tab__new-btn" on:click={openNewQuote}>
-        Nueva Cotización +
+        New Quote +
       </button>
     </div>
 
     {#if loading}
       <div class="quotes-tab__loading">
         <div class="quotes-tab__spinner"></div>
-        <span>Cargando cotizaciones…</span>
+        <span>Loading quotes…</span>
       </div>
     {:else if error}
       <div class="quotes-tab__error">
         ⚠️ {error}
-        <button class="quotes-tab__retry" on:click={loadQuotes}>Reintentar</button>
+        <button class="quotes-tab__retry" on:click={loadQuotes}>Retry</button>
       </div>
     {:else if $quotes.length === 0}
       <div class="quotes-tab__empty">
         <span class="quotes-tab__empty-icon">💰</span>
-        <p class="quotes-tab__empty-title">Sin cotizaciones</p>
-        <p class="quotes-tab__empty-desc">Crea la primera cotización para este cliente.</p>
+        <p class="quotes-tab__empty-title">No quotes yet</p>
+        <p class="quotes-tab__empty-desc">Create the first quote for this client.</p>
       </div>
     {:else}
       <ul class="quotes-tab__list">
@@ -132,7 +132,7 @@
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <li class="quotes-tab__item" on:click={() => openEdit(quote.quoteId)} role="button" tabindex="0">
             <div class="quotes-tab__item-main">
-              <span class="quotes-tab__item-title">{quote.title || 'Sin título'}</span>
+              <span class="quotes-tab__item-title">{quote.title || 'Untitled'}</span>
               <span
                 class="quotes-tab__status-badge"
                 style="background: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}22; color: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}; border-color: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}44;"
@@ -142,7 +142,7 @@
             </div>
             <div class="quotes-tab__item-meta">
               <span class="quotes-tab__item-total">{formatTotal(quote)}</span>
-              <span class="quotes-tab__item-lines">{(quote.lineItems ?? []).length} línea{(quote.lineItems ?? []).length !== 1 ? 's' : ''}</span>
+              <span class="quotes-tab__item-lines">{(quote.lineItems ?? []).length} line item{(quote.lineItems ?? []).length !== 1 ? 's' : ''}</span>
               <span class="quotes-tab__item-date">{formatDate(quote.createdAt)}</span>
             </div>
             <!-- Portal link — permanently visible on sent/accepted quotes ── -->
@@ -155,16 +155,16 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   class="quotes-tab__portal-link"
-                  title="Abrir portal del cliente"
+                  title="Open client portal"
                   on:click|stopPropagation
                 >
                   internationalrelocationpartner.com/status/{clientId}
                 </a>
                 <button
                   class="quotes-tab__copy-btn"
-                  title="Copiar enlace del portal"
+                  title="Copy portal link"
                   on:click|stopPropagation={() => copyPortalUrl(quote.clientToken ?? null)}
-                  aria-label="Copiar enlace"
+                  aria-label="Copy link"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
@@ -174,12 +174,12 @@
             <div class="quotes-tab__item-actions">
               <button
                 class="quotes-tab__action-btn quotes-tab__action-btn--edit"
-                title="Editar cotización"
+                title="Edit quote"
                 on:click|stopPropagation={() => openEdit(quote.quoteId)}
               >✏️</button>
               <button
                 class="quotes-tab__action-btn quotes-tab__action-btn--delete"
-                title="Eliminar cotización"
+                title="Delete quote"
                 on:click|stopPropagation={() => handleDelete(quote)}
               >🗑️</button>
             </div>

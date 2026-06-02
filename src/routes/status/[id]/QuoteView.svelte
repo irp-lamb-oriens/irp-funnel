@@ -24,10 +24,10 @@
     if (!token) { loading = false; return; }
     try {
       quote = await fetchQuoteByToken(consultationId, token);
-      if (!quote) loadError = 'Cotización no encontrada.';
+      if (!quote) loadError = 'Quote not found.';
       if (quote?.status === 'client_accepted') accepted = true;
     } catch (e: any) {
-      loadError = e.message ?? 'Error al cargar cotización.';
+      loadError = e.message ?? 'Error loading quote.';
     } finally {
       loading = false;
     }
@@ -48,7 +48,7 @@
       accepted = true;
       if (quote) quote = { ...quote, status: 'client_accepted' };
     } catch (e: any) {
-      acceptError = e.message ?? 'Error al aceptar cotización.';
+      acceptError = e.message ?? 'Error accepting quote.';
     } finally {
       accepting = false;
     }
@@ -62,7 +62,7 @@
 {#if !token}
   <!-- No quoteToken in URL — don't render anything -->
 {:else if loading}
-  <div class="qv-loading">Cargando cotización...</div>
+  <div class="qv-loading">Loading quote...</div>
 {:else if loadError}
   <div class="qv-error">{loadError}</div>
 {:else if quote}
@@ -90,11 +90,11 @@
     <!-- ── Legacy line-items render — backward compatible ──────────────── -->
     <div class="qv-container">
       <div class="qv-header">
-        <h2 class="qv-title">{quote.title || 'Cotización'}</h2>
+        <h2 class="qv-title">{quote.title || 'Quote'}</h2>
       {#if quote.status === 'client_accepted'}
-        <span class="qv-badge qv-badge-accepted">✓ Aceptada</span>
+        <span class="qv-badge qv-badge-accepted">✓ Accepted</span>
       {:else}
-        <span class="qv-badge qv-badge-pending">Pendiente de aceptación</span>
+        <span class="qv-badge qv-badge-pending">Pending acceptance</span>
       {/if}
     </div>
 
@@ -102,8 +102,8 @@
       <table class="qv-table">
         <thead>
           <tr>
-            <th>Servicio</th>
-            <th class="qv-amount">Monto</th>
+            <th>Service</th>
+            <th class="qv-amount">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -130,7 +130,7 @@
 
     {#if Array.isArray(quote.providerSnapshots) && quote.providerSnapshots.length > 0}
       <div class="qv-providers">
-        <p class="qv-providers-label">Operadores asignados</p>
+        <p class="qv-providers-label">Assigned operators</p>
         {#each quote.providerSnapshots as p}
           <span class="qv-provider-tag">{p.name} · {p.country}</span>
         {/each}
@@ -139,7 +139,7 @@
 
     {#if quote.notes}
       <div class="qv-notes">
-        <p class="qv-notes-label">Nota del equipo</p>
+        <p class="qv-notes-label">Team note</p>
         <p class="qv-notes-text">{quote.notes}</p>
       </div>
     {/if}
@@ -147,25 +147,25 @@
     {#if !accepted && quote.status !== 'client_accepted'}
       <div class="qv-accept-section">
         <p class="qv-accept-intro">
-          Al hacer clic en <strong>Aceptar cotización</strong>, confirmás que revisaste los precios y alcance aquí indicados y que estás de acuerdo con proceder.
+          By clicking <strong>Accept quote</strong>, you confirm that you have reviewed the prices and scope listed here and agree to proceed.
         </p>
         <input
           class="qv-name-input"
           type="text"
           bind:value={acceptedBy}
-          placeholder="Tu nombre completo (opcional)"
+          placeholder="Your full name (optional)"
         />
         {#if acceptError}
           <p class="qv-error-msg">{acceptError}</p>
         {/if}
         <button class="qv-accept-btn" on:click={handleAccept} disabled={accepting}>
-          {accepting ? 'Procesando...' : '✅ Aceptar cotización'}
+          {accepting ? 'Processing...' : '✅ Accept quote'}
         </button>
       </div>
     {:else}
       <div class="qv-accepted">
-        <p>🎉 <strong>¡Cotización aceptada!</strong></p>
-        <p class="qv-accepted-sub">Nuestro equipo se pondrá en contacto para coordinar los próximos pasos.</p>
+        <p>🎉 <strong>Quote accepted!</strong></p>
+        <p class="qv-accepted-sub">Our team will be in touch to coordinate next steps.</p>
       </div>
     {/if}
   </div>
