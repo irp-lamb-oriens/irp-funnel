@@ -462,7 +462,14 @@
 <!-- ════════════════════════════════════════════════════════
      OVERLAY
 ════════════════════════════════════════════════════════ -->
-<div class="acm-overlay" on:click|self={closeModal} role="dialog" aria-modal="true">
+<div
+  class="acm-overlay"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  on:click|self={closeModal}
+  on:keydown={(e) => e.key === 'Escape' && closeModal()}
+>
   <div class="acm-shell" class:dictate-mode={step === 'dictate'}>
 
     <button class="acm-x" on:click={closeModal} aria-label="Close">
@@ -747,54 +754,54 @@
             {/if}
           </div>
 
-        </div><!-- .review-body -->
-
-        <!-- ── Additional attendees (optional) ────────────────────────────── -->
-        <div class="acm-attendees-section">
-          <p class="acm-attendees-label">
-            Additional attendees
-            <span class="acm-attendees-optional">(optional)</span>
-          </p>
-          <p class="acm-attendees-hint">
-            Primary client lead: <strong>{getField('email').trim() || '—'}</strong>.
-            Add extra people to be invited to the same call.
-          </p>
-          {#each extraAttendees as _att, i}
-            <div class="acm-attendee-row">
-              <input type="email" class="acm-attendee-input"
-                bind:value={extraAttendees[i]}
-                placeholder="attendee@example.com" />
-              <button type="button" class="acm-attendee-del"
-                on:click={() => removeExtraAttendee(i)}
-                aria-label="Remove attendee">×</button>
-            </div>
-          {/each}
-          <button type="button" class="acm-add-attendee" on:click={addExtraAttendee}>
-            + Add attendee
-          </button>
-        </div>
-
-        <!-- ── Schedule a call (optional) ──────────────────────────────── -->
-        <div class="acm-schedule-section">
-          <p class="acm-schedule-label">
-            📅 Schedule a consultation call
-            <span class="acm-schedule-optional">(optional)</span>
-          </p>
-          <AvailabilityPicker
-            theme="light"
-            slotTheme="light"
-            staffMode={true}
-            onSelect={(iso) => { selectedSlot = iso; }}
-          />
-          {#if selectedSlot}
-            <p class="acm-slot-preview">
-              ✓ {new Date(selectedSlot).toLocaleString('en-US', {
-                weekday: 'short', month: 'short', day: 'numeric',
-                hour: 'numeric', minute: '2-digit', timeZone: 'America/Costa_Rica',
-              })} (CR time)
+          <!-- ── Additional attendees (optional) ────────────────────────────── -->
+          <div class="acm-attendees-section">
+            <p class="acm-attendees-label">
+              Additional attendees
+              <span class="acm-attendees-optional">(optional)</span>
             </p>
-          {/if}
-        </div>
+            <p class="acm-attendees-hint">
+              Primary client lead: <strong>{getField('email').trim() || '—'}</strong>.
+              Add extra people to be invited to the same call.
+            </p>
+            {#each extraAttendees as _att, i}
+              <div class="acm-attendee-row">
+                <input type="email" class="acm-attendee-input"
+                  bind:value={extraAttendees[i]}
+                  placeholder="attendee@example.com" />
+                <button type="button" class="acm-attendee-del"
+                  on:click={() => removeExtraAttendee(i)}
+                  aria-label="Remove attendee">×</button>
+              </div>
+            {/each}
+            <button type="button" class="acm-add-attendee" on:click={addExtraAttendee}>
+              + Add attendee
+            </button>
+          </div>
+  
+          <!-- ── Schedule a call (optional) ──────────────────────────────── -->
+          <div class="acm-schedule-section">
+            <p class="acm-schedule-label">
+              📅 Schedule a consultation call
+              <span class="acm-schedule-optional">(optional)</span>
+            </p>
+            <AvailabilityPicker
+              theme="light"
+              slotTheme="light"
+              staffMode={true}
+              onSelect={(iso) => { selectedSlot = iso; }}
+            />
+            {#if selectedSlot}
+              <p class="acm-slot-preview">
+                ✓ {new Date(selectedSlot).toLocaleString('en-US', {
+                  weekday: 'short', month: 'short', day: 'numeric',
+                  hour: 'numeric', minute: '2-digit', timeZone: 'America/Costa_Rica',
+                })} (CR time)
+              </p>
+            {/if}
+          </div>
+
+        </div><!-- .review-body -->
 
         <div class="review-footer">
           {#if bookingWarning}
