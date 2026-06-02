@@ -28,6 +28,7 @@
     type QuoteBlock,
     type QuoteBlockType,
   } from '../store.ts';
+  import { MERGE_FIELDS, mergeFieldsByGroup } from '$lib/mergeFields.ts';
 
   // ─── State ───────────────────────────────────────────────────────────────────
   let templates: QuoteTemplate[] = [];
@@ -52,6 +53,63 @@
   let newName = '';
   let newDescription = '';
   let newCategory = '';
+
+  // ─── Sidebar search ────────────────────────────────────────────────────────────
+  let sidebarSearch = '';
+  $: filteredTemplates = sidebarSearch.trim()
+    ? templates.filter(t =>
+        t.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+        (t.category ?? '').toLowerCase().includes(sidebarSearch.toLowerCase())
+      )
+    : templates;
+
+  // ─── Merge-field picker ────────────────────────────────────────────────────────
+  let activePickerBlockId: string | null = null;   // which textarea's picker is open
+  let pickerSearch = '';
+
+  $: pickerGroups = mergeFieldsByGroup();
+  $: filteredPickerFields = MERGE_FIELDS.filter(f =>
+    !pickerSearch.trim() ||
+    f.label.toLowerCase().includes(pickerSearch.toLowerCase()) ||
+    f.token.toLowerCase().includes(pickerSearch.toLowerCase()) ||
+    f.group.toLowerCase().includes(pickerSearch.toLowerCase())
+  );
+
+  function openPicker(blockId: string) {
+    activePickerBlockId = blockId;
+    pickerSearch = '';
+  }
+
+  function closePicker() {
+    activePickerBlockId = null;
+    pickerSearch = '';
+  }
+
+  /**
+   * Insert `{{token}}` at the cursor position of the textarea for the given block.
+   * Falls back to appending at the end if selection detection fails.
+   */
+  function insertField(blockId: string, token: string) {
+    // Find the textarea for this block
+    const ta = document.querySelector<HTMLTextAreaElement>(`[data-block-id="${blockId}"]`);
+    if (!ta) {
+      // Fallback: just append to the block's html
+      const block = editBlocks.find(b => b.id === blockId);
+      if (block) updateBlockHtml(blockId, (block.html ?? '') + token);
+      closePicker();
+      return;
+    }
+    const start = ta.selectionStart ?? ta.value.length;
+    const end   = ta.selectionEnd   ?? ta.value.length;
+    const newVal = ta.value.slice(0, start) + token + ta.value.slice(end);
+    updateBlockHtml(blockId, newVal);
+    // Restore cursor after the inserted token
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(start + token.length, start + token.length);
+    });
+    closePicker();
+  }
 
   // ─── Block type options ───────────────────────────────────────────────────────
   const BLOCK_TYPES: { type: QuoteBlockType; label: string; icon: string; description: string }[] = [
@@ -238,6 +296,9 @@
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
+
+  // Static placeholder (avoids Svelte curly-brace escaping issues in attributes)
+  const HTML_BLOCK_PLACEHOLDER = '<h2>Dear {{client.fullName}},</h2>\n<p>Your content with merge fields like {{route.destinationCountry}}.</p>';
 </script>
 
 <div class="tv-root">
@@ -247,6 +308,17 @@
     <div class="tv-sidebar__header">
       <h2 class="tv-sidebar__title">📄 Quote Templates</h2>
       <button class="tv-new-btn" on:click={openCreateNew} title="Create new template">+ New</button>
+    </div>
+
+    <!-- ── Sidebar search ──────────────────────────────────────────────────── -->
+    <div class="tv-sidebar__search">
+      <input
+        class="tv-sidebar__search-input"
+        type="text"
+        bind:value={sidebarSearch}
+        placeholder="🔍 Search templates…"
+        autocomplete="off"
+      />
     </div>
 
     {#if loadingList}
@@ -260,7 +332,7 @@
       </div>
     {:else}
       <ul class="tv-list">
-        {#each templates as tmpl (tmpl.templateId)}
+        {#each filteredTemplates as tmpl (tmpl.templateId)}
           <li
             class="tv-list__item"
             class:tv-list__item--active={selectedTemplate?.templateId === tmpl.templateId}
@@ -269,13 +341,21 @@
             tabindex="0"
             on:keydown={(e) => e.key === 'Enter' && selectTemplate(tmpl)}
           >
-            <span class="tv-list__name">{tmpl.name}</span>
+            <div class="tv-list__name-row">
+              <span class="tv-list__name">{tmpl.name}</span>
+              {#if tmpl.isDefault}
+                <span class="tv-list__default-badge">Default</span>
+              {/if}
+            </div>
             <span class="tv-list__meta">
               {tmpl.blocks.length} block{tmpl.blocks.length !== 1 ? 's' : ''}
               {#if tmpl.category}<span class="tv-list__cat">· {tmpl.category}</span>{/if}
             </span>
           </li>
         {/each}
+        {#if filteredTemplates.length === 0 && sidebarSearch}
+          <div class="tv-empty tv-empty--sm">No templates match "{sidebarSearch}"</div>
+        {/if}
       </ul>
     {/if}
   </aside>
@@ -378,13 +458,71 @@
 
                   {#if hasHtmlEditor(block.type)}
                     <div class="tv-block-card__body">
-                      <label class="tv-label tv-label--sm">HTML Content (bare HTML, no WYSIWYG)</label>
+                      <div class="tv-block-card__html-label-row">
+                        <label class="tv-label tv-label--sm">HTML Content</label>
+                        <button
+                          type="button"
+                          class="tv-insert-field-btn"
+                          on:click={() => openPicker(block.id)}
+                          title="Insert merge field — client name, route, move details…"
+                        >
+                          ＋ Insert field
+                        </button>
+                      </div>
+
+                      <!-- ── Merge-field picker ──────────────────────────────── -->
+                      {#if activePickerBlockId === block.id}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <div class="tv-field-picker" on:click|stopPropagation>
+                          <div class="tv-field-picker__header">
+                            <span class="tv-field-picker__title">Insert field token</span>
+                            <button class="tv-field-picker__close" on:click={closePicker} title="Close">✕</button>
+                          </div>
+                          <input
+                            class="tv-field-picker__search"
+                            type="text"
+                            bind:value={pickerSearch}
+                            placeholder="Search fields…"
+                            autocomplete="off"
+                          />
+                          <div class="tv-field-picker__groups">
+                            {#each Object.entries(pickerGroups) as [group, fields]}
+                              {@const visibleFields = fields.filter(f =>
+                                !pickerSearch.trim() ||
+                                f.label.toLowerCase().includes(pickerSearch.toLowerCase()) ||
+                                f.token.toLowerCase().includes(pickerSearch.toLowerCase())
+                              )}
+                              {#if visibleFields.length > 0}
+                                <div class="tv-field-picker__group">
+                                  <span class="tv-field-picker__group-label">{group}</span>
+                                  {#each visibleFields as field (field.token)}
+                                    <button
+                                      class="tv-field-picker__field"
+                                      on:click={() => insertField(block.id, field.token)}
+                                      title="{field.token} — e.g. {field.example}"
+                                    >
+                                      <span class="tv-field-picker__field-label">{field.label}</span>
+                                      <code class="tv-field-picker__field-token">{field.token}</code>
+                                      <span class="tv-field-picker__field-example">{field.example}</span>
+                                    </button>
+                                  {/each}
+                                </div>
+                              {/if}
+                            {/each}
+                            {#if filteredPickerFields.length === 0 && pickerSearch}
+                              <div class="tv-field-picker__empty">No fields match "{pickerSearch}"</div>
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
+
                       <textarea
                         class="tv-textarea tv-textarea--code"
+                        data-block-id={block.id}
                         value={block.html ?? ''}
                         on:input={(e) => updateBlockHtml(block.id, e.currentTarget.value)}
                         rows="6"
-                        placeholder="<h2>Dear {'{'}clientName{'}'}, </h2><p>Thank you...</p>"
+                        placeholder={HTML_BLOCK_PLACEHOLDER}
                         spellcheck="false"
                       ></textarea>
                     </div>
@@ -932,4 +1070,208 @@
     line-height: 1.6;
   }
   .tv-empty p { margin: 0.2rem 0; }
+  .tv-empty--sm { padding: 0.7rem 1.2rem; }
+
+  /* ─── Sidebar search ─────────────────────────────────────────────────────── */
+  .tv-sidebar__search {
+    padding: 0.5rem 0.8rem 0.3rem;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+  }
+  .tv-sidebar__search-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 0.36rem 0.75rem;
+    font-size: 0.78rem;
+    color: #0f172a;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.14s, box-shadow 0.14s;
+  }
+  .tv-sidebar__search-input:focus {
+    border-color: #02b6bc;
+    box-shadow: 0 0 0 2px rgba(2,182,188,0.1);
+  }
+
+  /* ─── Default badge in list items ────────────────────────────────────────── */
+  .tv-list__name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .tv-list__default-badge {
+    display: inline-block;
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0d9488;
+    background: rgba(2,182,188,0.1);
+    border: 1px solid rgba(2,182,188,0.25);
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* ─── Insert-field button + picker ──────────────────────────────────────── */
+  .tv-block-card__html-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.2rem;
+  }
+  .tv-block-card__html-label-row .tv-label { margin-bottom: 0; }
+
+  .tv-insert-field-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: rgba(2,182,188,0.08);
+    border: 1px solid rgba(2,182,188,0.25);
+    border-radius: 6px;
+    color: #0d9488;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    letter-spacing: 0.02em;
+  }
+  .tv-insert-field-btn:hover {
+    background: rgba(2,182,188,0.15);
+    border-color: rgba(2,182,188,0.4);
+    color: #02b6bc;
+  }
+
+  /* Field picker popover */
+  .tv-field-picker {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow:
+      0 4px 20px rgba(0,0,0,0.10),
+      0 1px 4px rgba(0,0,0,0.06);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tv-field-picker__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.9rem 0.4rem;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+  }
+  .tv-field-picker__title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .tv-field-picker__close {
+    width: 22px;
+    height: 22px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s;
+  }
+  .tv-field-picker__close:hover { background: #f1f5f9; color: #0f172a; }
+
+  .tv-field-picker__search {
+    margin: 0.5rem 0.8rem;
+    padding: 0.38rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    color: #0f172a;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.14s;
+  }
+  .tv-field-picker__search:focus { border-color: #02b6bc; }
+
+  .tv-field-picker__groups {
+    overflow-y: auto;
+    max-height: 260px;
+    padding: 0 0.5rem 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(2,182,188,0.15) transparent;
+  }
+
+  .tv-field-picker__group { margin-bottom: 0.2rem; }
+  .tv-field-picker__group-label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.45rem 0.5rem 0.25rem;
+  }
+
+  .tv-field-picker__field {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.42rem 0.65rem;
+    background: none;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+    font-family: inherit;
+  }
+  .tv-field-picker__field:hover { background: #f0fdfe; }
+
+  .tv-field-picker__field-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+  .tv-field-picker__field-token {
+    font-size: 0.7rem;
+    color: #02b6bc;
+    background: rgba(2,182,188,0.08);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'SF Mono','Fira Code',monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tv-field-picker__field-example {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tv-field-picker__empty {
+    padding: 0.7rem 0.65rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    text-align: center;
+  }
 </style>

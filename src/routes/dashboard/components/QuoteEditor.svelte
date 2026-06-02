@@ -22,6 +22,7 @@
     QUOTE_STATUS_LABEL,
   } from '../store.ts';
   import type { Quote, QuoteLineItem } from '../store.ts';
+  import { aggregateByCurrency, formatTotalsLine } from '$lib/money.ts';
 
   export let clientId: string;
   export let quoteId: string | null = null;
@@ -58,6 +59,8 @@
 
   // ── Computed total ─────────────────────────────────────────────────────────
   $: total = lineItems.reduce((sum, li) => sum + (Number(li.amount) || 0), 0);
+  // Per-currency buckets for the total display (multi-currency, no conversion)
+  $: totalBuckets = aggregateByCurrency(lineItems, null);
 
   // ── Line item helpers ──────────────────────────────────────────────────────
   function makeLineId(): string {
@@ -191,7 +194,7 @@
         providerIds,
         providerSnapshots,
         total,
-        currency: 'USD',
+        currency: totalBuckets.length === 1 ? totalBuckets[0].currency : (totalBuckets[0]?.currency ?? 'USD'),
         status: 'draft',
       };
       if (quoteId) {
@@ -412,7 +415,7 @@
       <!-- Total display -->
       <div class="qe-field qe-field--total">
         <span class="qe-label">Total estimado</span>
-        <span class="qe-total">{formatTotal(total)}</span>
+        <span class="qe-total">{totalBuckets.length ? formatTotalsLine(totalBuckets) : formatTotal(total)}</span>
       </div>
 
       <!-- Provider search -->

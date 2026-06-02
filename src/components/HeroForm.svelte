@@ -320,7 +320,8 @@
         if (!$formState.originZip || !zipRegex.test($formState.originZip.trim())) { errors.originZip = 'Invalid zip'; valid = false; }
         break;
       case 3:
-        if (!$formState.phone.trim() || !isPhoneValid) { errors.phone = 'Valid phone required'; valid = false; }
+        // Phone is optional — only validate format if the user actually typed something.
+        if ($formState.phone?.trim() && !isPhoneValid) { errors.phone = 'Please enter a valid phone number, or leave it blank.'; valid = false; }
         break;
       case 4:
         if (!$formState.budget.trim()) { errors.budget = 'Required'; valid = false; }
@@ -553,7 +554,7 @@
 
             {:else if formStep === 3}
               <h2>Your phone number</h2>
-              <p class="sub-heading">So we can contact you directly</p>
+              <p class="sub-heading">So we can contact you directly <span class="optional-label">(optional)</span></p>
               <Phone bind:value={$formState.phone} onUpdate={(val) => updateField(val, 'phone')} onEnter={formNext} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
               {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>

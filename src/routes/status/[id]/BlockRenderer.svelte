@@ -18,12 +18,17 @@
   import { createEventDispatcher } from 'svelte';
   import type { Quote, QuoteBlock } from '../../dashboard/store.ts';
   import { sanitizeHtml } from './sanitizeHtml.ts';
+  import { aggregateByCurrency, formatMoney } from '$lib/money.ts';
+  import { buildMergeContext, renderMergeFields } from '$lib/mergeFields.ts';
 
   export let blocks: QuoteBlock[];
   export let quote: Quote;
   export let accepted: boolean;
   export let accepting: boolean;
   export let acceptError: string;
+  /** Client/project data for merge-field substitution at render-time.
+   *  Populated from the `$project` store in QuoteView. Defaults to {} (no-op). */
+  export let clientSummary: Record<string, any> = {};
 
   // Internal only — BlockRenderer owns the input value for the accept block
   let acceptedByInput = '';
@@ -43,12 +48,14 @@
   $: hasOptionalItems = quote.lineItems.some(li => !!li.isOptional);
 
   /**
-   * Dynamic total: sum of all selected (checked) line items.
+   * Dynamic totals: per-currency buckets for selected line items.
    * Recalculates every time _selectedIds is reassigned.
+   * Replaces the old single-currency dynamicTotal.
    */
-  $: dynamicTotal = quote.lineItems.reduce((sum, li) => {
-    return _selectedIds.has(li.lineId) ? sum + li.amount : sum;
-  }, 0);
+  $: currencyBuckets = aggregateByCurrency(quote.lineItems, _selectedIds);
+
+  /** Flat merge context derived from the client summary prop. */
+  $: mergeCtx = buildMergeContext(clientSummary);
 
   function toggleItem(lineId: string, isOptional: boolean) {
     if (!isOptional) return; // required items cannot be deselected
@@ -56,13 +63,6 @@
     if (next.has(lineId)) next.delete(lineId);
     else next.add(lineId);
     _selectedIds = next; // reassign triggers $: reactivity
-  }
-
-  function fmt(amount: number, currency: string): string {
-    return `$${amount.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} ${currency}`;
   }
 
   function handleAcceptClick() {
@@ -77,27 +77,27 @@
   {#each blocks as block (block.id)}
 
     {#if block.type === 'html' && block.html}
-      <!-- ── Free-form HTML block — Qwilr-style text sections ─────────── -->
+      <!-- ── Free-form HTML block — merge-fields substituted at render-time -->
       <div class="br-block br-html">
-        {@html sanitizeHtml(block.html)}
+        {@html sanitizeHtml(renderMergeFields(block.html, mergeCtx))}
       </div>
 
     {:else if block.type === 'heading' && block.html}
-      <!-- ── Heading block (alternative to putting heading in html) ─────── -->
+      <!-- ── Heading block ─────────────────────────────────────────────── -->
       <div class="br-block br-heading">
-        {@html sanitizeHtml(block.html)}
+        {@html sanitizeHtml(renderMergeFields(block.html, mergeCtx))}
       </div>
 
     {:else if block.type === 'banner' && block.html}
-      <!-- ── Banner / hero block with optional background ──────────────── -->
+      <!-- ── Banner / hero block ───────────────────────────────────────── -->
       <div class="br-block br-banner">
-        {@html sanitizeHtml(block.html)}
+        {@html sanitizeHtml(renderMergeFields(block.html, mergeCtx))}
       </div>
 
     {:else if block.type === 'accordion' && block.html}
       <!-- ── Accordion / expandable sections block ─────────────────────── -->
       <div class="br-block br-accordion">
-        {@html sanitizeHtml(block.html)}
+        {@html sanitizeHtml(renderMergeFields(block.html, mergeCtx))}
       </div>
 
     {:else if block.type === 'quoteTable'}
@@ -157,17 +157,31 @@
                     {/if}
                   </td>
                   <td class="br-amt" class:br-amt-dim={!!item.isOptional && !isSelected}>
-                    {fmt(item.amount, item.currency)}
+                    {formatMoney(item.amount, item.currency)}
                   </td>
                 </tr>
               {/each}
             </tbody>
             <tfoot>
-              <tr class="br-total-row">
-                {#if hasOptionalItems}<td></td>{/if}
-                <td><strong>Total seleccionado</strong></td>
-                <td class="br-amt"><strong>{fmt(dynamicTotal, quote.currency)}</strong></td>
-              </tr>
+              {#each currencyBuckets as bucket, i (bucket.currency)}
+                <tr class="br-total-row" class:br-total-row--first={i === 0}>
+                  {#if hasOptionalItems}<td></td>{/if}
+                  <td>
+                    <strong>{i === 0 ? 'Total seleccionado' : '\u00a0'}</strong>
+                    {#if currencyBuckets.length > 1}
+                      <span class="br-currency-badge">{bucket.currency}</span>
+                    {/if}
+                  </td>
+                  <td class="br-amt"><strong>{formatMoney(bucket.amount, bucket.currency)}</strong></td>
+                </tr>
+              {/each}
+              {#if currencyBuckets.length === 0}
+                <tr class="br-total-row">
+                  {#if hasOptionalItems}<td></td>{/if}
+                  <td><strong>Total seleccionado</strong></td>
+                  <td class="br-amt"><strong>$0.00</strong></td>
+                </tr>
+              {/if}
             </tfoot>
           </table>
 
@@ -355,6 +369,22 @@
     font-size: 20px;
     font-weight: 900;
     color: #02b6bc;
+  }
+
+  /* Multi-currency badge — shows ISO code next to label on secondary rows */
+  .br-currency-badge {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0d9488;
+    background: rgba(2, 182, 188, 0.09);
+    border: 1px solid rgba(2, 182, 188, 0.25);
+    border-radius: 5px;
+    padding: 2px 6px;
+    margin-left: 8px;
+    vertical-align: middle;
   }
 
   /* ── Selection column ──────────────────────────────────────────────────── */

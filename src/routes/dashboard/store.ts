@@ -1970,6 +1970,10 @@ export interface QuoteTemplate {
   createdBy: string;
   createdAt: string;
   updatedAt: string | null;
+  /** When true, this template is pinned first in all template selectors. */
+  isDefault?: boolean;
+  /** Explicit sort order — lower numbers appear first. Default templates use order 0. */
+  order?: number;
 }
 
 /** Fetch all quote templates (newest first). */

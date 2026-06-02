@@ -4,6 +4,7 @@
   import type { Quote } from '../../dashboard/store.ts';
   import { fetchQuoteByToken, acceptQuoteAsClient } from '../../dashboard/store.ts';
   import BlockRenderer from './BlockRenderer.svelte';
+  import { project } from './store.ts';
 
   export let consultationId: string;
 
@@ -77,6 +78,7 @@
       {accepted}
       {accepting}
       {acceptError}
+      clientSummary={$project ?? {}}
       on:accept={async (e) => {
         acceptedBy = e.detail.acceptedBy;
         // Phase 3 — capture the client's service selection from BlockRenderer
