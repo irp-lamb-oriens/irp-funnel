@@ -336,9 +336,9 @@
   .qv-provider-tag {
     display: inline-flex;
     align-items: center;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    color: #4f46e5;
+    background: rgba(2, 181, 187, 0.08);
+    border: 1px solid #9fe3e6;
+    color: #02b5bb;
     font-size: 12.5px;
     font-weight: 600;
     padding: 4px 12px;
@@ -354,7 +354,7 @@
     border-radius: 12px;
     padding: 16px 20px;
     margin-bottom: 24px;
-    border-left: 3px solid #6366f1;
+    border-left: 3px solid #02b5bb;
   }
   .qv-notes-label {
     font-size: 11px;
@@ -407,13 +407,13 @@
   }
   .qv-name-input::placeholder { color: #94a3b8; }
   .qv-name-input:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.10);
+    border-color: #02b5bb;
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.15);
   }
 
   /* ── Accept button ────────────────────────────────────────────────────── */
   .qv-accept-btn {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
     color: #fff;
     border: none;
     padding: 0 32px;
@@ -424,7 +424,7 @@
     cursor: pointer;
     width: 100%;
     letter-spacing: -0.01em;
-    box-shadow: 0 4px 14px rgba(99,102,241,0.40);
+    box-shadow: 0 4px 14px rgba(2,181,187,0.40);
     transition: box-shadow 0.2s, transform 0.2s, filter 0.2s;
     display: inline-flex;
     align-items: center;
@@ -432,14 +432,14 @@
     gap: 8px;
   }
   .qv-accept-btn:hover:not(:disabled) {
-    box-shadow: 0 8px 28px rgba(99,102,241,0.52);
+    box-shadow: 0 8px 28px rgba(2,181,187,0.52);
     transform: translateY(-2px);
     filter: brightness(1.07);
   }
   .qv-accept-btn:active:not(:disabled) {
     transform: translateY(0);
     filter: brightness(0.97);
-    box-shadow: 0 2px 8px rgba(99,102,241,0.32);
+    box-shadow: 0 2px 8px rgba(2,181,187,0.32);
   }
   .qv-accept-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
