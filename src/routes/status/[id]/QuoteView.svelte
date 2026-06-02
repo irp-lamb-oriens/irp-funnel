@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import type { Quote } from '../../dashboard/store.ts';
   import { fetchQuoteByToken, acceptQuoteAsClient } from '../../dashboard/store.ts';
+  import BlockRenderer from './BlockRenderer.svelte';
 
   export let consultationId: string;
 
@@ -13,6 +14,8 @@
   let acceptedBy = '';
   let accepted = false;
   let acceptError = '';
+  // Phase 3 — selections captured from BlockRenderer's accept event
+  let selectedLineItemIds: string[] = [];
 
   const token = $page.url.searchParams.get('quoteToken') ?? '';
 
@@ -34,7 +37,13 @@
     accepting = true;
     acceptError = '';
     try {
-      await acceptQuoteAsClient(consultationId, token, acceptedBy);
+      // Phase 3: pass selectedLineItemIds so the server records the final services chosen
+      await acceptQuoteAsClient(
+        consultationId,
+        token,
+        acceptedBy,
+        selectedLineItemIds.length > 0 ? selectedLineItemIds : undefined,
+      );
       accepted = true;
       if (quote) quote = { ...quote, status: 'client_accepted' };
     } catch (e: any) {
@@ -56,9 +65,30 @@
 {:else if loadError}
   <div class="qv-error">{loadError}</div>
 {:else if quote}
-  <div class="qv-container">
-    <div class="qv-header">
-      <h2 class="qv-title">{quote.title || 'Cotización'}</h2>
+  {#if Array.isArray(quote.blocks) && quote.blocks.length > 0}
+    <!-- ── Block-based Qwilr-style document renderer (Phase 1) ──────────
+         BlockRenderer owns the accept block state and dispatches the
+         `accept` event back up so we can orchestrate via acceptQuoteAsClient.
+         Legacy quotes without `blocks` are unaffected — they fall through
+         to the qv-container path below. -->
+    <BlockRenderer
+      blocks={quote.blocks}
+      {quote}
+      {accepted}
+      {accepting}
+      {acceptError}
+      on:accept={async (e) => {
+        acceptedBy = e.detail.acceptedBy;
+        // Phase 3 — capture the client's service selection from BlockRenderer
+        selectedLineItemIds = e.detail.selectedLineItemIds ?? [];
+        await handleAccept();
+      }}
+    />
+  {:else}
+    <!-- ── Legacy line-items render — backward compatible ──────────────── -->
+    <div class="qv-container">
+      <div class="qv-header">
+        <h2 class="qv-title">{quote.title || 'Cotización'}</h2>
       {#if quote.status === 'client_accepted'}
         <span class="qv-badge qv-badge-accepted">✓ Aceptada</span>
       {:else}
@@ -137,6 +167,7 @@
       </div>
     {/if}
   </div>
+  {/if}
 {/if}
 
 <style>

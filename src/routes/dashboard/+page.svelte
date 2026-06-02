@@ -27,6 +27,7 @@
   import ProvidersView from './components/ProvidersView.svelte';
   import PostsView from './components/PostsView.svelte';
   import AdminView from './components/AdminView.svelte';
+  import TemplatesView from './components/TemplatesView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
   import './dashboard.scss';
@@ -448,6 +449,9 @@
           {#if allowedViews.includes('admin')}
             <button class:active={$activeView === 'admin'} on:click={() => switchView('admin')} title="Admin: manage staff access and view sessions" class="topbar__admin-btn">Admin</button>
           {/if}
+          {#if allowedViews.includes('templates')}
+            <button class:active={$activeView === 'templates'} on:click={() => switchView('templates')} title="Quote document templates builder">Templates</button>
+          {/if}
         </nav>
       </div>
       <div class="topbar__right">
@@ -700,6 +704,10 @@
     <!-- ══════════════ ADMIN VIEW (luisarmando + pablo only) ══════════════ -->
     {:else if $activeView === 'admin'}
       <AdminView />
+
+    <!-- ══════════════ TEMPLATES VIEW ══════════════ -->
+    {:else if $activeView === 'templates'}
+      <TemplatesView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

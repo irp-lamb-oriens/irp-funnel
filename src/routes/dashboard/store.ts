@@ -485,7 +485,7 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates'>('board');
 export const detailPanelOpen = writable<boolean>(false);
 
 /**
@@ -1626,6 +1626,9 @@ export interface QuoteLineItem {
   currency: string;
   providerId: string | null;
   notes: string | null;
+  /** Phase 3 — when true, client can check/uncheck this item in the interactive quoteTable.
+   *  Absent/false = required service, always included in the total. */
+  isOptional?: boolean;
 }
 
 export interface QuoteChangeLogEntry {
@@ -1635,6 +1638,35 @@ export interface QuoteChangeLogEntry {
   summary: string;
   timestamp: string;
   addressesCommentId?: string | null;
+}
+
+// ─── QuoteBlock — block-based proposal document (Phase 1 read path) ─────────
+// Adding new block types here is forward-compatible:
+// BlockRenderer silently skips unknown types, so old deploys keep working.
+
+export type QuoteBlockType =
+  | 'html'
+  | 'heading'
+  | 'image'
+  | 'banner'
+  | 'quoteTable'
+  | 'accept'
+  | 'accordion'
+  | 'testimonials'
+  | 'reviews'
+  | 'partners';
+
+/**
+ * A single content block in a Qwilr-style quote proposal document.
+ * Stored as an array in Quote.blocks (optional field — absent on existing quotes).
+ */
+export interface QuoteBlock {
+  id: string;
+  type: QuoteBlockType;
+  /** Sanitized HTML — used by html, heading, banner, accordion types. */
+  html?: string | null;
+  /** Structured data for component-based blocks (quoteTable, accept, etc.). */
+  data?: Record<string, any> | null;
 }
 
 export interface Quote {
@@ -1672,6 +1704,12 @@ export interface Quote {
   providerName?: string | null;
   providerEmail?: string | null;
   amount?: number | null;
+  // ── Block-based proposal document (Phase 1 — additive, existing quotes unaffected) ──
+  /** References a quote_templates/{id} document. Absent on quotes created before Phase 2. */
+  templateId?: string | null;
+  /** Ordered array of content blocks for Qwilr-style proposal rendering on the status page.
+   *  When absent/empty, QuoteView falls back to the legacy line-items table. */
+  blocks?: QuoteBlock[] | null;
 }
 
 export const QUOTE_STATUS_LABEL: Record<Quote['status'], { label: string; color: string }> = {
@@ -1894,14 +1932,95 @@ export async function fetchQuoteByToken(
 /**
  * Accept a quote as the client (called from the public status page).
  * No auth required — validated by clientToken on the server.
+ *
+ * Phase 3: pass `selectedLineItemIds` so the server records which optional
+ * services the client specifically agreed to and calculates `finalBilledTotal`.
  */
 export async function acceptQuoteAsClient(
   consultationId: string,
   token: string,
   acceptedBy?: string,
+  selectedLineItemIds?: string[],
 ): Promise<{ success: boolean; status: string }> {
   return apiFetch(`/api/status/${consultationId}/quote/accept`, {
     method: 'POST',
-    body: JSON.stringify({ token, acceptedBy: acceptedBy?.trim() || '' }),
+    body: JSON.stringify({
+      token,
+      acceptedBy: acceptedBy?.trim() || '',
+      ...(selectedLineItemIds ? { selectedLineItemIds } : {}),
+    }),
   });
+}
+
+// ─── Quote Templates ──────────────────────────────────────────────────────────
+//
+// Top-level Firestore collection: quote_templates/{templateId}
+// A QuoteTemplate is an ordered array of QuoteBlocks reusable across many quotes.
+// Applying a template to a quote seeds quote.blocks + quote.templateId.
+
+export interface QuoteTemplate {
+  templateId: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  blocks: QuoteBlock[];
+  destinationCountries?: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+/** Fetch all quote templates (newest first). */
+export async function fetchQuoteTemplates(): Promise<QuoteTemplate[]> {
+  const data = await apiFetch('/api/dashboard/quote-templates');
+  return (data.templates ?? []) as QuoteTemplate[];
+}
+
+/** Fetch a single quote template by ID. */
+export async function fetchQuoteTemplate(templateId: string): Promise<QuoteTemplate> {
+  return apiFetch(`/api/dashboard/quote-templates/${templateId}`) as Promise<QuoteTemplate>;
+}
+
+/** Create a new quote template. Returns the created doc. */
+export async function createQuoteTemplate(
+  payload: Pick<QuoteTemplate, 'name'> & Partial<Omit<QuoteTemplate, 'templateId' | 'createdBy' | 'createdAt' | 'updatedAt'>>,
+): Promise<QuoteTemplate> {
+  const data = await apiFetch('/api/dashboard/quote-templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.template as QuoteTemplate;
+}
+
+/** Partially update a quote template. */
+export async function updateQuoteTemplate(
+  templateId: string,
+  updates: Partial<Pick<QuoteTemplate, 'name' | 'description' | 'category' | 'blocks' | 'destinationCountries'>>,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return apiFetch(`/api/dashboard/quote-templates/${templateId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Delete a quote template permanently. */
+export async function deleteQuoteTemplate(templateId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/quote-templates/${templateId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Apply a template to a quote: seeds the quote's blocks + templateId.
+ * The quote's lineItems and all other existing fields are preserved.
+ */
+export async function applyTemplateToQuote(
+  clientId: string,
+  quoteId: string,
+  template: QuoteTemplate,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return updateQuote(clientId, quoteId, {
+    templateId: template.templateId,
+    blocks: template.blocks,
+  } as Partial<Quote>);
 }
