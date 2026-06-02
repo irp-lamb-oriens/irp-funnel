@@ -66,6 +66,19 @@
     editingQuoteId = null;
   }
 
+  // ── Portal URL helper ─────────────────────────────────────────────────────
+  const STATUS_BASE = 'https://internationalrelocationpartner.com/status';
+
+  function portalUrl(token: string | null): string {
+    const base = `${STATUS_BASE}/${clientId}`;
+    return token ? `${base}?quoteToken=${token}` : base;
+  }
+
+  function copyPortalUrl(token: string | null): void {
+    const url = portalUrl(token);
+    navigator.clipboard?.writeText(url).catch(() => {});
+  }
+
   // ── Formatting helpers ─────────────────────────────────────────────────────
   function formatTotal(quote: Quote): string {
     const total = quote.total ?? quote.lineItems?.reduce((s, li) => s + (li.amount ?? 0), 0) ?? 0;
@@ -132,6 +145,32 @@
               <span class="quotes-tab__item-lines">{(quote.lineItems ?? []).length} línea{(quote.lineItems ?? []).length !== 1 ? 's' : ''}</span>
               <span class="quotes-tab__item-date">{formatDate(quote.createdAt)}</span>
             </div>
+            <!-- Portal link — permanently visible on sent/accepted quotes ── -->
+            {#if quote.status === 'sent_to_client' || quote.status === 'client_accepted'}
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="quotes-tab__portal-row" on:click|stopPropagation>
+                <svg class="quotes-tab__portal-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <a
+                  href={portalUrl(quote.clientToken ?? null)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="quotes-tab__portal-link"
+                  title="Abrir portal del cliente"
+                  on:click|stopPropagation
+                >
+                  internationalrelocationpartner.com/status/{clientId}
+                </a>
+                <button
+                  class="quotes-tab__copy-btn"
+                  title="Copiar enlace del portal"
+                  on:click|stopPropagation={() => copyPortalUrl(quote.clientToken ?? null)}
+                  aria-label="Copiar enlace"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            {/if}
+
             <div class="quotes-tab__item-actions">
               <button
                 class="quotes-tab__action-btn quotes-tab__action-btn--edit"
@@ -377,7 +416,7 @@
   /* ── Action buttons ───────────────────────────────────────────────────── */
   .quotes-tab__item-actions {
     position: absolute;
-    top: 50%;
+    top: 23px;
     right: 14px;
     transform: translateY(-50%);
     display: flex;
@@ -411,5 +450,64 @@
     background: #fef2f2;
     border-color: #fecaca;
     color: #dc2626;
+  }
+
+  /* ── Portal link row (sent_to_client / client_accepted) ──────────────── */
+  .quotes-tab__portal-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: #f0fdfc;
+    border: 1px solid #99f6e4;
+    border-radius: 7px;
+    margin-top: 2px;
+  }
+
+  .quotes-tab__portal-icon {
+    color: #0d9488;
+    flex-shrink: 0;
+  }
+
+  .quotes-tab__portal-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0d9488;
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.01em;
+    transition: color 0.14s;
+  }
+  .quotes-tab__portal-link:hover {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+
+  .quotes-tab__copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: 1px solid #99f6e4;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #0d9488;
+    flex-shrink: 0;
+    transition: background 0.14s, border-color 0.14s, transform 0.14s;
+    padding: 0;
+  }
+  .quotes-tab__copy-btn:hover {
+    background: #ccfbf1;
+    border-color: #5eead4;
+    transform: scale(1.1);
+  }
+  .quotes-tab__copy-btn:active {
+    transform: scale(0.96);
   }
 </style>
