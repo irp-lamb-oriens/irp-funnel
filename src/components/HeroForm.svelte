@@ -762,7 +762,7 @@
       &:active { transform: translateY(-1px) scale(1.01); }
 
       &--v1-baseline {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #a855f7 100%);
+        background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 40%, #076f72 100%);
         box-shadow:
           0 8px 28px rgba(99, 102, 241, 0.45),
           0 16px 48px rgba(139, 92, 246, 0.25),
@@ -881,9 +881,9 @@
     &__arrow { font-size: 1.3rem; font-weight: 700; color: rgba(255,255,255,0.4); transition: all 0.3s ease; flex-shrink: 0; }
     &:hover &__arrow { color: #fff; transform: translateX(3px); }
 
-    &--primary { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
-      .choice-btn__icon { background: rgba(99,102,241,0.2); color: #818cf8; }
-      &:hover { background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(99,102,241,0.1)); border-color: rgba(99,102,241,0.4); box-shadow: 0 8px 32px rgba(99,102,241,0.15); }
+    &--primary { background: linear-gradient(135deg, rgba(2,181,187,0.15), rgba(2,181,187,0.05));
+      .choice-btn__icon { background: rgba(2,181,187,0.2); color: #02b5bb; }
+      &:hover { background: linear-gradient(135deg, rgba(2,181,187,0.25), rgba(2,181,187,0.1)); border-color: rgba(2,181,187,0.4); box-shadow: 0 8px 32px rgba(2,181,187,0.15); }
     }
     &--form { background: linear-gradient(135deg, rgba(251,191,36,0.12), rgba(251,191,36,0.04));
       .choice-btn__icon { background: rgba(251,191,36,0.2); color: #fbbf24; }

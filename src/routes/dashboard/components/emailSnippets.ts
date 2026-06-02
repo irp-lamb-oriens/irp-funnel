@@ -28,7 +28,7 @@ export const EMAIL_SNIPPETS: EmailSnippet[] = [
   {
     id: 'sig_warm',
     label: 'Warm signature — team',
-    html: `<p style="margin-top:24px;font-size:14px;color:#555;">Warm regards,<br><strong>The International Relocation Partner Team</strong><br>🌍 <a href="https://www.internationalrelocationpartner.com" style="color:#4f46e5;">internationalrelocationpartner.com</a></p>`,
+    html: `<p style="margin-top:24px;font-size:14px;color:#555;">Warm regards,<br><strong>The International Relocation Partner Team</strong><br>🌍 <a href="https://www.internationalrelocationpartner.com" style="color:#02b5bb;">internationalrelocationpartner.com</a></p>`,
     category: 'signature',
   },
   {
@@ -43,7 +43,7 @@ export const EMAIL_SNIPPETS: EmailSnippet[] = [
     id: 'cta_book',
     label: '📅 Book a call CTA',
     html: `<div style="text-align:center;margin:24px 0;">
-  <a href="https://www.internationalrelocationpartner.com/status/{statusPageUrl}" style="display:inline-block;background:#4f46e5;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+  <a href="https://www.internationalrelocationpartner.com/status/{statusPageUrl}" style="display:inline-block;background:#02b5bb;color:#020d10;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
     📅 Book your consultation call
   </a>
   <p style="font-size:13px;color:#888;margin-top:8px;">No commitment — just a friendly chat about your move.</p>
@@ -54,7 +54,7 @@ export const EMAIL_SNIPPETS: EmailSnippet[] = [
     id: 'cta_reply',
     label: '💬 Reply CTA',
     html: `<p style="margin-top:16px;font-size:15px;color:#333;">
-  Simply reply to this email or <a href="https://www.internationalrelocationpartner.com/status/{statusPageUrl}" style="color:#4f46e5;">visit your project portal</a> — we'll get back to you within 24 hours.
+  Simply reply to this email or <a href="https://www.internationalrelocationpartner.com/status/{statusPageUrl}" style="color:#02b5bb;">visit your project portal</a> — we'll get back to you within 24 hours.
 </p>`,
     category: 'cta',
   },

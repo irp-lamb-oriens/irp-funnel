@@ -724,8 +724,8 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   .providers-search-inner:focus-within {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 1px 4px rgba(0,0,0,0.06);
+    border-color: #02b5bb;
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.12), 0 1px 4px rgba(0,0,0,0.06);
   }
   .providers-search-inner.has-value {
     border-color: #a5b4fc;
@@ -738,7 +738,7 @@
     pointer-events: none;
   }
   .providers-search-inner:focus-within .providers-search-icon {
-    color: #6366f1;
+    color: #02b5bb;
   }
 
   .providers-search-input {
@@ -832,7 +832,7 @@
   .form-field input:focus,
   .form-field textarea:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #02b5bb;
     background: #fff;
   }
   .form-field--full { grid-column: 1 / -1; }
@@ -857,9 +857,9 @@
     user-select: none;
   }
   .checkbox-label.checked {
-    border-color: #6366f1;
-    background: #eef2ff;
-    color: #4338ca;
+    border-color: #02b5bb;
+    background: rgba(2,181,187,0.08);
+    color: #0b3b3d;
     font-weight: 600;
   }
   .checkbox-label input[type="checkbox"] {
@@ -964,7 +964,7 @@
   }
   .tag-cat {
     background: #ede9fe;
-    color: #5b21b6;
+    color: #02b5bb;
     border: 1px solid #ddd6fe;
   }
   .tag-mod {
@@ -1042,7 +1042,7 @@
     flex: 1;
     min-width: 180px;
     padding: 9px 12px;
-    border: 1px dashed #6366f1;
+    border: 1px dashed #02b5bb;
     border-radius: 8px;
     font-size: 13px;
     color: #111;
@@ -1051,13 +1051,13 @@
   }
   .custom-field-name-input:focus {
     border-style: solid;
-    border-color: #6366f1;
+    border-color: #02b5bb;
     background: #fff;
   }
   .btn-add-field {
-    background: #eef2ff;
-    color: #4338ca;
-    border: 1px solid #c7d2fe;
+    background: rgba(2,181,187,0.08);
+    color: #0b3b3d;
+    border: 1px solid #9fe3e6;
     padding: 9px 16px;
     border-radius: 8px;
     font-size: 13px;

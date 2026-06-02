@@ -357,7 +357,7 @@
       <div class="bi-controls" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div class="bi-group">
           <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Collection</label>
-          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #6366f1; font-size: 13px; min-width: 200px; font-weight: 600; color: #4338ca; background: #eef2ff;">
+          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #02b5bb; font-size: 13px; min-width: 200px; font-weight: 600; color: #0b3b3d; background: rgba(2,181,187,0.08);">
             {#each AVAILABLE_COLLECTIONS as col}
               <option value={col.value}>{col.label}</option>
             {/each}
@@ -506,7 +506,7 @@
           <div class="metric-card__value">${$metrics.llmCosts.periodSpend?.thisYear?.toFixed(4) || '0.0000'}</div>
           <div class="metric-card__label">This Year</div>
         </div>
-        <div class="metric-card" style="border-left: 4px solid #6366f1">
+        <div class="metric-card" style="border-left: 4px solid #02b5bb">
           <div class="metric-card__value">${$metrics.llmCosts.totalCost.toFixed(4)}</div>
           <div class="metric-card__label">All Time</div>
         </div>
@@ -534,7 +534,7 @@
         <div class="monthly-chart">
           {#each $metrics.llmCosts.weeklySnapshots as snap}
             <div class="monthly-bar">
-              <div class="monthly-bar__fill" style="height: {Math.min(100, (snap.totalCost / Math.max(...$metrics.llmCosts.weeklySnapshots.map(s => s.totalCost), 0.001)) * 100)}%; background: #6366f1;"></div>
+              <div class="monthly-bar__fill" style="height: {Math.min(100, (snap.totalCost / Math.max(...$metrics.llmCosts.weeklySnapshots.map(s => s.totalCost), 0.001)) * 100)}%; background: #02b5bb;"></div>
               <span class="monthly-bar__count">${snap.totalCost.toFixed(2)}</span>
               <span class="monthly-bar__label">{snap.weekKey}</span>
             </div>
@@ -563,7 +563,7 @@
         <h2>Cost by Provider</h2>
         <div class="metrics-grid metrics-grid--small">
           {#each Object.entries($metrics.llmCosts.byProvider) as [provider, data]}
-            <div class="metric-card" style="border-left: 4px solid {provider === 'openrouter' ? '#f97316' : provider === 'google' ? '#3b82f6' : '#8b5cf6'}">
+            <div class="metric-card" style="border-left: 4px solid {provider === 'openrouter' ? '#f97316' : provider === 'google' ? '#3b82f6' : '#02b5bb'}">
               <div class="metric-card__value">${data.cost.toFixed(4)}</div>
               <div class="metric-card__label">{provider}</div>
               <div class="metric-card__sub">{data.calls} calls · {((data.inputTokens + data.outputTokens) / 1000).toFixed(1)}K tok</div>
@@ -599,7 +599,7 @@
       <div class="metrics-section">
         <h2>📊 Lead Channels</h2>
         <div class="metrics-grid metrics-grid--small">
-          <div class="metric-card" style="border-left: 4px solid #6366f1">
+          <div class="metric-card" style="border-left: 4px solid #02b5bb">
             <div class="metric-card__icon">💬</div>
             <div class="metric-card__value">{$metrics.channelBreakdown.chatbot || 0}</div>
             <div class="metric-card__label">AI Chatbot</div>

@@ -767,20 +767,20 @@
     align-items: center;
     gap: 0.42rem;
     padding: 0.38rem 1rem;
-    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 60%, #4c1d95 100%);
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 60%, #076f72 100%);
     color: #fff;
-    border: 1px solid rgba(167,139,250,.3);
+    border: 1px solid rgba(2,181,187,.3);
     border-radius: 10px;
     font-size: 0.8rem;
     font-weight: 800;
     letter-spacing: 0.03em;
     cursor: pointer;
     white-space: nowrap;
-    box-shadow: 0 3px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.15);
+    box-shadow: 0 3px 14px rgba(2,181,187,.35), inset 0 1px 0 rgba(255,255,255,.15);
     transition: box-shadow .2s, transform .12s, filter .15s;
   }
   .topbar__add-client:hover {
-    box-shadow: 0 6px 22px rgba(124,58,237,.52);
+    box-shadow: 0 6px 22px rgba(2,181,187,.52);
     filter: brightness(1.1);
     transform: translateY(-1px);
   }
@@ -862,13 +862,13 @@
 
   /* hover state */
   .bug-fab:hover .bug-fab__inner {
-    background: linear-gradient(135deg, rgba(99,102,241,0.9) 0%, rgba(79,70,229,0.95) 100%);
+    background: linear-gradient(135deg, rgba(2,181,187,0.9) 0%, rgba(10,138,142,0.95) 100%);
     border-color: rgba(99, 102, 241, 0.8);
     color: #fff;
     transform: scale(1.1) translateY(-2px);
     box-shadow:
       0 8px 32px rgba(99, 102, 241, 0.45),
-      0 0 0 1px rgba(99,102,241,0.25),
+      0 0 0 1px rgba(2,181,187,0.25),
       inset 0 1px 0 rgba(255,255,255,0.15);
   }
   .bug-fab:hover .bug-fab__ring {

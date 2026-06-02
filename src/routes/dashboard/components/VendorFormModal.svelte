@@ -488,12 +488,12 @@
   .pill:hover { border-color: #475569; color: #94a3b8; }
 
   /* Selected state — category */
-  .pill--full_service.pill--selected           { background: rgba(99,102,241,0.15); border-color: #6366f1; color: #a5b4fc; }
+  .pill--full_service.pill--selected           { background: rgba(2,181,187,0.12); border-color: #02b5bb; color: #02b5bb; }
   .pill--self_pack_with_loading.pill--selected { background: rgba(20,184,166,0.15); border-color: #14b8a6; color: #5eead4; }
   .pill--diy_no_loading.pill--selected         { background: rgba(234,179,8,0.15);  border-color: #eab308; color: #fde047; }
   /* Selected state — modality */
   .pill--maritime.pill--selected { background: rgba(14,165,233,0.15); border-color: #0ea5e9; color: #38bdf8; }
-  .pill--air.pill--selected      { background: rgba(139,92,246,0.15); border-color: #8b5cf6; color: #c4b5fd; }
+  .pill--air.pill--selected      { background: rgba(2,181,187,0.12); border-color: #02b5bb; color: #02b5bb; }
   .pill--land.pill--selected     { background: rgba(249,115,22,0.15); border-color: #f97316; color: #fdba74; }
 
   .pill__icon { font-size: 1em; }

@@ -517,7 +517,7 @@
             {#each Object.entries(STAGE_LABELS) as [key, label]}
               <button
                 class="posts-view__tag"
-                style={targetStages.includes(key) ? 'background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.5);' : 'background:transparent;color:var(--text-muted);border-color:var(--border);'}
+                style={targetStages.includes(key) ? 'background:rgba(2,181,187,0.15);border-color:rgba(2,181,187,0.5);' : 'background:transparent;color:var(--text-muted);border-color:var(--border);'}
                 on:click={() => toggleStage(key)}
               >{label}</button>
             {/each}

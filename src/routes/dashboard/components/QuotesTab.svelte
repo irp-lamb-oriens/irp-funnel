@@ -220,7 +220,7 @@
   }
 
   .quotes-tab__new-btn {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
     color: #fff;
     border: none;
     border-radius: 999px;
@@ -231,11 +231,11 @@
     transition: box-shadow 0.18s, transform 0.18s, filter 0.18s;
     white-space: nowrap;
     letter-spacing: 0.01em;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.28);
+    box-shadow: 0 2px 8px rgba(2,181,187,0.28);
   }
   .quotes-tab__new-btn:hover {
     filter: brightness(1.07);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.38);
+    box-shadow: 0 4px 16px rgba(2,181,187,0.38);
     transform: translateY(-1px);
   }
   .quotes-tab__new-btn:active { transform: translateY(0); filter: brightness(0.97); }
@@ -255,7 +255,7 @@
     width: 18px;
     height: 18px;
     border: 2px solid #e2e8f0;
-    border-top-color: #6366f1;
+    border-top-color: #02b5bb;
     border-radius: 50%;
     animation: qt-spin 0.7s linear infinite;
     flex-shrink: 0;
@@ -341,12 +341,12 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(0,0,0,0.04);
   }
   .quotes-tab__item:hover {
-    border-color: #c7d2fe;
-    box-shadow: 0 4px 16px rgba(99,102,241,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    border-color: #9fe3e6;
+    box-shadow: 0 4px 16px rgba(2,181,187,0.10), 0 1px 4px rgba(0,0,0,0.06);
     transform: translateY(-1px);
   }
   .quotes-tab__item:focus-visible {
-    outline: 2px solid #6366f1;
+    outline: 2px solid #02b5bb;
     outline-offset: 2px;
   }
 

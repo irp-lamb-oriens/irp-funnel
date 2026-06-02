@@ -245,7 +245,7 @@
     transition: border-color 0.14s;
   }
   .vmatch-card--open {
-    border-color: rgba(99,102,241,0.25);
+    border-color: rgba(2,181,187,0.25);
   }
 
   /* ── Header ────────────────────────────────────────────────────────────── */
@@ -333,7 +333,7 @@
   }
   .vmatch-chip--sm { font-size: 0.68rem; padding: 0.15rem 0.4rem; }
   /* Dark-enough accent colours → readable on their light bg */
-  .vmatch-chip--cat   { background: rgba(99,102,241,0.1);  color: #4f46e5; border: 1px solid rgba(99,102,241,0.2); }
+  .vmatch-chip--cat   { background: rgba(2,181,187,0.1);  color: #02b5bb; border: 1px solid rgba(2,181,187,0.2); }
   .vmatch-chip--mod   { background: rgba(14,165,233,0.08); color: #0284c7; border: 1px solid rgba(14,165,233,0.2); }
   .vmatch-chip--route { background: #f1f5f9;               color: #475569; border: 1px solid #e2e8f0; }
 
@@ -361,11 +361,11 @@
     padding: 0.25rem 0;
   }
   .vmatch-empty a {
-    color: #6366f1;
+    color: #02b5bb;
     text-decoration: underline;
     cursor: pointer;
   }
-  .vmatch-empty a:hover { color: #4f46e5; }
+  .vmatch-empty a:hover { color: #0a8a8e; }
 
   /* ── Provider list ───────────────────────────────────────────────────────── */
   .vmatch-list {
@@ -386,7 +386,7 @@
     border: 1px solid #e2e8f0;
     transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .vmatch-item:hover { border-color: #c7d2fe; box-shadow: 0 1px 4px rgba(99,102,241,0.08); }
+  .vmatch-item:hover { border-color: #9fe3e6; box-shadow: 0 1px 4px rgba(2,181,187,0.08); }
   .vmatch-item:first-child { border-color: #bbf7d0; background: #f0fdf4; }
   .vmatch-item--dim { opacity: 0.55; }
 
@@ -409,11 +409,11 @@
   }
   .vmatch-site {
     font-size: 0.72rem;
-    color: #6366f1;
+    color: #02b5bb;
     text-decoration: none;
     font-weight: 600;
   }
-  .vmatch-site:hover { text-decoration: underline; color: #4f46e5; }
+  .vmatch-site:hover { text-decoration: underline; color: #0a8a8e; }
 
   .vmatch-contact {
     display: flex;
@@ -422,8 +422,8 @@
     font-size: 0.78rem;
     color: #475569;   /* dark on light-bg → readable */
   }
-  .vmatch-email { color: #6366f1; text-decoration: none; }
-  .vmatch-email:hover { text-decoration: underline; color: #4f46e5; }
+  .vmatch-email { color: #02b5bb; text-decoration: none; }
+  .vmatch-email:hover { text-decoration: underline; color: #0a8a8e; }
   .vmatch-phone { color: #94a3b8; }
 
   .vmatch-chips {
@@ -446,7 +446,7 @@
     width: 12px;
     height: 12px;
     border: 1.5px solid #e2e8f0;
-    border-top-color: #6366f1;
+    border-top-color: #02b5bb;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }

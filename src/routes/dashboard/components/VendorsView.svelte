@@ -522,7 +522,7 @@
     white-space: nowrap;
   }
   /* Category colors */
-  .chip--full_service           { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+  .chip--full_service           { background: rgba(2,181,187,0.12); color: #02b5bb; }
   .chip--self_pack_with_loading { background: rgba(20,184,166,0.15); color: #5eead4; }
   .chip--diy_no_loading         { background: rgba(234,179,8,0.15);  color: #fde047; }
   /* Modality colors */

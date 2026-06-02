@@ -62,7 +62,7 @@
       icon: '🛂',
       title: 'Residency & Visa Options',
       tag: 'Immigration',
-      tagColor: '#8b5cf6',
+      tagColor: '#02b5bb',
       body: 'Explore digital nomad visas, pensioner residency programs, investor schemes, and work permit pathways for your destination.',
       priority: ['costa rica', 'portugal', 'spain', 'mexico', 'colombia', 'Panama'],
       lilyTopic: 'What residency or visa options are available for moving to {{destination}}?',
