@@ -49,6 +49,37 @@
    *  'light' — dark (#1e293b) text + teal border on white bg (CRM modal, etc.).
    */
   export let slotTheme: 'dark' | 'light' = 'dark';
+  /**
+   * When true (staff/dashboard context), reveals a "⚡ Pick a custom time"
+   * toggle that lets staff book same-day or off-hours appointments bypassing
+   * the 2-day grace and working-hours filter. NEVER set this on the public form.
+   */
+  export let staffMode: boolean = false;
+
+  // ── Staff custom-time state ────────────────────────────────────────────────
+  let useCustomTime = false;
+  let customTimeValue = '';
+
+  /** Minimum datetime-local value = right now (no grace restriction for staff). */
+  $: todayMin = (() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  })();
+
+  function toggleCustomTime() {
+    useCustomTime = !useCustomTime;
+    if (!useCustomTime) { customTimeValue = ''; onSelect(''); }
+  }
+
+  function handleCustomTimeInput() {
+    if (!customTimeValue) { onSelect(''); return; }
+    try {
+      const d = new Date(customTimeValue);
+      if (isNaN(d.getTime())) { onSelect(''); return; }
+      onSelect(d.toISOString());
+    } catch { onSelect(''); }
+  }
 
   // ── Internal stores ────────────────────────────────────────────────────────
   type AvailableHour = { name: string; value: string; disabled: boolean };
@@ -228,7 +259,36 @@
 </script>
 
 <div class="ap ap--{theme}" class:ap--disabled={disabled}>
-  {#if $errorLoading}
+  {#if staffMode}
+    <div class="ap__staff-bar">
+      <button type="button" class="ap__staff-toggle" on:click={toggleCustomTime}>
+        {useCustomTime ? '← Use calendar slots' : '⚡ Pick a custom time'}
+      </button>
+    </div>
+  {/if}
+
+  {#if staffMode && useCustomTime}
+    <div class="ap__custom-time">
+      <label class="ap__custom-label" for="ap-custom-input">Date &amp; time (your local time)</label>
+      <input
+        id="ap-custom-input"
+        type="datetime-local"
+        class="ap__custom-input"
+        bind:value={customTimeValue}
+        min={todayMin}
+        on:input={handleCustomTimeInput}
+        disabled={disabled}
+      />
+      {#if customTimeValue}
+        <p class="ap__custom-preview">
+          ✓ {new Date(customTimeValue).toLocaleString('en-US', {
+            weekday: 'short', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: '2-digit', timeZone: 'America/Costa_Rica',
+          })} (CR time)
+        </p>
+      {/if}
+    </div>
+  {:else if $errorLoading}
     <div class="ap__error">{$errorLoading}</div>
   {:else if currentDates.length === 0}
     <div class="ap__loading">
@@ -523,4 +583,60 @@
   }
 
   @keyframes ap-spin { to { transform: rotate(360deg); } }
+
+  /* ── Staff-mode custom time picker ── */
+  .ap__staff-bar {
+    padding: 0 0 0.75rem;
+    display: flex;
+  }
+  .ap__staff-toggle {
+    background: none;
+    border: 1px dashed var(--ap-avail-bdr);
+    color: var(--ap-muted);
+    border-radius: 8px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    &:hover:not(:disabled) {
+      border-style: solid;
+      border-color: var(--ap-accent);
+      color: var(--ap-accent);
+      background: var(--ap-avail-bg);
+    }
+  }
+  .ap__custom-time {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.25rem 0 0.5rem;
+  }
+  .ap__custom-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ap-muted);
+  }
+  .ap__custom-input {
+    background: var(--ap-bg);
+    border: 1.5px solid var(--ap-avail-bdr);
+    border-radius: 8px;
+    color: var(--ap-text);
+    padding: 0.5rem 0.65rem;
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+    &:focus { border-color: var(--ap-accent); }
+    &:disabled { opacity: 0.5; }
+  }
+  .ap__custom-preview {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ap-accent);
+    margin: 0;
+  }
 </style>

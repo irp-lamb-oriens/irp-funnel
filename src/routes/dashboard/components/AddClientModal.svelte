@@ -10,6 +10,18 @@
   // ── Scheduling slot + post-booking success state ─────────────────────
   let selectedSlot = '';
   let successData: Record<string, any> | null = null;
+  /** Non-fatal: client was created but the slot was taken — warn + let staff proceed. */
+  let bookingWarning: string = '';
+  /** The docId returned from the server; set regardless of booking outcome so
+   *  "Open Client Card" always dispatches with the correct ID. */
+  let createdDocId: string = '';
+
+  // ── Additional attendees (optional) ──────────────────────────────────
+  // Primary lead = the email in the form (drives the docId + consultation record).
+  // extraAttendees are extra invitees added to the calendar event only.
+  let extraAttendees: string[] = [];
+  function addExtraAttendee()             { extraAttendees = [...extraAttendees, '']; }
+  function removeExtraAttendee(i: number) { extraAttendees = extraAttendees.filter((_, idx) => idx !== i); }
 
   // Canonical API base — localhost:8000 in dev, irp-funnel-server.onrender.com
   // in prod. Shared with the rest of the dashboard via store.ts/getApiUrl().
@@ -404,6 +416,7 @@
           voiceTranscript: rawTranscript || undefined,
           customFields: Object.keys(cf).length ? cf : undefined,
           startISO: selectedSlot || undefined,
+          additionalAttendees: extraAttendees.filter(e => e.trim()).map(e => e.trim()).filter(Boolean) || undefined,
         }),
       });
       if (!res.ok) {
@@ -411,8 +424,15 @@
         throw new Error((e as any).error || 'Failed to create client.');
       }
       const data = await res.json();
-      if (data.hangoutLink) {
-        // Call was booked — show success panel with the Meet link before closing.
+      // Always capture docId first so every branch can dispatch it.
+      createdDocId = data.docId ?? '';
+
+      if (data.bookingError) {
+        // Client was created but the selected slot was taken (non-fatal).
+        // Surface a warning and let staff open the card to reschedule.
+        bookingWarning = data.bookingError;
+      } else if (data.hangoutLink) {
+        // Call was booked — show success panel with the Meet link.
         successData = data;
       } else {
         dispatch('created', { docId: data.docId });
@@ -729,6 +749,31 @@
 
         </div><!-- .review-body -->
 
+        <!-- ── Additional attendees (optional) ────────────────────────────── -->
+        <div class="acm-attendees-section">
+          <p class="acm-attendees-label">
+            Additional attendees
+            <span class="acm-attendees-optional">(optional)</span>
+          </p>
+          <p class="acm-attendees-hint">
+            Primary client lead: <strong>{getField('email').trim() || '—'}</strong>.
+            Add extra people to be invited to the same call.
+          </p>
+          {#each extraAttendees as _att, i}
+            <div class="acm-attendee-row">
+              <input type="email" class="acm-attendee-input"
+                bind:value={extraAttendees[i]}
+                placeholder="attendee@example.com" />
+              <button type="button" class="acm-attendee-del"
+                on:click={() => removeExtraAttendee(i)}
+                aria-label="Remove attendee">×</button>
+            </div>
+          {/each}
+          <button type="button" class="acm-add-attendee" on:click={addExtraAttendee}>
+            + Add attendee
+          </button>
+        </div>
+
         <!-- ── Schedule a call (optional) ──────────────────────────────── -->
         <div class="acm-schedule-section">
           <p class="acm-schedule-label">
@@ -738,6 +783,7 @@
           <AvailabilityPicker
             theme="light"
             slotTheme="light"
+            staffMode={true}
             onSelect={(iso) => { selectedSlot = iso; }}
           />
           {#if selectedSlot}
@@ -751,24 +797,38 @@
         </div>
 
         <div class="review-footer">
-          {#if submitError}<div class="rfoot-error">{submitError}</div>{/if}
+          {#if bookingWarning}
+            <div class="rfoot-booking-warning">
+              ⚠️ Client created — but the selected time slot was already taken.
+              Schedule a call from the client card.
+            </div>
+          {:else if submitError}
+            <div class="rfoot-error">{submitError}</div>
+          {/if}
           <button class="btn-back"
             on:click={() => { resetForm(); step = 'dictate'; rawTranscript = ''; }}>
             ← Re-record
           </button>
-          <button class="btn-create" on:click={handleSubmit}
-            disabled={submitting || !getField('email').trim()}>
-            {#if submitting}
-              <span class="btn-spin"></span>
-              <span>{selectedSlot ? 'Creating + Booking…' : 'Creating…'}</span>
-            {:else}
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>{selectedSlot ? 'Create Client + Book Call' : 'Create Client'}</span>
-            {/if}
-          </button>
+          {#if bookingWarning}
+            <button class="btn-create btn-create--warning" type="button"
+              on:click={() => dispatch('created', { docId: createdDocId })}>
+              Open Client Card →
+            </button>
+          {:else}
+            <button class="btn-create" on:click={handleSubmit}
+              disabled={submitting || !getField('email').trim()}>
+              {#if submitting}
+                <span class="btn-spin"></span>
+                <span>{selectedSlot ? 'Creating + Booking…' : 'Creating…'}</span>
+              {:else}
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2.5 8.5L6.5 12.5L13.5 4" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{selectedSlot ? 'Create Client + Book Call' : 'Create Client'}</span>
+              {/if}
+            </button>
+          {/if}
         </div>
 
         {/if}
@@ -1130,6 +1190,95 @@
     border-radius:50%; animation:btn-rotate .65s linear infinite; flex-shrink:0;
   }
   @keyframes btn-rotate { to{transform:rotate(360deg)} }
+  /* ── Additional attendees section ─────────────────────────────────── */
+  .acm-attendees-section {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .acm-attendees-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .acm-attendees-optional { font-weight: 400; color: #94a3b8; font-style: italic; }
+  .acm-attendees-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .acm-attendee-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .acm-attendee-input {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.84rem;
+    font-family: inherit;
+    color: #1e293b;
+    outline: none;
+    background: #fff;
+    &:focus { border-color: #02b5bb; }
+  }
+  .acm-attendee-del {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #dc2626;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    &:hover { background: #fee2e2; }
+  }
+  .acm-add-attendee {
+    align-self: flex-start;
+    background: none;
+    border: 1px dashed #e2e8f0;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.2rem 0.65rem;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+    &:hover { border-color: #02b5bb; color: #02b5bb; }
+  }
+  .rfoot-booking-warning {
+    flex: 1;
+    font-size: 0.77rem;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fef08a;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    line-height: 1.4;
+  }
+  .btn-create--warning {
+    background: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
+    &:hover:not(:disabled) { background: #d97706 !important; }
+  }
+
   /* ── Scheduling section (Review & Create step) ────────────────────── */
   .acm-schedule-section {
     padding: 1rem 1.25rem;

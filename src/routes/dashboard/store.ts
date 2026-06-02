@@ -1435,6 +1435,7 @@ export async function dismissEmailSuggestion(
 export async function rescheduleCall(
   clientId: string,
   startISO: string,
+  additionalAttendees?: string[],
 ): Promise<{
   success: boolean;
   hangoutLink?: string;
@@ -1447,7 +1448,10 @@ export async function rescheduleCall(
 }> {
   return apiFetch(`/api/dashboard/clients/${clientId}/reschedule`, {
     method: 'POST',
-    body: JSON.stringify({ startISO }),
+    body: JSON.stringify({
+      startISO,
+      ...(additionalAttendees?.length ? { additionalAttendees } : {}),
+    }),
   });
 }
 
@@ -1465,6 +1469,8 @@ export interface CreateClientPayload {
   originCity?: string;
   budget?: string;
   notes?: string[];
+  /** Extra attendees to add to the Google Calendar event beyond the primary client and team. */
+  additionalAttendees?: string[];
 }
 
 /**

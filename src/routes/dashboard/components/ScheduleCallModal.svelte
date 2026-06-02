@@ -48,6 +48,24 @@
   let originCountry = '';
   let notes = '';
 
+  // ── Attendees ────────────────────────────────────────────────────────────
+  // Create mode: primary lead = email (the form field above); extraAttendees
+  // are added to the Calendar invite and deduped server-side.
+  // Reschedule mode: extra invitees only (primary is the existing client).
+  let extraAttendees: string[] = [];
+
+  function addAttendee()             { extraAttendees = [...extraAttendees, '']; }
+  function removeAttendee(i: number) { extraAttendees = extraAttendees.filter((_, idx) => idx !== i); }
+  /** Swap attendee at index i with the primary email field. */
+  function promoteAttendee(i: number) {
+    const newPrimary = extraAttendees[i]?.trim();
+    if (!newPrimary) return;
+    const oldPrimary = email;
+    email = newPrimary;
+    extraAttendees = extraAttendees.map((a, idx) => idx === i ? oldPrimary : a);
+    extraAttendees = [...extraAttendees];
+  }
+
   // Validation
   $: emailValid = email.includes('@') && email.includes('.');
   $: canSubmit = !submitting && (
@@ -71,11 +89,13 @@
     submitting = true;
     try {
       if (mode === 'reschedule' && client) {
-        const result = await rescheduleCall(client.id, selectedSlot);
+        const extras = extraAttendees.filter((e: string) => e.trim());
+        const result = await rescheduleCall(client.id, selectedSlot, extras.length ? extras : undefined);
         successResult = result;
         toasts.success('Call rescheduled! Google Meet link is ready.');
         onSuccess(result);
       } else {
+        const extras = extraAttendees.filter((e: string) => e.trim()).map((e: string) => e.trim());
         const result = await createClientFromCrm({
           email: email.trim(),
           name: firstName.trim(),
@@ -85,6 +105,7 @@
           originCountry: originCountry.trim(),
           notes: notes.trim() ? [notes.trim()] : [],
           startISO: selectedSlot || undefined,
+          additionalAttendees: extras.length ? extras : undefined,
         });
         successResult = result;
         toasts.success(result.hangoutLink ? 'Client created and call booked!' : 'Client created!');
@@ -213,6 +234,44 @@
           </div>
         {/if}
 
+        <!-- ── Attendees ── -->
+        <div class="scm__attendees">
+          <p class="scm__attendees-label">
+            Attendees
+            {#if mode === 'create'}
+              <span class="scm__attendees-sub">— first is primary client lead</span>
+            {:else}
+              <span class="scm__attendees-optional">(optional)</span>
+            {/if}
+          </p>
+          {#if mode === 'create'}
+            <div class="scm__attendee-row scm__attendee-row--primary">
+              <span class="scm__attendee-star scm__attendee-star--fixed" title="Primary client lead">★</span>
+              <span class="scm__attendee-primary-email">{email.trim() || '(enter email above)'}</span>
+            </div>
+          {/if}
+          {#each extraAttendees as _att, i}
+            <div class="scm__attendee-row">
+              {#if mode === 'create'}
+                <button class="scm__attendee-star scm__attendee-star--btn" type="button"
+                  title="Set as primary client lead" on:click={() => promoteAttendee(i)}
+                  disabled={submitting} aria-label="Set as primary">★</button>
+              {:else}
+                <span class="scm__attendee-dot">•</span>
+              {/if}
+              <input type="email" class="scm__input scm__attendee-input"
+                bind:value={extraAttendees[i]}
+                placeholder="attendee@example.com"
+                disabled={submitting} />
+              <button class="scm__attendee-del" type="button"
+                on:click={() => removeAttendee(i)} disabled={submitting} aria-label="Remove">×</button>
+            </div>
+          {/each}
+          <button class="scm__add-attendee" type="button" on:click={addAttendee} disabled={submitting}>
+            + Add attendee
+          </button>
+        </div>
+
         <!-- ── Availability picker ── -->
         <div class="scm__picker-wrap">
           <p class="scm__picker-label">
@@ -221,6 +280,7 @@
           <AvailabilityPicker
             theme="light"
             slotTheme="light"
+            staffMode={true}
             preselected={mode === 'reschedule' ? (currentSlot ?? '') : ''}
             disabled={submitting}
             onSelect={(iso) => { selectedSlot = iso; }}
@@ -512,6 +572,95 @@
     cursor: pointer;
     font-family: inherit;
     &:hover { background: #f8fafc; }
+  }
+
+  /* ── Attendees ── */
+  .scm__attendees {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .scm__attendees-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .scm__attendees-sub { font-weight: 400; color: #94a3b8; }
+  .scm__attendees-optional { font-weight: 400; color: #94a3b8; font-style: italic; }
+  .scm__attendee-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    &--primary { padding: 0.3rem 0; }
+  }
+  .scm__attendee-star {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+    &--fixed { color: #02b5bb; }
+    &--btn {
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      transition: color 0.15s;
+      &:hover:not(:disabled) { color: #02b5bb; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+  }
+  .scm__attendee-dot { color: #94a3b8; flex-shrink: 0; width: 24px; text-align: center; }
+  .scm__attendee-primary-email {
+    font-size: 0.83rem;
+    color: #1e293b;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .scm__attendee-input {
+    flex: 1;
+    min-width: 0;
+  }
+  .scm__attendee-del {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #dc2626;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    &:hover:not(:disabled) { background: #fee2e2; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+  .scm__add-attendee {
+    align-self: flex-start;
+    background: none;
+    border: 1px dashed #e2e8f0;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.22rem 0.7rem;
+    font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+    &:hover:not(:disabled) { border-color: #02b5bb; color: #02b5bb; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
   }
 
   .scm__spinner {
