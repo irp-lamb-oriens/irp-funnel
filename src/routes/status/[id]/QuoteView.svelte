@@ -57,6 +57,12 @@
   function formatCurrency(amount: number, currency: string): string {
     return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
   }
+
+  /** Client price for a line item. Server pre-computes `clientPrice` on the public endpoint.
+   *  Falls back to `item.amount` for backward compat with old quotes in transition. */
+  function lineDisplayPrice(item: any): number {
+    return item.clientPrice ?? item.amount ?? 0;
+  }
 </script>
 
 {#if !token}
@@ -115,7 +121,7 @@
                   <span class="qv-item-notes">{item.notes}</span>
                 {/if}
               </td>
-              <td class="qv-amount">{formatCurrency(item.amount, item.currency)}</td>
+              <td class="qv-amount">{formatCurrency(lineDisplayPrice(item), item.currency)}</td>
             </tr>
           {/each}
         </tbody>
@@ -128,19 +134,12 @@
       </table>
     {/if}
 
-    {#if Array.isArray(quote.providerSnapshots) && quote.providerSnapshots.length > 0}
-      <div class="qv-providers">
-        <p class="qv-providers-label">Assigned operators</p>
-        {#each quote.providerSnapshots as p}
-          <span class="qv-provider-tag">{p.name} · {p.country}</span>
-        {/each}
-      </div>
-    {/if}
+    <!-- Providers intentionally hidden — clients never see provider names or cost detail -->
 
-    {#if quote.notes}
+    {#if (quote as any).clientDescription}
       <div class="qv-notes">
-        <p class="qv-notes-label">Team note</p>
-        <p class="qv-notes-text">{quote.notes}</p>
+        <p class="qv-notes-label">About this service</p>
+        <p class="qv-notes-text">{(quote as any).clientDescription}</p>
       </div>
     {/if}
 

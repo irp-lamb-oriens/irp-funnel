@@ -72,8 +72,14 @@
 
   // ── Margin math ────────────────────────────────────────────────────────────
   function lineClientPrice(li: QuoteLineItem): number {
+    const cost = Number(li.amount) || 0;
+    // Flat mode: clientPrice = cost + marginFlat
+    if (li.marginMode === 'flat') {
+      return Math.round((cost + (Number(li.marginFlat) || 0)) * 100) / 100;
+    }
+    // Percentage mode (default): clientPrice = cost × (1 + marginPct/100)
     const m = typeof li.marginPct === 'number' ? li.marginPct : 20;
-    return Math.round((Number(li.amount) || 0) * (1 + m / 100) * 100) / 100;
+    return Math.round(cost * (1 + m / 100) * 100) / 100;
   }
   $: costSubtotal = lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0);
   $: clientTotal  = lineItems.reduce((s, li) => s + lineClientPrice(li), 0);
@@ -90,7 +96,7 @@
   function addLine() {
     lineItems = [
       ...lineItems,
-      { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, currency: 'USD', providerId: null, notes: null },
+      { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency: 'USD', providerId: null, notes: null },
     ];
   }
 
@@ -123,6 +129,8 @@
       lineItems = (q.lineItems ?? []).map(li => ({
         ...li,
         marginPct: typeof li.marginPct === 'number' ? li.marginPct : 20,
+        marginMode: li.marginMode === 'flat' ? 'flat' as const : 'pct' as const,
+        marginFlat: typeof li.marginFlat === 'number' ? li.marginFlat : null,
       }));
       providerIds = [...(q.providerIds ?? [])];
       providerSnapshots = [...(q.providerSnapshots ?? [])];
@@ -488,18 +496,37 @@
                       />
                     </td>
                     <td class="qe-td-pct">
-                      <div class="qe-pct-wrap">
-                        <input
-                          class="qe-input qe-input--sm qe-input--num qe-input--pct"
-                          type="number"
-                          min="0"
-                          max="500"
-                          step="1"
-                          placeholder="20"
-                          value={typeof li.marginPct === 'number' ? li.marginPct : 20}
-                          on:input={(e) => updateLine(li.lineId, 'marginPct', parseFloat((e.target as HTMLInputElement).value) || 0)}
-                        />
-                        <span class="qe-pct-sym">%</span>
+                      <div class="qe-margin-cell">
+                        <!-- Mode toggle: % or flat currency -->
+                        <button
+                          type="button"
+                          class="qe-margin-mode-btn"
+                          class:qe-margin-mode-btn--pct={li.marginMode !== 'flat'}
+                          title="{li.marginMode === 'flat' ? 'Flat amount — click to switch to %' : 'Percentage — click to switch to flat amount'}"
+                          on:click={() => updateLine(li.lineId, 'marginMode', li.marginMode === 'flat' ? 'pct' : 'flat')}
+                        >{li.marginMode === 'flat' ? (li.currency || '$') : '%'}</button>
+                        {#if li.marginMode === 'flat'}
+                          <input
+                            class="qe-input qe-input--sm qe-input--num qe-input--margin"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={typeof li.marginFlat === 'number' ? li.marginFlat : 0}
+                            on:input={(e) => updateLine(li.lineId, 'marginFlat', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                          />
+                        {:else}
+                          <input
+                            class="qe-input qe-input--sm qe-input--num qe-input--margin"
+                            type="number"
+                            min="0"
+                            max="500"
+                            step="1"
+                            placeholder="20"
+                            value={typeof li.marginPct === 'number' ? li.marginPct : 20}
+                            on:input={(e) => updateLine(li.lineId, 'marginPct', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                          />
+                        {/if}
                       </div>
                     </td>
                     <td class="qe-td-price">
@@ -1635,7 +1662,32 @@
   .qe-pct-wrap--field { gap: 6px; }
   .qe-pct-sym { font-size: 12px; color: #64748b; font-weight: 600; flex-shrink: 0; }
   .qe-input--pct { width: 68px !important; max-width: 68px; }
-  .qe-th-pct  { width: 96px; }
+  /* ── Margin mode cell (per-line toggle % ↔ flat $) ── */
+  .qe-margin-cell { display: flex; align-items: center; gap: 3px; }
+  .qe-input--margin { width: 68px !important; max-width: 68px; }
+  .qe-margin-mode-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 28px; height: 28px; padding: 0 5px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 11px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .qe-margin-mode-btn--pct {
+    background: rgba(2,181,187,0.08);
+    border-color: rgba(2,181,187,0.25);
+    color: #02b5bb;
+  }
+  .qe-margin-mode-btn:hover {
+    background: rgba(2,181,187,0.12);
+    border-color: rgba(2,181,187,0.38);
+    color: #02999e;
+  }
+  .qe-th-pct  { width: 110px; }
   .qe-th-price { width: 108px; color: #02b5bb !important; }
   .qe-th-cur  { width: 82px; }
   .qe-th-notes { min-width: 130px; }

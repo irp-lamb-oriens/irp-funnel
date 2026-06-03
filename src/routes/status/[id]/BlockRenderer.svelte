@@ -16,7 +16,7 @@
    */
 
   import { createEventDispatcher } from 'svelte';
-  import type { Quote, QuoteBlock } from '../../dashboard/store.ts';
+  import type { Quote, QuoteBlock, QuoteLineItem } from '../../dashboard/store.ts';
   import { sanitizeHtml } from './sanitizeHtml.ts';
   import { aggregateByCurrency, formatMoney } from '$lib/money.ts';
   import { buildMergeContext, renderMergeFields } from '$lib/mergeFields.ts';
@@ -47,12 +47,23 @@
 
   $: hasOptionalItems = quote.lineItems.some(li => !!li.isOptional);
 
+  // ── Client price helper ───────────────────────────────────────────────────
+  // The server pre-computes `clientPrice` (cost + margin) on the public endpoint.
+  // Provider cost (`amount`), margin % and margin mode are NEVER sent to the client.
+  // For old quotes still in transition, falls back to `item.amount` (backward compat).
+  function displayPrice(item: QuoteLineItem): number {
+    return (item as any).clientPrice ?? item.amount ?? 0;
+  }
+
+  // Map line items so aggregateByCurrency sees client-facing prices.
+  $: clientPriceItems = quote.lineItems.map(li => ({ ...li, amount: displayPrice(li) }));
+
   /**
    * Dynamic totals: per-currency buckets for selected line items.
+   * Uses client prices (never provider cost / margin detail).
    * Recalculates every time _selectedIds is reassigned.
-   * Replaces the old single-currency dynamicTotal.
    */
-  $: currencyBuckets = aggregateByCurrency(quote.lineItems, _selectedIds);
+  $: currencyBuckets = aggregateByCurrency(clientPriceItems, _selectedIds);
 
   /** Flat merge context derived from the client summary prop. */
   $: mergeCtx = buildMergeContext(clientSummary);
@@ -157,7 +168,7 @@
                     {/if}
                   </td>
                   <td class="br-amt" class:br-amt-dim={!!item.isOptional && !isSelected}>
-                    {formatMoney(item.amount, item.currency)}
+                    {formatMoney(displayPrice(item), item.currency)}
                   </td>
                 </tr>
               {/each}
@@ -185,19 +196,10 @@
             </tfoot>
           </table>
 
-          {#if Array.isArray(quote.providerSnapshots) && quote.providerSnapshots.length > 0}
-            <div class="br-providers">
-              <p class="br-providers-label">Assigned operators</p>
-              {#each quote.providerSnapshots as p}
-                <span class="br-provider-tag">{p.name} · {p.country}</span>
-              {/each}
-            </div>
-          {/if}
-
-          {#if quote.notes}
-            <div class="br-notes-card">
-              <p class="br-notes-label">Team note</p>
-              <p class="br-notes-text">{quote.notes}</p>
+          {#if (quote as any).clientDescription}
+            <div class="br-notes-card br-client-description">
+              <p class="br-notes-label">About this service</p>
+              <p class="br-notes-text">{(quote as any).clientDescription}</p>
             </div>
           {/if}
         </div>
@@ -238,7 +240,8 @@
       </div>
 
     {/if}
-    <!-- All other block types (image, testimonials, reviews, partners, …)
+      <!-- Providers, internal notes, costs and margin are intentionally hidden from the client.
+           All other block types (image, testimonials, reviews, partners, …)
          are intentionally skipped here — forward-compatible: future deploys
          that know how to render them will replace this component. -->
 
@@ -526,6 +529,14 @@
     font-size: 14px;
     line-height: 1.7;
   }
+  /* Client description — slightly different treatment from internal notes */
+  .br-client-description {
+    background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfe 100%);
+    border-left-color: #0ea5e9;
+    margin-top: 16px;
+  }
+  .br-client-description .br-notes-label { color: #0284c7; }
+  .br-client-description .br-notes-text { color: #1e293b; font-size: 14.5px; }
 
   /* ═══════════════════════ ACCEPT CTA BLOCK ════════════════════════════ */
 

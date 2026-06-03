@@ -1633,11 +1633,19 @@ export interface QuoteLineItem {
   /** Provider cost — what IRP pays the provider for this service line. */
   amount: number;
   /**
-   * IRP margin percentage (default 20).
+   * IRP margin percentage (default 20).  Used when marginMode === 'pct' (the default).
    * clientPrice = amount × (1 + marginPct / 100)
    * e.g. amount = $100, marginPct = 20  →  clientPrice = $120
    */
   marginPct: number;
+  /**
+   * Margin mode:
+   *   'pct'  (default) — percentage-based:  clientPrice = amount × (1 + marginPct / 100)
+   *   'flat'           — flat currency add:  clientPrice = amount + marginFlat
+   */
+  marginMode?: 'pct' | 'flat';
+  /** Flat currency margin; only used when marginMode === 'flat'. Matches the line's currency. */
+  marginFlat?: number | null;
   currency: string;
   providerId: string | null;
   notes: string | null;
