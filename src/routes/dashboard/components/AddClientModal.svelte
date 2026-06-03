@@ -466,7 +466,8 @@
   class="acm-overlay"
   role="dialog"
   aria-modal="true"
-  tabindex="-1"
+  aria-label="Add New Client"
+  tabindex="0"
   on:click|self={closeModal}
   on:keydown={(e) => e.key === 'Escape' && closeModal()}
 >
@@ -856,6 +857,12 @@
     display: flex; align-items: center; justify-content: center;
     padding: 1rem; backdrop-filter: blur(8px);
   }
+  /* Suppress browser focus ring when Tab cycles to the backdrop (tabindex="0"
+     is required by a11y_interactive_supports_focus for role="dialog", but the
+     backdrop itself should never show a focus indicator — the inner shell
+     handles all focus-visible interactions). */
+  .acm-overlay:focus,
+  .acm-overlay:focus-visible { outline: none; }
   .acm-shell {
     background: #fff; border: 1px solid #e2e2ee; border-radius: 22px;
     width: 100%; max-width: 700px; max-height: 92vh;

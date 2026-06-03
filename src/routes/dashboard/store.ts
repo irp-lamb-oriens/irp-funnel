@@ -1630,12 +1630,18 @@ export async function fetchUserActivity(email: string): Promise<UserActivityEntr
 export interface QuoteLineItem {
   lineId: string;
   label: string;
+  /** Provider cost — what IRP pays the provider for this service line. */
   amount: number;
+  /**
+   * IRP margin percentage (default 20).
+   * clientPrice = amount × (1 + marginPct / 100)
+   * e.g. amount = $100, marginPct = 20  →  clientPrice = $120
+   */
+  marginPct: number;
   currency: string;
   providerId: string | null;
   notes: string | null;
-  /** Phase 3 — when true, client can check/uncheck this item in the interactive quoteTable.
-   *  Absent/false = required service, always included in the total. */
+  /** Phase 3 — when true, client can check/uncheck this item on the status page. */
   isOptional?: boolean;
 }
 
@@ -1712,6 +1718,21 @@ export interface Quote {
   providerName?: string | null;
   providerEmail?: string | null;
   amount?: number | null;
+  // ── Margin / pricing breakdown ──
+  /** Default margin % applied to new lines (20 = 20%). Each line's marginPct overrides this. */
+  defaultMarginPct?: number;
+  /** Σ lineItem.amount — total provider cost (what IRP pays). */
+  costSubtotal?: number;
+  /** Σ clientPrice per line — what the client is charged. Stored in `total`. */
+  earnings?: number;
+  // ── Service configuration ──
+  /** AI-extracted (transcriptInsights.packingTier) or set manually. Required for submission. */
+  serviceType?: string | null;
+  /** Broad project description shown to the client (no cost/margin/provider detail). */
+  clientDescription?: string | null;
+  // ── Exclusionary option groups (Phase 4) ──
+  optionGroupId?: string | null;
+  optionLabel?: string | null;
   // ── Block-based proposal document (Phase 1 — additive, existing quotes unaffected) ──
   /** References a quote_templates/{id} document. Absent on quotes created before Phase 2. */
   templateId?: string | null;

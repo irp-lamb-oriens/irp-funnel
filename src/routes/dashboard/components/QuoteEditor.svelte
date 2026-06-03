@@ -20,9 +20,13 @@
     liveActionPermissions,
     fetchLiveActionPermissions,
     QUOTE_STATUS_LABEL,
+    // ── Margin & insights ──
+    extractInsights,
+    selectedClient,
+    PACKING_TIER_LABEL,
   } from '../store.ts';
   import type { Quote, QuoteLineItem } from '../store.ts';
-  import { aggregateByCurrency, formatTotalsLine } from '$lib/money.ts';
+  import { aggregateByCurrency } from '$lib/money.ts';
 
   export let clientId: string;
   export let quoteId: string | null = null;
@@ -47,6 +51,15 @@
   let loadingQuote = false;
   let errorMsg = '';
 
+  // ── Margin & project config ────────────────────────────────────────────────
+  let serviceType = '';
+  let serviceTypeError = false;
+  let serviceTypeEl: HTMLSelectElement | null = null;
+  let refreshingInsights = false;
+  let insightsHint = '';
+  let defaultMarginPct = 20;
+  let clientDescription = '';
+
   // ── Approval workflow state ────────────────────────────────────────────────
   let quote: Quote | null = null;
   let noteToApprovers = '';
@@ -57,9 +70,16 @@
   // Alias error to errorMsg for approval handlers
   $: error = errorMsg;
 
-  // ── Computed total ─────────────────────────────────────────────────────────
-  $: total = lineItems.reduce((sum, li) => sum + (Number(li.amount) || 0), 0);
-  // Per-currency buckets for the total display (multi-currency, no conversion)
+  // ── Margin math ────────────────────────────────────────────────────────────
+  function lineClientPrice(li: QuoteLineItem): number {
+    const m = typeof li.marginPct === 'number' ? li.marginPct : 20;
+    return Math.round((Number(li.amount) || 0) * (1 + m / 100) * 100) / 100;
+  }
+  $: costSubtotal = lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0);
+  $: clientTotal  = lineItems.reduce((s, li) => s + lineClientPrice(li), 0);
+  $: earnings     = Math.round((clientTotal - costSubtotal) * 100) / 100;
+  $: total        = clientTotal; // total = client-facing number (used in payload)
+  // Per-currency buckets kept for the currency selector in handleSave
   $: totalBuckets = aggregateByCurrency(lineItems, null);
 
   // ── Line item helpers ──────────────────────────────────────────────────────
@@ -70,7 +90,7 @@
   function addLine() {
     lineItems = [
       ...lineItems,
-      { lineId: makeLineId(), label: '', amount: 0, currency: 'USD', providerId: null, notes: null },
+      { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, currency: 'USD', providerId: null, notes: null },
     ];
   }
 
@@ -97,7 +117,13 @@
       quote = q;
       title = q.title ?? '';
       notes = q.notes ?? '';
-      lineItems = (q.lineItems ?? []).map(li => ({ ...li }));
+      serviceType = q.serviceType ?? '';
+      defaultMarginPct = typeof q.defaultMarginPct === 'number' ? q.defaultMarginPct : 20;
+      clientDescription = q.clientDescription ?? '';
+      lineItems = (q.lineItems ?? []).map(li => ({
+        ...li,
+        marginPct: typeof li.marginPct === 'number' ? li.marginPct : 20,
+      }));
       providerIds = [...(q.providerIds ?? [])];
       providerSnapshots = [...(q.providerSnapshots ?? [])];
       if (lineItems.length === 0) addLine();
@@ -108,8 +134,40 @@
     }
   }
 
+  // ── Service-type: auto-populate from transcriptInsights ─────────────────
+  async function resolveServiceType() {
+    if (serviceType) return; // already set from existing quote or explicit selection
+    const insights = get(selectedClient)?.transcriptInsights;
+    if (insights?.packingTier) {
+      serviceType = insights.packingTier;
+      return;
+    }
+    if (!insights) {
+      // No insights yet — try on-demand extraction
+      refreshingInsights = true;
+      insightsHint = 'Detecting service type from call notes…';
+      try {
+        const result = await extractInsights(clientId);
+        if (result?.packingTier) {
+          serviceType = result.packingTier;
+          insightsHint = '';
+        } else {
+          insightsHint = 'Could not auto-detect. Please select a service type manually.';
+        }
+      } catch {
+        insightsHint = 'Detection unavailable. Please select a service type manually.';
+      } finally {
+        refreshingInsights = false;
+      }
+    } else {
+      // Has insights but packingTier is null
+      insightsHint = 'Service type not detected in notes. Please select manually.';
+    }
+  }
+
   onMount(async () => {
-    loadQuote();
+    await loadQuote();
+    resolveServiceType();
     // Eagerly hydrate the live action-permissions store so canApproveQuotes
     // switches from the static fallback to the live Firestore map on first render.
     // Non-fatal: if the fetch fails, the static QUOTE_APPROVERS list is used.
@@ -184,6 +242,12 @@
   // ── Save ───────────────────────────────────────────────────────────────────
   async function handleSave() {
     if (!title.trim()) { errorMsg = 'Title is required.'; return; }
+    if (!serviceType) {
+      serviceTypeError = true;
+      errorMsg = 'Service type is required before saving this quote.';
+      serviceTypeEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     saving = true;
     errorMsg = '';
     try {
@@ -193,7 +257,12 @@
         lineItems,
         providerIds,
         providerSnapshots,
-        total,
+        total: clientTotal,
+        costSubtotal,
+        earnings,
+        serviceType,
+        defaultMarginPct,
+        clientDescription: clientDescription.trim() || null,
         currency: totalBuckets.length === 1 ? totalBuckets[0].currency : (totalBuckets[0]?.currency ?? 'USD'),
         status: 'draft',
       };
@@ -334,6 +403,50 @@
         />
       </div>
 
+      <!-- Service type (required) — auto-populated from AI transcript insights -->
+      <div class="qe-field" class:qe-field--error={serviceTypeError}>
+        <label class="qe-label qe-label--required" for="qe-service-type">
+          Service type
+          {#if refreshingInsights}<span class="qe-insights-spinner" title="Detecting from call notes…"></span>{/if}
+        </label>
+        <select
+          id="qe-service-type"
+          class="qe-select"
+          class:qe-select--error={serviceTypeError}
+          bind:this={serviceTypeEl}
+          bind:value={serviceType}
+          on:change={() => { serviceTypeError = false; insightsHint = ''; }}
+        >
+          <option value="">— Select service type —</option>
+          {#each Object.entries(PACKING_TIER_LABEL) as [key, meta]}
+            <option value={key}>{meta.icon} {meta.label}</option>
+          {/each}
+        </select>
+        {#if serviceTypeError}
+          <p class="qe-field-error">⚠ Service type is required before saving this quote.</p>
+        {:else if insightsHint}
+          <p class="qe-field-hint">{refreshingInsights ? '⏳' : 'ℹ️'} {insightsHint}</p>
+        {/if}
+      </div>
+
+      <!-- Default margin (applies to new lines; per-line override available in table) -->
+      <div class="qe-field qe-field--inline">
+        <label class="qe-label" for="qe-default-margin">Default margin %</label>
+        <div class="qe-pct-wrap qe-pct-wrap--field">
+          <input
+            id="qe-default-margin"
+            class="qe-input qe-input--num qe-input--pct"
+            type="number"
+            min="0"
+            max="500"
+            step="1"
+            bind:value={defaultMarginPct}
+          />
+          <span class="qe-pct-sym">%</span>
+        </div>
+        <p class="qe-field-hint">Applied to all new lines. Each line can be adjusted individually in the table.</p>
+      </div>
+
       <!-- Line items -->
       <div class="qe-field">
         <label class="qe-label">Quote line items</label>
@@ -342,11 +455,13 @@
             <table class="qe-lines-table">
               <thead>
                 <tr>
-                  <th>Description</th>
-                  <th class="qe-th-num">Amount</th>
-                  <th>Currency</th>
-                  <th>Notes</th>
-                  <th></th>
+                  <th class="qe-th-desc">Description</th>
+                  <th class="qe-th-num">Cost</th>
+                  <th class="qe-th-pct">Margin %</th>
+                  <th class="qe-th-num qe-th-price">Client price</th>
+                  <th class="qe-th-cur">Currency</th>
+                  <th class="qe-th-notes">Notes</th>
+                  <th class="qe-th-del"></th>
                 </tr>
               </thead>
               <tbody>
@@ -371,6 +486,24 @@
                         value={li.amount}
                         on:input={(e) => updateLine(li.lineId, 'amount', parseFloat((e.target as HTMLInputElement).value) || 0)}
                       />
+                    </td>
+                    <td class="qe-td-pct">
+                      <div class="qe-pct-wrap">
+                        <input
+                          class="qe-input qe-input--sm qe-input--num qe-input--pct"
+                          type="number"
+                          min="0"
+                          max="500"
+                          step="1"
+                          placeholder="20"
+                          value={typeof li.marginPct === 'number' ? li.marginPct : 20}
+                          on:input={(e) => updateLine(li.lineId, 'marginPct', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                        />
+                        <span class="qe-pct-sym">%</span>
+                      </div>
+                    </td>
+                    <td class="qe-td-price">
+                      <span class="qe-computed-price">{lineClientPrice(li).toFixed(2)}</span>
                     </td>
                     <td>
                       <select
@@ -412,10 +545,25 @@
         </button>
       </div>
 
-      <!-- Total display -->
-      <div class="qe-field qe-field--total">
-        <span class="qe-label">Estimated total</span>
-        <span class="qe-total">{totalBuckets.length ? formatTotalsLine(totalBuckets) : formatTotal(total)}</span>
+      <!-- Finance footer: internal Cost subtotal · Client total · Earnings -->
+      <div class="qe-finance-footer">
+        <div class="qe-finance-cell qe-finance-cell--cost">
+          <span class="qe-finance-label">Cost subtotal</span>
+          <span class="qe-finance-value">{costSubtotal.toFixed(2)}</span>
+          <span class="qe-finance-hint">IRP pays</span>
+        </div>
+        <div class="qe-finance-sep"></div>
+        <div class="qe-finance-cell qe-finance-cell--total">
+          <span class="qe-finance-label">Client total</span>
+          <span class="qe-finance-value qe-finance-value--accent">{clientTotal.toFixed(2)}</span>
+          <span class="qe-finance-hint">Client pays</span>
+        </div>
+        <div class="qe-finance-sep"></div>
+        <div class="qe-finance-cell qe-finance-cell--earn">
+          <span class="qe-finance-label">Earnings</span>
+          <span class="qe-finance-value qe-finance-value--earn">{earnings.toFixed(2)}</span>
+          <span class="qe-finance-hint">IRP margin</span>
+        </div>
       </div>
 
       <!-- Provider search -->
@@ -462,6 +610,22 @@
             </div>
           {/if}
         </div>
+      </div>
+
+      <!-- Client description (broad summary shown to client; no cost/margin detail) -->
+      <div class="qe-field">
+        <label class="qe-label" for="qe-client-desc">
+          Client description
+          <span class="qe-label-badge">client-visible</span>
+        </label>
+        <textarea
+          id="qe-client-desc"
+          class="qe-textarea"
+          placeholder="E.g. Full-service international relocation from Texas to Costa Rica — origin packing, ocean freight, customs clearance, and door-to-door delivery."
+          rows="4"
+          bind:value={clientDescription}
+        ></textarea>
+        <p class="qe-field-hint">Describe the scope shown to the client. Providers, costs, and margins are never shown.</p>
       </div>
 
       <!-- Notes -->
@@ -1433,4 +1597,128 @@
   }
   .log-summary { flex: 1; color: #334155; }
   .log-date { color: #94a3b8; font-size: 10.5px; white-space: nowrap; }
+
+  /* ── Service-type field ─────────────────────────────────────────────────── */
+  .qe-label--required::after { content: ' *'; color: #ef4444; font-size: 11px; }
+  .qe-field--error .qe-label,
+  .qe-field--error .qe-label--required { color: #dc2626; }
+  .qe-select--error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important;
+  }
+  .qe-field-error {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #dc2626;
+    font-weight: 600;
+    animation: qe-shake 0.3s ease;
+  }
+  @keyframes qe-shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-4px); }
+    75%      { transform: translateX(4px); }
+  }
+  .qe-field-hint { margin: 5px 0 0; font-size: 11.5px; color: #64748b; line-height: 1.4; }
+  .qe-insights-spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(2,181,187,0.2);
+    border-top-color: #02b5bb;
+    border-radius: 50%;
+    animation: qe-spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  /* ── Margin % column / field ────────────────────────────────────────────── */
+  .qe-pct-wrap { display: flex; align-items: center; gap: 3px; }
+  .qe-pct-wrap--field { gap: 6px; }
+  .qe-pct-sym { font-size: 12px; color: #64748b; font-weight: 600; flex-shrink: 0; }
+  .qe-input--pct { width: 68px !important; max-width: 68px; }
+  .qe-th-pct  { width: 96px; }
+  .qe-th-price { width: 108px; color: #02b5bb !important; }
+  .qe-th-cur  { width: 82px; }
+  .qe-th-notes { min-width: 130px; }
+  .qe-th-del  { width: 36px; }
+  .qe-td-pct  { white-space: nowrap; }
+  .qe-td-price { text-align: right; }
+  .qe-computed-price {
+    display: inline-block;
+    min-width: 72px;
+    padding: 4px 8px;
+    background: rgba(2,181,187,0.07);
+    border: 1px solid rgba(2,181,187,0.18);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #02b5bb;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Finance footer ─────────────────────────────────────────────────────── */
+  .qe-finance-footer {
+    display: flex;
+    align-items: stretch;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--irp-border, rgba(0,0,0,0.08));
+    background: var(--irp-surface, #fff);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    margin-top: 4px;
+  }
+  .qe-finance-cell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 20px 12px;
+    gap: 3px;
+  }
+  .qe-finance-cell--total { background: rgba(2,181,187,0.04); }
+  .qe-finance-cell--earn  { background: rgba(34,197,94,0.04); }
+  .qe-finance-sep { width: 1px; background: var(--irp-border, rgba(0,0,0,0.08)); flex-shrink: 0; }
+  .qe-finance-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .qe-finance-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--irp-text, #181818);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .qe-finance-value--accent { color: #02b5bb; }
+  .qe-finance-value--earn   { color: #22c55e; }
+  .qe-finance-hint { font-size: 10px; color: #94a3b8; font-weight: 500; }
+
+  /* ── Client description badge ───────────────────────────────────────────── */
+  .qe-label-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 20px;
+    background: rgba(2,181,187,0.10);
+    color: #02b5bb;
+    border: 1px solid rgba(2,181,187,0.22);
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+
+  /* ── Default margin inline row ──────────────────────────────────────────── */
+  .qe-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .qe-field--inline .qe-label { margin: 0; white-space: nowrap; }
+  .qe-field--inline .qe-field-hint { flex: 1 0 100%; }
 </style>
