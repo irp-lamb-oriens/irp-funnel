@@ -419,3 +419,130 @@ export async function acceptQuote(
     acceptingQuote.set(false);
   }
 }
+
+// ─── Template Proposal System ──────────────────────────────────────────────────
+//
+// The status page can render a Qwilr-style proposal document from a
+// QuoteTemplate (independent of a specific quote token). Staff select the
+// template; AI auto-selects a default after locked-loading. Clients see
+// whatever template is selected.
+//
+// Stores:
+//   selectedTemplateId  — templateId persisted on the consultation doc
+//   templateBlocks      — blocks[] from the selected template (fetched on demand)
+//   templateSections    — unique section labels from templateBlocks (for Header tabs)
+//   activeSection       — which section tab is currently shown in BlockRenderer
+//   templateInferred    — true once AI inference has run for this session
+//   allTemplates        — list of all templates for the staff selector dropdown
+
+import { derived } from 'svelte/store';
+import type { QuoteBlock } from '../../dashboard/store.ts';
+
+export const selectedTemplateId  = writable<string | null>(null);
+export const templateBlocks      = writable<QuoteBlock[]>([]);
+export const activeSection       = writable<string | null>(null);
+export const templateInferred    = writable<boolean>(false);
+export const allTemplatesLoading = writable<boolean>(false);
+
+export interface TemplateSummary {
+  templateId: string;
+  name: string;
+  category?: string | null;
+  destinationCountries?: string[];
+  isDefault?: boolean;
+  order?: number;
+}
+export const allTemplates = writable<TemplateSummary[]>([]);
+
+/** Unique ordered section labels extracted from the current template blocks. */
+export const templateSections = derived(templateBlocks, ($blocks): string[] => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const b of $blocks) {
+    if (b.section && !seen.has(b.section)) {
+      seen.add(b.section);
+      result.push(b.section);
+    }
+  }
+  return result;
+});
+
+/**
+ * Fetch a template's blocks via the PUBLIC endpoint (no auth required).
+ * Falls back to the default template on 404.
+ */
+export async function loadTemplate(templateId: string): Promise<void> {
+  try {
+    const data = await apiFetch(`/api/template/${templateId}`);
+    templateBlocks.set(data.blocks ?? []);
+    selectedTemplateId.set(templateId);
+    // Auto-select first section
+    const sections = (data.blocks ?? [])
+      .map((b: any) => b.section)
+      .filter(Boolean)
+      .filter((s: string, i: number, arr: string[]) => arr.indexOf(s) === i);
+    if (sections.length > 0) activeSection.set(sections[0]);
+  } catch {
+    templateBlocks.set([]);
+  }
+}
+
+/**
+ * Call the AI infer-template endpoint (dashboard-auth required — staff only).
+ * Persists `selectedQuoteTemplateId` on the consultation, then loads the blocks.
+ */
+export async function inferTemplate(projectId: string): Promise<void> {
+  if (get(templateInferred)) return; // run once per session
+  templateInferred.set(true);
+  try {
+    const data = await apiFetch(`/api/dashboard/clients/${projectId}/infer-template`, {
+      method: 'POST',
+    });
+    const tid: string = data.templateId ?? 'irp-standard-proposal';
+    await loadTemplate(tid);
+  } catch {
+    // Inference failed → load the default template
+    await loadTemplate('irp-standard-proposal');
+  }
+}
+
+/**
+ * Staff explicitly selects a different template — persists it on the consultation
+ * and in the local store.
+ */
+export async function setSelectedTemplate(projectId: string, templateId: string): Promise<void> {
+  selectedTemplateId.set(templateId);
+  await loadTemplate(templateId);
+  // Persist to consultation (best-effort; non-fatal if it fails)
+  try {
+    await apiFetch(`/api/dashboard/clients/${projectId}/infer-template`, {
+      method: 'POST',
+      body: JSON.stringify({ overrideTemplateId: templateId }),
+    });
+  } catch { /* non-fatal */ }
+}
+
+/**
+ * Load the full list of templates for the staff selector dropdown.
+ * Requires dashboard-auth (x-dashboard-token). No-op for end-customers.
+ */
+export async function loadAllTemplates(): Promise<void> {
+  allTemplatesLoading.set(true);
+  try {
+    const data = await apiFetch('/api/dashboard/quote-templates');
+    allTemplates.set(
+      (data.templates ?? []).map((t: any) => ({
+        templateId: t.templateId,
+        name: t.name,
+        category: t.category ?? null,
+        destinationCountries: t.destinationCountries ?? [],
+        isDefault: t.isDefault ?? false,
+        order: t.order ?? 9999,
+      })),
+    );
+  } catch {
+    // Non-fatal — staff won't see the dropdown, client is unaffected
+  } finally {
+    allTemplatesLoading.set(false);
+  }
+}

@@ -29,6 +29,13 @@
     type QuoteBlockType,
   } from '../store.ts';
   import { MERGE_FIELDS, mergeFieldsByGroup } from '$lib/mergeFields.ts';
+  /**
+   * WysiwygEditor — centralized, zero-dep, drag-and-drop block canvas editor.
+   * Replaces the raw-HTML textarea in edit mode.
+   * Self-contained: handles contenteditable, formatting toolbar, section tags,
+   * drag-and-drop reorder, and merge-field insertion internally.
+   */
+  import WysiwygEditor from '$lib/WysiwygEditor.svelte';
 
   // ─── State ───────────────────────────────────────────────────────────────────
   let templates: QuoteTemplate[] = [];
@@ -430,133 +437,16 @@
           <input class="tv-input" bind:value={editDescription} placeholder="Optional description…" />
         </div>
 
-        <!-- ── Block list ────────────────────────────────────────────────────── -->
-        <div class="tv-blocks-section">
-          <div class="tv-blocks-section__header">
-            <span class="tv-label">Blocks ({editBlocks.length})</span>
-            <span class="tv-blocks-section__hint">Drag to reorder · Blocks render in order on the status page</span>
-          </div>
-
-          {#if editBlocks.length === 0}
-            <div class="tv-blocks-empty">No blocks yet. Add one from the panel below.</div>
-          {:else}
-            <div class="tv-blocks-list">
-              {#each editBlocks as block, i (block.id)}
-                <div class="tv-block-card">
-                  <div class="tv-block-card__header">
-                    <div class="tv-block-card__type-row">
-                      <span class="tv-block-card__icon">{blockTypeIcon(block.type)}</span>
-                      <span class="tv-block-card__label">{blockTypeLabel(block.type)}</span>
-                      <code class="tv-block-card__id">{block.id}</code>
-                    </div>
-                    <div class="tv-block-card__controls">
-                      <button class="tv-icon-btn" on:click={() => moveBlockUp(i)} disabled={i === 0} title="Move up">↑</button>
-                      <button class="tv-icon-btn" on:click={() => moveBlockDown(i)} disabled={i === editBlocks.length - 1} title="Move down">↓</button>
-                      <button class="tv-icon-btn tv-icon-btn--danger" on:click={() => removeBlock(block.id)} title="Remove block">✕</button>
-                    </div>
-                  </div>
-
-                  {#if hasHtmlEditor(block.type)}
-                    <div class="tv-block-card__body">
-                      <div class="tv-block-card__html-label-row">
-                        <label class="tv-label tv-label--sm">HTML Content</label>
-                        <button
-                          type="button"
-                          class="tv-insert-field-btn"
-                          on:click={() => openPicker(block.id)}
-                          title="Insert merge field — client name, route, move details…"
-                        >
-                          ＋ Insert field
-                        </button>
-                      </div>
-
-                      <!-- ── Merge-field picker ──────────────────────────────── -->
-                      {#if activePickerBlockId === block.id}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <div class="tv-field-picker" on:click|stopPropagation>
-                          <div class="tv-field-picker__header">
-                            <span class="tv-field-picker__title">Insert field token</span>
-                            <button class="tv-field-picker__close" on:click={closePicker} title="Close">✕</button>
-                          </div>
-                          <input
-                            class="tv-field-picker__search"
-                            type="text"
-                            bind:value={pickerSearch}
-                            placeholder="Search fields…"
-                            autocomplete="off"
-                          />
-                          <div class="tv-field-picker__groups">
-                            {#each Object.entries(pickerGroups) as [group, fields]}
-                              {@const visibleFields = fields.filter(f =>
-                                !pickerSearch.trim() ||
-                                f.label.toLowerCase().includes(pickerSearch.toLowerCase()) ||
-                                f.token.toLowerCase().includes(pickerSearch.toLowerCase())
-                              )}
-                              {#if visibleFields.length > 0}
-                                <div class="tv-field-picker__group">
-                                  <span class="tv-field-picker__group-label">{group}</span>
-                                  {#each visibleFields as field (field.token)}
-                                    <button
-                                      class="tv-field-picker__field"
-                                      on:click={() => insertField(block.id, field.token)}
-                                      title="{field.token} — e.g. {field.example}"
-                                    >
-                                      <span class="tv-field-picker__field-label">{field.label}</span>
-                                      <code class="tv-field-picker__field-token">{field.token}</code>
-                                      <span class="tv-field-picker__field-example">{field.example}</span>
-                                    </button>
-                                  {/each}
-                                </div>
-                              {/if}
-                            {/each}
-                            {#if filteredPickerFields.length === 0 && pickerSearch}
-                              <div class="tv-field-picker__empty">No fields match "{pickerSearch}"</div>
-                            {/if}
-                          </div>
-                        </div>
-                      {/if}
-
-                      <textarea
-                        class="tv-textarea tv-textarea--code"
-                        data-block-id={block.id}
-                        value={block.html ?? ''}
-                        on:input={(e) => updateBlockHtml(block.id, e.currentTarget.value)}
-                        rows="6"
-                        placeholder={HTML_BLOCK_PLACEHOLDER}
-                        spellcheck="false"
-                      ></textarea>
-                    </div>
-                  {:else}
-                    <div class="tv-block-card__body tv-block-card__body--info">
-                      <span class="tv-block-card__auto-label">
-                        {#if block.type === 'quoteTable'}📊 Renders the quote's line-items table automatically.{/if}
-                        {#if block.type === 'accept'}✅ Renders the "Accept quote" CTA automatically.{/if}
-                        {#if block.type === 'testimonials' || block.type === 'reviews' || block.type === 'partners'}🔧 Phase 3 block — renders as placeholder until implemented.{/if}
-                      </span>
-                    </div>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-
-        <!-- ── Add Block Palette ──────────────────────────────────────────────── -->
-        <div class="tv-palette">
-          <span class="tv-label">+ Add Block</span>
-          <div class="tv-palette__grid">
-            {#each BLOCK_TYPES as bt (bt.type)}
-              <button
-                class="tv-palette__btn"
-                on:click={() => addBlock(bt.type)}
-                title={bt.description}
-              >
-                <span class="tv-palette__icon">{bt.icon}</span>
-                <span class="tv-palette__label">{bt.label}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
+        <!-- ── True WYSIWYG Block Canvas ────────────────────────────────────────
+             WysiwygEditor.svelte (src/lib/WysiwygEditor.svelte):
+               • Drag-and-drop block reordering (HTML5 drag API, zero deps)
+               • Contenteditable inline editing — no raw textarea (true WYSIWYG)
+               • Per-block formatting toolbar: B, I, U, H2-H4, UL, OL, Link, clear
+               • Section tab assignment per block (→ Header portal-tabs navigation)
+               • Merge-field picker built-in
+               • Add-block palette built-in
+             bind:blocks keeps editBlocks in sync with the parent save flow. -->
+        <WysiwygEditor bind:blocks={editBlocks} />
       </div>
 
     <!-- ── View / Preview Mode ──────────────────────────────────────────────── -->

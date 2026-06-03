@@ -1,0 +1,59 @@
+{
+  "id": "irp-us-standard",
+  "name": "United States — Standard Proposal",
+  "category": "us",
+  "destinationCountries": [
+    "United States"
+  ],
+  "blocks": [
+    {
+      "id": "irp-us-standard-banner",
+      "type": "banner",
+      "section": "Introduction",
+      "html": "<div style=\"background:linear-gradient(135deg,#0f172a 0%,#0d3140 60%,#052a30 100%);padding:52px 48px 44px;border-radius:0;text-align:center;color:#fff;\">\n<h1 style=\"font-family:'Jost',sans-serif;font-size:2rem;font-weight:900;color:#fff;margin:0 0 10px;\">United States — Standard Proposal</h1>\n<p style=\"font-size:1.05rem;color:rgba(255,255,255,0.75);margin:0;\">Prepared for <strong style=\"color:#02b5bb;\">{{client.fullName}}</strong></p>\n</div>",
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-intro",
+      "type": "html",
+      "section": "Introduction",
+      "html": "<div style=\"padding:40px 48px 32px;background:#fff;\">\n<h2 style=\"font-family:'Jost',sans-serif;font-size:1.45rem;font-weight:800;color:#0f172a;margin:0 0 14px;\">Dear {{client.fullName}},</h2>\n<p style=\"font-size:1rem;line-height:1.75;color:#334155;margin:0 0 20px;\">Thank you for trusting <strong>International Relocation Partners</strong> with your move from <strong>{{route.originCity}}, {{route.originCountry}}</strong> to <strong>{{route.destinationCity}}, {{route.destinationCountry}}</strong>. Below you will find the complete service breakdown prepared for your relocation.</p>\n</div>",
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-desc",
+      "type": "html",
+      "section": "Project Description",
+      "html": "<div style=\"padding:32px 48px;background:#fff;\">\n<h2 style=\"font-family:'Jost',sans-serif;font-size:1.3rem;font-weight:800;color:#0f172a;margin:0 0 16px;\">Project Description</h2>\n<table style=\"width:100%;border-collapse:collapse;font-family:'Jost',sans-serif;font-size:0.92rem;\">\n  <tr style=\"background:#f8fafc;\"><td style=\"padding:10px 14px;color:#64748b;font-weight:700;width:38%;border-bottom:1px solid #f1f5f9;\">Route</td><td style=\"padding:10px 14px;border-bottom:1px solid #f1f5f9;\">{{route.originCity}} → {{route.destinationCity}}, {{route.destinationCountry}}</td></tr>\n  <tr><td style=\"padding:10px 14px;color:#64748b;font-weight:700;border-bottom:1px solid #f1f5f9;\">Move Size</td><td style=\"padding:10px 14px;border-bottom:1px solid #f1f5f9;\">{{move.size}}</td></tr>\n  <tr style=\"background:#f8fafc;\"><td style=\"padding:10px 14px;color:#64748b;font-weight:700;border-bottom:1px solid #f1f5f9;\">Vehicles</td><td style=\"padding:10px 14px;border-bottom:1px solid #f1f5f9;\">{{move.vehicles}}</td></tr>\n  <tr><td style=\"padding:10px 14px;color:#64748b;font-weight:700;\">Est. Move Date</td><td style=\"padding:10px 14px;\">{{move.scheduling}}</td></tr>\n</table>\n</div>",
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-quotetable",
+      "type": "quoteTable",
+      "section": "Project Investment",
+      "html": null,
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-testimonials",
+      "type": "html",
+      "section": "Testimonials",
+      "html": "<div style=\"padding:32px 48px;background:#f8fafc;\">\n<h2 style=\"font-family:'Jost',sans-serif;font-size:1.3rem;font-weight:800;color:#0f172a;margin:0 0 20px;\">What Our Customers Say</h2>\n<p style=\"color:#64748b;font-style:italic;\">✏️ <em>Add customer testimonials here via the template editor.</em></p>\n</div>",
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-terms",
+      "type": "accordion",
+      "section": "Important Info",
+      "html": "<div style=\"padding:32px 48px;background:#f8fafc;border-top:2px solid #e2e8f0;\">\n<h3 style=\"font-family:'Jost',sans-serif;font-size:1.05rem;font-weight:800;color:#0f172a;margin:0 0 20px;\">📋 Terms &amp; Conditions</h3>\n<div style=\"display:flex;flex-direction:column;gap:14px;font-size:0.88rem;line-height:1.7;color:#475569;\">\n  <div><strong style=\"color:#0f172a;\">1. Payment Terms.</strong> A 50% deposit is required to confirm booking. The remaining balance is due prior to loading. IRP accepts bank wire, Zelle, and SWIFT.</div>\n  <div><strong style=\"color:#0f172a;\">2. Scope.</strong> This proposal covers the services listed. Additional services require written approval and may affect pricing.</div>\n  <div><strong style=\"color:#0f172a;\">3. Insurance.</strong> Basic cargo insurance is included. We recommend All-Risk marine insurance for full coverage.</div>\n  <div><strong style=\"color:#0f172a;\">4. Customs &amp; Duties.</strong> Destination import duties are estimates only. Final amounts depend on customs authorities at the time of import.</div>\n</div>\n</div>",
+      "data": null
+    },
+    {
+      "id": "irp-us-standard-accept",
+      "type": "accept",
+      "section": "Book Your Move",
+      "html": null,
+      "data": null
+    }
+  ]
+}

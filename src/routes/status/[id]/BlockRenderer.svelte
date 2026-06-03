@@ -10,6 +10,12 @@
    *     dispatches `accept` event up to QuoteView
    *   - All other block types: gracefully skipped (forward-compatible)
    *
+   * Section tabs (Phase 2 — additive, backward-compatible):
+   *   When blocks carry `section` labels, the parent (status +page.svelte)
+   *   passes the `activeSection` prop to show only blocks belonging to that
+   *   section. When `activeSection` is null/undefined OR when no blocks have
+   *   sections, all blocks render in the original single-flow mode.
+   *
    * Backward compatibility guarantee:
    *   If blocks is empty or absent, QuoteView never mounts this component.
    *   This component never touches legacy fields.
@@ -29,6 +35,13 @@
   /** Client/project data for merge-field substitution at render-time.
    *  Populated from the `$project` store in QuoteView. Defaults to {} (no-op). */
   export let clientSummary: Record<string, any> = {};
+  /**
+   * Active section id (string from block.section).
+   * When provided: only blocks matching this section are rendered.
+   * When null/undefined: all blocks render (legacy single-flow mode).
+   * The status page Header drives this via the tabchange event.
+   */
+  export let activeSection: string | null = null;
 
   // Internal only — BlockRenderer owns the input value for the accept block
   let acceptedByInput = '';
@@ -36,6 +49,16 @@
   const dispatch = createEventDispatcher<{
     accept: { acceptedBy: string; selectedLineItemIds: string[] }
   }>();
+
+  // ── Section filtering ─────────────────────────────────────────────────────
+  // If any block has a section label → use section-filtered mode.
+  // Otherwise → legacy single-flow (all blocks visible).
+  $: hasSections = blocks.some(b => !!b.section);
+  $: visibleBlocks = (hasSections && activeSection)
+    ? blocks.filter(b => b.section === activeSection)
+    : (hasSections && !activeSection)
+      ? blocks.filter(b => !b.section) // fallback: show unsectioned blocks
+      : blocks; // legacy mode: all blocks
 
   // ── Phase 3: interactive line-item selection ─────────────────────────────
   // Required items (isOptional = false/absent) are always selected.
@@ -85,7 +108,7 @@
 </script>
 
 <div class="br-document">
-  {#each blocks as block (block.id)}
+  {#each visibleBlocks as block (block.id)}
 
     {#if block.type === 'html' && block.html}
       <!-- ── Free-form HTML block — merge-fields substituted at render-time -->
@@ -203,6 +226,11 @@
             </div>
           {/if}
         </div>
+      {:else}
+        <!-- quoteTable block but quote has no line items — show placeholder in portal  -->
+        <div class="br-block br-quote-table-placeholder">
+          <p>💰 Pricing will appear here once your quote is prepared.</p>
+        </div>
       {/if}
 
     {:else if block.type === 'accept'}
@@ -271,6 +299,17 @@
   .br-html, .br-heading, .br-banner, .br-accordion {
     line-height: 1.7;
     overflow-wrap: break-word;
+  }
+
+  /* ── Quote table placeholder (when template shown but no quote yet) ──── */
+  .br-quote-table-placeholder {
+    padding: 32px 36px;
+    background: #f8fafc;
+    border: 1.5px dashed #e2e8f0;
+    border-radius: 12px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
   }
 
   /* ═══════════════ QUOTE TABLE — INTERACTIVE ════════════════════════════ */
@@ -374,7 +413,7 @@
     color: #02b6bc;
   }
 
-  /* Multi-currency badge — shows ISO code next to label on secondary rows */
+  /* Multi-currency badge */
   .br-currency-badge {
     display: inline-block;
     font-size: 9.5px;
@@ -400,50 +439,27 @@
 
   /* ── Custom checkbox ───────────────────────────────────────────────────── */
   .br-checkbox {
-    width: 22px;
-    height: 22px;
+    width: 22px; height: 22px;
     border-radius: 7px;
     border: 2px solid #e2e8f0;
     background: #fafbfc;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 900;
-    color: #fff;
-    transition:
-      background 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
-      border-color 0.15s,
-      box-shadow 0.15s,
-      transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; color: #fff;
+    transition: background 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s, box-shadow 0.15s, transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative; overflow: hidden;
   }
-
   .br-checkbox--checked {
     background: linear-gradient(135deg, #02b6bc 0%, #0e9f8e 100%);
     border-color: #02b6bc;
-    box-shadow:
-      0 0 0 3px rgba(2, 182, 188, 0.15),
-      0 2px 8px rgba(2, 182, 188, 0.30);
+    box-shadow: 0 0 0 3px rgba(2, 182, 188, 0.15), 0 2px 8px rgba(2, 182, 188, 0.30);
     transform: scale(1.08);
   }
-
   .br-checkbox:hover:not(.br-checkbox--checked) {
-    border-color: #02b6bc;
-    background: #f0fdfe;
-    box-shadow: 0 0 0 3px rgba(2, 182, 188, 0.10);
-    transform: scale(1.05);
+    border-color: #02b6bc; background: #f0fdfe;
+    box-shadow: 0 0 0 3px rgba(2, 182, 188, 0.10); transform: scale(1.05);
   }
-
-  .br-required-lock {
-    font-size: 12px;
-    opacity: 0.35;
-    display: block;
-    text-align: center;
-    line-height: 1;
-  }
+  .br-required-lock { font-size: 12px; opacity: 0.35; display: block; text-align: center; line-height: 1; }
 
   /* ── Interactive row states ────────────────────────────────────────────── */
   .br-item-row { transition: background 0.1s, opacity 0.2s; }
@@ -451,256 +467,68 @@
   .br-item-row--optional:hover { background: rgba(2, 182, 188, 0.04); }
   .br-item-row--unselected { opacity: 0.45; }
   .br-item-row--unselected:hover { opacity: 0.65; }
-
-  /* Strikethrough when deselected */
-  .br-item-label--dim {
-    color: #94a3b8;
-    text-decoration: line-through;
-    text-decoration-color: #cbd5e1;
-    text-decoration-thickness: 1.5px;
-  }
-
-  .br-optional-tag {
-    display: inline-block;
-    font-size: 9.5px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: #94a3b8;
-    background: #f1f5f9;
-    border-radius: 4px;
-    padding: 2px 7px;
-    margin-left: 7px;
-    vertical-align: middle;
-    text-decoration: none !important;
-  }
-
-  .br-amt-dim {
-    color: #94a3b8 !important;
-    text-decoration: line-through;
-    text-decoration-color: #cbd5e1;
-    text-decoration-thickness: 1.5px;
-  }
-
-  /* ── Provider chips ──────────────────────────────────────────────────── */
-  .br-providers { margin-bottom: 20px; }
-  .br-providers-label {
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin: 0 0 10px;
-  }
-  .br-provider-tag {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(2, 182, 188, 0.07);
-    border: 1px solid rgba(2, 182, 188, 0.20);
-    color: #0d9488;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 5px 13px;
-    border-radius: 999px;
-    margin-right: 6px;
-    margin-bottom: 6px;
-    letter-spacing: 0.01em;
-  }
+  .br-item-label--dim { color: #94a3b8; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }
+  .br-optional-tag { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: #94a3b8; background: #f1f5f9; border-radius: 4px; padding: 2px 7px; margin-left: 7px; vertical-align: middle; text-decoration: none !important; }
+  .br-amt-dim { color: #94a3b8 !important; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }
 
   /* ── Notes card ──────────────────────────────────────────────────────── */
-  .br-notes-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1fdfe 100%);
-    border-radius: 12px;
-    padding: 16px 20px;
-    border-left: 3px solid #02b6bc;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
-  }
-  .br-notes-label {
-    font-size: 10.5px;
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin: 0 0 7px;
-  }
-  .br-notes-text {
-    margin: 0;
-    color: #334155;
-    font-size: 14px;
-    line-height: 1.7;
-  }
-  /* Client description — slightly different treatment from internal notes */
-  .br-client-description {
-    background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfe 100%);
-    border-left-color: #0ea5e9;
-    margin-top: 16px;
-  }
+  .br-notes-card { background: linear-gradient(135deg, #f8fafc 0%, #f1fdfe 100%); border-radius: 12px; padding: 16px 20px; border-left: 3px solid #02b6bc; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
+  .br-notes-label { font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 7px; }
+  .br-notes-text { margin: 0; color: #334155; font-size: 14px; line-height: 1.7; }
+  .br-client-description { background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfe 100%); border-left-color: #0ea5e9; margin-top: 16px; }
   .br-client-description .br-notes-label { color: #0284c7; }
   .br-client-description .br-notes-text { color: #1e293b; font-size: 14.5px; }
 
   /* ═══════════════════════ ACCEPT CTA BLOCK ════════════════════════════ */
-
   .br-accept {
     padding: 32px 40px 40px;
     background: linear-gradient(180deg, #f8faff 0%, #f0fdfe 100%);
     border-top: 1px solid rgba(2, 182, 188, 0.15);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    position: relative;
-    overflow: hidden;
+    display: flex; flex-direction: column; gap: 16px;
+    position: relative; overflow: hidden;
   }
-
-  /* Subtle teal glow behind accept section */
   .br-accept::before {
-    content: '';
-    position: absolute;
-    top: -40px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 120px;
+    content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 120px;
     background: radial-gradient(ellipse, rgba(2, 182, 188, 0.08) 0%, transparent 70%);
     pointer-events: none;
   }
-
-  .br-accept-intro {
-    font-size: 13.5px;
-    font-weight: 450;
-    color: #475569;
-    line-height: 1.7;
-    margin: 0;
-  }
-
+  .br-accept-intro { font-size: 13.5px; font-weight: 450; color: #475569; line-height: 1.7; margin: 0; }
   .br-name-input {
-    width: 100%;
-    padding: 14px 18px;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 12px;
-    font-size: 15px;
-    font-family: inherit;
-    box-sizing: border-box;
-    background: #ffffff;
-    color: #0f172a;
-    outline: none;
+    width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px;
+    font-size: 15px; font-family: inherit; box-sizing: border-box;
+    background: #ffffff; color: #0f172a; outline: none;
     transition: border-color 0.18s, box-shadow 0.18s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
   .br-name-input::placeholder { color: #94a3b8; }
-  .br-name-input:focus {
-    border-color: #02b6bc;
-    box-shadow:
-      0 0 0 4px rgba(2, 182, 188, 0.12),
-      0 1px 3px rgba(0,0,0,0.04);
-  }
-
-  /* IRP teal Book Your Move CTA */
+  .br-name-input:focus { border-color: #02b6bc; box-shadow: 0 0 0 4px rgba(2, 182, 188, 0.12), 0 1px 3px rgba(0,0,0,0.04); }
   .br-accept-btn {
     background: linear-gradient(135deg, #02b6bc 0%, #08a89e 60%, #0e9f8e 100%);
-    color: #fff;
-    border: none;
-    padding: 0 36px;
-    height: 58px;
-    border-radius: 999px;
-    font-size: 16.5px;
-    font-weight: 800;
-    font-family: inherit;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    width: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow:
-      0 4px 16px rgba(2, 182, 188, 0.40),
-      0 1px 0 rgba(255,255,255,0.15) inset;
-    transition:
-      box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-      transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-      filter 0.15s;
-    position: relative;
-    overflow: hidden;
+    color: #fff; border: none; padding: 0 36px; height: 58px;
+    border-radius: 999px; font-size: 16.5px; font-weight: 800; font-family: inherit;
+    letter-spacing: 0.01em; cursor: pointer; width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 16px rgba(2, 182, 188, 0.40), 0 1px 0 rgba(255,255,255,0.15) inset;
+    transition: box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s;
+    position: relative; overflow: hidden;
   }
-
-  /* Shimmer sweep on hover */
   .br-accept-btn::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 60%;
-    height: 100%;
+    content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
-    transition: left 0.5s ease;
-    pointer-events: none;
+    transition: left 0.5s ease; pointer-events: none;
   }
-
-  .br-accept-btn:hover:not(:disabled) {
-    box-shadow:
-      0 10px 32px rgba(2, 182, 188, 0.50),
-      0 1px 0 rgba(255,255,255,0.15) inset;
-    transform: translateY(-2px) scale(1.01);
-    filter: brightness(1.06);
-  }
+  .br-accept-btn:hover:not(:disabled) { box-shadow: 0 10px 32px rgba(2, 182, 188, 0.50), 0 1px 0 rgba(255,255,255,0.15) inset; transform: translateY(-2px) scale(1.01); filter: brightness(1.06); }
   .br-accept-btn:hover:not(:disabled)::after { left: 120%; }
-
-  .br-accept-btn:active:not(:disabled) {
-    transform: translateY(0) scale(0.99);
-    filter: brightness(0.97);
-    box-shadow: 0 4px 12px rgba(2, 182, 188, 0.35);
-  }
-  .br-accept-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .br-error-msg {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #dc2626;
-    font-size: 13px;
-    font-weight: 600;
-    margin: 0;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    padding: 10px 16px;
-    border-radius: 10px;
-  }
+  .br-accept-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); filter: brightness(0.97); box-shadow: 0 4px 12px rgba(2, 182, 188, 0.35); }
+  .br-accept-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .br-error-msg { display: flex; align-items: center; gap: 8px; color: #dc2626; font-size: 13px; font-weight: 600; margin: 0; background: #fef2f2; border: 1px solid #fecaca; padding: 10px 16px; border-radius: 10px; }
 
   /* ── Accepted celebration ──────────────────────────────────────────────── */
-  .br-accepted {
-    text-align: center;
-    padding: 32px 28px;
-    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfe 100%);
-    border-radius: 16px;
-    border: 1px solid rgba(2, 182, 188, 0.25);
-    box-shadow:
-      0 4px 16px rgba(2, 182, 188, 0.12),
-      inset 0 1px 0 rgba(255,255,255,0.8);
-    animation: br-celebration-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  }
-
-  @keyframes br-celebration-pop {
-    0%   { opacity: 0; transform: scale(0.9) translateY(10px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-  }
-
-  .br-accepted p {
-    margin: 0 0 6px;
-    font-size: 21px;
-    font-weight: 900;
-    color: #0d9488;
-    letter-spacing: -0.025em;
-  }
-  .br-accepted-sub {
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
-    font-weight: 400;
-  }
+  .br-accepted { text-align: center; padding: 32px 28px; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfe 100%); border-radius: 16px; border: 1px solid rgba(2, 182, 188, 0.25); box-shadow: 0 4px 16px rgba(2, 182, 188, 0.12), inset 0 1px 0 rgba(255,255,255,0.8); animation: br-celebration-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  @keyframes br-celebration-pop { 0% { opacity: 0; transform: scale(0.9) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+  .br-accepted p { margin: 0 0 6px; font-size: 21px; font-weight: 900; color: #0d9488; letter-spacing: -0.025em; }
+  .br-accepted-sub { font-size: 14px; color: #64748b; line-height: 1.6; font-weight: 400; }
 
   /* ── Mobile ─────────────────────────────────────────────────────────────── */
   @media (max-width: 640px) {

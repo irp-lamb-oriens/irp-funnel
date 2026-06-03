@@ -8,12 +8,17 @@
     project, loading, error, stages, stageLabels,
     requestClientOTP, verifyClientOTP, checkClientAuth, logout, fetchProject,
     loadLilyHistory,
+    // ── Template proposal system ──────────────────────────────────────────
+    templateBlocks, templateSections, activeSection,
+    inferTemplate, loadTemplate, loadAllTemplates,
+    allTemplates, allTemplatesLoading, setSelectedTemplate, selectedTemplateId,
   } from './store.ts';
   import LilyChat from './LilyChat.svelte';
   import CommentsThread from './CommentsThread.svelte';
   import StageRating from './StageRating.svelte';
   import QuotePanel from './QuotePanel.svelte';
   import QuoteView from './QuoteView.svelte';
+  import BlockRenderer from './BlockRenderer.svelte';
   import RegulationsLanding from './RegulationsLanding.svelte';
   import {
     irpStaffIsAuthenticated, irpStaffEmail,
@@ -171,6 +176,46 @@
   // ─── Lily FAB state ─────────────────────────────────────────────────────
   let lilyOpen = false;
 
+  // ─── Template Proposal — auto-load after locked-loading completes ────────
+  //
+  // After the project data is available ($project is set), determine which
+  // template to display:
+  //   1. If the consultation has a `selectedQuoteTemplateId` → load that.
+  //   2. If staff is present and no template is set → AI-infer one.
+  //   3. Otherwise → load the general default (irp-standard-proposal).
+  //
+  // The $templateBlocks.length guard prevents re-triggering once blocks load.
+  // $allTemplates is loaded for the staff template-selector dropdown.
+  $: if ($project && !$templateBlocks.length && !$allTemplatesLoading) {
+    const tid: string | null = ($project as any).selectedQuoteTemplateId ?? null;
+    if (tid) {
+      loadTemplate(tid);
+    } else if ($irpStaffIsAuthenticated) {
+      inferTemplate(projectId);
+    } else {
+      loadTemplate('irp-standard-proposal');
+    }
+  }
+  $: if ($irpStaffIsAuthenticated && $project && !$allTemplates.length && !$allTemplatesLoading) {
+    loadAllTemplates();
+  }
+
+  // Portal-tabs header: build tab descriptors from template sections
+  $: proposalTabs = ($templateSections as string[]).map((s: string) => ({ id: s, label: s }));
+  $: headerMode = proposalTabs.length > 0 ? ('portal-tabs' as const) : ('website' as const);
+
+  // Minimal quote stub for BlockRenderer when rendering a template preview
+  // (no actual line-items — quoteTable shows the placeholder card).
+  const templateStubQuote: any = {
+    quoteId: 'template-preview', consultationId: projectId,
+    title: 'Proposal Preview', lineItems: [], currency: 'USD', total: 0,
+    providerIds: [], providerSnapshots: [], notes: null, status: 'draft',
+    approvers: [], approvals: [], comments: [], changeLog: [],
+    clientVisible: false, sentToClientAt: null, clientToken: null,
+    clientAcceptedAt: null, clientAcceptedBy: null,
+    createdAt: new Date().toISOString(), createdBy: 'system', updatedAt: null,
+  };
+
   /**
    * Opens the Lily drawer and auto-sends a deep-link prompt.
    * Called by RegulationsLanding "Ask Lily →" buttons.
@@ -189,7 +234,18 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<Header />
+<!--
+  Portal-tabs mode: when a template with sections is loaded, the Header
+  transforms into the section tab navigator for the proposal document.
+  On all other status pages (no template blocks), the marketing website
+  nav renders as usual (mode='website', fully backward-compatible).
+-->
+<Header
+  mode={headerMode}
+  tabs={proposalTabs}
+  activeTab={$activeSection ?? ''}
+  on:tabchange={(e) => activeSection.set(e.detail)}
+/>
 
 <div class="client-portal">
   {#if $isCheckingAuth || ($isAuthenticated && $loading && !$project)}
@@ -371,14 +427,65 @@
             {/if}
           </section>
 
+      <!-- ══════════════ TEMPLATE PROPOSAL ══════════════════════════════ -->
+
+      <!-- Staff-only: template selector dropdown.
+           Visible only via IRP dashboard staff bypass — clients never see it.
+           Staff pick which proposal template to show; AI pre-selected a default. -->
+      {#if $irpStaffIsAuthenticated && $allTemplates.length > 0}
+        <div class="cp-dashboard__full-width-section">
+          <div class="cp-template-selector">
+            <div class="cp-template-selector__inner">
+              <span class="cp-template-selector__eyebrow">🤖 AI-selected proposal template</span>
+              <div class="cp-template-selector__row">
+                <label class="cp-template-selector__label" for="tpl-select">Showing:</label>
+                <select
+                  id="tpl-select"
+                  class="cp-template-selector__select"
+                  value={$selectedTemplateId ?? ''}
+                  on:change={(e) => setSelectedTemplate(projectId, e.currentTarget.value)}
+                >
+                  <option value="" disabled>Select a template…</option>
+                  {#each $allTemplates as tpl (tpl.templateId)}
+                    <option value={tpl.templateId}>
+                      {tpl.name}{tpl.isDefault ? ' ★ Default' : ''}
+                    </option>
+                  {/each}
+                </select>
+                <span class="cp-template-selector__hint">Only you see this — clients see the rendered proposal below</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      <!-- Proposal document: template blocks rendered with section tabs.
+           Visible to EVERYONE (staff + clients). The top Header tabs drive
+           which section is shown (activeSection store). -->
+      {#if $templateBlocks.length > 0}
+        <div class="cp-dashboard__full-width-section cp-proposal-section">
+          <BlockRenderer
+            blocks={$templateBlocks}
+            quote={templateStubQuote}
+            accepted={false}
+            accepting={false}
+            acceptError=""
+            activeSection={$activeSection}
+            clientSummary={$project ?? {}}
+          />
+        </div>
+      {/if}
+
       <!-- ── QUOTE PANEL ─────────────────────────────────────────────────── -->
       <!-- Shows received/accepted quotes + Accept CTA. Self-hides when empty -->
       <div class="cp-dashboard__full-width-section">
         <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
       </div>
 
-      <!-- Quote view: only shown when the URL has a ?quoteToken= param -->
-      {#if $page.url.searchParams.get('quoteToken')}
+      <!-- Quote view: only shown when the URL has a ?quoteToken= param.
+           When template blocks are shown above, this still renders for
+           clients with a quoteToken (backward compatible). -->
+      {#if $page.url.searchParams.get('quoteToken') && !$templateBlocks.length}
         <div class="cp-dashboard__full-width-section">
           <QuoteView consultationId={projectId} />
         </div>
@@ -702,6 +809,71 @@
       width: 100%;
       justify-content: center;
     }
+  }
+
+  /* ── Staff Template Selector ────────────────────────────────────────── */
+  :global(.cp-template-selector) {
+    background: linear-gradient(135deg, rgba(2,182,188,0.06) 0%, rgba(2,28,42,0.6) 100%);
+    border: 1px solid rgba(2, 182, 188, 0.2);
+    border-radius: 12px;
+    padding: 0.85rem 1.25rem;
+  }
+  :global(.cp-template-selector__inner) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  :global(.cp-template-selector__eyebrow) {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #02b6bc;
+    opacity: 0.8;
+  }
+  :global(.cp-template-selector__row) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  :global(.cp-template-selector__label) {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(248,250,252,0.75);
+    white-space: nowrap;
+  }
+  :global(.cp-template-selector__select) {
+    flex: 1;
+    min-width: 180px;
+    max-width: 360px;
+    padding: 0.4rem 0.75rem;
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(2,182,188,0.3);
+    border-radius: 8px;
+    color: #f1f5f9;
+    font-size: 0.84rem;
+    font-family: 'Jost', system-ui, sans-serif;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  :global(.cp-template-selector__select:focus) {
+    border-color: #02b6bc;
+    box-shadow: 0 0 0 3px rgba(2,182,188,0.15);
+  }
+  :global(.cp-template-selector__hint) {
+    font-size: 0.72rem;
+    color: rgba(248,250,252,0.4);
+    font-style: italic;
+  }
+
+  /* ── Proposal document section ───────────────────────────────────────── */
+  :global(.cp-proposal-section) {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 0 rgba(0,0,0,0.04);
   }
 
   /* ── Lily FAB ─────────────────────────────────────────────────────────── */

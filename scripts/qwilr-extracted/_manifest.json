@@ -1,0 +1,138 @@
+[
+  {
+    "id": "irp-mexico-riviera-maya",
+    "name": "México — Rivera Maya (Oferta Irresistible)",
+    "category": "mexico-riviera-maya",
+    "destinationCountries": [
+      "Mexico"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-mexico-standard",
+    "name": "México — Todo México excepto Rivera Maya",
+    "category": "mexico-standard",
+    "destinationCountries": [
+      "Mexico"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-us-standard",
+    "name": "United States — Standard Proposal",
+    "category": "us",
+    "destinationCountries": [
+      "United States"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-panama-standard",
+    "name": "Panama — Oferta Irresistible",
+    "category": "panama",
+    "destinationCountries": [
+      "Panama"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-cr-roro-vehicle",
+    "name": "Costa Rica — Vehículo solo (RoRo)",
+    "category": "cr-car-roro",
+    "destinationCountries": [
+      "Costa Rica"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-cr-tampa-container",
+    "name": "Costa Rica — Vehículo solo (Contenedor Consolidado desde Tampa)",
+    "category": "cr-car-container",
+    "destinationCountries": [
+      "Costa Rica"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-cr-hhg-car",
+    "name": "Costa Rica — Menaje y Vehículo",
+    "category": "cr-hhg-car",
+    "destinationCountries": [
+      "Costa Rica"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  },
+  {
+    "id": "irp-cr-hhg-only",
+    "name": "Costa Rica — Menaje solo",
+    "category": "cr-hhg-only",
+    "destinationCountries": [
+      "Costa Rica"
+    ],
+    "blockCount": 7,
+    "sections": [
+      "Introduction",
+      "Project Description",
+      "Project Investment",
+      "Testimonials",
+      "Important Info",
+      "Book Your Move"
+    ]
+  }
+]

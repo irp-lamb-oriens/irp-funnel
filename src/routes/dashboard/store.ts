@@ -1689,6 +1689,13 @@ export interface QuoteBlock {
   html?: string | null;
   /** Structured data for component-based blocks (quoteTable, accept, etc.). */
   data?: Record<string, any> | null;
+  /**
+   * Optional named section this block belongs to.
+   * When blocks share a section label, BlockRenderer groups them into a
+   * navigable tab. Blocks without a section fall through to the legacy
+   * single-flow document mode (backward compatible).
+   */
+  section?: string | null;
 }
 
 export interface Quote {
