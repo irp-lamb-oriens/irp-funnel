@@ -418,7 +418,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
   }
 
   /* ── Empty state ───────────────────────────────────────────────────── */
@@ -582,7 +582,7 @@
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.1s;
-    font-family: inherit;
+    font-family: 'Montserrat', 'Arial', sans-serif;
   }
   .we-tb-btn:hover { background: rgba(2,182,188,0.12); border-color: rgba(2,182,188,0.25); }
   .we-tb-btn--field {
@@ -670,9 +670,9 @@
     min-height: 80px;
     padding: 0.75rem 1rem;
     outline: none;
-    font-family: inherit;
+    font-family: 'Montserrat', 'Arial', sans-serif;
     font-size: 0.9rem;
-    line-height: 1.65;
+    line-height: 1.7;
     color: #1e293b;
     word-break: break-word;
     cursor: text;

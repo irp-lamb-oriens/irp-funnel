@@ -512,7 +512,7 @@
     display: flex;
     height: calc(100vh - 64px);
     overflow: hidden;
-    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
     background: #f8fafc;
     color: #0f172a;
   }

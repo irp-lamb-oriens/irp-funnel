@@ -854,7 +854,7 @@
     border-radius: 8px;
     color: #f1f5f9;
     font-size: 0.84rem;
-    font-family: 'Jost', system-ui, sans-serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
     outline: none;
     cursor: pointer;
     transition: border-color 0.15s;

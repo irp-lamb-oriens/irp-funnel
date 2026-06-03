@@ -206,92 +206,135 @@
     }
   }
 
-  /* ── Portal-tabs mode ──────────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────────────────────────
+     Portal-tabs mode
+     Same floating-pill geometry as the website header:
+       position: fixed; top: 24px; border-radius: 24px; max-width: 1200px
+     Dark glassmorphism — complements the client portal's dark-navy (#1a1a2e)
+     background while staying visually cohesive with the brand.
+     Font: 'Montserrat', 'Arial', sans-serif (site brand font).
+  ──────────────────────────────────────────────────────────────────────── */
 
-  /** Spacer that reserves exactly the height of the sticky header */
-  .pt-space { height: 56px; }
+  /* Spacer — same visual area as the floating pill + breathing room */
+  .pt-space { height: 104px; }
 
   .pt-header {
     position: fixed;
-    top: 0; left: 0; right: 0;
+    top: 24px; left: 0; right: 0;
+    width: calc(100% - 48px);
+    max-width: 1200px;
+    margin: 0 auto;
     z-index: 10010;
-    height: 56px;
-    background: linear-gradient(135deg, #0a1628 0%, #0b2035 60%, #052a30 100%);
-    border-bottom: 1px solid rgba(2, 182, 188, 0.25);
+    height: 64px;
+    /* Dark glassmorphism — same pill geometry as the website nav pill */
+    background: rgba(10, 16, 30, 0.86);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(2, 182, 188, 0.16);
+    border-radius: 24px;
     box-shadow:
-      0 2px 24px rgba(0, 0, 0, 0.35),
-      0 0 0 1px rgba(2, 182, 188, 0.08);
+      0 4px 32px -4px rgba(0, 0, 0, 0.55),
+      0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    transition: box-shadow 0.3s ease;
   }
 
   .pt-inner {
     display: flex;
     align-items: center;
     height: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    gap: 1.5rem;
+    padding: 0 16px 0 20px;
   }
 
-  /* Mini brand logo */
+  /* Mini brand — separated from tabs by a teal rule */
   .pt-brand {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     text-decoration: none;
-  }
-  .pt-brand__logo {
-    height: 28px;
-    width: auto;
-    object-fit: contain;
-    opacity: 0.9;
+    padding-right: 16px;
+    margin-right: 4px;
+    border-right: 1px solid rgba(2, 182, 188, 0.18);
     transition: opacity 0.15s;
   }
-  .pt-brand:hover .pt-brand__logo { opacity: 1; }
+  .pt-brand:hover { opacity: 0.85; }
+  .pt-brand__logo {
+    height: 26px;
+    width: auto;
+    object-fit: contain;
+    filter: brightness(1.08);
+  }
 
   /* Tab strip */
   .pt-tabs {
     display: flex;
     align-items: stretch;
-    gap: 0;
     overflow-x: auto;
     scrollbar-width: none;
     flex: 1;
     height: 100%;
+    padding: 0 4px;
   }
   .pt-tabs::-webkit-scrollbar { display: none; }
 
   .pt-tab {
     display: inline-flex;
     align-items: center;
-    padding: 0 18px;
+    padding: 0 15px;
     height: 100%;
-    font-family: 'Jost', system-ui, sans-serif;
-    font-size: 0.82rem;
+    font-family: 'Montserrat', 'Arial', sans-serif;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.62);
+    color: rgba(255, 255, 255, 0.48);
     background: transparent;
     border: none;
-    border-bottom: 2.5px solid transparent;
     cursor: pointer;
     white-space: nowrap;
-    transition: color 0.18s, border-color 0.18s, background 0.15s;
-    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    position: relative;
+    transition: color 0.18s, background 0.15s;
+  }
+  /* Active indicator — bottom bar inside the pill */
+  .pt-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 2.5px;
+    border-radius: 2px 2px 0 0;
+    background: transparent;
+    transition: background 0.2s, box-shadow 0.2s;
   }
   .pt-tab:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(2, 182, 188, 0.06);
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
   }
   .pt-tab--active {
-    color: #fff;
-    border-bottom-color: #02b6bc;
+    color: #02b5bb;
     font-weight: 700;
   }
-  .pt-tab--active:hover { background: transparent; }
+  .pt-tab--active::after {
+    background: #02b5bb;
+    box-shadow: 0 0 10px rgba(2, 181, 187, 0.45);
+  }
 
+  @media (max-width: 1024px) {
+    .pt-header {
+      width: calc(100% - 24px);
+      top: 14px;
+      border-radius: 20px;
+      height: 58px;
+    }
+    .pt-space { height: 88px; }
+  }
   @media (max-width: 640px) {
-    .pt-inner { padding: 0 12px; gap: 0.75rem; }
-    .pt-tab { padding: 0 12px; font-size: 0.78rem; }
-    .pt-brand__logo { height: 22px; }
+    .pt-inner { padding: 0 10px 0 14px; }
+    .pt-tab { padding: 0 10px; font-size: 0.67rem; letter-spacing: 0.04em; }
+    .pt-brand { padding-right: 10px; }
+    .pt-brand__logo { height: 21px; }
+    .pt-header { height: 52px; border-radius: 16px; }
+    .pt-space { height: 76px; }
   }
 </style>
