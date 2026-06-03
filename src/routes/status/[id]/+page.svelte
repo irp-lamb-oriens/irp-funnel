@@ -483,9 +483,10 @@
       </div>
 
       <!-- Quote view: only shown when the URL has a ?quoteToken= param.
-           When template blocks are shown above, this still renders for
-           clients with a quoteToken (backward compatible). -->
-      {#if $page.url.searchParams.get('quoteToken') && !$templateBlocks.length}
+           Always rendered when quoteToken is present regardless of whether
+           template blocks are also showing above — fully backward compatible
+           for clients who arrive via the legacy send-to-client email link. -->
+      {#if $page.url.searchParams.get('quoteToken')}
         <div class="cp-dashboard__full-width-section">
           <QuoteView consultationId={projectId} />
         </div>
