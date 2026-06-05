@@ -342,6 +342,47 @@
     font-weight: 500;
     margin-top: 4px;
   }
+
+  /* ── AI Cost Summary Pill ─────────────────────────────────────────────
+     Moved from the dashboard topbar into the Metrics page.
+     Floats at the top of the LLM section as a quick-glance banner.      */
+  .llm-cost-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 1rem;
+    background: rgba(2, 181, 187, 0.07);
+    border: 1px solid rgba(2, 181, 187, 0.2);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    font-size: 0.82rem;
+    color: #0f172a;
+  }
+  .llm-cost-summary__icon { font-size: 1rem; }
+  .llm-cost-summary__label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .llm-cost-summary__item {
+    font-size: 0.84rem;
+    color: #334155;
+  }
+  .llm-cost-summary__item strong {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .llm-cost-summary__item--week strong  { color: #16a34a; }  /* green  */
+  .llm-cost-summary__item--month strong { color: #2563eb; }  /* blue   */
+  .llm-cost-summary__item--total strong { color: #02b5bb; }  /* teal   */
+  .llm-cost-summary__sep {
+    color: #cbd5e1;
+    font-weight: 300;
+    user-select: none;
+  }
 </style>
 
 <div class="metrics-view">
@@ -488,6 +529,23 @@
           <div class="metric-card__label">Failed</div>
         </div>
       </div>
+    </div>
+
+    <!-- LLM Cost Summary Pill (moved from dashboard topbar) -->
+    <div class="llm-cost-summary">
+      <span class="llm-cost-summary__icon">🤖</span>
+      <span class="llm-cost-summary__label">AI Cost at a glance:</span>
+      <span class="llm-cost-summary__item llm-cost-summary__item--week">
+        W <strong>${$metrics.llmCosts.periodSpend?.thisWeek?.toFixed(2) || '0.00'}</strong>
+      </span>
+      <span class="llm-cost-summary__sep">·</span>
+      <span class="llm-cost-summary__item llm-cost-summary__item--month">
+        M <strong>${$metrics.llmCosts.periodSpend?.thisMonth?.toFixed(2) || '0.00'}</strong>
+      </span>
+      <span class="llm-cost-summary__sep">·</span>
+      <span class="llm-cost-summary__item llm-cost-summary__item--total">
+        ∑ <strong>${$metrics.llmCosts.totalCost.toFixed(2)}</strong>
+      </span>
     </div>
 
     <!-- LLM Costs — Period Spend Breakdown -->

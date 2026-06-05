@@ -455,11 +455,6 @@
         </nav>
       </div>
       <div class="topbar__right">
-        {#if $metrics}
-          <span class="topbar__spend" title="Week / Month / All-Time AI spend">
-            🤖 W:${$metrics.llmCosts.periodSpend?.thisWeek?.toFixed(2) || '0'} · M:${$metrics.llmCosts.periodSpend?.thisMonth?.toFixed(2) || '0'} · ∑${$metrics.llmCosts.totalCost.toFixed(2)}
-          </span>
-        {/if}
         <div class="topbar__search">
           <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
         </div>

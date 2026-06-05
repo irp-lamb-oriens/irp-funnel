@@ -472,11 +472,14 @@ export const templateSections = derived(templateBlocks, ($blocks): string[] => {
  * Falls back to the default template on 404.
  */
 export async function loadTemplate(templateId: string): Promise<void> {
+  // Set selectedTemplateId FIRST — acts as an idempotent guard so the reactive
+  // block in +page.svelte (keyed on `!$selectedTemplateId`) doesn't re-fire on
+  // fetch failure (empty blocks + null id → infinite retry loop).
+  selectedTemplateId.set(templateId);
   try {
     const data = await apiFetch(`/api/template/${templateId}`);
     templateBlocks.set(data.blocks ?? []);
-    selectedTemplateId.set(templateId);
-    // Auto-select first section
+    // Auto-select first section tab
     const sections = (data.blocks ?? [])
       .map((b: any) => b.section)
       .filter(Boolean)
@@ -484,6 +487,9 @@ export async function loadTemplate(templateId: string): Promise<void> {
     if (sections.length > 0) activeSection.set(sections[0]);
   } catch {
     templateBlocks.set([]);
+    activeSection.set(null);
+    // selectedTemplateId is intentionally NOT reset here — keeps the guard intact
+    // so +page.svelte's reactive block won't re-trigger after a failed fetch.
   }
 }
 

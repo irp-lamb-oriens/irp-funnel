@@ -186,7 +186,11 @@
   //
   // The $templateBlocks.length guard prevents re-triggering once blocks load.
   // $allTemplates is loaded for the staff template-selector dropdown.
-  $: if ($project && !$templateBlocks.length && !$allTemplatesLoading) {
+  // Guard: `!$selectedTemplateId` prevents re-triggering after a failed fetch.
+  // loadTemplate() sets selectedTemplateId BEFORE the network call, so even if
+  // the call fails and resets templateBlocks to [], the id stays non-null and
+  // this block won't fire again — no infinite retry loop.
+  $: if ($project && !$templateBlocks.length && !$allTemplatesLoading && !$selectedTemplateId) {
     const tid: string | null = ($project as any).selectedQuoteTemplateId ?? null;
     if (tid) {
       loadTemplate(tid);
