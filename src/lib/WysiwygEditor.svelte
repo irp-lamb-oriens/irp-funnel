@@ -41,7 +41,9 @@
 
   // ── Props ────────────────────────────────────────────────────────────────────
   export let blocks: QuoteBlock[] = [];
-  export let clientSummary: Record<string, any> = {};
+  // clientSummary: reserved for future merge-field preview context (buildMergeContext)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  export let clientSummary: Record<string, any> = {}; $: void clientSummary;
 
   const dispatch = createEventDispatcher<{ change: QuoteBlock[] }>();
 
@@ -68,9 +70,38 @@
   let focusedBlockId: string | null = null;
   let hoveredBlockId: string | null = null;
 
-  // DnD
+  // Block-level DnD (between sections via <hr> drop-zones)
   let dragBlockId:    string | null = null;
-  let activeDropZone: string | null = null; // "${section}::before::${blockId}" | "${section}::end"
+  let activeDropZone: string | null = null;
+
+  // Per-block HTML source mode
+  let htmlModeBlocks: Set<string> = new Set();
+  let htmlSourceMap:  Record<string, string> = {};
+  // Per-block debounce timers (typing save — 480 ms after last keystroke)
+  const debounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  function debounceBlock(blockId: string, fn: () => void, ms = 480) {
+    const prev = debounceTimers.get(blockId);
+    if (prev !== undefined) clearTimeout(prev);
+    debounceTimers.set(blockId, setTimeout(() => { fn(); debounceTimers.delete(blockId); }, ms));
+  }
+
+  function isHtmlMode(blockId: string): boolean { return htmlModeBlocks.has(blockId); }
+  function toggleHtmlMode(blockId: string) {
+    const s = new Set(htmlModeBlocks);
+    if (s.has(blockId)) {
+      // Leaving HTML mode → commit textarea contents to block
+      if (htmlSourceMap[blockId] !== undefined) {
+        saveBlockHtml(blockId, htmlSourceMap[blockId]);
+        delete htmlSourceMap[blockId];
+      }
+      s.delete(blockId);
+    } else {
+      // Entering HTML mode → snapshot current html
+      htmlSourceMap[blockId] = blocks.find(b => b.id === blockId)?.html ?? '';
+      s.add(blockId);
+    }
+    htmlModeBlocks = s;
+  }
 
   // Section rename
   let renamingSection: string | null = null;
@@ -115,12 +146,205 @@
   function blockLabel(type: QuoteBlockType) { return BLOCK_CATALOG.find(b => b.type === type)?.label ?? type; }
   function isEditable(type: QuoteBlockType) { return EDITABLE_TYPES.has(type); }
 
-  // ── Svelte action: set innerHTML without cursor-jump ─────────────────────────
+  // ── Svelte action: liveHtmlBlock ─────────────────────────────────────────────
+  // Pre-render: injects contenteditable on ALL elements + draggable/.we-draggable
+  //   on direct children (reorderable units within the block).
+  // Post-render: attaches class-based DnD event listeners via delegation
+  //   (.we-draggable filter) with transition-class animation.
+  // Debounced input save (480 ms typing pause → commit), blur safety save.
+  // Focus toggle: disables draggable while editing text, re-enables on blur
+  //   → resolves contenteditable+draggable conflict cleanly.
+  // Re-mount: on external html change, detaches listeners, waits 0ms, re-mounts
+  //   with full attribute/content preservation (cleans only editor-only attrs).
+  // Inject global drag-transition CSS once per page load.
+  // (Avoids :global() in Svelte style blocks — which triggers esbuild
+  //  css-syntax-error warnings when CSS property values contain commas.)
+  function ensureGlobalStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('__we-drag-styles__')) return;
+    const s = document.createElement('style');
+    s.id = '__we-drag-styles__';
+    s.textContent = [
+      '.we-draggable{transition:all .18s ease;cursor:grab}',
+      '.we-draggable:active{cursor:grabbing}',
+      '.we-dragging{opacity:.35!important;transform:scale(.97)!important;box-shadow:0 4px 16px rgba(0,0,0,.18)!important}',
+      '.we-drop-target{box-shadow:0 3px 0 0 #02b5bb!important;transform:translateY(-1px)!important;transition:all .12s ease!important}',
+      '.we-drop-above{box-shadow:0 -3px 0 0 #02b5bb!important;transform:translateY(1px)!important;transition:all .12s ease!important}',
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  interface LHBOpts { html: string | null | undefined; onChange: (html: string) => void; }
+  function liveHtmlBlock(node: HTMLElement, opts: LHBOpts) {
+    ensureGlobalStyles();
+    let currentOpts = opts;
+    let dragSrc: HTMLElement | null = null;
+
+    // 1. Pre-render: walk a temp clone, inject attrs, set innerHTML
+    // NON-DESTRUCTIVE: attrs already present in block.html are NOT overwritten.
+    // We mark every attr WE add with a provenance key (data-we-ce / data-we-drag)
+    // so serialize() knows exactly what to remove — and never touches originals.
+    function prepareAndMount(rawHtml: string | null | undefined) {
+      const temp = document.createElement('div');
+      temp.innerHTML = rawHtml ?? '';
+      // contenteditable on ALL elements — skip if already present (preserve original)
+      temp.querySelectorAll<HTMLElement>('*').forEach(el => {
+        if (!el.hasAttribute('contenteditable')) {
+          el.setAttribute('contenteditable', 'true');
+          el.setAttribute('data-we-ce', '1'); // provenance: editor-injected, safe to strip
+        }
+      });
+      // draggable + class on direct structural children — skip draggable if already present
+      Array.from(temp.children).forEach((child, i) => {
+        const el = child as HTMLElement;
+        if (!el.hasAttribute('draggable')) {
+          el.setAttribute('draggable', 'true');
+          el.setAttribute('data-we-drag', '1'); // provenance: editor-injected, safe to strip
+        }
+        el.classList.add('we-draggable');
+        if (!el.dataset.weId) el.dataset.weId = `${i}-${Date.now()}`;
+      });
+      node.innerHTML = temp.innerHTML;
+      attachListeners();
+    }
+
+    // 2. Serialize → strip ONLY editor-injected attrs (fully non-destructive).
+    // Original contenteditable / draggable / class attrs in block.html are preserved.
+    function serialize(): string {
+      const clone = node.cloneNode(true) as HTMLElement;
+      // Remove only editor-added contenteditable (provenance marker data-we-ce)
+      clone.querySelectorAll<HTMLElement>('[data-we-ce]').forEach(el => {
+        el.removeAttribute('contenteditable');
+        el.removeAttribute('data-we-ce');
+      });
+      // Remove editor DnD markers; only remove draggable if editor added it
+      clone.querySelectorAll<HTMLElement>('.we-draggable').forEach(el => {
+        el.classList.remove('we-draggable', 'we-dragging', 'we-drop-target', 'we-drop-above');
+        if (el.dataset.weDrag) el.removeAttribute('draggable'); // only if we added it
+        el.removeAttribute('data-we-drag');
+        delete el.dataset.weId;
+      });
+      // Clean remaining drag-state classes (safety pass)
+      clone.querySelectorAll<HTMLElement>('.we-dragging,.we-drop-target,.we-drop-above').forEach(el => {
+        el.classList.remove('we-dragging', 'we-drop-target', 'we-drop-above');
+      });
+      return clone.innerHTML;
+    }
+
+    // 3. DnD handlers (class-based delegation)
+    function onDragStart(e: DragEvent) {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      if (!t || !node.contains(t)) return;
+      e.stopPropagation(); // don't bubble to block-level DnD
+      dragSrc = t;
+      t.classList.add('we-dragging');
+      if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', t.dataset.weId ?? ''); }
+    }
+    function onDragOver(e: DragEvent) {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      if (!t || !node.contains(t) || t === dragSrc) return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      // Clear previous indicators
+      node.querySelectorAll('.we-drop-target,.we-drop-above').forEach(el => el.classList.remove('we-drop-target','we-drop-above'));
+      const rect = t.getBoundingClientRect();
+      t.classList.add(e.clientY < rect.top + rect.height / 2 ? 'we-drop-above' : 'we-drop-target');
+    }
+    function onDragLeave(e: DragEvent) {
+      const t = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      if (t) t.classList.remove('we-drop-target', 'we-drop-above');
+    }
+    function onDrop(e: DragEvent) {
+      e.preventDefault(); e.stopPropagation();
+      if (!dragSrc) return;
+      const t = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      if (t && t !== dragSrc && node.contains(t)) {
+        const rect = t.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) node.insertBefore(dragSrc, t);
+        else node.insertBefore(dragSrc, t.nextSibling);
+        // Immediate: regenerate internal element map + serialize → state
+        currentOpts.onChange(serialize());
+      }
+      clearDragClasses(); dragSrc = null;
+    }
+    function onDragEnd() { clearDragClasses(); dragSrc = null; }
+    function clearDragClasses() {
+      node.querySelectorAll('.we-dragging,.we-drop-target,.we-drop-above').forEach(el =>
+        el.classList.remove('we-dragging','we-drop-target','we-drop-above'));
+    }
+
+    // 4. Focus toggle: disable draggable while editing (resolves contenteditable conflict).
+    // NON-DESTRUCTIVE: onFocusOut only restores draggable=true on elements that
+    // had draggable added by the editor (data-we-drag present). Elements that
+    // originally had draggable in block.html are left as-is (DOM only; serialize
+    // never removes their draggable attr, so saved HTML is unaffected).
+    function onFocusIn(e: FocusEvent) {
+      const d = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      if (d && node.contains(d)) d.setAttribute('draggable', 'false');
+    }
+    function onFocusOut(e: FocusEvent) {
+      const d = (e.target as HTMLElement).closest<HTMLElement>('.we-draggable');
+      // Only restore to draggable=true if the editor originally set it (provenance)
+      if (d && node.contains(d) && d.dataset.weDrag) d.setAttribute('draggable', 'true');
+    }
+
+    // 5. Debounced input save (480 ms typing pause)
+    function onInput() {
+      const blockId = node.dataset.blockPreview ?? '';
+      debounceBlock(blockId, () => currentOpts.onChange(serialize()));
+    }
+
+    // 6. Blur safety save
+    function onBlur(e: FocusEvent) {
+      setTimeout(() => {
+        if (!node.contains(document.activeElement)) currentOpts.onChange(serialize());
+      }, 120);
+    }
+
+    function attachListeners() {
+      node.addEventListener('dragstart', onDragStart);
+      node.addEventListener('dragover', onDragOver);
+      node.addEventListener('dragleave', onDragLeave);
+      node.addEventListener('drop', onDrop);
+      node.addEventListener('dragend', onDragEnd);
+      node.addEventListener('focusin', onFocusIn);
+      node.addEventListener('focusout', onFocusOut);
+      node.addEventListener('input', onInput);
+      node.addEventListener('blur', onBlur, true);
+    }
+    function detachListeners() {
+      node.removeEventListener('dragstart', onDragStart);
+      node.removeEventListener('dragover', onDragOver);
+      node.removeEventListener('dragleave', onDragLeave);
+      node.removeEventListener('drop', onDrop);
+      node.removeEventListener('dragend', onDragEnd);
+      node.removeEventListener('focusin', onFocusIn);
+      node.removeEventListener('focusout', onFocusOut);
+      node.removeEventListener('input', onInput);
+      node.removeEventListener('blur', onBlur, true);
+    }
+
+    prepareAndMount(opts.html);
+
+    return {
+      update(newOpts: LHBOpts) {
+        const htmlChanged = newOpts.html !== currentOpts.html;
+        currentOpts = newOpts;
+        // Re-mount: detach → preserve HTML with attrs → re-attach in minimal ms
+        if (htmlChanged && !node.contains(document.activeElement as Node)) {
+          detachListeners();
+          setTimeout(() => prepareAndMount(newOpts.html), 0);
+        }
+      },
+      destroy() { detachListeners(); },
+    };
+  }
+
+  // Keep initContent as alias for unsectioned block fallback
   function initContent(el: HTMLElement, html: string | null | undefined) {
     el.innerHTML = html ?? '';
     return {
       update(newHtml: string | null | undefined) {
-        // Only update when the element is not being edited
         if (document.activeElement !== el && !el.contains(document.activeElement as Node)) {
           if (el.innerHTML !== (newHtml ?? '')) el.innerHTML = newHtml ?? '';
         }
@@ -400,6 +624,7 @@
             on:mouseleave={() => { if (hoveredBlockId === block.id) hoveredBlockId = null; }}
             draggable="true"
             on:dragstart={(e) => onBlockDragStart(block.id, e)}
+            role="listitem"
           >
             <div class="we-frame__badge">{blockIcon(block.type)} {blockLabel(block.type)}</div>
             <button class="we-frame__delete" on:click={() => removeBlock(block.id)} title="Delete">✕</button>
@@ -412,7 +637,7 @@
                   on:focus={() => focusedBlockId = block.id}
                   on:blur={(e) => onEditorBlur(e, block.id)}
                   on:keydown={(e) => { if (e.ctrlKey || e.metaKey) e.stopPropagation(); }}
-                  spellcheck="false" role="textbox" aria-multiline="true"
+                  tabindex="0" spellcheck="false" role="textbox" aria-multiline="true"
                 ></div>
               {:else}
                 <div class="we-preview-placeholder">{blockIcon(block.type)} {blockLabel(block.type)} — renders at send time</div>
@@ -470,14 +695,13 @@
       <!-- Lane body ────────────────────────────────────────────────────────── -->
       <div class="we-lane__body">
 
-        <!-- Top drop zone -->
-        {@const topZoneKey = dzKey(section, secBlocks[0]?.id ?? null)}
+        <!-- Top drop zone (key = first block id or END) -->
         <hr class="we-dropzone"
-          class:we-dropzone--active={activeDropZone === topZoneKey}
-          on:dragenter={() => onDropZoneDragEnter(topZoneKey)}
-          on:dragover|preventDefault={(e) => onDropZoneDragOver(topZoneKey, e)}
-          on:dragleave={() => onDropZoneDragLeave(topZoneKey)}
-          on:drop|preventDefault={(e) => onDropAtZone(topZoneKey, e)}
+          class:we-dropzone--active={activeDropZone === dzKey(section, secBlocks[0]?.id ?? null)}
+          on:dragenter={() => onDropZoneDragEnter(dzKey(section, secBlocks[0]?.id ?? null))}
+          on:dragover|preventDefault={(e) => onDropZoneDragOver(dzKey(section, secBlocks[0]?.id ?? null), e)}
+          on:dragleave={() => onDropZoneDragLeave(dzKey(section, secBlocks[0]?.id ?? null))}
+          on:drop|preventDefault={(e) => onDropAtZone(dzKey(section, secBlocks[0]?.id ?? null), e)}
         />
 
         {#each secBlocks as block, bi (block.id)}
@@ -489,6 +713,13 @@
             class:we-block-frame--dragging={dragBlockId === block.id}
             on:mouseenter={() => hoveredBlockId = block.id}
             on:mouseleave={() => { if (hoveredBlockId === block.id) hoveredBlockId = null; }}
+            on:focusin={() => focusedBlockId = block.id}
+            on:focusout={(e) => {
+              const rel = (e as FocusEvent).relatedTarget as Node | null;
+              if (!rel || !(e.currentTarget as HTMLElement).contains(rel)) {
+                setTimeout(() => { if (focusedBlockId === block.id) focusedBlockId = null; }, 160);
+              }
+            }}
             draggable="true"
             on:dragstart={(e) => onBlockDragStart(block.id, e)}
             role="listitem"
@@ -520,13 +751,21 @@
                     {/if}
                   </div>
                 {/if}
+                {#if isEditable(block.type)}
+                  <button
+                    class="we-frame__btn we-frame__btn--code"
+                    class:we-frame__btn--code-active={isHtmlMode(block.id)}
+                    title={isHtmlMode(block.id) ? 'Switch to preview' : 'Edit HTML source'}
+                    on:click|stopPropagation={() => toggleHtmlMode(block.id)}
+                  >{isHtmlMode(block.id) ? '👁 Preview' : '</> HTML'}</button>
+                {/if}
                 <button class="we-frame__btn" title="Duplicate block" on:click={() => duplicateBlock(block.id)}>⎘</button>
                 <button class="we-frame__btn we-frame__btn--danger" title="Delete block" on:click={() => removeBlock(block.id)}>✕</button>
               </div>
             </div>
 
             <!-- Formatting toolbar (focused editable blocks) -->
-            {#if focusedBlockId === block.id && isEditable(block.type)}
+            {#if focusedBlockId === block.id && isEditable(block.type) && !isHtmlMode(block.id)}
               <div class="we-bar" role="toolbar" aria-label="Text formatting">
                 <button class="we-bar__btn" on:click={() => fmt('bold')} title="Bold"><strong>B</strong></button>
                 <button class="we-bar__btn" on:click={() => fmt('italic')} title="Italic"><em>I</em></button>
@@ -549,7 +788,7 @@
 
             <!-- Merge-field picker -->
             {#if activePickerBlockId === block.id}
-              <div class="we-picker" on:click|stopPropagation role="dialog" aria-label="Merge field picker">
+              <div class="we-picker" on:click|stopPropagation role="dialog" tabindex="-1" aria-label="Merge field picker">
                 <div class="we-picker__head">
                   <span class="we-picker__title">Insert field token</span>
                   <button class="we-picker__close" on:click={closePicker}>✕</button>
@@ -584,22 +823,34 @@
             <!-- ── Block preview ────────────────────────────────────────── -->
             <div class="we-block-preview">
               {#if isEditable(block.type)}
-                <!-- True WYSIWYG: renders block.html as-is (faithful preview).
-                     contenteditable lets staff edit text directly in-place.
-                     No CSS font/padding overrides → client sees the same output. -->
-                <div
-                  class="we-preview-content"
-                  contenteditable="true"
-                  data-block-preview={block.id}
-                  use:initContent={block.html}
-                  on:focus={() => focusedBlockId = block.id}
-                  on:blur={(e) => onEditorBlur(e, block.id)}
-                  on:keydown={(e) => { if (e.ctrlKey || e.metaKey) e.stopPropagation(); }}
-                  spellcheck="false"
-                  role="textbox"
-                  aria-multiline="true"
-                  aria-label="{blockLabel(block.type)} — click to edit"
-                ></div>
+                {#if isHtmlMode(block.id)}
+                  <!-- HTML source mode: raw textarea for block.html -->
+                  <textarea
+                    class="we-html-source"
+                    bind:value={htmlSourceMap[block.id]}
+                    on:input={() => debounceBlock(block.id, () => saveBlockHtml(block.id, htmlSourceMap[block.id] ?? ''))}
+                    on:blur={() => saveBlockHtml(block.id, htmlSourceMap[block.id] ?? '')}
+                    spellcheck="false"
+                    aria-label="HTML source"
+                  ></textarea>
+                {:else}
+                  <!-- Preview mode: liveHtmlBlock action
+                       • Pre-render injects contenteditable on ALL elements
+                       • Direct children get draggable + .we-draggable
+                       • Class-based DnD listeners w/ transition animations
+                       • Debounced typing save + blur safety commit
+                       • Re-mount: detach → 0ms → re-attach with preserved attrs -->
+                  <div
+                    class="we-preview-content"
+                    data-block-preview={block.id}
+                    use:liveHtmlBlock={{ html: block.html, onChange: (html) => saveBlockHtml(block.id, html) }}
+                    spellcheck="false"
+                    role="textbox"
+                    tabindex="0"
+                    aria-multiline="true"
+                    aria-label="{blockLabel(block.type)} — click to edit"
+                  ></div>
+                {/if}
 
               {:else if block.type === 'quoteTable'}
                 <!-- Representative pricing table preview -->
@@ -1348,4 +1599,51 @@
   .we-btn--primary:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
   .we-btn--ghost { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
   .we-btn--ghost:hover:not(:disabled) { background: #e2e8f0; }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * CODE TOGGLE BUTTON (</> HTML ↔ 👁 Preview)
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  .we-frame__btn--code {
+    color: #a5b4fc;
+    border-color: rgba(165,180,252,0.3);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.63rem;
+    letter-spacing: 0.03em;
+  }
+  .we-frame__btn--code:hover { background: rgba(165,180,252,0.12); color: #c7d2fe; }
+  .we-frame__btn--code-active {
+    color: #34d399;
+    border-color: rgba(52,211,153,0.3);
+    background: rgba(52,211,153,0.07);
+  }
+  .we-frame__btn--code-active:hover { background: rgba(52,211,153,0.14); }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * HTML SOURCE TEXTAREA
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  .we-html-source {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #e2e8f0;
+    background: #0f172a;
+    border: none;
+    border-radius: 0 0 6px 6px;
+    outline: none;
+    resize: vertical;
+    tab-size: 2;
+    box-sizing: border-box;
+    transition: background 0.15s;
+  }
+  .we-html-source:focus { background: #1e293b; }
+  .we-html-source::selection { background: rgba(2,181,187,0.25); }
+
+  /* ── In-block DnD transition classes (.we-draggable / .we-dragging / .we-drop-*)
+   * are injected once at runtime by ensureGlobalStyles() called from liveHtmlBlock.
+   * Moved out of :global() Svelte style blocks to eliminate esbuild warnings.
+   * (esbuild warns on commas inside :global() pseudo-function selectors.) ── */
 </style>
