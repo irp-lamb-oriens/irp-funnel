@@ -375,8 +375,9 @@ export async function loadQuotes(projectId: string): Promise<void> {
 }
 
 /**
- * Accept a quote.  If quoteId is omitted the server auto-selects the sole
- * received quote (returns 400 if there are multiple).
+ * Accept a quote with a full-name attestation and explicit consent.
+ * The server requires { fullName, consent: true } in addition to the optional
+ * quoteId; both are enforced server-side (400 if missing/false).
  *
  * On success:
  *  • Updates the local `project` store stage to 'sales_quote_acceptance'.
@@ -384,14 +385,15 @@ export async function loadQuotes(projectId: string): Promise<void> {
  */
 export async function acceptQuote(
   projectId: string,
-  quoteId?: string,
+  opts: { quoteId?: string; fullName: string; consent: true },
 ): Promise<{ success: boolean; error?: string }> {
   acceptingQuote.set(true);
   acceptError.set('');
   try {
+    const { quoteId, fullName, consent } = opts;
     const data = await apiFetch(`/api/client-status/project/${projectId}/accept-quote`, {
       method: 'POST',
-      body: JSON.stringify(quoteId ? { quoteId } : {}),
+      body: JSON.stringify({ ...(quoteId ? { quoteId } : {}), fullName, consent }),
     });
 
     // Mirror the stage update locally so the UI reacts instantly

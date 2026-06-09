@@ -19,6 +19,7 @@
   import CommentsThread from './CommentsThread.svelte';
   import StageRating from './StageRating.svelte';
   import QuotePanel from './QuotePanel.svelte';
+  import QuoteAcceptance from './QuoteAcceptance.svelte';
   import QuoteView from './QuoteView.svelte';
   import BlockRenderer from './BlockRenderer.svelte';
   import RegulationsLanding from './RegulationsLanding.svelte';
@@ -219,6 +220,8 @@
       scrollToSection('cp-overview');
     } else if (id === '__quotes') {
       scrollToSection('cp-quotes');
+    } else if (id === '__accept') {
+      scrollToSection('cp-accept');
     } else {
       // Template document section — filter BlockRenderer + scroll to container
       activeSection.set(id);
@@ -266,6 +269,7 @@
       ? [
           ...($templateSections as string[]).map((s: string) => ({ id: s, label: s })),
           { id: '__quotes', label: 'Quote' },
+          { id: '__accept', label: 'Accept' },
         ]
       : []),
   ];
@@ -276,7 +280,8 @@
   // Quote section from appearing alongside the "Your Move" content.
   $: isOverviewTab  = activePortalTab === '__overview' || !hasQuotes;
   $: isQuoteTab     = hasQuotes && activePortalTab === '__quotes';
-  $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab;
+  $: isAcceptTab    = hasQuotes && activePortalTab === '__accept';
+  $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab && !isAcceptTab;
 
   // Always use portal-tabs when the project is loaded so the "Your Move" tab
   // is available even before quotes arrive.
@@ -701,9 +706,26 @@
       {#if isQuoteTab}
         <div id="cp-quotes" class="cp-section-anchor">
           <div class="cp-dashboard__full-width-section">
-            <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
+            <QuotePanel
+              {projectId}
+              isStaff={$irpStaffIsAuthenticated}
+              on:goToAccept={() => { activePortalTab = '__accept'; setTimeout(() => scrollToSection('cp-accept'), 200); }}
+            />
           </div>
         </div><!-- /#cp-quotes -->
+      {/if}
+
+      <!-- ══ ACCEPT — dedicated consent / attestation form ════════════════ -->
+      {#if isAcceptTab}
+        <div id="cp-accept" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <QuoteAcceptance
+              {projectId}
+              isStaff={$irpStaffIsAuthenticated}
+              onViewQuote={() => { activePortalTab = '__quotes'; setTimeout(() => scrollToSection('cp-quotes'), 200); }}
+            />
+          </div>
+        </div><!-- /#cp-accept -->
       {/if}
 
       <!--

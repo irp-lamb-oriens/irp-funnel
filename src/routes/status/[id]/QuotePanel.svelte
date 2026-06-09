@@ -12,17 +12,18 @@
    * 
    * Data is loaded on mount via loadQuotes() from the status store.
    */
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import {
     quotes, quotesLoading, quotesError,
-    acceptingQuote, acceptError,
-    loadQuotes, acceptQuote,
+    loadQuotes,
     type ClientQuote,
   } from './store.ts';
 
   export let projectId: string;
   /** When true (staff bypass) the Accept button is visible but disabled. */
   export let isStaff: boolean = false;
+
+  const dispatch = createEventDispatcher<{ goToAccept: void }>();
 
   onMount(() => {
     loadQuotes(projectId);
@@ -64,27 +65,6 @@
     return c ? (map[c] ?? c) : '—';
   }
 
-  // ── Accept flow ────────────────────────────────────────────────────────────
-
-  let showConfirm = false;
-  let selectedQuoteId: string | null = null;
-
-  function requestAccept(q: ClientQuote) {
-    selectedQuoteId = q.quoteId ?? q.id ?? null;
-    showConfirm = true;
-    acceptError.set('');
-  }
-
-  async function confirmAccept() {
-    showConfirm = false;
-    const result = await acceptQuote(projectId, selectedQuoteId ?? undefined);
-    if (result.success) {
-      accepted = true;
-    }
-  }
-
-  let accepted = false;
-
   // ── Derived ────────────────────────────────────────────────────────────────
 
   $: receivedQuotes  = $quotes.filter(q => q.status === 'received');
@@ -94,7 +74,7 @@
 </script>
 
 <!-- ── ACCEPTED CONFIRMATION ───────────────────────────────────────────────── -->
-{#if accepted || isAlreadyAccepted}
+{#if isAlreadyAccepted}
   <section class="qp-section qp-section--accepted">
     <div class="qp-accepted-badge">
       <span class="qp-accepted-icon">✅</span>
@@ -173,35 +153,6 @@
       <p class="qp-subtitle">Review the details below and accept when you're ready to proceed.</p>
     </div>
 
-    <!-- confirmation modal -->
-    {#if showConfirm}
-      <div class="qp-confirm-overlay" role="dialog" aria-modal="true">
-        <div class="qp-confirm-card">
-          <h4 class="qp-confirm-title">Confirm Quote Acceptance</h4>
-          <p class="qp-confirm-body">
-            By accepting this quote you authorise IRP to begin coordinating your
-            relocation. Your advisor will contact you to confirm the next steps.
-          </p>
-          <div class="qp-confirm-actions">
-            <button class="qp-btn qp-btn--ghost" on:click={() => showConfirm = false}>
-              Cancel
-            </button>
-            <button
-              class="qp-btn qp-btn--accept"
-              on:click={confirmAccept}
-              disabled={$acceptingQuote}
-            >
-              {$acceptingQuote ? 'Processing…' : '✅ Yes, Accept Quote'}
-            </button>
-          </div>
-        </div>
-      </div>
-    {/if}
-
-    {#if $acceptError}
-      <div class="qp-error">{$acceptError}</div>
-    {/if}
-
     {#each receivedQuotes as q (q.quoteId ?? q.id)}
       <div class="qp-card">
         <div class="qp-card__header">
@@ -244,22 +195,21 @@
           <p class="qp-notes">{q.notes}</p>
         {/if}
 
-        <!-- Accept CTA -->
+        <!-- Accept CTA — routes to the dedicated Accept tab with full consent form -->
         {#if isStaff}
           <div class="qp-staff-notice">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Only the client can accept their own quote. This button is intentionally disabled for staff.
+            Only the client can accept their own quote.
           </div>
           <button class="qp-btn qp-btn--accept qp-btn--disabled" disabled>
-            🔒 Accept Quote (client action only)
+            🔒 Review & Accept (client action only)
           </button>
         {:else}
           <button
             class="qp-btn qp-btn--accept"
-            on:click={() => requestAccept(q)}
-            disabled={$acceptingQuote}
+            on:click={() => dispatch('goToAccept')}
           >
-            {$acceptingQuote ? 'Processing…' : '✅ Accept This Quote'}
+            Review & Accept →
           </button>
         {/if}
       </div>
@@ -460,45 +410,6 @@
     padding: 0.6rem 0.9rem;
     margin-top: 0.75rem;
     margin-bottom: 0.5rem;
-  }
-
-  /* Confirmation overlay */
-  .qp-confirm-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9000;
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-  .qp-confirm-card {
-    background: #0f172a;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 16px;
-    padding: 2rem;
-    max-width: 440px;
-    width: 100%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  }
-  .qp-confirm-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--color-text-primary, #f1f5f9);
-    margin: 0 0 0.75rem;
-  }
-  .qp-confirm-body {
-    font-size: 0.9rem;
-    color: var(--color-text-muted, #94a3b8);
-    margin: 0 0 1.5rem;
-    line-height: 1.6;
-  }
-  .qp-confirm-actions {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
   }
 
   /* Loading / error */
