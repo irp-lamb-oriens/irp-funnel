@@ -111,10 +111,10 @@
   <div class="pt-space"></div>
   <header class="pt-header" role="navigation" aria-label="Proposal sections">
     <div class="pt-inner">
-      <!-- Mini brand mark on the left -->
-      <a href="/consultation" class="pt-brand" aria-label="International Relocation Partners">
+      <!-- Mini brand mark on the left — links to homepage, same as the website-mode logo -->
+      <a href="/" class="pt-brand" aria-label="International Relocation Partners — Home">
         <img
-          src="https://internationalrelocationpartner.com/wp-content/uploads/2023/01/IRP-Logo-White.png"
+          src="https://internationalrelocationpartner.com/IRP-LOGO.jpg"
           alt="IRP"
           class="pt-brand__logo"
         />
@@ -281,7 +281,7 @@
     align-items: center;
     padding: 0 15px;
     height: 100%;
-    font-family: 'Montserrat', 'Arial', sans-serif;
+    font-family: var(--font-paragraph);
     font-size: 0.72rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.48);
@@ -312,11 +312,11 @@
     border-radius: 14px;
   }
   .pt-tab--active {
-    color: #02b5bb;
+    color: var(--color-highlight-2, #02b5bb);
     font-weight: 700;
   }
   .pt-tab--active::after {
-    background: #02b5bb;
+    background: var(--color-highlight-2, #02b5bb);
     box-shadow: 0 0 10px rgba(2, 181, 187, 0.45);
   }
 

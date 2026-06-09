@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/stores';
   import Header from '../../../components/Header/Header.svelte';
   import Footer from '../../../components/Footer/Footer.svelte';
@@ -12,6 +12,8 @@
     templateBlocks, templateSections, activeSection,
     inferTemplate, loadTemplate, loadAllTemplates,
     allTemplates, allTemplatesLoading, setSelectedTemplate, selectedTemplateId,
+    // ── Quotes (loaded early so hasQuotes drives tab/section visibility) ──
+    quotes, quotesLoading, loadQuotes,
   } from './store.ts';
   import LilyChat from './LilyChat.svelte';
   import CommentsThread from './CommentsThread.svelte';
@@ -38,6 +40,10 @@
   let loginLoading = false;
 
   onMount(async () => {
+    // ─── 0. Match portal background on the body so the pt-space gap above
+    //        .client-portal doesn't expose the body background colour.
+    document.body.style.setProperty('background-color', '#1a1a2e');
+
     // ─── 1. IRP organization-agent bypass ────────────────────────────────
     // If a /dashboard session is present, every /api/client-status request
     // is authorized via the `x-dashboard-token` header. Skip the OTP wall
@@ -48,6 +54,9 @@
       isCheckingAuth.set(false);
       await fetchProject(projectId);
       await loadLilyHistory(projectId);
+      // Load quotes early so hasQuotes is known before the first render tick.
+      // This drives the tab-bar and section visibility (quote-gated sections).
+      loadQuotes(projectId);
       return;
     }
 
@@ -56,10 +65,12 @@
     if (valid) {
       await fetchProject(projectId);
       await loadLilyHistory(projectId);
+      // Same quote pre-load for end-customers.
+      loadQuotes(projectId);
     }
   });
 
-  // ─── Login Handlers ─────────────────────────────────────────────────────
+  // ─── Login Handlers ─────────────────────────────────────────────────────────
   async function handleRequestOTP() {
     loginLoading = true;
     loginError = '';
@@ -80,12 +91,19 @@
       await verifyClientOTP(loginEmailInput, projectId, loginCode);
       await fetchProject(projectId);
       await loadLilyHistory(projectId);
+      loadQuotes(projectId);
     } catch (err: any) {
       loginError = err.message;
     } finally {
       loginLoading = false;
     }
   }
+
+  onDestroy(() => {
+    if (typeof document !== 'undefined') {
+      document.body.style.removeProperty('background-color');
+    }
+  });
 
   function handleLogout() {
     // Also clear the IRP-staff session so a logged-in agent is signed out
@@ -98,7 +116,7 @@
     loginMessage = '';
   }
 
-  // ─── Helpers ────────────────────────────────────────────────────────────
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   function formatDate(iso: string): string {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -140,7 +158,6 @@
   }
 
   function formatKeyLabel(key: string): string {
-    // Convert camelCase to Title Case
     const result = key.replace(/([A-Z])/g, ' $1').trim();
     return result.charAt(0).toUpperCase() + result.slice(1);
   }
@@ -149,9 +166,6 @@
     return typeof val === 'string' && val.length > 60;
   }
 
-  // Type predicate so the {:else if isUrl(val)} branch narrows `val` to
-  // string for the <a href={val}> binding (Svelte 4+ requires a string|null
-  // there, not the inferred `unknown` from Object.entries).
   function isUrl(val: unknown): val is string {
     if (typeof val !== 'string') return false;
     return val.startsWith('http://') || val.startsWith('https://');
@@ -159,12 +173,10 @@
 
   function getStageTime(stageKey: string): string {
     if (!$project || !$project.activityLog) return '';
-    // Find the earliest time this stage was reached in the activity log
     const entry = $project.activityLog.find((log: any) => log.type === 'stage_change' && log.to === stageKey);
     if (entry && entry.timestamp) {
       return formatDate(entry.timestamp);
     }
-    // Fallback: if it's the very first stage, use createdAt
     if (stageKey === $stages[0] && $project.createdAt) {
       return formatDate($project.createdAt);
     }
@@ -173,23 +185,53 @@
 
   $: currentStageIndex = $project ? $stages.indexOf($project.stage) : -1;
 
-  // ─── Lily FAB state ─────────────────────────────────────────────────────
+  // ─── Upcoming consultation (future only) ─────────────────────────────────
+  // We only show the call banner if there is at least one scheduling date that
+  // has NOT yet passed. Past dates are silently ignored.
+  $: upcomingConsultation = (() => {
+    const now = Date.now();
+    return ($project?.scheduling ?? []).find((d: string) => new Date(d).getTime() > now) ?? null;
+  })();
+
+  // ─── Section scroll ─────────────────────────────────────────────────────────
+  /**
+   * Smooth-scrolls to a section anchor by id.
+   * CSS `scroll-margin-top` on the target element compensates for the fixed header.
+   */
+  function scrollToSection(id: string) {
+    if (typeof window === 'undefined') return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─── Lily FAB state ─────────────────────────────────────────────────────────
   let lilyOpen = false;
 
-  // ─── Template Proposal — auto-load after locked-loading completes ────────
-  //
-  // After the project data is available ($project is set), determine which
-  // template to display:
-  //   1. If the consultation has a `selectedQuoteTemplateId` → load that.
-  //   2. If staff is present and no template is set → AI-infer one.
-  //   3. Otherwise → load the general default (irp-standard-proposal).
-  //
-  // The $templateBlocks.length guard prevents re-triggering once blocks load.
-  // $allTemplates is loaded for the staff template-selector dropdown.
-  // Guard: `!$selectedTemplateId` prevents re-triggering after a failed fetch.
-  // loadTemplate() sets selectedTemplateId BEFORE the network call, so even if
-  // the call fails and resets templateBlocks to [], the id stays non-null and
-  // this block won't fire again — no infinite retry loop.
+  // ─── Active portal tab ───────────────────────────────────────────────────────
+  // Tracks which tab the header highlights. Starts on 'Your Move' overview.
+  // handleTabChange is the single entry-point for both user clicks and auto-nav.
+  let activePortalTab = '__overview';
+
+  function handleTabChange(id: string) {
+    activePortalTab = id;
+    if (id === '__overview') {
+      scrollToSection('cp-overview');
+    } else if (id === '__quotes') {
+      scrollToSection('cp-quotes');
+    } else {
+      // Template document section — filter BlockRenderer + scroll to container
+      activeSection.set(id);
+      scrollToSection('cp-proposal');
+    }
+  }
+
+  // ─── hasQuotes ───────────────────────────────────────────────────────────────
+  // Gates the template proposal section, quotes section, and the related tabs.
+  // Quotes are loaded early in onMount so this is resolved quickly.
+  $: hasQuotes = $quotes.length > 0;
+
+  // ─── Template Proposal — auto-load after data is ready ───────────────────────
   $: if ($project && !$templateBlocks.length && !$allTemplatesLoading && !$selectedTemplateId) {
     const tid: string | null = ($project as any).selectedQuoteTemplateId ?? null;
     if (tid) {
@@ -204,12 +246,35 @@
     loadAllTemplates();
   }
 
-  // Portal-tabs header: build tab descriptors from template sections
-  $: proposalTabs = ($templateSections as string[]).map((s: string) => ({ id: s, label: s }));
-  $: headerMode = proposalTabs.length > 0 ? ('portal-tabs' as const) : ('website' as const);
+  // ─── Auto-select Quotes tab when quotes become available ──────────────────
+  // Once the quotes array loads (hasQuotes transitions false → true), we auto-
+  // select the Quotes tab and scroll the client there so the quote is the first
+  // thing they see.  The guard ensures this fires only once per page load.
+  let _quotesAutoSelected = false;
+  $: if (hasQuotes && !_quotesAutoSelected) {
+    _quotesAutoSelected = true;
+    activePortalTab = '__quotes';
+    setTimeout(() => scrollToSection('cp-quotes'), 400);
+  }
+
+  // ─── Portal tab bar ──────────────────────────────────────────────────────────
+  // With quotes:    [ Your Move ] [ ...template sections ] [ Quotes ]
+  // Without quotes: [ Your Move ] only
+  $: proposalTabs = [
+    { id: '__overview', label: 'Your Move' },
+    ...(hasQuotes
+      ? [
+          ...($templateSections as string[]).map((s: string) => ({ id: s, label: s })),
+          { id: '__quotes', label: 'Quotes' },
+        ]
+      : []),
+  ];
+
+  // Always use portal-tabs when the project is loaded so the "Your Move" tab
+  // is available even before quotes arrive.
+  $: headerMode = $project ? ('portal-tabs' as const) : ('website' as const);
 
   // Minimal quote stub for BlockRenderer when rendering a template preview
-  // (no actual line-items — quoteTable shows the placeholder card).
   const templateStubQuote: any = {
     quoteId: 'template-preview', consultationId: projectId,
     title: 'Proposal Preview', lineItems: [], currency: 'USD', total: 0,
@@ -226,7 +291,6 @@
    */
   function handleLilyDeepLink(prompt: string) {
     lilyOpen = true;
-    // Give the drawer 400 ms to animate in before sending the message
     setTimeout(() => {
       sendLilyMessage(projectId, prompt);
     }, 400);
@@ -239,16 +303,16 @@
 </svelte:head>
 
 <!--
-  Portal-tabs mode: when a template with sections is loaded, the Header
-  transforms into the section tab navigator for the proposal document.
-  On all other status pages (no template blocks), the marketing website
-  nav renders as usual (mode='website', fully backward-compatible).
+  Portal-tabs: always shown when a project is loaded, even without proposals.
+  The tab list is conditional:
+    • No quotes  → [ Your Move ] only
+    • Has quotes → [ Your Move ] [ template sections… ] [ Quotes ]
 -->
 <Header
   mode={headerMode}
   tabs={proposalTabs}
-  activeTab={$activeSection ?? ''}
-  on:tabchange={(e) => activeSection.set(e.detail)}
+  activeTab={activePortalTab}
+  on:tabchange={(e) => handleTabChange(e.detail)}
 />
 
 <div class="client-portal">
@@ -319,7 +383,6 @@
           <div class="cp-auth-wall__success">{loginMessage}</div>
         {/if}
 
-        <!-- Transparent Security Explanation Micro-copy -->
         <div class="cp-auth-wall__security-note">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <span style="text-align: left;">This project is securely linked to your registered email. Only you can receive the authorization code to access this portal.</span>
@@ -337,8 +400,8 @@
   {:else if $project}
     <!-- ═══════════════════════ DASHBOARD PORTAL ═══════════════════════ -->
     <div class="cp-dashboard">
-      
-      <!-- HEADER -->
+
+      <!-- ══ HERO HEADER ═══════════════════════════════════════════════════ -->
       <header class="cp-dashboard__header">
         <div class="cp-dashboard__header-overlay"></div>
         <div class="cp-dashboard__header-content">
@@ -352,11 +415,6 @@
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             {#if $irpStaffIsAuthenticated}
-              <!--
-                Staff-bypass indicator. Visible only when an IRP organization
-                agent is viewing this client portal via their /dashboard
-                session (the OTP wall was skipped). Hidden for end-customers.
-              -->
               <span class="cp-dashboard__header-staff-pill" title="You are viewing this client portal as an IRP organization agent (signed in via /dashboard).">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M20.188 10.934c.388.756.612 1.612.612 2.566 0 4.418-3.582 8-8 8a7.962 7.962 0 0 1-5.5-2.187"></path></svg>
                 Staff bypass{#if $irpStaffEmail} · {$irpStaffEmail}{/if}
@@ -370,309 +428,322 @@
         </div>
       </header>
 
-          <!-- ── CONSULTATION CALL BANNER ─────────────────────────────────── -->
-          <!-- Shown whenever a consultation is scheduled; highlights the       -->
-          <!-- portal as the client's central hub and offers a direct join CTA  -->
-          <!-- when a Google Meet link (hangoutLink / meetCode) is present.     -->
-          {#if $project.scheduling && $project.scheduling.length > 0}
-            <section class="cp-call-banner">
-              <div class="cp-call-banner__inner">
-                <div class="cp-call-banner__info">
-                  <span class="cp-call-banner__eyebrow">📅 Upcoming Consultation</span>
-                  <h2 class="cp-call-banner__title">Your consultation call is scheduled</h2>
-                  <p class="cp-call-banner__time">{formatDateTime($project.scheduling[0])}</p>
-                  <p class="cp-call-banner__subtitle">
-                    This is your <strong>Relocation Portal</strong> — your central hub throughout your entire international move.
-                  </p>
-                </div>
-                {#if $project.hangoutLink || $project.meetCode}
-                  <a
-                    href={$project.hangoutLink || `https://meet.google.com/${$project.meetCode}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="cp-call-banner__join-btn"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                    Join Consultation Call
-                  </a>
-                {/if}
-              </div>
-            </section>
-          {/if}
+      <!-- ══ YOUR MOVE — the non-quote principal section ══════════════════
+           This anchor (#cp-overview) wraps all content that does NOT depend
+           on the template / quotes: status timeline, project details, activity
+           log, regulations. Always visible.
+           Clicking the "Your Move" tab scrolls here.                        -->
+      <div id="cp-overview" class="cp-section-anchor">
 
-          <!-- PIPELINE STAGE + INLINE COMMENTS ────────────────────────────── -->
-          <section class="cp-dashboard__pipeline">
-            <h3>Current Status</h3>
-            <div style="overflow-x: auto; padding-bottom: 1rem;">
-              <div class="stepper">
-                {#each $stages as stageKey, idx}
-                  <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
-                    <div class="step__circle"></div>
-                    <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
-                    {#if getStageTime(stageKey)}
-                      <div class="step__date">{getStageTime(stageKey)}</div>
-                    {/if}
-                    {#if idx < currentStageIndex}
-                      <div class="step__rating">
-                        <StageRating {projectId} {stageKey} readonly={$irpStaffIsAuthenticated} />
-                      </div>
-                    {/if}
-                  </div>
-                {/each}
+        <!-- Consultation call banner — only shown for FUTURE dates ──────── -->
+        {#if upcomingConsultation}
+          <section class="cp-call-banner">
+            <div class="cp-call-banner__inner">
+              <div class="cp-call-banner__info">
+                <span class="cp-call-banner__eyebrow">📅 Upcoming Consultation</span>
+                <h2 class="cp-call-banner__title">Your consultation call is scheduled</h2>
+                <p class="cp-call-banner__time">{formatDateTime(upcomingConsultation)}</p>
+                <p class="cp-call-banner__subtitle">
+                  This is your <strong>Relocation Portal</strong> — your central hub throughout your entire international move.
+                </p>
               </div>
+              {#if $project.hangoutLink || $project.meetCode}
+                <a
+                  href={$project.hangoutLink || `https://meet.google.com/${String($project.meetCode)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="cp-call-banner__join-btn"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                  Join Consultation Call
+                </a>
+              {/if}
+            </div>
+          </section>
+        {/if}
+
+        <!-- Status pipeline + inline comments ───────────────────────────── -->
+        <section class="cp-dashboard__pipeline">
+          <h3>Current Status</h3>
+          <div style="overflow-x: auto; padding-bottom: 1rem;">
+            <div class="stepper">
+              {#each $stages as stageKey, idx}
+                <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
+                  <div class="step__circle"></div>
+                  <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
+                  {#if getStageTime(stageKey)}
+                    <div class="step__date">{getStageTime(stageKey)}</div>
+                  {/if}
+                  {#if idx < currentStageIndex}
+                    <div class="step__rating">
+                      <StageRating {projectId} {stageKey} readonly={$irpStaffIsAuthenticated} />
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          {#if !$irpStaffIsAuthenticated}
+            <div class="cp-dashboard__inline-comments">
+              <CommentsThread {projectId} />
+            </div>
+          {/if}
+        </section>
+
+        <!-- Regulations & Compliance ─────────────────────────────────────── -->
+        <div class="cp-dashboard__full-width-section">
+          <RegulationsLanding
+            destinationCountry={$project.destinationCountry ?? ''}
+            originCountry={$project.originCountry ?? ''}
+            onOpenLily={handleLilyDeepLink}
+          />
+        </div>
+
+        <!-- Project details + activity log grid ────────────────────────── -->
+        <div class="cp-dashboard__grid">
+          <!-- DETAILS BOX -->
+          <section class="cp-dashboard__details">
+            <h3>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              Project Details
+            </h3>
+            <div class="field-grid">
+              {#if $project.budget}
+                <div class="field field--card">
+                  <span class="field__icon">💰</span>
+                  <div class="field__content">
+                    <span class="field__label">Estimated Budget</span>
+                    <span class="field__value field__value--highlight">{$project.budget}</span>
+                  </div>
+                </div>
+              {/if}
+              {#if $project.size}
+                <div class="field field--card">
+                  <span class="field__icon">📦</span>
+                  <div class="field__content">
+                    <span class="field__label">Move Size</span>
+                    <span class="field__value">{$project.size}</span>
+                  </div>
+                </div>
+              {/if}
+              {#if $project.immigrationStatus}
+                <div class="field field--card">
+                  <span class="field__icon">🛂</span>
+                  <div class="field__content">
+                    <span class="field__label">Immigration Status</span>
+                    <span class="field__value field__value--badge">{$project.immigrationStatus}</span>
+                  </div>
+                </div>
+              {/if}
+              {#if $project.propertyTypeFrom || $project.propertyTypeTo}
+                <div class="field field--card field--full">
+                  <span class="field__icon">🏠</span>
+                  <div class="field__content">
+                    <span class="field__label">Property Requirements</span>
+                    <div class="field__row">
+                      {#if $project.propertyTypeFrom}
+                        <span class="field__tag">Moving from: <strong>{$project.propertyTypeFrom}</strong></span>
+                      {/if}
+                      {#if $project.propertyTypeTo}
+                        <span class="field__tag">Looking for: <strong>{$project.propertyTypeTo}</strong></span>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              {/if}
+              {#if $project.vehicles && $project.vehicles.length > 0}
+                <div class="field field--card field--full">
+                  <span class="field__icon">🚗</span>
+                  <div class="field__content">
+                    <span class="field__label">Vehicles to Ship</span>
+                    <div class="field__tags">
+                      {#each $project.vehicles as vehicle}
+                        <span class="tag-pill">{typeof vehicle === 'object' && vehicle !== null ? [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') : vehicle}</span>
+                      {/each}
+                    </div>
+                  </div>
+                </div>
+              {/if}
+              {#if upcomingConsultation}
+                <div class="field field--card">
+                  <span class="field__icon">📅</span>
+                  <div class="field__content">
+                    <span class="field__label">Next Consultation</span>
+                    <span class="field__value">{formatDate(upcomingConsultation)}</span>
+                  </div>
+                </div>
+              {/if}
             </div>
 
-            <!-- Comments sit right below the stage timeline so feedback lives
-                 in the same spatial context as the progress indicator. -->
-            {#if !$irpStaffIsAuthenticated}
-              <div class="cp-dashboard__inline-comments">
-                <CommentsThread {projectId} />
+            {#if Object.keys($project.customFields || {}).length > 0}
+              <h4 class="cp-dashboard__subheading">Additional Information</h4>
+              <div class="field-grid">
+                {#each Object.entries($project.customFields || {}) as [key, val]}
+                  <div class="field field--card" class:field--full={isLongText(val) || Array.isArray(val)}>
+                    <div class="field__content">
+                      <span class="field__label">{formatKeyLabel(key)}</span>
+
+                      {#if Array.isArray(val)}
+                        <div class="field__tags" style="margin-top: 0.5rem;">
+                          {#each val as item}
+                            <span class="tag-pill">{item}</span>
+                          {/each}
+                        </div>
+                      {:else if typeof val === 'boolean'}
+                        <div class="field__value" style="margin-top: 0.25rem;">
+                          {#if val}
+                            <span class="badge badge--success">✓ Yes</span>
+                          {:else}
+                            <span class="badge badge--danger">✗ No</span>
+                          {/if}
+                        </div>
+                      {:else if isUrl(val)}
+                        <a href={val} target="_blank" rel="noopener noreferrer" class="field__value field__value--link">
+                          View Document ↗
+                        </a>
+                      {:else}
+                        <span class="field__value">{val}</span>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
               </div>
             {/if}
           </section>
 
-      <!-- ══════════════ TEMPLATE PROPOSAL ══════════════════════════════ -->
+          <!-- ACTIVITY TIMELINE -->
+          <section class="cp-dashboard__activity">
+            <h3>Activity Log</h3>
+            {#if $project.activityLog && $project.activityLog.length > 0}
+              <div class="timeline">
+                {#each [...$project.activityLog].reverse() as entry}
+                  <div class="timeline__item">
+                    <div class="timeline__item-icon">{getActivityIcon(entry.type)}</div>
+                    <div class="timeline__item-content">
+                      <div class="timeline__item-text">
+                        {@html getActivityText(entry)}
+                      </div>
+                      <div class="timeline__item-time">
+                        {formatDateTime(entry.timestamp)}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <p style="color: #64748b; font-size: 0.95rem;">No activity recorded yet.</p>
+            {/if}
+          </section>
+        </div>
 
-      <!-- Staff-only: template selector dropdown.
-           Visible only via IRP dashboard staff bypass — clients never see it.
-           Staff pick which proposal template to show; AI pre-selected a default. -->
-      {#if $irpStaffIsAuthenticated && $allTemplates.length > 0}
-        <div class="cp-dashboard__full-width-section">
-          <div class="cp-template-selector">
-            <div class="cp-template-selector__inner">
-              <span class="cp-template-selector__eyebrow">🤖 AI-selected proposal template</span>
-              <div class="cp-template-selector__row">
-                <label class="cp-template-selector__label" for="tpl-select">Showing:</label>
-                <select
-                  id="tpl-select"
-                  class="cp-template-selector__select"
-                  value={$selectedTemplateId ?? ''}
-                  on:change={(e) => setSelectedTemplate(projectId, e.currentTarget.value)}
-                >
-                  <option value="" disabled>Select a template…</option>
-                  {#each $allTemplates as tpl (tpl.templateId)}
-                    <option value={tpl.templateId}>
-                      {tpl.name}{tpl.isDefault ? ' ★ Default' : ''}
-                    </option>
-                  {/each}
-                </select>
-                <span class="cp-template-selector__hint">Only you see this — clients see the rendered proposal below</span>
+      </div><!-- /#cp-overview -->
+
+      <!-- ══ PROPOSAL — template document (only when quotes exist) ══════════
+           All the template-related content lives here: the staff template
+           selector, the BlockRenderer proposal document.
+           Tab clicks on template sections filter BlockRenderer to that section
+           and scroll the viewport here.                                      -->
+      {#if hasQuotes}
+        <div id="cp-proposal" class="cp-section-anchor">
+
+          <!-- Staff-only template selector -->
+          {#if $irpStaffIsAuthenticated && $allTemplates.length > 0}
+            <div class="cp-dashboard__full-width-section">
+              <div class="cp-template-selector">
+                <div class="cp-template-selector__inner">
+                  <span class="cp-template-selector__eyebrow">🤖 AI-selected proposal template</span>
+                  <div class="cp-template-selector__row">
+                    <label class="cp-template-selector__label" for="tpl-select">Showing:</label>
+                    <select
+                      id="tpl-select"
+                      class="cp-template-selector__select"
+                      value={$selectedTemplateId ?? ''}
+                      on:change={(e) => setSelectedTemplate(projectId, e.currentTarget.value)}
+                    >
+                      <option value="" disabled>Select a template…</option>
+                      {#each $allTemplates as tpl (tpl.templateId)}
+                        <option value={tpl.templateId}>
+                          {tpl.name}{tpl.isDefault ? ' ★ Default' : ''}
+                        </option>
+                      {/each}
+                    </select>
+                    <span class="cp-template-selector__hint">Only you see this — clients see the rendered proposal below</span>
+                  </div>
+                </div>
               </div>
             </div>
+          {/if}
+
+          <!-- Proposal document: BlockRenderer -->
+          {#if $templateBlocks.length > 0}
+            <div class="cp-dashboard__full-width-section cp-proposal-section">
+              <BlockRenderer
+                blocks={$templateBlocks}
+                quote={templateStubQuote}
+                accepted={false}
+                accepting={false}
+                acceptError=""
+                activeSection={$activeSection}
+                clientSummary={$project ?? {}}
+              />
+            </div>
+          {/if}
+
+        </div><!-- /#cp-proposal -->
+      {/if}
+
+      <!-- ══ QUOTES — received/accepted quotes (only when quotes exist) ═════
+           QuotePanel self-manages visibility (shows nothing when empty), but
+           we gate the whole section on hasQuotes as the user requested:
+           "if and only if the array of quotes has any element in it".         -->
+      {#if hasQuotes}
+        <div id="cp-quotes" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
           </div>
-        </div>
+        </div><!-- /#cp-quotes -->
       {/if}
 
-      <!-- Proposal document: template blocks rendered with section tabs.
-           Visible to EVERYONE (staff + clients). The top Header tabs drive
-           which section is shown (activeSection store). -->
-      {#if $templateBlocks.length > 0}
-        <div class="cp-dashboard__full-width-section cp-proposal-section">
-          <BlockRenderer
-            blocks={$templateBlocks}
-            quote={templateStubQuote}
-            accepted={false}
-            accepting={false}
-            acceptError=""
-            activeSection={$activeSection}
-            clientSummary={$project ?? {}}
-          />
-        </div>
-      {/if}
-
-      <!-- ── QUOTE PANEL ─────────────────────────────────────────────────── -->
-      <!-- Shows received/accepted quotes + Accept CTA. Self-hides when empty -->
-      <div class="cp-dashboard__full-width-section">
-        <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
-      </div>
-
-      <!-- Quote view: only shown when the URL has a ?quoteToken= param.
-           Always rendered when quoteToken is present regardless of whether
-           template blocks are also showing above — fully backward compatible
-           for clients who arrive via the legacy send-to-client email link. -->
+      <!--
+        QuoteView is intentionally OUTSIDE the hasQuotes gate.
+        It is self-gating: it reads ?quoteToken= from the URL and renders nothing
+        if the param is absent. The token-based deep-link flow (sent via email)
+        must work even before the quotes subcollection shows items as 'received'.
+      -->
       {#if $page.url.searchParams.get('quoteToken')}
-        <div class="cp-dashboard__full-width-section">
+        <div class="cp-dashboard__full-width-section" style="margin-top: 1.5rem;">
           <QuoteView consultationId={projectId} />
         </div>
       {/if}
 
-      <!-- ── REGULATIONS & COMPLIANCE LANDING ──────────────────────────── -->
-      <div class="cp-dashboard__full-width-section">
-        <RegulationsLanding
-          destinationCountry={$project.destinationCountry ?? ''}
-          onOpenLily={handleLilyDeepLink}
-        />
-      </div>
-
-      <div class="cp-dashboard__grid">
-        <!-- DETAILS BOX -->
-        <section class="cp-dashboard__details">
-          <h3>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            Project Details
-          </h3>
-          <div class="field-grid">
-            {#if $project.budget}
-              <div class="field field--card">
-                <span class="field__icon">💰</span>
-                <div class="field__content">
-                  <span class="field__label">Estimated Budget</span>
-                  <span class="field__value field__value--highlight">{$project.budget}</span>
-                </div>
-              </div>
-            {/if}
-            {#if $project.size}
-              <div class="field field--card">
-                <span class="field__icon">📦</span>
-                <div class="field__content">
-                  <span class="field__label">Move Size</span>
-                  <span class="field__value">{$project.size}</span>
-                </div>
-              </div>
-            {/if}
-            {#if $project.immigrationStatus}
-              <div class="field field--card">
-                <span class="field__icon">🛂</span>
-                <div class="field__content">
-                  <span class="field__label">Immigration Status</span>
-                  <span class="field__value field__value--badge">{$project.immigrationStatus}</span>
-                </div>
-              </div>
-            {/if}
-            {#if $project.propertyTypeFrom || $project.propertyTypeTo}
-              <div class="field field--card field--full">
-                <span class="field__icon">🏠</span>
-                <div class="field__content">
-                  <span class="field__label">Property Requirements</span>
-                  <div class="field__row">
-                    {#if $project.propertyTypeFrom}
-                      <span class="field__tag">Moving from: <strong>{$project.propertyTypeFrom}</strong></span>
-                    {/if}
-                    {#if $project.propertyTypeTo}
-                      <span class="field__tag">Looking for: <strong>{$project.propertyTypeTo}</strong></span>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-            {/if}
-            {#if $project.vehicles && $project.vehicles.length > 0}
-              <div class="field field--card field--full">
-                <span class="field__icon">🚗</span>
-                <div class="field__content">
-                  <span class="field__label">Vehicles to Ship</span>
-                  <div class="field__tags">
-                    {#each $project.vehicles as vehicle}
-                      <span class="tag-pill">{typeof vehicle === 'object' && vehicle !== null ? [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') : vehicle}</span>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            {/if}
-            {#if $project.scheduling && $project.scheduling.length > 0}
-              <div class="field field--card">
-                <span class="field__icon">📅</span>
-                <div class="field__content">
-                  <span class="field__label">Next Consultation</span>
-                  <span class="field__value">{formatDate($project.scheduling[0])}</span>
-                </div>
-              </div>
-            {/if}
-          </div>
-
-          {#if Object.keys($project.customFields || {}).length > 0}
-            <h4 class="cp-dashboard__subheading">Additional Information</h4>
-            <div class="field-grid">
-              {#each Object.entries($project.customFields || {}) as [key, val]}
-                <div class="field field--card" class:field--full={isLongText(val) || Array.isArray(val)}>
-                  <div class="field__content">
-                    <span class="field__label">{formatKeyLabel(key)}</span>
-                    
-                    {#if Array.isArray(val)}
-                      <div class="field__tags" style="margin-top: 0.5rem;">
-                        {#each val as item}
-                          <span class="tag-pill">{item}</span>
-                        {/each}
-                      </div>
-                    {:else if typeof val === 'boolean'}
-                      <div class="field__value" style="margin-top: 0.25rem;">
-                        {#if val}
-                          <span class="badge badge--success">✓ Yes</span>
-                        {:else}
-                          <span class="badge badge--danger">✗ No</span>
-                        {/if}
-                      </div>
-                    {:else if isUrl(val)}
-                      <a href={val} target="_blank" rel="noopener noreferrer" class="field__value field__value--link">
-                        View Document ↗
-                      </a>
-                    {:else}
-                      <span class="field__value">{val}</span>
-                    {/if}
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </section>
-
-        <!-- ACTIVITY TIMELINE -->
-        <section class="cp-dashboard__activity">
-          <h3>Activity Log</h3>
-          {#if $project.activityLog && $project.activityLog.length > 0}
-            <div class="timeline">
-              {#each [...$project.activityLog].reverse() as entry}
-                <div class="timeline__item">
-                  <div class="timeline__item-icon">{getActivityIcon(entry.type)}</div>
-                  <div class="timeline__item-content">
-                    <div class="timeline__item-text">
-                      {@html getActivityText(entry)}
-                    </div>
-                    <div class="timeline__item-time">
-                      {formatDateTime(entry.timestamp)}
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {:else}
-            <p style="color: #64748b; font-size: 0.95rem;">No activity recorded yet.</p>
-          {/if}
-        </section>
-      </div>
-
-    </div>
+    </div><!-- /.cp-dashboard -->
 
     <!-- ── LILY FAB — floating bottom-left ───────────────────────────────── -->
-    <!-- Only rendered when the user is authenticated and a project is loaded. -->
     {#if !lilyOpen}
-        <button
-          class="lily-fab"
-          on:click={() => lilyOpen = true}
-          aria-label="Chat with Lily"
-          aria-expanded={lilyOpen}
-        >
-          <!-- Lili avatar in FAB — × in chat header handles closing -->
-          <div class="lily-fab__avatar-wrap">
-            <img src="/lili.png" alt="Lily" class="lily-fab__avatar" />
-            <span class="lily-fab__online-dot"></span>
-          </div>
-          <span class="lily-fab__label">Chat with Lily</span>
-        </button>
-      {/if}
-
-      <!-- Drawer panel — slides up from the bottom-left, no separate header
-           since LilyChat itself now has a beautiful dark-glass header. -->
-      <div class="lily-drawer" class:lily-drawer--open={lilyOpen} aria-hidden={!lilyOpen}>
-        <div class="lily-drawer__body">
-          <!-- groupChat shows participants bar; fillContainer fills the drawer height -->
-          <LilyChat {projectId} groupChat={true} fillContainer={true} onClose={() => lilyOpen = false} />
+      <button
+        class="lily-fab"
+        on:click={() => lilyOpen = true}
+        aria-label="Chat with Lily"
+        aria-expanded={lilyOpen}
+      >
+        <div class="lily-fab__avatar-wrap">
+          <img src="/lili.png" alt="Lily" class="lily-fab__avatar" />
+          <span class="lily-fab__online-dot"></span>
         </div>
-      </div>
+        <span class="lily-fab__label">Chat with Lily</span>
+      </button>
+    {/if}
 
-      {#if lilyOpen}
-        <!-- Backdrop: click outside to close on mobile -->
-        <div class="lily-drawer-backdrop" on:click={() => lilyOpen = false} aria-hidden="true"></div>
-      {/if}
+    <div class="lily-drawer" class:lily-drawer--open={lilyOpen} aria-hidden={!lilyOpen}>
+      <div class="lily-drawer__body">
+        <LilyChat {projectId} groupChat={true} fillContainer={true} onClose={() => lilyOpen = false} />
+      </div>
+    </div>
+
+    {#if lilyOpen}
+      <div class="lily-drawer-backdrop" on:click={() => lilyOpen = false} aria-hidden="true"></div>
+    {/if}
   {/if}
 </div>
 
@@ -733,12 +804,12 @@
   :global(.cp-call-banner) {
     margin: 0 var(--cp-h-pad, 1.5rem) 0;
     background: linear-gradient(135deg, #020d10 0%, #062028 60%, #04181f 100%);
-    border: 1px solid rgba(2, 182, 188, 0.28);
+    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.28);
     border-radius: 16px;
     padding: 1.5rem 1.75rem;
     box-shadow:
       0 4px 32px rgba(0,0,0,0.35),
-      0 0 0 1px rgba(2,182,188,0.08),
+      0 0 0 1px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.08),
       inset 0 1px 0 rgba(255,255,255,0.04);
   }
   :global(.cp-call-banner__inner) {
@@ -758,7 +829,7 @@
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    color: #02b6bc;
+    color: var(--color-highlight-2);
     margin-bottom: 0.45rem;
   }
   :global(.cp-call-banner__title) {
@@ -771,7 +842,7 @@
   :global(.cp-call-banner__time) {
     font-size: 0.95rem;
     font-weight: 600;
-    color: rgba(2,182,188,0.9);
+    color: rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.9);
     margin: 0 0 0.5rem;
   }
   :global(.cp-call-banner__subtitle) {
@@ -789,21 +860,22 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.7rem 1.4rem;
-    background: #02b6bc;
+    background: var(--color-highlight-2);
     color: #020d10;
     border-radius: 10px;
     font-weight: 800;
     font-size: 0.875rem;
+    font-family: var(--font-paragraph);
     text-decoration: none;
     white-space: nowrap;
     flex-shrink: 0;
-    box-shadow: 0 2px 16px rgba(2,182,188,0.35);
+    box-shadow: 0 2px 16px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.35);
     transition: background 0.18s ease, transform 0.16s ease, box-shadow 0.18s ease;
   }
   :global(.cp-call-banner__join-btn:hover) {
-    background: #01d4db;
+    filter: brightness(1.1);
     transform: translateY(-2px);
-    box-shadow: 0 4px 24px rgba(2,182,188,0.5);
+    box-shadow: 0 4px 24px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.5);
   }
   @media (max-width: 520px) {
     :global(.cp-call-banner__inner) {
@@ -833,7 +905,7 @@
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    color: #02b6bc;
+    color: var(--color-highlight-2);
     opacity: 0.8;
   }
   :global(.cp-template-selector__row) {
@@ -854,18 +926,18 @@
     max-width: 360px;
     padding: 0.4rem 0.75rem;
     background: rgba(15,23,42,0.7);
-    border: 1px solid rgba(2,182,188,0.3);
+    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.3);
     border-radius: 8px;
     color: #f1f5f9;
     font-size: 0.84rem;
-    font-family: 'Montserrat', 'Arial', sans-serif;
+    font-family: var(--font-paragraph);
     outline: none;
     cursor: pointer;
     transition: border-color 0.15s;
   }
   :global(.cp-template-selector__select:focus) {
-    border-color: #02b6bc;
-    box-shadow: 0 0 0 3px rgba(2,182,188,0.15);
+    border-color: var(--color-highlight-2);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.15);
   }
   :global(.cp-template-selector__hint) {
     font-size: 0.72rem;
@@ -892,24 +964,25 @@
     gap: 0.6rem;
     padding: 0.5rem 1.1rem 0.5rem 0.5rem;
     background: var(--chat-glass-header, #08080f);
-    color: #f8fafc;
-    border: 1px solid var(--chat-glass-border-glow, rgba(2,181,187,0.3));
+    color: var(--cp-text-primary, #f8fafc);
+    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3);
     border-radius: 9999px;
     font-size: 0.875rem;
     font-weight: 600;
+    font-family: var(--font-paragraph);
     cursor: pointer;
     box-shadow:
       0 4px 24px rgba(0,0,0,0.4),
-      0 0 0 1px rgba(2,181,187,0.15),
-      0 0 20px rgba(2,181,187,0.08);
+      0 0 0 1px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.15),
+      0 0 20px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.08);
     transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
   }
   .lily-fab:hover {
     transform: translateY(-2px);
     box-shadow:
       0 6px 32px rgba(0,0,0,0.5),
-      0 0 0 1px rgba(2,181,187,0.3),
-      0 0 30px rgba(2,181,187,0.14);
+      0 0 0 1px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3),
+      0 0 30px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.14);
   }
   .lily-fab__label {
     white-space: nowrap;
@@ -918,7 +991,6 @@
     letter-spacing: 0.01em;
   }
 
-  /* FAB avatar (shown when closed) */
   .lily-fab__avatar-wrap {
     position: relative;
     width: 34px;
@@ -953,7 +1025,6 @@
     z-index: 1100;
     width: min(460px, 100vw);
     height: min(76vh, 660px);
-    /* LilyChat renders its own dark glass — drawer is just the shell */
     background: transparent;
     border-radius: 16px 16px 0 0;
     box-shadow:
@@ -975,7 +1046,6 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* LilyChat in fillContainer mode stretches to fill this */
     min-height: 0;
   }
 

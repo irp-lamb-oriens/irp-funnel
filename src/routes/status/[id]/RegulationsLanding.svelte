@@ -13,7 +13,10 @@
    *                         with a pre-filled prompt
    */
 
+  /** Destination country (used to rank cards and substitute {{destination}} prompts). */
   export let destinationCountry: string = '';
+  /** Origin country (used to substitute {{origin}} prompts, e.g. "Export Restrictions"). */
+  export let originCountry: string = '';
   export let onOpenLily: ((prompt: string) => void) | null = null;
 
   // ── Card definitions ──────────────────────────────────────────────────────
@@ -136,7 +139,11 @@
 
   function askLily(card: RegCard) {
     if (!card.lilyTopic || !onOpenLily) return;
-    const prompt = card.lilyTopic.replace('{{destination}}', destinationCountry || 'my destination');
+    // Replace both {{destination}} and {{origin}} placeholders used in lilyTopic strings.
+    // (e.g. the "Export Restrictions" card uses {{origin}} instead of {{destination}})
+    const prompt = card.lilyTopic
+      .replace(/\{\{destination\}\}/g, destinationCountry || 'my destination')
+      .replace(/\{\{origin\}\}/g, originCountry || 'my origin country');
     onOpenLily(prompt);
   }
 </script>
@@ -304,10 +311,11 @@
   }
   .rl__link--guide:hover { opacity: 0.8; }
 
+  /* Lily button uses the global brand teal token so it always matches the portal accent */
   .rl__link--lily {
-    background: rgba(2, 181, 187, 0.1);
-    color: #02b5bb;
-    border: 1px solid rgba(2, 181, 187, 0.3);
+    background: rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.1);
+    color: var(--color-highlight-2, #02b5bb);
+    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3);
   }
   .rl__link--lily:hover { opacity: 0.8; }
 
