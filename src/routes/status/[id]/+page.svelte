@@ -258,17 +258,25 @@
   }
 
   // ─── Portal tab bar ──────────────────────────────────────────────────────────
-  // With quotes:    [ Your Move ] [ ...template sections ] [ Quotes ]
+  // With quotes:    [ Your Move ] [ ...template sections ] [ Quote ]
   // Without quotes: [ Your Move ] only
   $: proposalTabs = [
     { id: '__overview', label: 'Your Move' },
     ...(hasQuotes
       ? [
           ...($templateSections as string[]).map((s: string) => ({ id: s, label: s })),
-          { id: '__quotes', label: 'Quotes' },
+          { id: '__quotes', label: 'Quote' },
         ]
       : []),
   ];
+
+  // ─── Tab visibility helpers ───────────────────────────────────────────────────
+  // These gate which section is rendered. Tabs behave like true tabs (only one
+  // section is mounted at a time) rather than scroll-anchors. This prevents the
+  // Quote section from appearing alongside the "Your Move" content.
+  $: isOverviewTab  = activePortalTab === '__overview' || !hasQuotes;
+  $: isQuoteTab     = hasQuotes && activePortalTab === '__quotes';
+  $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab;
 
   // Always use portal-tabs when the project is loaded so the "Your Move" tab
   // is available even before quotes arrive.
@@ -428,11 +436,9 @@
         </div>
       </header>
 
-      <!-- ══ YOUR MOVE — the non-quote principal section ══════════════════
-           This anchor (#cp-overview) wraps all content that does NOT depend
-           on the template / quotes: status timeline, project details, activity
-           log, regulations. Always visible.
-           Clicking the "Your Move" tab scrolls here.                        -->
+      <!-- ══ YOUR MOVE — shown when "Your Move" tab is active (always shown
+           when the client has no quotes yet).                               -->
+      {#if isOverviewTab}
       <div id="cp-overview" class="cp-section-anchor">
 
         <!-- Consultation call banner — only shown for FUTURE dates ──────── -->
@@ -638,13 +644,11 @@
         </div>
 
       </div><!-- /#cp-overview -->
+      {/if}
 
-      <!-- ══ PROPOSAL — template document (only when quotes exist) ══════════
-           All the template-related content lives here: the staff template
-           selector, the BlockRenderer proposal document.
-           Tab clicks on template sections filter BlockRenderer to that section
-           and scroll the viewport here.                                      -->
-      {#if hasQuotes}
+      <!-- ══ PROPOSAL — template document (only when a template section tab
+           is active). Contains the staff template selector and BlockRenderer. -->
+      {#if isProposalTab}
         <div id="cp-proposal" class="cp-section-anchor">
 
           <!-- Staff-only template selector -->
@@ -693,11 +697,8 @@
         </div><!-- /#cp-proposal -->
       {/if}
 
-      <!-- ══ QUOTES — received/accepted quotes (only when quotes exist) ═════
-           QuotePanel self-manages visibility (shows nothing when empty), but
-           we gate the whole section on hasQuotes as the user requested:
-           "if and only if the array of quotes has any element in it".         -->
-      {#if hasQuotes}
+      <!-- ══ QUOTES — shown only when "Quote" tab is active ════════════════ -->
+      {#if isQuoteTab}
         <div id="cp-quotes" class="cp-section-anchor">
           <div class="cp-dashboard__full-width-section">
             <QuotePanel {projectId} isStaff={$irpStaffIsAuthenticated} />
