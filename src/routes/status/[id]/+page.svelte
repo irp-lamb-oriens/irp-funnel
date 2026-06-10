@@ -825,7 +825,7 @@
 
   /* ── Consultation Call Banner ────────────────────────────────────────── */
   :global(.cp-call-banner) {
-    margin: 0 var(--cp-h-pad, 1.5rem) 0;
+    margin: 0 var(--cp-h-pad, 1.5rem) 2.5rem;
     background: linear-gradient(135deg, #020d10 0%, #062028 60%, #04181f 100%);
     border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.28);
     border-radius: 16px;
