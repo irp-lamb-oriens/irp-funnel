@@ -288,8 +288,11 @@
           authorizing <strong>International Relocation Partners</strong> to
           charge me the amount shown (
           <strong>{targetQuote ? fmt(targetQuote.amount, targetQuote.currency) : '—'}</strong>
-          ). I understand this is a binding commitment.
+          ). I understand this is a binding commitment, governed by the
+          <a href="/legal/quote-acceptance" target="_blank" rel="noopener noreferrer" class="qa-consent__link">Quote Acceptance Terms</a>.
         </span>
+
+
       </label>
 
       <!-- Staff notice -->
@@ -785,6 +788,15 @@
     color: var(--cp-text-primary);
     font-weight: 700;
   }
+  .qa-consent__link {
+    color: var(--color-highlight-2);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(var(--color-highlight-2-rgb), 0.3);
+    transition: border-color 0.15s ease;
+  }
+  .qa-consent__link:hover { border-color: var(--color-highlight-2); }
+
 
   /* ══ STAFF NOTICE ═════════════════════════════════════════════════════ */
   .qa-staff-notice {

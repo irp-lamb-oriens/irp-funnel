@@ -68,7 +68,8 @@
   font-family: var(--font-paragraph);
 }
 
-:global(h1, h2, h3, h4, h5, h6, span, section) {
+:global(h1), :global(h2), :global(h3), :global(h4), :global(h5), :global(h6), :global(span), :global(section) {
+
   transition: color 0.35s, background-color 0.35s, fill 0.35s, stroke 0.35s;
   scroll-behavior: smooth;
 }

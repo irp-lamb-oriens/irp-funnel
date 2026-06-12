@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { page } from '$app/stores';
   import Header from '../../../components/Header/Header.svelte';
   import Footer from '../../../components/Footer/Footer.svelte';
@@ -22,6 +22,8 @@
   import QuoteAcceptance from './QuoteAcceptance.svelte';
   import QuoteView from './QuoteView.svelte';
   import BlockRenderer from './BlockRenderer.svelte';
+  import EmailPreviewDrawer from '../../dashboard/components/EmailPreviewDrawer.svelte';
+  import { presendEmail, fetchEmailPreview } from '../../dashboard/store.ts';
   import RegulationsLanding from './RegulationsLanding.svelte';
   import {
     irpStaffIsAuthenticated, irpStaffEmail,
@@ -58,16 +60,18 @@
       // Load quotes early so hasQuotes is known before the first render tick.
       // This drives the tab-bar and section visibility (quote-gated sections).
       loadQuotes(projectId);
+      scrollStepperToActive();
       return;
     }
 
-    // ─── 2. Existing end-customer flow ───────────────────────────────
+    // ─── 2. Existing end-customer flow ───────────────────────────
     const valid = await checkClientAuth();
     if (valid) {
       await fetchProject(projectId);
       await loadLilyHistory(projectId);
       // Same quote pre-load for end-customers.
       loadQuotes(projectId);
+      scrollStepperToActive();
     }
   });
 
@@ -93,6 +97,7 @@
       await fetchProject(projectId);
       await loadLilyHistory(projectId);
       loadQuotes(projectId);
+      scrollStepperToActive();
     } catch (err: any) {
       loginError = err.message;
     } finally {
@@ -196,6 +201,19 @@
 
   // ─── Section scroll ─────────────────────────────────────────────────────────
   /**
+   * Smooth-scrolls the horizontal stepper to the active step so clients
+   * immediately see their current stage without manually scrolling.
+   */
+  async function scrollStepperToActive() {
+    await tick();
+    if (typeof document === 'undefined') return;
+    const activeStep = document.querySelector('.stepper .step.active') as HTMLElement | null;
+    if (activeStep) {
+      activeStep.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }
+
+  /**
    * Smooth-scrolls to a section anchor by id.
    * CSS `scroll-margin-top` on the target element compensates for the fixed header.
    */
@@ -208,6 +226,31 @@
 
   // ─── Lily FAB state ─────────────────────────────────────────────────────────
   let lilyOpen = false;
+
+  // ─── Staff email preview (Quotes tab) ────────────────────────────────────────
+  // Allows IRP staff to preview and send the pricing_summary email directly
+  // from the client portal. Uses the same EmailPreviewDrawer as the dashboard —
+  // it reacts to the presendEmail global store being set.
+  let emailPreviewing = false;
+  async function previewQuoteEmail() {
+    if (!projectId) return;
+    emailPreviewing = true;
+    try {
+      const preview = await fetchEmailPreview(projectId, 'pricing_summary');
+      presendEmail.set({
+        clientId: projectId,
+        emailType: 'pricing_summary',
+        clientEmail: (preview as any).clientEmail,
+        subject: (preview as any).subject,
+        bodyHtml: (preview as any).bodyHtml,
+        context: (preview as any).context,
+      });
+    } catch (err: any) {
+      console.error('[status] previewQuoteEmail error:', err);
+    } finally {
+      emailPreviewing = false;
+    }
+  }
 
   // ─── Active portal tab ───────────────────────────────────────────────────────
   // Tracks which tab the header highlights. Starts on 'Your Move' overview.
@@ -233,6 +276,11 @@
   // Gates the template proposal section, quotes section, and the related tabs.
   // Quotes are loaded early in onMount so this is resolved quickly.
   $: hasQuotes = $quotes.length > 0;
+  $: hasQuoteToken = !!$page.url.searchParams.get('quoteToken');
+  // showQuoteSection — gates the Quote tab and all quote-related sections.
+  // True when either the subcollection has displayable quotes OR a quoteToken
+  // (pre-generated, sent-to-client quote) is present in the URL.
+  $: showQuoteSection = hasQuotes || hasQuoteToken;
 
   // ─── Template Proposal — auto-load after data is ready ───────────────────────
   $: if ($project && !$templateBlocks.length && !$allTemplatesLoading && !$selectedTemplateId) {
@@ -254,7 +302,7 @@
   // select the Quotes tab and scroll the client there so the quote is the first
   // thing they see.  The guard ensures this fires only once per page load.
   let _quotesAutoSelected = false;
-  $: if (hasQuotes && !_quotesAutoSelected) {
+  $: if (showQuoteSection && !_quotesAutoSelected) {
     _quotesAutoSelected = true;
     activePortalTab = '__quotes';
     setTimeout(() => scrollToSection('cp-quotes'), 400);
@@ -263,23 +311,32 @@
   // ─── Portal tab bar ──────────────────────────────────────────────────────────
   // With quotes:    [ Your Move ] [ ...template sections ] [ Quote ]
   // Without quotes: [ Your Move ] only
+  // ─── Portal tab bar ─────────────────────────────────────────────────────────
+  // Rules (backward-compatible):
+  //  • Template-section tabs and Accept tab are gated on `hasQuotes` (unchanged).
+  //  • The Quote tab is additionally gated on `showQuoteSection` so clients who
+  //    arrive via a ?quoteToken email link see the Quote tab immediately — even
+  //    before the subcollection quotes appear as 'received'.
   $: proposalTabs = [
     { id: '__overview', label: 'Your Move' },
-    ...(hasQuotes
+    ...(showQuoteSection
       ? [
-          ...($templateSections as string[]).map((s: string) => ({ id: s, label: s })),
+          // Template-section tabs only when subcollection quotes exist (unchanged).
+          ...( hasQuotes ? ($templateSections as string[]).map((s: string) => ({ id: s, label: s })) : [] ),
           { id: '__quotes', label: 'Quote' },
-          { id: '__accept', label: 'Accept' },
+          // Accept tab only for subcollection-based flow (unchanged).
+          ...( hasQuotes ? [{ id: '__accept', label: 'Accept' }] : [] ),
         ]
       : []),
   ];
 
   // ─── Tab visibility helpers ───────────────────────────────────────────────────
-  // These gate which section is rendered. Tabs behave like true tabs (only one
-  // section is mounted at a time) rather than scroll-anchors. This prevents the
-  // Quote section from appearing alongside the "Your Move" content.
-  $: isOverviewTab  = activePortalTab === '__overview' || !hasQuotes;
-  $: isQuoteTab     = hasQuotes && activePortalTab === '__quotes';
+  // isOverviewTab / isQuoteTab — use showQuoteSection (new: token-based quote also
+  //   activates the Quote tab).
+  // isAcceptTab / isProposalTab — use hasQuotes (unchanged: only when subcollection
+  //   quotes exist, preserving existing acceptance & proposal flows).
+  $: isOverviewTab  = activePortalTab === '__overview' || !showQuoteSection;
+  $: isQuoteTab     = showQuoteSection && activePortalTab === '__quotes';
   $: isAcceptTab    = hasQuotes && activePortalTab === '__accept';
   $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab && !isAcceptTab;
 
@@ -479,7 +536,11 @@
           <div style="overflow-x: auto; padding-bottom: 1rem;">
             <div class="stepper">
               {#each $stages as stageKey, idx}
-                <div class="step" class:completed={idx < currentStageIndex} class:active={idx === currentStageIndex}>
+                <div class="step"
+                  class:completed={idx < currentStageIndex}
+                  class:active={idx === currentStageIndex}
+                  class:rate-prompt={idx === currentStageIndex - 1 && !($project?.stageRatings ?? {})[stageKey]}
+                >
                   <div class="step__circle"></div>
                   <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
                   {#if getStageTime(stageKey)}
@@ -702,16 +763,60 @@
         </div><!-- /#cp-proposal -->
       {/if}
 
-      <!-- ══ QUOTES — shown only when "Quote" tab is active ════════════════ -->
+      <!-- ══ QUOTES — shown whenever showQuoteSection is true and Quote tab is active.
+           Renders QuotePanel for subcollection quotes (old flow, hasQuotes) and/or
+           QuoteView for token-based pre-generated quotes (hasQuoteToken / new flow). -->
       {#if isQuoteTab}
         <div id="cp-quotes" class="cp-section-anchor">
-          <div class="cp-dashboard__full-width-section">
-            <QuotePanel
-              {projectId}
-              isStaff={$irpStaffIsAuthenticated}
-              on:goToAccept={() => { activePortalTab = '__accept'; setTimeout(() => scrollToSection('cp-accept'), 200); }}
-            />
-          </div>
+
+          <!-- ── Staff-only: preview / send the pricing summary email ──────── -->
+          {#if $irpStaffIsAuthenticated}
+            <div class="cp-dashboard__full-width-section">
+              <div class="cp-quote-email-trigger">
+                <div class="cp-quote-email-trigger__inner">
+                  <div class="cp-quote-email-trigger__info">
+                    <span class="cp-quote-email-trigger__eyebrow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                      Staff action
+                    </span>
+                    <h3 class="cp-quote-email-trigger__title">Send pricing summary to client</h3>
+                    <p class="cp-quote-email-trigger__desc">
+                      Preview the email before sending. The client will receive a direct link to this Quote tab.
+                    </p>
+                  </div>
+                  <button
+                    class="cp-quote-email-trigger__btn"
+                    disabled={emailPreviewing}
+                    on:click={previewQuoteEmail}
+                    type="button"
+                  >
+                    {#if emailPreviewing}
+                      <span class="cp-quote-email-trigger__spinner"></span>
+                      Preparing…
+                    {:else}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      Preview & Send
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            </div>
+          {/if}
+
+          {#if hasQuotes}
+            <div class="cp-dashboard__full-width-section">
+              <QuotePanel
+                {projectId}
+                isStaff={$irpStaffIsAuthenticated}
+                on:goToAccept={() => { activePortalTab = '__accept'; setTimeout(() => scrollToSection('cp-accept'), 200); }}
+              />
+            </div>
+          {/if}
+          {#if hasQuoteToken}
+            <div class="cp-dashboard__full-width-section" style={hasQuotes ? 'margin-top: 1.5rem;' : ''}>
+              <QuoteView consultationId={projectId} />
+            </div>
+          {/if}
         </div><!-- /#cp-quotes -->
       {/if}
 
@@ -729,16 +834,10 @@
       {/if}
 
       <!--
-        QuoteView is intentionally OUTSIDE the hasQuotes gate.
-        It is self-gating: it reads ?quoteToken= from the URL and renders nothing
-        if the param is absent. The token-based deep-link flow (sent via email)
-        must work even before the quotes subcollection shows items as 'received'.
+        QuoteView is now rendered inside the dedicated Quote tab section above.
+        When ?quoteToken is present, showQuoteSection becomes true, the Quote tab
+        is activated automatically, and QuoteView is mounted inside that section.
       -->
-      {#if $page.url.searchParams.get('quoteToken')}
-        <div class="cp-dashboard__full-width-section" style="margin-top: 1.5rem;">
-          <QuoteView consultationId={projectId} />
-        </div>
-      {/if}
 
     </div><!-- /.cp-dashboard -->
 
@@ -767,6 +866,11 @@
     {#if lilyOpen}
       <div class="lily-drawer-backdrop" on:click={() => lilyOpen = false} aria-hidden="true"></div>
     {/if}
+
+    <!-- EmailPreviewDrawer: staff-only slide-over for previewing / sending emails.
+         Reacts to the global presendEmail store being set via previewQuoteEmail(). -->
+    <EmailPreviewDrawer />
+
   {/if}
 </div>
 
@@ -775,6 +879,96 @@
 <style>
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* ── Staff quote-email trigger card ────────────────────────────────────── */
+  :global(.cp-quote-email-trigger) {
+    background: linear-gradient(135deg, #020d10 0%, #051920 60%, #03141a 100%);
+    border: 1px solid rgba(2, 181, 187, 0.22);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  :global(.cp-quote-email-trigger__inner) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+  :global(.cp-quote-email-trigger__info) {
+    flex: 1;
+    min-width: 0;
+  }
+  :global(.cp-quote-email-trigger__eyebrow) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-highlight-2, #02b5bb);
+    margin-bottom: 0.4rem;
+  }
+  :global(.cp-quote-email-trigger__title) {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0 0 0.3rem;
+    line-height: 1.3;
+  }
+  :global(.cp-quote-email-trigger__desc) {
+    font-size: 0.78rem;
+    color: rgba(248, 250, 252, 0.45);
+    margin: 0;
+    line-height: 1.5;
+  }
+  :global(.cp-quote-email-trigger__btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1.25rem;
+    background: var(--color-highlight-2, #02b5bb);
+    color: #020d10;
+    border: none;
+    border-radius: 9px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    font-family: var(--font-paragraph, sans-serif);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 2px 14px rgba(2, 181, 187, 0.28);
+    transition: background 0.18s ease, transform 0.14s ease, box-shadow 0.18s ease, opacity 0.15s ease;
+  }
+  :global(.cp-quote-email-trigger__btn:hover:not(:disabled)) {
+    background: #03cdd4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(2, 181, 187, 0.42);
+  }
+  :global(.cp-quote-email-trigger__btn:active:not(:disabled)) {
+    transform: translateY(0);
+  }
+  :global(.cp-quote-email-trigger__btn:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  @keyframes qet-spin {
+    to { transform: rotate(360deg); }
+  }
+  :global(.cp-quote-email-trigger__spinner) {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(2, 13, 16, 0.25);
+    border-left-color: #020d10;
+    border-radius: 50%;
+    animation: qet-spin 0.75s linear infinite;
+    flex-shrink: 0;
   }
 
   /* ── Inline comments (below pipeline stepper) ─────────────────────────── */
@@ -793,23 +987,42 @@
   :global(.step.completed) {
     cursor: pointer;
   }
+  /* Ratings are ALWAYS visible (no hover required) so every completed stage
+     shows its stars immediately. The current-stage "rate-prompt" still adds a
+     glow to draw the eye, but visibility no longer depends on :hover. */
   :global(.step__rating) {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
+    max-height: 80px;
+    overflow: visible;
+    opacity: 1;
+    pointer-events: auto;
     transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
-    margin-top: 0;
+    margin-top: 5px;
   }
   :global(.step.completed:hover .step__rating) {
-    max-height: 56px;
+    max-height: 80px;
     opacity: 1;
     pointer-events: auto;
     margin-top: 5px;
+  }
+  /* ── Rate-prompt: same always-visible rating + glow on the most-recently-completed step ── */
+  :global(.step.rate-prompt .step__rating) {
+    max-height: 80px;
+    opacity: 1;
+    pointer-events: auto;
+    margin-top: 6px;
+  }
+
+  @keyframes rateGlow {
+    0%, 100% { box-shadow: 0 0 4px 2px rgba(2, 181, 187, 0.22); }
+    50%       { box-shadow: 0 0 14px 7px rgba(2, 181, 187, 0.52); }
+  }
+  :global(.step.rate-prompt .step__circle) {
+    animation: rateGlow 2.2s ease-in-out infinite;
+    border-color: var(--color-highlight-2, #02b5bb) !important;
   }
   :global(.step__rating-label) {
     font-size: 0.62rem;

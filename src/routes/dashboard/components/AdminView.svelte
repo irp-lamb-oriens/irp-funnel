@@ -515,7 +515,8 @@
           <button class="save-btn" on:click={handleSaveConfig} disabled={configSaving}>
             {configSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
           </button>
-          <button class="reload-btn" on:click={loadConfig} disabled={configSource === 'loading'}>
+          <button class="reload-btn" on:click={loadConfig} disabled={configSaving}>
+
             ↺ Reload
           </button>
         </div>
@@ -665,7 +666,8 @@
           <button class="save-btn" on:click={handleSavePermissions} disabled={permSaving}>
             {permSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
           </button>
-          <button class="reload-btn" on:click={loadPermissions} disabled={permSource === 'loading'}>
+          <button class="reload-btn" on:click={loadPermissions} disabled={permSaving}>
+
             ↺ Reload
           </button>
         </div>

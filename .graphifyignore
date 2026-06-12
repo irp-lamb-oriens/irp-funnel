@@ -1,0 +1,45 @@
+# graphify scope: keep the SvelteKit/TypeScript application source, drop build & test artifacts.
+# (node_modules / .git are ignored by graphify automatically; listed for clarity.)
+
+node_modules/
+.git/
+.svelte-kit/
+build/
+dist/
+.netlify/
+.vercel/
+.wrangler/
+.output/
+
+# ── Test / debug artifacts ──
+test-results/
+tests/test-results/
+*.log
+check_output.txt
+check_output_2.txt
+infoDump
+
+# ── Secrets / env ──
+.env
+.env.*
+serviceAccountKey.json
+
+# ── Docs (Phase 1 is code-only; Phase 2 re-adds architecture docs via LLM) ──
+*.md
+*.mdx
+*.rst
+*.html
+*.htm
+*.yaml
+*.yml
+
+# ── Images / papers / stray text (need vision/LLM; out of scope for code graph) ──
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.pdf
+*.txt

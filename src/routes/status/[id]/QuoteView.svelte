@@ -5,18 +5,26 @@
   import { fetchQuoteByToken, acceptQuoteAsClient } from '../../dashboard/store.ts';
   import BlockRenderer from './BlockRenderer.svelte';
   import { project } from './store.ts';
+  import { irpStaffIsAuthenticated } from '../../../lib/auth/irpStaff.ts';
 
   export let consultationId: string;
+
+  const LEGAL_URL = '/legal/quote-acceptance';
 
   let quote: Quote | null = null;
   let loading = true;
   let loadError = '';
   let accepting = false;
   let acceptedBy = '';
+  let consent = false;
   let accepted = false;
   let acceptError = '';
+  // True when an IRP staff member is viewing via the dashboard bypass — they
+  // must never be able to accept a quote on the client's behalf.
+  $: isStaff = $irpStaffIsAuthenticated;
   // Phase 3 — selections captured from BlockRenderer's accept event
   let selectedLineItemIds: string[] = [];
+
 
   const token = $page.url.searchParams.get('quoteToken') ?? '';
 
@@ -35,9 +43,24 @@
 
   async function handleAccept() {
     if (!quote || !token) return;
+    // ── Client-only, name + binding consent required (applies to BOTH the
+    //    modern BlockRenderer accept block and the legacy accept section). ──
+    if (isStaff) {
+      acceptError = 'Quotes can only be accepted by the client named on this project — not IRP staff.';
+      return;
+    }
+    if (!acceptedBy.trim()) {
+      acceptError = 'Please type your full legal name to accept.';
+      return;
+    }
+    if (!consent) {
+      acceptError = 'Please tick the box to confirm you agree to the binding Quote Acceptance Terms.';
+      return;
+    }
     accepting = true;
     acceptError = '';
     try {
+
       // Phase 3: pass selectedLineItemIds so the server records the final services chosen
       await acceptQuoteAsClient(
         consultationId,
@@ -84,14 +107,18 @@
       {accepted}
       {accepting}
       {acceptError}
+      {isStaff}
+      legalUrl={LEGAL_URL}
       clientSummary={$project ?? {}}
       on:accept={async (e) => {
         acceptedBy = e.detail.acceptedBy;
+        consent = e.detail.consent ?? false;
         // Phase 3 — capture the client's service selection from BlockRenderer
         selectedLineItemIds = e.detail.selectedLineItemIds ?? [];
         await handleAccept();
       }}
     />
+
   {:else}
     <!-- ── Legacy line-items render — backward compatible ──────────────── -->
     <div class="qv-container">
@@ -145,23 +172,40 @@
 
     {#if !accepted && quote.status !== 'client_accepted'}
       <div class="qv-accept-section">
-        <p class="qv-accept-intro">
-          By clicking <strong>Accept quote</strong>, you confirm that you have reviewed the prices and scope listed here and agree to proceed.
-        </p>
-        <input
-          class="qv-name-input"
-          type="text"
-          bind:value={acceptedBy}
-          placeholder="Your full name (optional)"
-        />
-        {#if acceptError}
-          <p class="qv-error-msg">{acceptError}</p>
+        {#if isStaff}
+          <div class="qv-staff-notice">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>You're viewing this as IRP staff. Only the client named on this project can accept the quote.</span>
+          </div>
+        {:else}
+          <p class="qv-accept-intro">
+            To accept, type your <strong>full legal name</strong> and tick the box below. Accepting is a
+            <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" class="qv-legal-link">legally binding agreement</a>.
+          </p>
+          <input
+            class="qv-name-input"
+            type="text"
+            bind:value={acceptedBy}
+            placeholder="Your full legal name"
+            autocomplete="name"
+          />
+          <label class="qv-consent" class:qv-consent--checked={consent}>
+            <input type="checkbox" class="qv-consent__check" bind:checked={consent} />
+            <span class="qv-consent__text">I confirm I am the named client and I have read and agree to the
+              <a href={LEGAL_URL} target="_blank" rel="noopener noreferrer" class="qv-legal-link">binding Quote Acceptance Terms</a>.
+              Typing my name and ticking this box is my electronic signature.</span>
+          </label>
+          {#if acceptError}
+            <p class="qv-error-msg">{acceptError}</p>
+          {/if}
+          <button class="qv-accept-btn" on:click={handleAccept} disabled={accepting || !acceptedBy.trim() || !consent}>
+            {accepting ? 'Processing...' : '✅ Accept quote'}
+          </button>
         {/if}
-        <button class="qv-accept-btn" on:click={handleAccept} disabled={accepting}>
-          {accepting ? 'Processing...' : '✅ Accept quote'}
-        </button>
+
       </div>
     {:else}
+
       <div class="qv-accepted">
         <p>🎉 <strong>Quote accepted!</strong></p>
         <p class="qv-accepted-sub">Our team will be in touch to coordinate next steps.</p>
@@ -320,34 +364,8 @@
     letter-spacing: -0.02em;
   }
 
-  /* ── Providers section ────────────────────────────────────────────────── */
-  .qv-providers {
-    margin-bottom: 24px;
-  }
-  .qv-providers-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: 0 0 10px;
-  }
-  .qv-provider-tag {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(2, 181, 187, 0.08);
-    border: 1px solid #9fe3e6;
-    color: #02b5bb;
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: 999px;
-    margin-right: 6px;
-    margin-bottom: 6px;
-    letter-spacing: 0.01em;
-  }
-
   /* ── Notes card ───────────────────────────────────────────────────────── */
+
   .qv-notes {
     background: #f8fafc;
     border-radius: 12px;
@@ -390,6 +408,64 @@
     line-height: 1.65;
     margin: 0;
   }
+
+  /* ── Staff notice ─────────────────────────────────────────────────────── */
+  .qv-staff-notice {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #9a3412;
+    background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 13px 15px;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .qv-staff-notice svg { flex-shrink: 0; color: #ea8a3c; }
+
+  /* ── Binding-consent row ──────────────────────────────────────────────── */
+  .qv-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 15px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  }
+  .qv-consent:hover { border-color: rgba(2, 181, 187, 0.45); background: #f0fdfe; }
+  .qv-consent--checked {
+    border-color: rgba(2, 181, 187, 0.55);
+    background: linear-gradient(135deg, rgba(2, 181, 187, 0.07) 0%, #f0fdfe 100%);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
+  }
+  .qv-consent__check {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+    accent-color: #02b5bb;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .qv-consent__text {
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.55;
+  }
+  .qv-legal-link {
+    color: #02b5bb;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(2, 181, 187, 0.32);
+    transition: border-color 0.15s ease;
+  }
+  .qv-legal-link:hover { border-color: #02b5bb; }
+
 
   .qv-name-input {
     width: 100%;

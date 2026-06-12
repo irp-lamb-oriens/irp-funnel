@@ -45,10 +45,17 @@
 
   // Internal only — BlockRenderer owns the input value for the accept block
   let acceptedByInput = '';
+  // Binding-consent checkbox for the accept block (client electronic signature).
+  let consentChecked = false;
+  /** True when an IRP staff member is viewing — they cannot accept for the client. */
+  export let isStaff = false;
+  /** Link to the binding Quote Acceptance Terms page. */
+  export let legalUrl = '/legal/quote-acceptance';
 
   const dispatch = createEventDispatcher<{
-    accept: { acceptedBy: string; selectedLineItemIds: string[] }
+    accept: { acceptedBy: string; selectedLineItemIds: string[]; consent: boolean }
   }>();
+
 
   // ── Section filtering ─────────────────────────────────────────────────────
   // If any block has a section label → use section-filtered mode.
@@ -103,8 +110,10 @@
     dispatch('accept', {
       acceptedBy: acceptedByInput,
       selectedLineItemIds: [..._selectedIds],
+      consent: consentChecked,
     });
   }
+
 </script>
 
 <div class="br-document">
@@ -237,27 +246,43 @@
       <!-- ── Accept CTA block ───────────────────────────────────────────── -->
       <div class="br-block br-accept">
         {#if !accepted && quote.status !== 'client_accepted'}
-          <p class="br-accept-intro">
-            By clicking <strong>Accept quote</strong>, you confirm that you have reviewed
-            the prices and scope listed here and agree to proceed.
-          </p>
-          <input
-            class="br-name-input"
-            type="text"
-            bind:value={acceptedByInput}
-            placeholder="Your full name (optional)"
-          />
-          {#if acceptError}
-            <p class="br-error-msg">{acceptError}</p>
+          {#if isStaff}
+            <div class="br-staff-notice">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>You're viewing this as IRP staff. Only the client named on this project can accept the quote.</span>
+            </div>
+          {:else}
+            <p class="br-accept-intro">
+              To accept, type your <strong>full legal name</strong> and tick the box below. Accepting is a
+              <a href={legalUrl} target="_blank" rel="noopener noreferrer" class="br-legal-link">legally binding agreement</a>.
+            </p>
+            <input
+              class="br-name-input"
+              type="text"
+              bind:value={acceptedByInput}
+              placeholder="Your full legal name"
+              autocomplete="name"
+            />
+            <label class="br-consent" class:br-consent--checked={consentChecked}>
+              <input type="checkbox" class="br-consent__check" bind:checked={consentChecked} />
+              <span class="br-consent__text">I confirm I am the named client and I have read and agree to the
+                <a href={legalUrl} target="_blank" rel="noopener noreferrer" class="br-legal-link">binding Quote Acceptance Terms</a>.
+                Typing my name and ticking this box is my electronic signature.</span>
+            </label>
+            {#if acceptError}
+              <p class="br-error-msg">{acceptError}</p>
+            {/if}
+            <button
+              class="br-accept-btn"
+              on:click={handleAcceptClick}
+              disabled={accepting || !acceptedByInput.trim() || !consentChecked}
+            >
+              {accepting ? 'Processing...' : '✅ Accept quote'}
+            </button>
           {/if}
-          <button
-            class="br-accept-btn"
-            on:click={handleAcceptClick}
-            disabled={accepting}
-          >
-            {accepting ? 'Processing...' : '✅ Accept quote'}
-          </button>
         {:else}
+
+
           <div class="br-accepted">
             <p>🎉 <strong>Quote accepted!</strong></p>
             <p class="br-accepted-sub">
@@ -494,6 +519,33 @@
     pointer-events: none;
   }
   .br-accept-intro { font-size: 13.5px; font-weight: 450; color: #475569; line-height: 1.7; margin: 0; }
+  /* Staff notice — amber, matches the document's light theme */
+  .br-staff-notice {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 13px; font-weight: 600; color: #9a3412;
+    background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
+    border: 1px solid #fed7aa; border-radius: 12px;
+    padding: 13px 15px; margin: 0; line-height: 1.5;
+  }
+  .br-staff-notice svg { flex-shrink: 0; color: #ea8a3c; }
+  /* Binding-consent row — teal accent, consistent with .br-accept */
+  .br-consent {
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 13px 15px; background: #f8fafc;
+    border: 1.5px solid #e2e8f0; border-radius: 12px; cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+  }
+  .br-consent:hover { border-color: rgba(2, 182, 188, 0.45); background: #f0fdfe; }
+  .br-consent--checked {
+    border-color: rgba(2, 182, 188, 0.55);
+    background: linear-gradient(135deg, rgba(2, 182, 188, 0.07) 0%, #f0fdfe 100%);
+    box-shadow: 0 0 0 3px rgba(2, 182, 188, 0.1);
+  }
+  .br-consent__check { margin-top: 2px; width: 18px; height: 18px; accent-color: #02b6bc; flex-shrink: 0; cursor: pointer; }
+  .br-consent__text { font-size: 13px; color: #475569; line-height: 1.55; }
+  .br-legal-link { color: #02b6bc; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(2, 182, 188, 0.32); transition: border-color 0.15s ease; }
+  .br-legal-link:hover { border-color: #02b6bc; }
+
   .br-name-input {
     width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px;
     font-size: 15px; font-family: inherit; box-sizing: border-box;

@@ -13,10 +13,17 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
-    // Add explicit path mapping as a fallback
+    // Add explicit path mapping as a fallback.
+    // NOTE: a child tsconfig's `paths` REPLACES (does not merge) the inherited
+    // SvelteKit paths, so `$lib`/`$lib/*` must be re-declared here or imports
+    // like `$lib/money.ts` fail type resolution (Vite still resolves them via
+    // svelte.config alias, which is why the build succeeds regardless).
     "paths": {
-      "$app/*": ["./node_modules/@sveltejs/kit/src/runtime/app/*"] 
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"],
+      "$app/*": ["./node_modules/@sveltejs/kit/src/runtime/app/*"]
     }
+
   },
   "include": ["src/**/*", ".svelte-kit/ambient.d.ts"], // Ensure ambient types are included
   "exclude": ["node_modules"]
