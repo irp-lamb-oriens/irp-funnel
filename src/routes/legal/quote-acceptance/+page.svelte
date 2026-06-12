@@ -144,7 +144,7 @@
     flex-direction: column;
     align-items: center;
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(2, 181, 187, 0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--color-highlight-2-rgb), 0.10) 0%, transparent 60%),
       linear-gradient(180deg, #020d10 0%, #03141a 100%);
     color: #e8eef2;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -173,7 +173,7 @@
     width: 100%;
     max-width: 760px;
     background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(2, 181, 187, 0.16);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.16);
     border-radius: 22px;
     padding: 2.5rem 2.25rem;
     box-shadow: 0 8px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -213,8 +213,8 @@
     display: flex;
     align-items: flex-start;
     gap: 0.85rem;
-    background: rgba(2, 181, 187, 0.08);
-    border: 1px solid rgba(2, 181, 187, 0.28);
+    background: rgba(var(--color-highlight-2-rgb), 0.08);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.28);
     border-radius: 14px;
     padding: 1.1rem 1.25rem;
     margin-bottom: 2.25rem;
@@ -224,7 +224,7 @@
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: #02b5bb;
+    background: var(--color-highlight-2);
     color: #020d10;
     font-weight: 900;
     display: grid;
@@ -253,8 +253,8 @@
     width: 24px;
     height: 24px;
     border-radius: 7px;
-    background: rgba(2, 181, 187, 0.14);
-    border: 1px solid rgba(2, 181, 187, 0.32);
+    background: rgba(var(--color-highlight-2-rgb), 0.14);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.32);
     color: #03cdd4;
     font-size: 0.8rem;
     font-weight: 800;

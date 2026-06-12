@@ -376,7 +376,7 @@
               <span class="qr-detail__icon">💰</span>
               <div class="qr-detail__body">
                 <span class="qr-detail__label">Your Quoted Price</span>
-                <span class="qr-detail__value" style="color: #02b5bb; font-weight: 800;">
+                <span class="qr-detail__value" style="color: var(--color-highlight-2); font-weight: 800;">
                   {formatCurrency(quoteRequest.providerResponse.price, quoteRequest.providerResponse.currency)}
                 </span>
               </div>
@@ -615,7 +615,7 @@
     flex-direction: column;
     align-items: center;
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(2, 181, 187, 0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--color-highlight-2-rgb), 0.09) 0%, transparent 60%),
       linear-gradient(180deg, #020d10 0%, #031319 100%);
     padding: 0 1rem 3rem;
   }
@@ -661,8 +661,8 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 0.7rem 1.25rem;
-    background: rgba(2, 181, 187, 0.07);
-    border: 1px solid rgba(2, 181, 187, 0.18);
+    background: rgba(var(--color-highlight-2-rgb), 0.07);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.18);
     border-radius: 12px;
     font-size: 1rem;
     font-weight: 700;
@@ -675,14 +675,14 @@
     color: #e2f8f9;
   }
   .qr-route-banner__arrow {
-    color: #02b5bb;
+    color: var(--color-highlight-2);
     flex-shrink: 0;
   }
 
   /* ── Card ──────────────────────────────────────────────────────────────── */
   .qr-card {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(2, 181, 187, 0.15);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.15);
     border-radius: 20px;
     padding: 2rem 1.75rem;
     box-shadow:
@@ -708,7 +708,7 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #02b5bb;
+    color: var(--color-highlight-2);
     margin-bottom: 0.75rem;
   }
 
@@ -733,7 +733,7 @@
     margin: 0.25rem 0;
   }
   .qr-highlight {
-    color: #02b5bb;
+    color: var(--color-highlight-2);
     font-weight: 700;
   }
 
@@ -792,12 +792,12 @@
   .qr-tag {
     display: inline-block;
     padding: 0.15rem 0.6rem;
-    background: rgba(2, 181, 187, 0.12);
-    border: 1px solid rgba(2, 181, 187, 0.25);
+    background: rgba(var(--color-highlight-2-rgb), 0.12);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.25);
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #02b5bb;
+    color: var(--color-highlight-2);
   }
 
   /* ── Divider ───────────────────────────────────────────────────────────── */
@@ -831,15 +831,15 @@
     font-family: inherit;
   }
   .qr-toggle-btn:hover:not(.qr-toggle-btn--active) {
-    border-color: rgba(2, 181, 187, 0.3);
+    border-color: rgba(var(--color-highlight-2-rgb), 0.3);
     color: #f1f5f9;
-    background: rgba(2, 181, 187, 0.06);
+    background: rgba(var(--color-highlight-2-rgb), 0.06);
   }
   .qr-toggle-btn--active {
-    background: rgba(2, 181, 187, 0.12);
-    border-color: rgba(2, 181, 187, 0.55);
-    color: #02b5bb;
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
+    background: rgba(var(--color-highlight-2-rgb), 0.12);
+    border-color: rgba(var(--color-highlight-2-rgb), 0.55);
+    color: var(--color-highlight-2);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1);
   }
   .qr-toggle-btn--decline.qr-toggle-btn--active {
     background: rgba(239, 68, 68, 0.1);
@@ -883,7 +883,7 @@
   .qr-select {
     padding: 0.6rem 0.75rem;
     background: rgba(15, 23, 42, 0.7);
-    border: 1.5px solid rgba(2, 181, 187, 0.22);
+    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.22);
     border-radius: 9px;
     color: #f1f5f9;
     font-size: 0.875rem;
@@ -895,13 +895,13 @@
     width: 90px;
   }
   .qr-select:focus {
-    border-color: #02b5bb;
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.12);
+    border-color: var(--color-highlight-2);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.12);
   }
   .qr-input {
     padding: 0.6rem 0.9rem;
     background: rgba(15, 23, 42, 0.7);
-    border: 1.5px solid rgba(2, 181, 187, 0.22);
+    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.22);
     border-radius: 9px;
     color: #f1f5f9;
     font-size: 0.9rem;
@@ -915,14 +915,14 @@
     flex: 1;
   }
   .qr-input:focus {
-    border-color: #02b5bb;
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.12);
+    border-color: var(--color-highlight-2);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.12);
   }
   .qr-input::placeholder { color: rgba(241, 245, 249, 0.25); }
   .qr-textarea {
     padding: 0.65rem 0.9rem;
     background: rgba(15, 23, 42, 0.7);
-    border: 1.5px solid rgba(2, 181, 187, 0.2);
+    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.2);
     border-radius: 9px;
     color: #f1f5f9;
     font-size: 0.875rem;
@@ -934,8 +934,8 @@
     transition: border-color 0.15s;
   }
   .qr-textarea:focus {
-    border-color: #02b5bb;
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.12);
+    border-color: var(--color-highlight-2);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.12);
   }
   .qr-textarea::placeholder { color: rgba(241, 245, 249, 0.22); }
 
@@ -961,14 +961,14 @@
     cursor: not-allowed;
   }
   .qr-btn--primary {
-    background: linear-gradient(135deg, #02b5bb 0%, #03cdd4 100%);
+    background: linear-gradient(135deg, var(--color-highlight-2) 0%, #03cdd4 100%);
     color: #020d10;
-    box-shadow: 0 3px 18px rgba(2, 181, 187, 0.32);
+    box-shadow: 0 3px 18px rgba(var(--color-highlight-2-rgb), 0.32);
     margin-top: 0.5rem;
   }
   .qr-btn--primary:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 5px 28px rgba(2, 181, 187, 0.48);
+    box-shadow: 0 5px 28px rgba(var(--color-highlight-2-rgb), 0.48);
   }
   .qr-btn--primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1043,7 +1043,7 @@
   .qr-response-summary__value--highlight {
     font-size: 1.05rem;
     font-weight: 800;
-    color: #02b5bb;
+    color: var(--color-highlight-2);
   }
 
   /* ── State icons ───────────────────────────────────────────────────────── */
@@ -1060,9 +1060,9 @@
     flex-shrink: 0;
   }
   .qr-state-icon--success {
-    background: rgba(2, 181, 187, 0.12);
-    border: 2px solid rgba(2, 181, 187, 0.4);
-    color: #02b5bb;
+    background: rgba(var(--color-highlight-2-rgb), 0.12);
+    border: 2px solid rgba(var(--color-highlight-2-rgb), 0.4);
+    color: var(--color-highlight-2);
   }
   .qr-state-icon--neutral {
     background: rgba(100, 116, 139, 0.15);
@@ -1093,7 +1093,7 @@
     border: 2px solid transparent;
     background:
       linear-gradient(#020d10, #020d10) padding-box,
-      conic-gradient(#02b5bb, #03e4ec, #7ee8f0, #02b5bb) border-box;
+      conic-gradient(var(--color-highlight-2), #03e4ec, #7ee8f0, var(--color-highlight-2)) border-box;
     animation: confetti-spin 3s linear infinite;
   }
   @keyframes confetti-spin {
@@ -1107,8 +1107,8 @@
   .qr-spinner {
     width: 36px;
     height: 36px;
-    border: 3px solid rgba(2, 181, 187, 0.15);
-    border-left-color: #02b5bb;
+    border: 3px solid rgba(var(--color-highlight-2-rgb), 0.15);
+    border-left-color: var(--color-highlight-2);
     border-radius: 50%;
     animation: spin 0.85s linear infinite;
     margin-bottom: 1rem;
@@ -1138,10 +1138,10 @@
     gap: 0.4rem;
     margin: 1.25rem auto 0;
     padding: 0.45rem 1rem;
-    background: rgba(2, 181, 187, 0.1);
-    border: 1px solid rgba(2, 181, 187, 0.35);
+    background: rgba(var(--color-highlight-2-rgb), 0.1);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.35);
     border-radius: 999px;
-    color: #02b5bb;
+    color: var(--color-highlight-2);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.05em;

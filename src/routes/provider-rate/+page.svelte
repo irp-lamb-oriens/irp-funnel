@@ -189,7 +189,7 @@
           {#if ratingData.quotedPrice}
             <div class="pr-summary__item">
               <span class="pr-summary__label">Quoted price</span>
-              <span class="pr-summary__value" style="color:#02b5bb;">{formatCurrency(ratingData.quotedPrice, ratingData.quotedCurrency)}</span>
+              <span class="pr-summary__value" style="color:var(--color-highlight-2);">{formatCurrency(ratingData.quotedPrice, ratingData.quotedCurrency)}</span>
             </div>
           {/if}
         </div>
@@ -275,7 +275,7 @@
     flex-direction: column;
     align-items: center;
     background:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(2,181,187,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--color-highlight-2-rgb), 0.09) 0%, transparent 60%),
       linear-gradient(180deg, #020d10 0%, #031319 100%);
     padding: 0 1rem 3rem;
   }
@@ -291,13 +291,13 @@
   .pr-route-banner {
     display: flex; align-items: center; justify-content: center; gap: 0.75rem;
     padding: 0.65rem 1.25rem;
-    background: rgba(2,181,187,0.07); border: 1px solid rgba(2,181,187,0.18); border-radius: 12px;
+    background: rgba(var(--color-highlight-2-rgb), 0.07); border: 1px solid rgba(var(--color-highlight-2-rgb), 0.18); border-radius: 12px;
     font-size: 0.95rem; font-weight: 700; color: #e2f8f9;
   }
-  .pr-arrow { color: #02b5bb; flex-shrink: 0; }
+  .pr-arrow { color: var(--color-highlight-2); flex-shrink: 0; }
   .pr-card {
     background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(2,181,187,0.15);
+    border: 1px solid rgba(var(--color-highlight-2-rgb), 0.15);
     border-radius: 20px; padding: 2rem 1.75rem;
     box-shadow: 0 8px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     backdrop-filter: blur(24px);
@@ -306,12 +306,12 @@
   .pr-eyebrow {
     display: inline-flex; align-items: center; gap: 0.35rem;
     font-size: 0.67rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #02b5bb; margin-bottom: 0.75rem;
+    color: var(--color-highlight-2); margin-bottom: 0.75rem;
   }
   .pr-title { font-size: 1.3rem; font-weight: 800; color: #f8fafc; margin: 0 0 0.5rem; line-height: 1.25; }
   .pr-subtitle { font-size: 0.85rem; color: rgba(241,245,249,0.5); line-height: 1.6; margin: 0 0 1.25rem; }
   .pr-muted { font-size: 0.875rem; color: rgba(241,245,249,0.5); line-height: 1.6; margin: 0.2rem 0; }
-  .pr-highlight { color: #02b5bb; font-weight: 700; }
+  .pr-highlight { color: var(--color-highlight-2); font-weight: 700; }
   .pr-summary {
     display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;
   }
@@ -346,12 +346,12 @@
   .pr-optional { font-weight: 400; color: rgba(241,245,249,0.32); }
   .pr-textarea {
     padding: 0.65rem 0.9rem; background: rgba(15,23,42,0.7);
-    border: 1.5px solid rgba(2,181,187,0.2); border-radius: 9px;
+    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.2); border-radius: 9px;
     color: #f1f5f9; font-size: 0.875rem; font-family: inherit; line-height: 1.55;
     outline: none; resize: vertical; min-height: 72px;
     transition: border-color 0.15s;
   }
-  .pr-textarea:focus { border-color: #02b5bb; box-shadow: 0 0 0 3px rgba(2,181,187,0.12); }
+  .pr-textarea:focus { border-color: var(--color-highlight-2); box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.12); }
   .pr-textarea::placeholder { color: rgba(241,245,249,0.2); }
   .pr-form-error {
     padding: 0.6rem 0.85rem;
@@ -368,10 +368,10 @@
   }
   .pr-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .pr-btn--primary {
-    background: linear-gradient(135deg, #02b5bb 0%, #03cdd4 100%);
-    color: #020d10; box-shadow: 0 3px 18px rgba(2,181,187,0.3);
+    background: linear-gradient(135deg, var(--color-highlight-2) 0%, #03cdd4 100%);
+    color: #020d10; box-shadow: 0 3px 18px rgba(var(--color-highlight-2-rgb), 0.3);
   }
-  .pr-btn--primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 26px rgba(2,181,187,0.46); }
+  .pr-btn--primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 26px rgba(var(--color-highlight-2-rgb), 0.46); }
   .pr-btn--ghost {
     background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.12);
     color: rgba(241,245,249,0.7); width: auto; padding: 0.6rem 1.25rem;
@@ -388,7 +388,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 1.4rem; font-weight: 700; margin-bottom: 1.1rem;
   }
-  .pr-icon--success { background: rgba(2,181,187,0.12); border: 2px solid rgba(2,181,187,0.4); color: #02b5bb; }
+  .pr-icon--success { background: rgba(var(--color-highlight-2-rgb), 0.12); border: 2px solid rgba(var(--color-highlight-2-rgb), 0.4); color: var(--color-highlight-2); }
   .pr-icon--warn { background: rgba(251,191,36,0.1); border: 2px solid rgba(251,191,36,0.3); color: #fbbf24; }
   /* ── Confetti ring ── */
   .pr-confetti-ring {
@@ -405,8 +405,8 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .pr-spinner {
-    width: 34px; height: 34px; border: 3px solid rgba(2,181,187,0.15);
-    border-left-color: #02b5bb; border-radius: 50%;
+    width: 34px; height: 34px; border: 3px solid rgba(var(--color-highlight-2-rgb), 0.15);
+    border-left-color: var(--color-highlight-2); border-radius: 50%;
     animation: spin 0.85s linear infinite; margin-bottom: 1rem;
   }
   .pr-footer {
