@@ -130,7 +130,22 @@ export function formatActivity(entry: ActivityEntry): FormattedActivity {
         undoable: false,
         raw: entry,
       };
+    case 'client_reply': {
+      const msg = typeof e.message === 'string' ? e.message : '';
+      const preview = msg.length > 80 ? `"${msg.slice(0, 80)}…"` : msg ? `"${msg}"` : '';
+      return {
+        who: 'client',
+        what: 'replied via the answer page',
+        detail: preview,
+        whenRelative,
+        whenExact,
+        icon: '💬',
+        undoable: false,
+        raw: entry,
+      };
+    }
     case 'gemini_notes_received':
+
       return {
         who,
         what: 'received meeting notes from Gemini',

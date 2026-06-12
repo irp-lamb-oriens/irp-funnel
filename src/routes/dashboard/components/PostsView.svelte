@@ -8,7 +8,9 @@
     title: string;
     bodyHtml: string;
     author: string;
-    status: 'draft' | 'scheduled' | 'dispatched';
+    status: 'draft' | 'scheduled' | 'dispatched' | 'published';
+    kind?: 'broadcast' | 'article';
+    slug?: string;
     createdAt: string;
     updatedAt: string;
     sendAt: string;
@@ -64,14 +66,22 @@
   let destInput  = '';
   let originInput = '';
 
+  // Web article (blog) fields
+  let kind: 'broadcast' | 'article' = 'broadcast';
+  let slug = '';
+  let slugTouched = false;
+  // Auto-derive slug from title until the operator edits it manually.
+  $: if (kind === 'article' && !slugTouched) slug = slugify(title);
+
   // Audience count
   let audienceTotal   = 0;
   let audienceMatched = 0;
   let audienceLoading = false;
   let audienceDebounce: ReturnType<typeof setTimeout> | null = null;
 
-  // Preview URL (iframe)
+  // Preview (iframe). previewSrcdoc is used for the article web preview.
   let previewUrl = '';
+  let previewSrcdoc = '';
   let showPreview = false;
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -108,8 +118,12 @@
     targetStages = [];
     destInput = '';
     originInput = '';
+    kind = 'broadcast';
+    slug = '';
+    slugTouched = false;
     showPreview = false;
     previewUrl = '';
+    previewSrcdoc = '';
     refreshAudience();
   }
 
@@ -123,8 +137,12 @@
     targetStages       = p.targeting?.pipelineStages ?? [];
     destInput = '';
     originInput = '';
+    kind = p.kind === 'article' ? 'article' : 'broadcast';
+    slug = p.slug ?? '';
+    slugTouched = true;
     showPreview = false;
     previewUrl = '';
+    previewSrcdoc = '';
     refreshAudience();
   }
 
@@ -168,6 +186,8 @@
 
   // ── Audience preview ──────────────────────────────────────────────────────
   function refreshAudience() {
+    // Articles have no audience — they publish to a public web page.
+    if (kind === 'article') return;
     if (audienceDebounce) clearTimeout(audienceDebounce);
     audienceDebounce = setTimeout(fetchAudience, 500);
   }
@@ -194,6 +214,23 @@
     return t;
   }
 
+  // ── Web article helpers ─────────────────────────────────────────────────
+  function slugify(s: string): string {
+    return (s || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function switchKind(k: 'broadcast' | 'article') {
+    kind = k;
+    if (k === 'article' && !slugTouched && title.trim()) {
+      slug = slugify(title);
+    }
+    refreshAudience();
+  }
+
   // ── Save / Schedule ───────────────────────────────────────────────────────
   async function saveDraft() {
     if (!title.trim() || !bodyHtml.trim()) {
@@ -203,14 +240,19 @@
     saving = true;
     error = '';
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         title: title.trim(),
         bodyHtml: bodyHtml.trim(),
-        sendAt: sendAt ? new Date(sendAt).toISOString() : new Date().toISOString(),
-        targeting: buildTargeting(),
         author: $authEmail ?? 'pablo@internationalrelocationpartner.com',
         status: 'draft',
+        kind,
       };
+      if (kind === 'article') {
+        payload.slug = slug.trim();
+      } else {
+        payload.sendAt = sendAt ? new Date(sendAt).toISOString() : new Date().toISOString();
+        payload.targeting = buildTargeting();
+      }
       if (selectedPost) {
         await apiFetch(`/api/posts/${selectedPost.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
         showToast('Draft saved');
@@ -267,6 +309,43 @@
     }
   }
 
+  // ── Publish web article ─────────────────────────────────────────────────
+  async function publishArticle() {
+    if (!title.trim() || !bodyHtml.trim()) {
+      error = 'Title and body are required before publishing.';
+      return;
+    }
+    if (!slug.trim()) {
+      error = 'A URL slug is required before publishing.';
+      return;
+    }
+    saving = true;
+    error = '';
+    try {
+      const payload = {
+        title: title.trim(),
+        bodyHtml: bodyHtml.trim(),
+        kind: 'article',
+        slug: slug.trim(),
+        author: $authEmail ?? 'pablo@internationalrelocationpartner.com',
+        status: 'published',
+      };
+      if (selectedPost) {
+        await apiFetch(`/api/posts/${selectedPost.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        showToast('✓ Article published');
+      } else {
+        await apiFetch('/api/posts', { method: 'POST', body: JSON.stringify(payload) });
+        showToast('✓ Article published');
+      }
+      await fetchPosts();
+      newPost();
+    } catch (e: any) {
+      error = e.message;
+    } finally {
+      saving = false;
+    }
+  }
+
   async function deletePost() {
     if (!selectedPost || selectedPost.status !== 'draft') return;
     if (!confirm(`Delete draft "${selectedPost.title}"? This cannot be undone.`)) return;
@@ -286,7 +365,30 @@
       await saveDraft();
     }
     if (!selectedPost) return;
+    previewSrcdoc = '';
     previewUrl = `${getApiUrl()}/api/posts/${selectedPost.id}/preview?token=${encodeURIComponent($authToken ?? '')}`;
+    showPreview = true;
+  }
+
+  // Web article preview — renders the body in a styled iframe (no server round-trip).
+  // NOTE: the <style> tags are concatenated from fragments so the literal tag
+  // strings never appear in source — otherwise svelte-preprocess mistakes them
+  // for a real component <style> block and tries to parse the CSS at build time.
+  function openArticlePreview() {
+    const safeTitle = title.trim() || 'Untitled article';
+    const css =
+      "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.7;color:#1f2937;max-width:760px;margin:0 auto;padding:32px 20px;}"
+      + 'h1{font-size:30px;line-height:1.2;margin:0 0 24px;}h2{font-size:22px;margin:32px 0 12px;}h3{font-size:18px;margin:24px 0 8px;}'
+      + 'p{margin:0 0 16px;}ul,ol{margin:0 0 16px 22px;}li{margin:4px 0;}a{color:#02b5bb;}img{max-width:100%;height:auto;border-radius:8px;}'
+      + 'blockquote{border-left:4px solid #02b5bb;margin:16px 0;padding:8px 16px;background:#f0fdfd;color:#334155;}';
+    const styleOpen = '<' + 'style>';
+    const styleClose = '</' + 'style>';
+    previewUrl = '';
+    previewSrcdoc =
+      '<!doctype html><html><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width, initial-scale=1">'
+      + styleOpen + css + styleClose
+      + '</head><body><h1>' + safeTitle + '</h1>' + bodyHtml + '</body></html>';
     showPreview = true;
   }
 
@@ -303,7 +405,7 @@
   }
 
   function statusLabel(s: string): string {
-    return { draft: 'Draft', scheduled: 'Scheduled', dispatched: 'Sent' }[s] ?? s;
+    return { draft: 'Draft', scheduled: 'Scheduled', dispatched: 'Sent', published: 'Published' }[s] ?? s;
   }
 </script>
 
@@ -323,15 +425,24 @@
       on:click|stopPropagation
     >
       <div style="padding:12px 16px;background:#0f172a;color:#e2e8f0;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
-        <span>📧 Email Preview — {title || 'Untitled'}</span>
+        <span>{previewSrcdoc ? '📄 Article Preview' : '📧 Email Preview'} — {title || 'Untitled'}</span>
         <button on:click={() => (showPreview = false)} style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1;">×</button>
       </div>
-      <iframe
-        src={previewUrl}
-        title="Email preview"
-        style="flex:1;border:none;width:100%;"
-        sandbox="allow-same-origin"
-      ></iframe>
+      {#if previewSrcdoc}
+        <iframe
+          srcdoc={previewSrcdoc}
+          title="Article preview"
+          style="flex:1;border:none;width:100%;"
+          sandbox=""
+        ></iframe>
+      {:else}
+        <iframe
+          src={previewUrl}
+          title="Email preview"
+          style="flex:1;border:none;width:100%;"
+          sandbox="allow-same-origin"
+        ></iframe>
+      {/if}
     </div>
   </div>
 {/if}
@@ -342,8 +453,8 @@
   <!-- ── Left: post list ─────────────────────────────────────────────────── -->
   <div class="posts-view__list-pane">
     <div class="posts-view__list-header">
-      <span class="posts-view__list-title">📢 Broadcasts</span>
-      <button class="posts-view__new-btn" on:click={newPost}>+ New Post</button>
+      <span class="posts-view__list-title">📢 Posts &amp; Blog</span>
+      <button class="posts-view__new-btn" on:click={newPost}>+ New</button>
     </div>
 
     {#if loading}
@@ -367,11 +478,15 @@
             </span>
           </div>
           <div class="posts-view__card-meta">
-            <span class="posts-view__card-stat">🗓 {p.status === 'dispatched' ? formatDate(p.dispatchedAt ?? p.sendAt) : formatDate(p.sendAt)}</span>
-            {#if p.status === 'dispatched'}
-              <span class="posts-view__card-stat posts-view__card-stat--success">✓ {p.sentCount ?? 0} sent</span>
-              {#if (p.failedCount ?? 0) > 0}
-                <span class="posts-view__card-stat posts-view__card-stat--warn">⚠ {p.failedCount} failed</span>
+            {#if p.kind === 'article'}
+              <span class="posts-view__card-stat">📄 /blog/{p.slug}</span>
+            {:else}
+              <span class="posts-view__card-stat">🗓 {p.status === 'dispatched' ? formatDate(p.dispatchedAt ?? p.sendAt) : formatDate(p.sendAt)}</span>
+              {#if p.status === 'dispatched'}
+                <span class="posts-view__card-stat posts-view__card-stat--success">✓ {p.sentCount ?? 0} sent</span>
+                {#if (p.failedCount ?? 0) > 0}
+                  <span class="posts-view__card-stat posts-view__card-stat--warn">⚠ {p.failedCount} failed</span>
+                {/if}
               {/if}
             {/if}
             <span class="posts-view__card-stat">by {(p.author ?? '').split('@')[0]}</span>
@@ -387,6 +502,8 @@
     <div class="posts-view__compose-title">
       {#if selectedPost?.status === 'dispatched'}
         📊 Post Stats
+      {:else if kind === 'article'}
+        {selectedPost ? '✏️ Edit Article' : '📄 New Article'}
       {:else if selectedPost}
         ✏️ Edit Post
       {:else}
@@ -414,9 +531,36 @@
 
     <!-- Active compose form ─────────────────────────────────────────────── -->
     {:else}
+      <!-- Kind toggle (broadcast vs web article) -->
+      <div class="posts-view__field">
+        <div style="display:flex;gap:6px;">
+          <button
+            type="button"
+            style={kind === 'broadcast'
+              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.5);background:rgba(2,181,187,0.15);color:#9fe9eb;font-size:12px;font-weight:600;cursor:pointer;'
+              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
+            on:click={() => switchKind('broadcast')}
+          >📢 Email Broadcast</button>
+          <button
+            type="button"
+            style={kind === 'article'
+              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.5);background:rgba(2,181,187,0.15);color:#9fe9eb;font-size:12px;font-weight:600;cursor:pointer;'
+              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
+            on:click={() => switchKind('article')}
+          >📄 Web Article (Blog)</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+          {#if kind === 'article'}
+            Publishes to a public page at <strong>/blog/&lt;slug&gt;</strong>. Not emailed to anyone.
+          {:else}
+            Emailed to all matching drip-enabled clients at the scheduled time.
+          {/if}
+        </div>
+      </div>
+
       <!-- Title -->
       <div class="posts-view__field">
-        <div class="posts-view__section-label">📌 Subject / Title</div>
+        <div class="posts-view__section-label">📌 {kind === 'article' ? 'Article Title' : 'Subject / Title'}</div>
         <input
           class="posts-view__input"
           type="text"
@@ -424,6 +568,23 @@
           bind:value={title}
         />
       </div>
+
+      {#if kind === 'article'}
+        <!-- Slug -->
+        <div class="posts-view__field">
+          <div class="posts-view__section-label">🔗 URL Slug</div>
+          <input
+            class="posts-view__input"
+            type="text"
+            placeholder="e.g. customs-import-duties"
+            bind:value={slug}
+            on:input={() => (slugTouched = true)}
+          />
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+            Public URL: <strong>/blog/{slug || 'your-slug'}</strong>
+          </div>
+        </div>
+      {/if}
 
       <!-- Body HTML -->
       <div class="posts-view__field">
@@ -435,10 +596,15 @@
           rows="10"
         ></textarea>
         <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
-          Tip: Use &lt;p&gt; tags for paragraphs, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists. The logo, header, and signature wrap your content automatically.
+          {#if kind === 'article'}
+            Tip: Use &lt;p&gt; for paragraphs, &lt;h2&gt;/&lt;h3&gt; for sections, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists. The page header and styling are added automatically.
+          {:else}
+            Tip: Use &lt;p&gt; tags for paragraphs, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists. The logo, header, and signature wrap your content automatically.
+          {/if}
         </div>
       </div>
 
+      {#if kind === 'broadcast'}
       <!-- Send date -->
       <div class="posts-view__field">
         <div class="posts-view__section-label">📅 Schedule Send</div>
@@ -538,12 +704,13 @@
       {#if audienceMatched === 0 && audienceTotal > 0}
         <div class="posts-view__audience-warn">⚠ No clients match the current filters — this post would not reach anyone.</div>
       {/if}
+      {/if}
 
       <!-- Actions ─────────────────────────────────────────────────────────── -->
       <div class="posts-view__actions">
         <button
           class="posts-view__btn posts-view__btn--preview"
-          on:click={openPreview}
+          on:click={kind === 'article' ? openArticlePreview : openPreview}
           disabled={saving || !bodyHtml.trim()}
         >👁 Preview</button>
 
@@ -553,11 +720,19 @@
           disabled={saving}
         >{saving ? 'Saving…' : '💾 Save Draft'}</button>
 
-        <button
-          class="posts-view__btn posts-view__btn--schedule"
-          on:click={schedulePost}
-          disabled={saving || !title.trim() || !bodyHtml.trim()}
-        >{saving ? 'Scheduling…' : '📅 Schedule'}</button>
+        {#if kind === 'article'}
+          <button
+            class="posts-view__btn posts-view__btn--schedule"
+            on:click={publishArticle}
+            disabled={saving || !title.trim() || !bodyHtml.trim() || !slug.trim()}
+          >{saving ? 'Publishing…' : '🌐 Publish'}</button>
+        {:else}
+          <button
+            class="posts-view__btn posts-view__btn--schedule"
+            on:click={schedulePost}
+            disabled={saving || !title.trim() || !bodyHtml.trim()}
+          >{saving ? 'Scheduling…' : '📅 Schedule'}</button>
+        {/if}
 
         {#if selectedPost?.status === 'draft'}
           <button

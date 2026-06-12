@@ -9,8 +9,11 @@
     fetchLiveActionPermissions,
     saveActionPermissions,
     liveActionPermissions,
+    fetchCollaborators,
+    saveCollaborators,
     type AdminSession,
     type UserActivityEntry,
+    type Collaborator,
   } from '../store.ts';
   import {
     ALL_VIEWS,
@@ -20,7 +23,7 @@
   } from '../access.ts';
 
   // ─── Tabs ─────────────────────────────────────────────────────────────────
-  let activeTab: 'access' | 'sessions' | 'activity' | 'permissions' = 'access';
+  let activeTab: 'access' | 'sessions' | 'activity' | 'permissions' | 'collaborators' = 'access';
 
   // ─── Displayable view names (no 'admin' shown in the grid) ───────────────
   const GRID_VIEWS: DashView[] = ['board', 'list', 'metrics', 'evo', 'providers', 'posts', 'templates'];
@@ -253,6 +256,62 @@
   }
 
   // ─── Init ──────────────────────────────────────────────────────────────────
+  // ─── Collaborators Map (drives the server-side AI router) ───────────────────
+  // Editable "who's who" list. When a client replies on /answer, the router
+  // reads this list and auto-notifies the most relevant teammate(s).
+  let collaborators: Collaborator[] = [];
+  let collabSource: 'live' | 'default' | 'loading' = 'loading';
+  let collabSaving = false;
+  let collabSaveMsg = '';
+  let collabError = '';
+
+  async function loadCollaborators() {
+    collabSource = 'loading';
+    collabError = '';
+    const res = await fetchCollaborators();
+    if (res) {
+      collaborators = res.collaborators.map((c) => ({ ...c }));
+      collabSource = res.isDefault ? 'default' : 'live';
+    } else {
+      collaborators = [];
+      collabSource = 'default';
+      collabError = 'Could not load collaborators.';
+    }
+  }
+
+  function addCollaborator() {
+    collaborators = [...collaborators, { email: '', name: '', function: '' }];
+  }
+
+  function removeCollaborator(index: number) {
+    collaborators = collaborators.filter((_, i) => i !== index);
+  }
+
+  async function handleSaveCollaborators() {
+    collabSaving = true;
+    collabSaveMsg = '';
+    collabError = '';
+    const cleaned = collaborators
+      .map((c) => ({ email: c.email.trim().toLowerCase(), name: c.name.trim(), function: c.function.trim() }))
+      .filter((c) => c.email.includes('@'));
+    if (cleaned.length === 0) {
+      collabError = 'Add at least one collaborator with a valid email.';
+      collabSaving = false;
+      return;
+    }
+    try {
+      await saveCollaborators(cleaned);
+      collaborators = cleaned;
+      collabSource = 'live';
+      collabSaveMsg = '✓ Saved. The AI router will use this list immediately.';
+      setTimeout(() => (collabSaveMsg = ''), 4000);
+    } catch (err) {
+      collabError = err instanceof Error ? err.message : 'Save failed.';
+    } finally {
+      collabSaving = false;
+    }
+  }
+
   onMount(async () => {
     await Promise.all([loadConfig(), loadSessions()]);
     // Permissions tab loads lazily when first opened — pre-warm here so
@@ -402,6 +461,13 @@
       on:click={() => { activeTab = 'permissions'; if (permSource === 'loading') loadPermissions(); }}
     >
       🛡️ Action Permissions
+    </button>
+    <button
+      class="admin-tab"
+      class:admin-tab--active={activeTab === 'collaborators'}
+      on:click={() => { activeTab = 'collaborators'; if (collabSource === 'loading') loadCollaborators(); }}
+    >
+      🤝 Collaborators
     </button>
   </div>
 
@@ -677,6 +743,84 @@
           <code>ACTION_KEYS</code> in this file and to the corresponding <code>can*</code>
           derived store in <code>store.ts</code> — zero Firestore schema migration needed.
         </p>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- ════════ COLLABORATORS TAB ════════ -->
+  <!--
+    Editable "who's who" map consumed by the server-side AI router. When a
+    client replies on /answer, the router reads this list (email · name ·
+    function) and notifies the most relevant teammate(s) automatically.
+  -->
+  {#if activeTab === 'collaborators'}
+    <div class="admin-section">
+      {#if collabSource === 'loading'}
+        <div class="admin-loading">Loading collaborators…</div>
+      {:else}
+        <div class="config-source">
+          {#if collabSource === 'live'}
+            <span class="badge badge--live">🟢 Live · Stored in Firestore</span>
+          {:else}
+            <span class="badge badge--static">🟡 Seed defaults · Edit below and save to go live</span>
+          {/if}
+          <span class="config-source__note">
+            The AI router reads this list to decide who to email when a client answers. Describe each
+            person's function clearly — that text is what the AI matches against.
+          </span>
+        </div>
+
+        <div class="collab-list">
+          {#each collaborators as collab, i (i)}
+            <div class="collab-row">
+              <div class="collab-fields">
+                <input
+                  type="email"
+                  class="collab-input"
+                  placeholder="email@internationalrelocationpartner.com"
+                  bind:value={collab.email}
+                />
+                <input
+                  type="text"
+                  class="collab-input"
+                  placeholder="Full name"
+                  bind:value={collab.name}
+                />
+                <textarea
+                  class="collab-input collab-input--fn"
+                  rows="2"
+                  placeholder="What this person handles (e.g. pricing questions, scheduling, immigration paperwork)…"
+                  bind:value={collab.function}
+                ></textarea>
+              </div>
+              <button class="remove-btn" on:click={() => removeCollaborator(i)} title="Remove">✕</button>
+            </div>
+          {/each}
+        </div>
+
+        <div class="add-staff">
+          <button class="add-staff__btn" on:click={addCollaborator}>+ Add Collaborator</button>
+          <p class="add-staff__hint">
+            Add everyone a client question could be routed to. Leaving the list empty falls back to the
+            built-in seed defaults.
+          </p>
+        </div>
+
+        {#if collabSaveMsg}
+          <div class="save-msg save-msg--success">{collabSaveMsg}</div>
+        {/if}
+        {#if collabError}
+          <div class="save-msg save-msg--error">{collabError}</div>
+        {/if}
+
+        <div class="save-bar">
+          <button class="save-btn" on:click={handleSaveCollaborators} disabled={collabSaving}>
+            {collabSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
+          </button>
+          <button class="reload-btn" on:click={loadCollaborators} disabled={collabSaving}>
+            ↺ Reload
+          </button>
+        </div>
       {/if}
     </div>
   {/if}
@@ -1201,6 +1345,56 @@
     color: #94a3b8;
     margin: 0.45rem 0 0;
     font-style: italic;
+  }
+
+  /* ─── Collaborators (light theme — cohesive with the admin panel) ─────────── */
+  .collab-list {
+    margin: 1rem 0 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .collab-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .collab-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex: 1;
+  }
+
+  .collab-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    transition:
+      border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .collab-input::placeholder { color: #94a3b8; }
+
+  .collab-input:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.10);
+  }
+
+  .collab-input--fn {
+    resize: vertical;
+    min-height: 2.6rem;
+    line-height: 1.5;
   }
 
   /* ─── Save bar ───────────────────────────────────────────────────────────── */

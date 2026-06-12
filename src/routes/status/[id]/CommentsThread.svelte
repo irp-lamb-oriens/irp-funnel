@@ -1,17 +1,40 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { project, addComment, editComment, deleteComment, authEmail } from './store.ts';
   import { irpStaffEmail, irpStaffIsAuthenticated } from '../../../lib/auth/irpStaff.ts';
 
   export let projectId: string;
+
+  // Edit & delete are available to the comment's author only, and only within
+  // this window after posting — the identical rule for IRP staff and clients.
+  const MUTATION_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
   let newBody = '';
   let submitting = false;
   let editingId: string | null = null;
   let editBody = '';
 
-  $: comments = ($project?.statusComments ?? []) as any[];
+  // `now` ticks so the Edit/Delete controls disappear the moment the window closes.
+  let now = Date.now();
+  onMount(() => {
+    const t = setInterval(() => (now = Date.now()), 30_000);
+    return () => clearInterval(t);
+  });
+
   $: userEmail = ($irpStaffIsAuthenticated ? $irpStaffEmail : $authEmail) ?? '';
-  $: isStaff = $irpStaffIsAuthenticated;
+
+  function withinWindow(comment: any, nowTs: number): boolean {
+    const ts = Date.parse(comment?.createdAt ?? '');
+    return Number.isFinite(ts) && nowTs - ts <= MUTATION_WINDOW_MS;
+  }
+
+  // Soft-deleted comments are hidden from the thread (retained server-side for the
+  // CRM audit trail). `_canModify` is re-derived whenever the comment list, the
+  // viewer, or the clock changes — so the time-boxed controls appear/disappear
+  // correctly without manual subscriptions.
+  $: comments = (($project?.statusComments ?? []) as any[])
+    .filter((c) => !c.deleted)
+    .map((c) => ({ ...c, _canModify: c.author === userEmail && withinWindow(c, now) }));
 
   function formatDate(iso: string): string {
     if (!iso) return '';
@@ -52,14 +75,11 @@
   }
 
   async function handleDelete(comment: any) {
-    if (!confirm('Delete this comment?')) return;
+    if (!confirm('Delete this comment? This cannot be undone.')) return;
     await deleteComment(projectId, comment.id);
   }
-
-  function canEdit(comment: any): boolean {
-    return isStaff || comment.author === userEmail;
-  }
 </script>
+
 
 <section class="comments-thread">
   <h3 class="comments-thread__title">
@@ -98,12 +118,13 @@
           </form>
         {:else}
           <p class="comments-thread__body">{comment.body}</p>
-          {#if canEdit(comment)}
+          {#if comment._canModify}
             <div class="comments-thread__actions">
               <button class="comments-thread__action-btn" on:click={() => startEdit(comment)}>Edit</button>
               <button class="comments-thread__action-btn comments-thread__action-btn--danger" on:click={() => handleDelete(comment)}>Delete</button>
             </div>
           {/if}
+
         {/if}
       </div>
     {/each}

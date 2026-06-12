@@ -633,6 +633,27 @@ export declare function fetchLiveAccessConfig(): Promise<Record<string, string[]
  * if the calling session is not luisarmando or pablo.
  */
 export declare function saveAccessConfig(config: Record<string, string[]>): Promise<void>;
+/** One internal teammate the AI router can notify. */
+export interface Collaborator {
+    email: string;
+    name: string;
+    function: string;
+}
+/**
+ * Fetch the editable collaborators map (email · name · function).
+ * The server falls back to seed defaults when nothing has been saved yet, so
+ * `collaborators` is always populated. `isDefault` is true while showing seeds.
+ * Readable by ALL authenticated staff.
+ */
+export declare function fetchCollaborators(): Promise<{
+    collaborators: Collaborator[];
+    isDefault: boolean;
+} | null>;
+/**
+ * Persist the full collaborators map to Firestore. Admin-only (server 403s
+ * for non-admins). The map is read by the server-side AI router on every reply.
+ */
+export declare function saveCollaborators(collaborators: Collaborator[]): Promise<void>;
 export interface AdminSession {
     email: string;
     createdAt: string;

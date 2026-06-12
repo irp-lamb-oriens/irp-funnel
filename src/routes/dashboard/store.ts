@@ -1568,6 +1568,44 @@ export async function saveAccessConfig(config: Record<string, string[]>): Promis
   });
 }
 
+// ─── Admin: Collaborators map (drives the AI router) ───────────────────────
+
+/** One internal teammate the AI router can notify. */
+export interface Collaborator {
+  email: string;
+  name: string;
+  function: string;
+}
+
+/**
+ * Fetch the editable collaborators map (email · name · function).
+ * The server falls back to seed defaults when nothing has been saved yet, so
+ * `collaborators` is always populated. `isDefault` is true while showing seeds.
+ * Readable by ALL authenticated staff.
+ */
+export async function fetchCollaborators(): Promise<{ collaborators: Collaborator[]; isDefault: boolean } | null> {
+  try {
+    const data = await apiFetch('/api/dashboard/admin/collaborators');
+    return {
+      collaborators: Array.isArray(data?.collaborators) ? data.collaborators : [],
+      isDefault: !!data?.isDefault,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist the full collaborators map to Firestore. Admin-only (server 403s
+ * for non-admins). The map is read by the server-side AI router on every reply.
+ */
+export async function saveCollaborators(collaborators: Collaborator[]): Promise<void> {
+  await apiFetch('/api/dashboard/admin/collaborators', {
+    method: 'PUT',
+    body: JSON.stringify({ collaborators }),
+  });
+}
+
 // ─── Admin: Session Log ────────────────────────────────────────────────────
 
 export interface AdminSession {

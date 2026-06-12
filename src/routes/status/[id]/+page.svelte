@@ -261,11 +261,14 @@
     activePortalTab = id;
     if (id === '__overview') {
       scrollToSection('cp-overview');
+    } else if (id === '__comments') {
+      scrollToSection('cp-comments');
     } else if (id === '__quotes') {
       scrollToSection('cp-quotes');
     } else if (id === '__accept') {
       scrollToSection('cp-accept');
     } else {
+
       // Template document section — filter BlockRenderer + scroll to container
       activeSection.set(id);
       scrollToSection('cp-proposal');
@@ -319,7 +322,11 @@
   //    before the subcollection quotes appear as 'received'.
   $: proposalTabs = [
     { id: '__overview', label: 'Your Move' },
+    // Comments is always available — clients (and staff) can leave a note at
+    // any stage; it lives in its own tab so the overview stays focused.
+    { id: '__comments', label: 'Comments' },
     ...(showQuoteSection
+
       ? [
           // Template-section tabs only when subcollection quotes exist (unchanged).
           ...( hasQuotes ? ($templateSections as string[]).map((s: string) => ({ id: s, label: s })) : [] ),
@@ -335,10 +342,12 @@
   //   activates the Quote tab).
   // isAcceptTab / isProposalTab — use hasQuotes (unchanged: only when subcollection
   //   quotes exist, preserving existing acceptance & proposal flows).
-  $: isOverviewTab  = activePortalTab === '__overview' || !showQuoteSection;
+  $: isCommentsTab  = activePortalTab === '__comments';
+  $: isOverviewTab  = !isCommentsTab && (activePortalTab === '__overview' || !showQuoteSection);
   $: isQuoteTab     = showQuoteSection && activePortalTab === '__quotes';
   $: isAcceptTab    = hasQuotes && activePortalTab === '__accept';
-  $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab && !isAcceptTab;
+  $: isProposalTab  = hasQuotes && !isOverviewTab && !isQuoteTab && !isAcceptTab && !isCommentsTab;
+
 
   // Always use portal-tabs when the project is loaded so the "Your Move" tab
   // is available even before quotes arrive.
@@ -555,13 +564,8 @@
               {/each}
             </div>
           </div>
-
-          {#if !$irpStaffIsAuthenticated}
-            <div class="cp-dashboard__inline-comments">
-              <CommentsThread {projectId} />
-            </div>
-          {/if}
         </section>
+
 
         <!-- Regulations & Compliance ─────────────────────────────────────── -->
         <div class="cp-dashboard__full-width-section">
@@ -711,6 +715,17 @@
 
       </div><!-- /#cp-overview -->
       {/if}
+
+      <!-- ══ COMMENTS — dedicated tab (keeps the overview lean; visible to both
+           clients and signed-in staff so either can leave notes on the move). -->
+      {#if isCommentsTab}
+        <div id="cp-comments" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <CommentsThread {projectId} />
+          </div>
+        </div>
+      {/if}
+
 
       <!-- ══ PROPOSAL — template document (only when a template section tab
            is active). Contains the staff template selector and BlockRenderer. -->
