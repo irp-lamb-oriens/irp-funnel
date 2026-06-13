@@ -548,7 +548,8 @@
                 <div class="step"
                   class:completed={idx < currentStageIndex}
                   class:active={idx === currentStageIndex}
-                  class:rate-prompt={idx === currentStageIndex - 1 && !($project?.stageRatings ?? {})[stageKey]}
+                  class:rate-prompt={idx === currentStageIndex - 1 && !($project?.stageRatings ?? {})[stageKey] && $project?.viewerIsPrincipal}
+
                 >
                   <div class="step__circle"></div>
                   <div class="step__label">{$stageLabels[stageKey] || stageKey}</div>
@@ -557,7 +558,8 @@
                   {/if}
                   {#if idx < currentStageIndex}
                     <div class="step__rating">
-                      <StageRating {projectId} {stageKey} readonly={$irpStaffIsAuthenticated} />
+                      <StageRating {projectId} {stageKey} readonly={$irpStaffIsAuthenticated || !$project?.viewerIsPrincipal} />
+
                     </div>
                   {/if}
                 </div>
