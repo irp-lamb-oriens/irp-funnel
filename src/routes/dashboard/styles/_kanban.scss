@@ -458,3 +458,90 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   "Stuck client" SLA pulse — overdue cards & columns
+   ───────────────────────────────────────────────────────────────────────────
+   Driven from +page.svelte via getStageSlaStatus(): a card gets `.card--overdue`
+   once it has sat in its column past the STAGE_SLA_DAYS threshold, and its
+   column gets `.board__column--overdue` whenever ≥1 of its cards is overdue.
+   The amber→red gradient breathes slowly so it reads as a gentle warning, not
+   an alarm. `prefers-reduced-motion` users get a static tint instead.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes sla-card-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), 0 2px 10px rgba(245, 158, 11, 0.18);
+    border-color: rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.85), 0 4px 18px rgba(239, 68, 68, 0.42);
+    border-color: rgba(239, 68, 68, 0.95);
+  }
+}
+
+@keyframes sla-column-pulse {
+  0%, 100% { background: linear-gradient(180deg, rgba(245, 158, 11, 0.10), rgba(245, 158, 11, 0.02)); }
+  50%      { background: linear-gradient(180deg, rgba(239, 68, 68, 0.16),  rgba(239, 68, 68, 0.04)); }
+}
+
+@keyframes sla-badge-pulse {
+  0%, 100% { background: #f59e0b; }
+  50%      { background: #ef4444; }
+}
+
+.card--overdue {
+  position: relative;
+  border: 1px solid rgba(245, 158, 11, 0.7);
+  animation: sla-card-pulse 2.6s ease-in-out infinite;
+}
+
+.board__column--overdue {
+  border-radius: 12px;
+  animation: sla-column-pulse 3.2s ease-in-out infinite;
+
+  .board__column-header { border-left-width: 3px; }
+}
+
+/* Per-column "⚠ N overdue" pill in the column header */
+.board__column-overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: #fff;
+  background: #f59e0b;
+  font-variant-numeric: tabular-nums;
+  animation: sla-badge-pulse 2.6s ease-in-out infinite;
+}
+
+/* Per-card "⏰ Nd" time-in-column chip */
+.card__sla {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.16);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--overdue,
+  .board__column--overdue,
+  .board__column-overdue {
+    animation: none;
+  }
+  .card--overdue        { border-color: #ef4444; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.7); }
+  .board__column--overdue { background: rgba(245, 158, 11, 0.07); }
+  .board__column-overdue  { background: #ef4444; }
+}
+
+

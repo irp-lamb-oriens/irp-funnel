@@ -12,8 +12,11 @@
     updateClientFields, addNote, triggerEmail, fetchMetrics,
     initDashboardSocket, disconnectDashboardSocket,
     pendingCountByClient, fetchLiveAccessConfig,
+    getStageSlaStatus, STAGE_SLA_DAYS,
     type Client
+
   } from './store.ts';
+
   import {
     STATIC_SECTION_ACCESS, DEFAULT_ACCESS, ALL_VIEWS, ADMIN_EMAILS,
     type DashView,
@@ -100,7 +103,17 @@
     }
   });
 
+  // ─── SLA "stuck client" pulse clock ──────────────────────────────────────
+  // Ticks once a minute so the overdue gradient on Kanban cards/columns stays
+  // current as time passes (even without new data arriving over the socket).
+  let nowMs = Date.now();
+  onMount(() => {
+    const t = setInterval(() => { nowMs = Date.now(); }, 60_000);
+    return () => clearInterval(t);
+  });
+
   // ─── Live access config (Firestore override) ─────────────────────────────
+
   // Set on every login. Overrides STATIC_SECTION_ACCESS when non-null.
   let liveAccessConfig: Record<string, string[]> | null = null;
 
@@ -537,8 +550,10 @@
           {@const pageSize = columnPages[stageKey] || 10}
           {@const visibleCards = filteredCards.slice(0, pageSize)}
           {@const hasMore = filteredCards.length > pageSize}
+          {@const overdueCount = allCards.filter((c) => getStageSlaStatus(c, nowMs).overdue).length}
           <div
             class="board__column"
+            class:board__column--overdue={overdueCount > 0}
             on:dragover={handleDragOver}
             on:drop={(e) => handleDrop(e, stageKey)}
           >
@@ -546,7 +561,14 @@
               <span class="board__column-icon">{STAGE_ICONS[stageKey]}</span>
               <span class="board__column-title">{stageLabel}</span>
               <span class="board__column-count">{colQuery ? `${filteredCards.length}/${allCards.length}` : allCards.length}</span>
+              {#if overdueCount > 0}
+                <span
+                  class="board__column-overdue"
+                  title="{overdueCount} client{overdueCount === 1 ? '' : 's'} past the {STAGE_SLA_DAYS[stageKey]}-day SLA for this column"
+                >⚠ {overdueCount}</span>
+              {/if}
             </div>
+
             <div class="board__column-search">
               <input
                 type="text"
@@ -557,11 +579,14 @@
             </div>
             <div class="board__column-cards">
               {#each visibleCards as client (client.id)}
+                {@const sla = getStageSlaStatus(client, nowMs)}
                 <div
                   class="card"
                   class:card--missing-name={!client.nameKnown}
                   class:card--no-show={isNoShow(client)}
+                  class:card--overdue={sla.overdue}
                   draggable="true"
+
                   on:dragstart={(e) => handleDragStart(e, client)}
                   on:click={() => openClientDetail(client)}
                   role="button"
@@ -590,7 +615,13 @@
                       </span>
                     {/if}
                     {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
+                    {#if sla.overdue}
+                      <span class="card__sla" title="In this column {sla.daysInStage}d — SLA is {sla.thresholdDays}d">
+                        ⏰ {sla.daysInStage}d
+                      </span>
+                    {/if}
                     {#if client.scheduling?.length}
+
                       <span class="card__date">{formatDate(client.scheduling[0])}</span>
                     {/if}
                     {#if (client.agentNotes?.length || 0) + (client.chatbotNotes?.length || 0) > 0}

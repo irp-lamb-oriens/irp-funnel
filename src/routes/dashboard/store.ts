@@ -324,6 +324,91 @@ export const STAGE_COLORS: Record<string, string> = {
   completed: '#059669',
 };
 
+/**
+ * CRM "stuck client" SLA thresholds — days a client may sit in a column before
+ * the team is alerted. MIRRORS the backend source of truth
+ * `irp-funnel-server/jobs/stageSla.ts → STAGE_SLA` (thresholdDays only).
+ * KEEP THE TWO IN SYNC. Stages omitted here have NO SLA and are never flagged
+ * overdue (e.g. sales_opt_in_email, sales_preconsultation, sale_dropped,
+ * completed).
+ */
+export const STAGE_SLA_DAYS: Record<string, number> = {
+  // Sales (alerts start at the post-transcript column)
+  sales_post_transcript: 2,
+  private_feedback_a: 2,
+  sales_pricing_quote: 2,
+  sales_quoted: 3,
+  sales_quote_acceptance: 2,
+  sales_initial_payment: 3,
+  // Ops · Origin
+  ops_self_packing: 7,
+  ops_full_packing: 5,
+  ops_loading: 3,
+  ops_container: 4,
+  ops_exporting: 7,
+  private_feedback_b: 3,
+  // Ops · Destination
+  ops_destination_arrival: 14,
+  ops_redestination: 7,
+  ops_container_mobilization: 5,
+  ops_container_unload: 4,
+  ops_tax_calculation: 5,
+  ops_destination_invoice: 4,
+  // Ops · Import & Delivery
+  ops_import: 7,
+  ops_dua_customs: 7,
+  ops_import_procedure: 7,
+  ops_customs_inspection: 5,
+  ops_delivery_coordination: 4,
+  ops_delivery: 3,
+  ops_pod: 3,
+  ops_insurance_claim: 14,
+  // Completion
+  operations_done: 5,
+  refunds: 7,
+  private_feedback_c: 3,
+};
+
+export interface StageSlaStatus {
+  /** True when the client's current stage has a configured SLA threshold. */
+  hasSla: boolean;
+  /** True when time-in-column has met or exceeded the threshold. */
+  overdue: boolean;
+  /** Whole days the client has spent in the current column. */
+  daysInStage: number;
+  /** The SLA threshold (days) for the current column, or null when no SLA. */
+  thresholdDays: number | null;
+  /** elapsed / threshold ratio (>= 1 ⇒ overdue); null when no SLA. */
+  ratio: number | null;
+}
+
+/**
+ * "Is this client stuck in its column?" — drives the pulsing warning gradient on
+ * overdue Kanban cards/columns. Measures time since `rawDoc.stageEnteredAt`
+ * (falling back to `lastUpdated` / `createdAt`) against the column's SLA
+ * threshold. Stages without an SLA never report overdue, so terminal/early
+ * columns stay calm.
+ */
+export function getStageSlaStatus(client: Client | null | undefined, now: number = Date.now()): StageSlaStatus {
+  const stage = client?.stage ?? '';
+  const thresholdDays = STAGE_SLA_DAYS[stage] ?? null;
+  if (thresholdDays == null) {
+    return { hasSla: false, overdue: false, daysInStage: 0, thresholdDays: null, ratio: null };
+  }
+  const enteredRaw =
+    (client?.rawDoc?.stageEnteredAt as string) || client?.lastUpdated || client?.createdAt || '';
+  const enteredMs = enteredRaw ? new Date(enteredRaw).getTime() : NaN;
+  if (Number.isNaN(enteredMs)) {
+    return { hasSla: true, overdue: false, daysInStage: 0, thresholdDays, ratio: 0 };
+  }
+  const MS_PER_DAY = 86_400_000;
+  const elapsedMs = Math.max(0, now - enteredMs);
+  const daysInStage = Math.floor(elapsedMs / MS_PER_DAY);
+  const ratio = elapsedMs / (thresholdDays * MS_PER_DAY);
+  return { hasSla: true, overdue: ratio >= 1, daysInStage, thresholdDays, ratio };
+}
+
+
 // ─── Server-driven email type registry ──────────────────────────────────────
 //
 // EmailTypeDescriptor mirrors the shape returned by GET /api/dashboard/email-types.

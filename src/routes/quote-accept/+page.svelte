@@ -19,7 +19,9 @@
     | 'accepted'
     | 'declined'
     | 'selected'
+    | 'confirmed'
     | 'error';
+
 
   let state: State = 'loading';
   let errorMessage = '';
@@ -91,6 +93,10 @@
         state = 'selected';
         return;
       }
+      if (data.status === 'confirmed') {
+        state = 'confirmed';
+        return;
+      }
       if (data.status === 'accepted' || data.status === 'declined') {
         state = 'already_responded';
         return;
@@ -160,6 +166,43 @@
       console.error('[quote-accept] submit error:', err);
       formError = 'Could not connect to the server. Please try again.';
       state = 'ready';
+    }
+  }
+
+  // ── Awarded-provider confirmation ──────────────────────────────────────────
+  // Called from the "selected" screen: the provider IRP chose either confirms
+  // they'll handle the move (→ client quote is drafted server-side) or backs out.
+  async function handleConfirm(action: 'confirm' | 'decline') {
+    formError = '';
+    state = 'submitting';
+    try {
+      const res = await fetch('/api/provider/quote-request/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultationId,
+          requestId,
+          token,
+          action: action === 'decline' ? 'decline' : 'confirm',
+        }),
+      });
+      const data = await res.json();
+
+      if (res.status === 409 && data.status === 'confirmed') {
+        state = 'confirmed';
+        return;
+      }
+      if (!res.ok) {
+        formError = data.error ?? 'Could not record your confirmation. Please try again.';
+        state = 'selected';
+        return;
+      }
+
+      state = data.status === 'declined' ? 'declined' : 'confirmed';
+    } catch (err) {
+      console.error('[quote-accept] confirm error:', err);
+      formError = 'Could not connect to the server. Please try again.';
+      state = 'selected';
     }
   }
 
@@ -349,7 +392,7 @@
         </h2>
         <p class="qr-subtitle" style="text-align:center;">
           IRP has selected your company to handle this relocation.
-          A member of our team will contact you shortly with the client's full details and next steps.
+          Please confirm you can take it on at your quoted price so we can finalize everything with the client.
         </p>
 
         <div class="qr-details-grid" style="margin-bottom: 1.5rem;">
@@ -384,8 +427,22 @@
           {/if}
         </div>
 
+        {#if formError}
+          <div class="qr-form-error" style="margin-bottom:1rem;">{formError}</div>
+        {/if}
+
+        <button class="qr-btn qr-btn--primary" type="button" on:click={() => handleConfirm('confirm')}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Confirm — I'll handle this move
+        </button>
+        <!-- Full-width to match the primary CTA above (.qr-btn--ghost defaults to width:auto). -->
+        <button class="qr-btn qr-btn--ghost" type="button" style="margin-top:0.6rem; width:100%;" on:click={() => handleConfirm('decline')}>
+          I can no longer take this on
+        </button>
+
+
         {#if quoteRequest.selectedAt}
-          <p class="qr-expiry-note" style="margin-top:0;">
+          <p class="qr-expiry-note" style="margin-top:1rem;">
             Selected on {formatDate(quoteRequest.selectedAt)}
           </p>
         {/if}
@@ -395,6 +452,19 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
           Officially selected by IRP
         </div>
+      </div>
+
+    <!-- ══ CONFIRMED — assignment locked in ════════════════════════════════ -->
+    {:else if state === 'confirmed'}
+      <div class="qr-card qr-card--center">
+        <div class="qr-confetti-ring">
+          <div class="qr-state-icon qr-state-icon--success">✓</div>
+        </div>
+        <h2 class="qr-title">You're confirmed!</h2>
+        <p class="qr-muted">
+          Thank you for confirming. IRP will finalize the booking with the client, and
+          a member of our team will be in touch with the full move details and next steps.
+        </p>
       </div>
 
     <!-- ══ SUCCESS — DECLINED ══════════════════════════════════════════════ -->
