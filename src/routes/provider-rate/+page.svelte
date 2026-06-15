@@ -2,8 +2,22 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
 
+  // ── Backend base (mirrors src/routes/answer/+page.svelte & status/[id]/store.ts) ──
+  // The funnel frontend (Netlify) and API server (Render) are separate origins,
+  // so public token-gated pages MUST call the absolute backend URL. A relative
+  // `/api/...` would hit the Netlify static site and return its 404 HTML page,
+  // which then fails JSON parsing ("Unexpected token '<'").
+  function getApiUrl(): string {
+    if (typeof window !== 'undefined' && window.location.origin.startsWith('http://localhost')) {
+      return 'http://localhost:8000';
+    }
+    return 'https://irp-funnel-server.onrender.com';
+  }
+  const API_BASE = getApiUrl();
+
   $: ratingId = $page.url.searchParams.get('ratingId') ?? '';
   $: token    = $page.url.searchParams.get('token')    ?? '';
+
 
   type State = 'loading' | 'invalid' | 'not_found' | 'error' | 'ready' | 'submitting' | 'success' | 'already_rated';
   let state: State = 'loading';
@@ -37,7 +51,7 @@
   async function loadData() {
     state = 'loading';
     try {
-      const res = await fetch(`/api/provider/rating-request?ratingId=${ratingId}&token=${token}`);
+      const res = await fetch(`${API_BASE}/api/provider/rating-request?ratingId=${ratingId}&token=${token}`);
       const data = await res.json();
       if (res.status === 404 || res.status === 403) { state = 'not_found'; return; }
       if (!res.ok) { errorMessage = data.error ?? 'Unknown error'; state = 'error'; return; }
@@ -54,7 +68,7 @@
     if (!selectedRating) { formError = 'Please select a star rating.'; return; }
     state = 'submitting';
     try {
-      const res = await fetch('/api/provider/rating-request/submit', {
+      const res = await fetch(`${API_BASE}/api/provider/rating-request/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratingId, token, rating: selectedRating, notes }),

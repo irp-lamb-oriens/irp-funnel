@@ -171,6 +171,35 @@ export interface Metrics {
 export declare const STAGE_LABELS: Record<string, string>;
 export declare const STAGE_ICONS: Record<string, string>;
 export declare const STAGE_COLORS: Record<string, string>;
+/**
+ * CRM "stuck client" SLA thresholds — days a client may sit in a column before
+ * the team is alerted. MIRRORS the backend source of truth
+ * `irp-funnel-server/jobs/stageSla.ts → STAGE_SLA` (thresholdDays only).
+ * KEEP THE TWO IN SYNC. Stages omitted here have NO SLA and are never flagged
+ * overdue (e.g. sales_opt_in_email, sales_preconsultation, sale_dropped,
+ * completed).
+ */
+export declare const STAGE_SLA_DAYS: Record<string, number>;
+export interface StageSlaStatus {
+    /** True when the client's current stage has a configured SLA threshold. */
+    hasSla: boolean;
+    /** True when time-in-column has met or exceeded the threshold. */
+    overdue: boolean;
+    /** Whole days the client has spent in the current column. */
+    daysInStage: number;
+    /** The SLA threshold (days) for the current column, or null when no SLA. */
+    thresholdDays: number | null;
+    /** elapsed / threshold ratio (>= 1 ⇒ overdue); null when no SLA. */
+    ratio: number | null;
+}
+/**
+ * "Is this client stuck in its column?" — drives the pulsing warning gradient on
+ * overdue Kanban cards/columns. Measures time since `rawDoc.stageEnteredAt`
+ * (falling back to `lastUpdated` / `createdAt`) against the column's SLA
+ * threshold. Stages without an SLA never report overdue, so terminal/early
+ * columns stay calm.
+ */
+export declare function getStageSlaStatus(client: Client | null | undefined, now?: number): StageSlaStatus;
 export interface EmailTypeDescriptor {
     value: string;
     label: string;
