@@ -205,6 +205,8 @@ export const STAGE_LABELS: Record<string, string> = {
   // Sales
   sales_opt_in_email: 'Opt-In Email',
   sales_preconsultation: 'Pre-Consultation',
+  sales_no_show: 'No Show',
+  sales_non_qualified: 'Non Qualified',
   sales_post_transcript: 'Post Transcript',
   private_feedback_a: 'Feedback A',
   sales_pricing_quote: 'Pricing Quote',
@@ -246,6 +248,8 @@ export const STAGE_ICONS: Record<string, string> = {
   // Sales
   sales_opt_in_email: '📧',
   sales_preconsultation: '📅',
+  sales_no_show: '👻',
+  sales_non_qualified: '🚷',
   sales_post_transcript: '📝',
   private_feedback_a: '💬',
   sales_pricing_quote: '💰',
@@ -287,6 +291,8 @@ export const STAGE_COLORS: Record<string, string> = {
   // Sales — warm purples/blues
   sales_opt_in_email: '#6366f1',
   sales_preconsultation: '#818cf8',
+  sales_no_show: '#f87171',
+  sales_non_qualified: '#94a3b8',
   sales_post_transcript: '#a78bfa',
   private_feedback_a: '#c084fc',
   sales_pricing_quote: '#8b5cf6',
@@ -322,6 +328,56 @@ export const STAGE_COLORS: Record<string, string> = {
   refunds: '#ef4444',
   private_feedback_c: '#64748b',
   completed: '#059669',
+};
+
+/**
+ * STAGE_DESCRIPTIONS — one short sentence per column, so the team always knows
+ * what each column is for. Surfaced in the Kanban column header (info tooltip)
+ * and inside the client-card stage selector.
+ * MIRRORS the backend source of truth `pipeline.ts → STAGE_DESCRIPTIONS`.
+ * KEEP THE TWO IN SYNC.
+ */
+export const STAGE_DESCRIPTIONS: Record<string, string> = {
+  // Sales
+  sales_opt_in_email: 'Lead captured — opt-in email sent, awaiting engagement before a consultation is booked.',
+  sales_preconsultation: 'Consultation booked — waiting for the scheduled discovery call to take place.',
+  sales_no_show: 'Client did not attend their scheduled consultation call (auto-flagged once the call time passed).',
+  sales_non_qualified: 'Client is not a fit for our service (out of scope / unrelated). Parked — no further sales actions.',
+  sales_post_transcript: 'Call completed — reviewing the consultation transcript before pricing.',
+  private_feedback_a: 'Internal feedback checkpoint after the consultation, before pricing.',
+  sales_pricing_quote: "Building the pricing quote from the client's requirements.",
+  sales_quoted: 'Quote sent to the client — awaiting their review.',
+  sales_quote_acceptance: 'Client accepted the quote — preparing for the initial payment.',
+  sales_initial_payment: 'Initial payment received — deal is won and moves into operations.',
+  sale_dropped: 'Deal did not close after the payment stage. Internal terminal state.',
+  // Ops — Origin
+  ops_self_packing: 'Origin: client is self-packing their belongings.',
+  ops_full_packing: 'Origin: our team is performing the full packing service.',
+  ops_loading: 'Origin: loading the packed goods for transport.',
+  ops_container: 'Origin: goods consolidated into the shipping container.',
+  ops_exporting: 'Origin: export / customs clearance at the origin country.',
+  private_feedback_b: 'Internal feedback checkpoint after origin operations.',
+  // Ops — Destination (Redestination)
+  ops_destination_arrival: 'Destination: shipment has arrived at the destination port / country.',
+  ops_redestination: 'Destination: coordinating onward routing to the final destination.',
+  ops_container_mobilization: 'Destination: moving the container to the fiscal / bonded warehouse.',
+  ops_container_unload: 'Destination: unloading the container at the warehouse.',
+  ops_tax_calculation: 'Destination: calculating import taxes and duties.',
+  ops_destination_invoice: 'Destination: issuing the destination-costs invoice to the client.',
+  // Ops — Destination (Import & Delivery)
+  ops_import: 'Destination: import process underway.',
+  ops_dua_customs: 'Destination: DUA customs declaration in progress.',
+  ops_import_procedure: 'Destination: completing the formal import procedure.',
+  ops_customs_inspection: 'Destination: goods undergoing customs inspection.',
+  ops_delivery_coordination: 'Destination: coordinating the final delivery with the client.',
+  ops_delivery: "Destination: delivering the goods to the client's address.",
+  ops_pod: 'Destination: collecting proof of delivery (POD).',
+  ops_insurance_claim: 'Handling an insurance claim for damaged / lost items.',
+  // Completion
+  operations_done: 'All operations complete — wrapping up the move.',
+  refunds: 'Processing a refund for the client.',
+  private_feedback_c: 'Final internal feedback checkpoint after the move.',
+  completed: 'Move fully completed and closed.',
 };
 
 /**
@@ -406,6 +462,102 @@ export function getStageSlaStatus(client: Client | null | undefined, now: number
   const daysInStage = Math.floor(elapsedMs / MS_PER_DAY);
   const ratio = elapsedMs / (thresholdDays * MS_PER_DAY);
   return { hasSla: true, overdue: ratio >= 1, daysInStage, thresholdDays, ratio };
+}
+
+export interface StageJourneySegment {
+  /** Pipeline stage key for this leg of the journey. */
+  stage: string;
+  /** Human label for the stage. */
+  label: string;
+  /** ISO timestamp the client entered this stage. */
+  enteredAt: string;
+  /** ISO timestamp the client left this stage, or null if still here. */
+  leftAt: string | null;
+  /** Milliseconds spent in this stage (live for the current stage). */
+  durationMs: number;
+  /** Whole days spent in this stage. */
+  days: number;
+  /** True for the stage the client is currently in. */
+  current: boolean;
+}
+
+const MS_PER_DAY_J = 86_400_000;
+
+/**
+ * Reconstruct the chronological time-per-column journey for a client purely
+ * from its `activityLog` stage_change entries + `createdAt` + the live
+ * `stageEnteredAt`. No extra Firestore field is needed — every move already
+ * records a timestamped `stage_change`, so the full history (and how long the
+ * client spent in each column, in order) is derivable here.
+ *
+ * The last segment is always the client's CURRENT column with `leftAt: null`
+ * and a live `durationMs` — which is exactly why the counter "resets" visually
+ * when a card moves: the previous column's segment is closed and a fresh one
+ * starts at 0.
+ */
+export function getStageJourney(
+  client: Client | null | undefined,
+  now: number = Date.now(),
+): StageJourneySegment[] {
+  if (!client) return [];
+
+  const log = Array.isArray(client.activityLog) ? client.activityLog : [];
+  const changes = log
+    .filter((e) => e && e.type === 'stage_change' && e.timestamp)
+    .map((e) => ({ from: e.from ?? null, to: e.to ?? null, timestamp: e.timestamp }))
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  const createdAt =
+    client.createdAt ||
+    (client.rawDoc?.createdAt as string) ||
+    changes[0]?.timestamp ||
+    new Date(now).toISOString();
+
+  const segments: StageJourneySegment[] = [];
+
+  // The first leg's stage is the `from` of the first change, else the client's
+  // current stage (when there were never any logged moves).
+  let currentStage =
+    changes.length > 0 && changes[0].from ? (changes[0].from as string) : client.stage;
+  let enteredAt = createdAt;
+
+  for (const ch of changes) {
+    const startMs = new Date(enteredAt).getTime();
+    const endMs = new Date(ch.timestamp).getTime();
+    const durationMs = Math.max(
+      0,
+      (Number.isNaN(endMs) ? now : endMs) - (Number.isNaN(startMs) ? now : startMs),
+    );
+    segments.push({
+      stage: currentStage,
+      label: STAGE_LABELS[currentStage] || currentStage,
+      enteredAt,
+      leftAt: ch.timestamp,
+      durationMs,
+      days: Math.floor(durationMs / MS_PER_DAY_J),
+      current: false,
+    });
+    currentStage = (ch.to as string) || currentStage;
+    enteredAt = ch.timestamp;
+  }
+
+  // Open (current) segment — authoritative stage from the client record, and
+  // the live clock anchored on stageEnteredAt when available.
+  const finalStage = client.stage || currentStage;
+  const liveEnteredAt = (client.rawDoc?.stageEnteredAt as string) || enteredAt;
+  const liveStartMs = new Date(liveEnteredAt).getTime();
+  const liveDurationMs = Math.max(0, now - (Number.isNaN(liveStartMs) ? now : liveStartMs));
+  segments.push({
+    stage: finalStage,
+    label: STAGE_LABELS[finalStage] || finalStage,
+    enteredAt: liveEnteredAt,
+    leftAt: null,
+    durationMs: liveDurationMs,
+    days: Math.floor(liveDurationMs / MS_PER_DAY_J),
+    current: true,
+  });
+
+  return segments;
 }
 
 

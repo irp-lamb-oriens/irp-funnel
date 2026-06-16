@@ -6,7 +6,7 @@
     isAuthenticated, authEmail, authToken,
     clients, selectedClient, metrics, loading, error,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
-    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES,
+    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES,
     requestOTP, verifyOTP, checkAuth, logout,
     fetchClients, fetchClientDetail, updateClientStage,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
@@ -335,6 +335,19 @@
   $: stageEntries = Object.entries(STAGE_LABELS);
 
   const stageKeys = Object.keys(STAGE_LABELS);
+
+  /**
+   * Whole days a client has been sitting in its current column — independent
+   * of whether the column has an SLA. Drives the always-visible ⏰ day counter
+   * on every Kanban card. Mirrors getStageSlaStatus's time source so the two
+   * never disagree.
+   */
+  function daysInColumn(client: any, now: number = nowMs): number {
+    const raw = client?.rawDoc?.stageEnteredAt || client?.lastUpdated || client?.createdAt || '';
+    const ms = raw ? new Date(raw).getTime() : NaN;
+    if (Number.isNaN(ms)) return 0;
+    return Math.floor(Math.max(0, now - ms) / 86_400_000);
+  }
   const postTranscriptIdx = stageKeys.indexOf('sales_post_transcript');
 
   function isMissingTranscript(client: Client): boolean {
@@ -559,7 +572,14 @@
           >
             <div class="board__column-header" style="border-color: {STAGE_COLORS[stageKey]}">
               <span class="board__column-icon">{STAGE_ICONS[stageKey]}</span>
-              <span class="board__column-title">{stageLabel}</span>
+              <span class="board__column-title" title={STAGE_DESCRIPTIONS[stageKey] || stageLabel}>{stageLabel}</span>
+              {#if STAGE_DESCRIPTIONS[stageKey]}
+                <span
+                  class="board__column-info"
+                  title={STAGE_DESCRIPTIONS[stageKey]}
+                  aria-label={STAGE_DESCRIPTIONS[stageKey]}
+                >ⓘ</span>
+              {/if}
               <span class="board__column-count">{colQuery ? `${filteredCards.length}/${allCards.length}` : allCards.length}</span>
               {#if overdueCount > 0}
                 <span
@@ -615,11 +635,15 @@
                       </span>
                     {/if}
                     {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
-                    {#if sla.overdue}
-                      <span class="card__sla" title="In this column {sla.daysInStage}d — SLA is {sla.thresholdDays}d">
-                        ⏰ {sla.daysInStage}d
-                      </span>
-                    {/if}
+                    <span
+                      class="card__sla"
+                      class:card__sla--overdue={sla.overdue}
+                      title={sla.hasSla
+                        ? `In this column ${daysInColumn(client, nowMs)}d — SLA is ${sla.thresholdDays}d`
+                        : `In this column ${daysInColumn(client, nowMs)}d`}
+                    >
+                      ⏰ {daysInColumn(client, nowMs)}d
+                    </span>
                     {#if client.scheduling?.length}
 
                       <span class="card__date">{formatDate(client.scheduling[0])}</span>

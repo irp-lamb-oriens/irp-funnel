@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import {
     selectedClient, detailPanelOpen,
-    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, EMAIL_TYPES, emailTypes, fetchEmailTypes,
+    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, emailTypes, fetchEmailTypes,
+    getStageJourney,
     SHIPPING_MODE_LABEL, PACKING_TIER_LABEL,
     selectedSentEmailId,
     presendEmail,
@@ -66,7 +67,29 @@
   async function chooseStage(stageKey: string) {
     if (!$selectedClient) return;
     stagePopoverOpen = false;
+    stageSearch = '';
     await handleStageChange($selectedClient.id, stageKey);
+  }
+
+  // ── Searchable stage selector ──────────────────────────────────────────
+  let stageSearch = '';
+  $: filteredStageEntries = stageSearch.trim()
+    ? stageEntries.filter(([k, l]) =>
+        l.toLowerCase().includes(stageSearch.toLowerCase()) ||
+        k.toLowerCase().includes(stageSearch.toLowerCase()))
+    : stageEntries;
+
+  /** Format a duration in ms as a compact "3d 4h" / "5h 2m" / "12m" string. */
+  function fmtDur(ms: number): string {
+    if (!ms || ms < 0) ms = 0;
+    const totalMin = Math.floor(ms / 60000);
+    const days = Math.floor(totalMin / 1440);
+    const hours = Math.floor((totalMin % 1440) / 60);
+    const mins = totalMin % 60;
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${mins}m`;
+    if (mins > 0) return `${mins}m`;
+    return '<1m';
   }
 
   // ── Insights tab state ─────────────────────────────────────────────────
@@ -525,18 +548,32 @@
 
       {#if stagePopoverOpen}
         <div class="detail-panel__stage-popover" role="presentation" on:click|stopPropagation>
-          <div class="detail-panel__stage-popover-grid">
-            {#each stageEntries as [stageKey, stageLabel]}
+          <!-- svelte-ignore a11y-autofocus -->
+          <input
+            class="detail-panel__stage-search"
+            type="text"
+            placeholder="Search stage…"
+            bind:value={stageSearch}
+            autofocus
+          />
+          <div class="detail-panel__stage-list">
+            {#each filteredStageEntries as [stageKey, stageLabel]}
               <button
-                class="detail-panel__stage-popover-dot"
+                class="detail-panel__stage-row"
                 class:active={$selectedClient.stage === stageKey}
-                style="background: {$selectedClient.stage === stageKey ? STAGE_COLORS[stageKey] : 'transparent'}; border-color: {STAGE_COLORS[stageKey]}"
-                title={stageLabel}
+                style="--stage-color: {STAGE_COLORS[stageKey]}"
+                title={STAGE_DESCRIPTIONS[stageKey] || stageLabel}
                 disabled={stageChanging}
                 on:click={() => chooseStage(stageKey)}
               >
-                <span>{STAGE_ICONS[stageKey]}</span>
+                <span class="detail-panel__stage-row-icon">{STAGE_ICONS[stageKey]}</span>
+                <span class="detail-panel__stage-row-label">{stageLabel}</span>
+                {#if $selectedClient.stage === stageKey}
+                  <span class="detail-panel__stage-row-check">✓</span>
+                {/if}
               </button>
+            {:else}
+              <div class="detail-panel__stage-empty">No stages match "{stageSearch}"</div>
             {/each}
           </div>
         </div>
@@ -1047,6 +1084,32 @@
           });
           return out;
         })()}
+
+        {@const journey = getStageJourney(sc)}
+        <div class="detail-journey__columns">
+          <div class="detail-journey__columns-header">
+            <span>⏱ Time spent per column</span>
+            <span class="detail-journey__columns-sub">{journey.length} stage{journey.length === 1 ? '' : 's'} · chronological</span>
+          </div>
+          <ol class="detail-journey__columns-list">
+            {#each journey as seg}
+              <li class="detail-journey__col" class:detail-journey__col--current={seg.current}>
+                <span class="detail-journey__col-dot" style="background: {STAGE_COLORS[seg.stage] || '#94a3b8'}"></span>
+                <span class="detail-journey__col-icon">{STAGE_ICONS[seg.stage] || '•'}</span>
+                <div class="detail-journey__col-body">
+                  <div class="detail-journey__col-name">
+                    {seg.label}
+                    {#if seg.current}<span class="detail-journey__col-badge">current</span>{/if}
+                  </div>
+                  <div class="detail-journey__col-meta" title={seg.enteredAt ? exactTime(seg.enteredAt) : ''}>
+                    Entered {seg.enteredAt ? relativeTime(seg.enteredAt) : '—'}
+                  </div>
+                </div>
+                <span class="detail-journey__col-duration">{fmtDur(seg.durationMs)}</span>
+              </li>
+            {/each}
+          </ol>
+        </div>
 
         <div class="detail-journey">
           {#if events.length === 0}

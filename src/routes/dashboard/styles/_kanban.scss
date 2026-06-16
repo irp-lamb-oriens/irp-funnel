@@ -519,18 +519,38 @@
   animation: sla-badge-pulse 2.6s ease-in-out infinite;
 }
 
-/* Per-card "⏰ Nd" time-in-column chip */
+/* Per-card "⏰ Nd" time-in-column chip — ALWAYS visible.
+   Neutral slate by default; the `--overdue` modifier turns it amber when the
+   client has blown past the column's SLA threshold. */
 .card__sla {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 6px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: $r-xs;
   font-size: 11px;
   font-weight: 700;
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.16);
+  color: $text-dim;
+  background: $surface-3;
   font-variant-numeric: tabular-nums;
+  transition: color $t-fast, background $t-fast;
+
+  &--overdue {
+    color: #b45309; // amber-700 — readable on the amber-tint chip below
+    background: rgba($warning, 0.16);
+  }
+}
+
+/* Column-header info "ⓘ" — hover for the column's purpose/description */
+.board__column-info {
+  margin-left: 4px;
+  font-size: 11px;
+  color: $text-dim;
+  cursor: help;
+  user-select: none;
+  transition: color $t-fast;
+
+  &:hover { color: $accent; }
 }
 
 @media (prefers-reduced-motion: reduce) {
