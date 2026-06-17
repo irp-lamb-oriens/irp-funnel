@@ -521,10 +521,11 @@
           class:email-preview-drawer__iframe--editing={editMode === 'visual'}
           title="Email preview"
           srcdoc={frozenSrcDoc}
-          sandbox="allow-same-origin allow-popups"
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           on:load={attachVisualEditor}
         ></iframe>
       {/if}
+
 
     </section>
 
@@ -654,9 +655,10 @@
           class="email-preview-drawer__iframe"
           title="Email body"
           srcdoc={buildIframeSrcDoc(snapshot.bodyHtml)}
-          sandbox="allow-same-origin allow-popups"
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
         ></iframe>
       </section>
+
 
       <section class="email-preview-drawer__engagement">
         <h3 class="email-preview-drawer__h3">Engagement</h3>

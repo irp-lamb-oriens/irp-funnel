@@ -5,8 +5,17 @@
  * the sandboxed email-preview iframe.
  *
  * APPROACH
- *   The iframe keeps its style isolation (sandbox="allow-same-origin allow-popups").
+ *   The iframe keeps its style isolation
+ *   (sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox").
+ *   Note: `allow-popups-to-escape-sandbox` lets links the operator clicks (the
+ *   email CTAs, which use <base target="_blank">) open as NORMAL, un-sandboxed
+ *   tabs — without it the new tab inherits this sandbox and, lacking
+ *   `allow-scripts`, the destination page (e.g. /answer) can't run its scripts.
+ *   We deliberately still omit `allow-scripts` here so the email body itself
+ *   stays script-disabled inside the drawer.
+ *
  *   We reach inside the iframe document from the parent via `contentDocument`
+
  *   (only possible because the srcdoc + allow-same-origin combo puts it in the
  *   same origin) and:
  *     • Toggle `body.contentEditable` on/off
