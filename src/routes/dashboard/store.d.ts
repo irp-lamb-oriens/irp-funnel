@@ -172,6 +172,14 @@ export declare const STAGE_LABELS: Record<string, string>;
 export declare const STAGE_ICONS: Record<string, string>;
 export declare const STAGE_COLORS: Record<string, string>;
 /**
+ * STAGE_DESCRIPTIONS — one short sentence per column, so the team always knows
+ * what each column is for. Surfaced in the Kanban column header (info tooltip)
+ * and inside the client-card stage selector.
+ * MIRRORS the backend source of truth `pipeline.ts → STAGE_DESCRIPTIONS`.
+ * KEEP THE TWO IN SYNC.
+ */
+export declare const STAGE_DESCRIPTIONS: Record<string, string>;
+/**
  * CRM "stuck client" SLA thresholds — days a client may sit in a column before
  * the team is alerted. MIRRORS the backend source of truth
  * `irp-funnel-server/jobs/stageSla.ts → STAGE_SLA` (thresholdDays only).
@@ -200,6 +208,35 @@ export interface StageSlaStatus {
  * columns stay calm.
  */
 export declare function getStageSlaStatus(client: Client | null | undefined, now?: number): StageSlaStatus;
+export interface StageJourneySegment {
+    /** Pipeline stage key for this leg of the journey. */
+    stage: string;
+    /** Human label for the stage. */
+    label: string;
+    /** ISO timestamp the client entered this stage. */
+    enteredAt: string;
+    /** ISO timestamp the client left this stage, or null if still here. */
+    leftAt: string | null;
+    /** Milliseconds spent in this stage (live for the current stage). */
+    durationMs: number;
+    /** Whole days spent in this stage. */
+    days: number;
+    /** True for the stage the client is currently in. */
+    current: boolean;
+}
+/**
+ * Reconstruct the chronological time-per-column journey for a client purely
+ * from its `activityLog` stage_change entries + `createdAt` + the live
+ * `stageEnteredAt`. No extra Firestore field is needed — every move already
+ * records a timestamped `stage_change`, so the full history (and how long the
+ * client spent in each column, in order) is derivable here.
+ *
+ * The last segment is always the client's CURRENT column with `leftAt: null`
+ * and a live `durationMs` — which is exactly why the counter "resets" visually
+ * when a card moves: the previous column's segment is closed and a fresh one
+ * starts at 0.
+ */
+export declare function getStageJourney(client: Client | null | undefined, now?: number): StageJourneySegment[];
 export interface EmailTypeDescriptor {
     value: string;
     label: string;
@@ -942,6 +979,32 @@ export declare function updateQuoteTemplate(templateId: string, updates: Partial
 }>;
 /** Delete a quote template permanently. */
 export declare function deleteQuoteTemplate(templateId: string): Promise<void>;
+export interface QuoteLineTemplate {
+    templateId: string;
+    name: string;
+    description?: string | null;
+    /** Default currency applied to each seeded line (e.g. 'USD'). */
+    currency: string;
+    /** Ordered list of line-item labels. */
+    lines: string[];
+    /** When true, this template is pinned first in selectors (e.g. the seeded Costa Rica preset). */
+    isDefault?: boolean;
+    order?: number;
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string | null;
+}
+/** Fetch all quote line-item templates (defaults first, then newest). */
+export declare function fetchQuoteLineTemplates(): Promise<QuoteLineTemplate[]>;
+/** Create a new quote line-item template. Returns the created doc. */
+export declare function createQuoteLineTemplate(payload: Pick<QuoteLineTemplate, 'name'> & Partial<Pick<QuoteLineTemplate, 'description' | 'currency' | 'lines'>>): Promise<QuoteLineTemplate>;
+/** Partially update a quote line-item template. */
+export declare function updateQuoteLineTemplate(templateId: string, updates: Partial<Pick<QuoteLineTemplate, 'name' | 'description' | 'currency' | 'lines'>>): Promise<{
+    success: boolean;
+    updatedFields: string[];
+}>;
+/** Delete a quote line-item template permanently. */
+export declare function deleteQuoteLineTemplate(templateId: string): Promise<void>;
 /**
  * Apply a template to a quote: seeds the quote's blocks + templateId.
  * The quote's lineItems and all other existing fields are preserved.

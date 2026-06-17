@@ -24,8 +24,14 @@
     extractInsights,
     selectedClient,
     PACKING_TIER_LABEL,
+    // ── Line-item templates (pricing presets) ──
+    fetchQuoteLineTemplates,
+    createQuoteLineTemplate,
+    updateQuoteLineTemplate,
+    deleteQuoteLineTemplate,
   } from '../store.ts';
-  import type { Quote, QuoteLineItem } from '../store.ts';
+  import type { Quote, QuoteLineItem, QuoteLineTemplate } from '../store.ts';
+
   import { aggregateByCurrency } from '$lib/money.ts';
 
   export let clientId: string;
@@ -108,6 +114,123 @@
     lineItems = lineItems.map(li => li.lineId === lineId ? { ...li, [field]: value } : li);
   }
 
+  // ── Line-item templates (pricing presets) ───────────────────────────────────
+  let lineTemplates: QuoteLineTemplate[] = [];
+  let lineTemplatesLoading = false;
+  let selectedLineTemplateId = '';
+
+  // Manage / edit panel state
+  let manageOpen = false;
+  let tmplEditingId: string | null = null; // null → creating a new template
+  let tmplName = '';
+  let tmplCurrency = 'USD';
+  let tmplLinesText = '';
+  let tmplSaving = false;
+  let tmplError = '';
+
+  async function loadLineTemplates() {
+    lineTemplatesLoading = true;
+    try {
+      lineTemplates = await fetchQuoteLineTemplates();
+    } catch {
+      lineTemplates = []; // non-fatal — the selector simply shows no presets
+    } finally {
+      lineTemplatesLoading = false;
+    }
+  }
+
+  /** True when every current line is still blank (no label and no amount). */
+  function linesAreBlank(): boolean {
+    return lineItems.every(li => !String(li.label ?? '').trim() && !(Number(li.amount) > 0));
+  }
+
+  /** Seed the quote's line items from a saved template (labels only; amounts stay editable at 0). */
+  function applyLineTemplate(templateId: string) {
+    const tmpl = lineTemplates.find(t => t.templateId === templateId);
+    if (!tmpl) { selectedLineTemplateId = ''; return; }
+    if (!linesAreBlank()) {
+      const ok = confirm(`Replace the current ${lineItems.length} line item(s) with the "${tmpl.name}" template?`);
+      if (!ok) { selectedLineTemplateId = ''; return; }
+    }
+    const cur = tmpl.currency || 'USD';
+    lineItems = tmpl.lines.map(label => ({
+      lineId: makeLineId(),
+      label,
+      amount: 0,
+      marginPct: defaultMarginPct,
+      marginMode: 'pct' as const,
+      marginFlat: null,
+      currency: cur,
+      providerId: null,
+      notes: null,
+    }));
+    if (lineItems.length === 0) addLine();
+    selectedLineTemplateId = ''; // reset so the same template can be re-applied
+  }
+
+  // ── Manage panel actions ─────────────────────────────────────────────────────
+  function openCreateTemplate() {
+    tmplEditingId = null;
+    tmplName = '';
+    tmplCurrency = 'USD';
+    tmplLinesText = '';
+    tmplError = '';
+    manageOpen = true;
+  }
+
+  function openEditTemplate(t: QuoteLineTemplate) {
+    tmplEditingId = t.templateId;
+    tmplName = t.name;
+    tmplCurrency = t.currency || 'USD';
+    tmplLinesText = (t.lines ?? []).join('\n');
+    tmplError = '';
+    manageOpen = true;
+  }
+
+  /** Quick "save the lines I just built as a reusable template". */
+  function seedTemplateFromCurrentLines() {
+    tmplEditingId = null;
+    tmplName = '';
+    tmplCurrency = lineItems[0]?.currency || 'USD';
+    tmplLinesText = lineItems.map(li => li.label).filter(l => String(l ?? '').trim()).join('\n');
+    tmplError = '';
+    manageOpen = true;
+  }
+
+  async function saveTemplate() {
+    const name = tmplName.trim();
+    const lines = tmplLinesText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!name) { tmplError = 'Template name is required.'; return; }
+    if (lines.length === 0) { tmplError = 'Add at least one line.'; return; }
+    tmplSaving = true;
+    tmplError = '';
+    try {
+      if (tmplEditingId) {
+        await updateQuoteLineTemplate(tmplEditingId, { name, currency: tmplCurrency, lines });
+      } else {
+        await createQuoteLineTemplate({ name, currency: tmplCurrency, lines });
+      }
+      await loadLineTemplates();
+      manageOpen = false;
+    } catch (err: any) {
+      tmplError = 'Error saving template: ' + (err?.message ?? err);
+    } finally {
+      tmplSaving = false;
+    }
+  }
+
+  async function removeTemplate(t: QuoteLineTemplate) {
+    if (!confirm(`Delete the "${t.name}" template? This cannot be undone.`)) return;
+    try {
+      await deleteQuoteLineTemplate(t.templateId);
+      if (tmplEditingId === t.templateId) openCreateTemplate();
+      await loadLineTemplates();
+    } catch (err: any) {
+      tmplError = 'Error deleting template: ' + (err?.message ?? err);
+    }
+  }
+
+
   // ── Load existing quote ────────────────────────────────────────────────────
   async function loadQuote() {
     if (!quoteId) {
@@ -176,6 +299,8 @@
   onMount(async () => {
     await loadQuote();
     resolveServiceType();
+    loadLineTemplates(); // non-fatal; populates the template selector
+
     // Eagerly hydrate the live action-permissions store so canApproveQuotes
     // switches from the static fallback to the live Firestore map on first render.
     // Non-fatal: if the fetch fails, the static QUOTE_APPROVERS list is used.
@@ -457,8 +582,36 @@
 
       <!-- Line items -->
       <div class="qe-field">
-        <label class="qe-label">Quote line items</label>
+        <div class="qe-lines-head">
+          <label class="qe-label">Quote line items</label>
+          <div class="qe-tmpl-bar">
+            <div class="qe-tmpl-select-wrap">
+              <span class="qe-tmpl-spark" aria-hidden="true">✦</span>
+              <select
+                class="qe-tmpl-select"
+                bind:value={selectedLineTemplateId}
+                on:change={() => selectedLineTemplateId && applyLineTemplate(selectedLineTemplateId)}
+                disabled={lineTemplatesLoading}
+                title="Apply a saved line-item template"
+              >
+                <option value="">{lineTemplatesLoading ? 'Loading templates…' : 'Apply a template…'}</option>
+                {#each lineTemplates as t (t.templateId)}
+                  <option value={t.templateId}>{t.name} · {t.lines.length} lines</option>
+                {/each}
+              </select>
+            </div>
+            <button
+              type="button"
+              class="qe-tmpl-manage-btn"
+              on:click={openCreateTemplate}
+              title="Create, edit or delete line-item templates"
+            >
+              <span class="qe-tmpl-manage-gear" aria-hidden="true">⚙</span> Manage
+            </button>
+          </div>
+        </div>
         {#if lineItems.length > 0}
+
           <div class="qe-lines-wrap">
             <table class="qe-lines-table">
               <thead>
@@ -791,6 +944,94 @@
         </div>
       {/if}
 
+      <!-- ── Line-item template manager (modal) ─────────────────────────────── -->
+      {#if manageOpen}
+        <div class="qe-tmpl-backdrop" on:click|self={() => (manageOpen = false)} role="presentation">
+          <div class="qe-tmpl-modal" role="dialog" aria-modal="true" aria-label="Line-item templates">
+            <div class="qe-tmpl-modal__head">
+              <div class="qe-tmpl-modal__titlewrap">
+                <span class="qe-tmpl-modal__spark" aria-hidden="true">✦</span>
+                <h4 class="qe-tmpl-modal__title">Line-item templates</h4>
+              </div>
+              <button type="button" class="qe-tmpl-modal__close" on:click={() => (manageOpen = false)} aria-label="Close">✕</button>
+            </div>
+
+            <div class="qe-tmpl-modal__body">
+              <!-- Saved templates list -->
+              <div class="qe-tmpl-listcol">
+                <div class="qe-tmpl-listcol__head">
+                  <span class="qe-tmpl-listcol__label">Saved templates</span>
+                  <button type="button" class="qe-tmpl-newbtn" class:is-active={tmplEditingId === null} on:click={openCreateTemplate}>+ New</button>
+                </div>
+                {#if lineTemplatesLoading}
+                  <div class="qe-tmpl-empty">Loading…</div>
+                {:else if lineTemplates.length === 0}
+                  <div class="qe-tmpl-empty">No templates yet. Create your first one →</div>
+                {:else}
+                  <div class="qe-tmpl-list">
+                    {#each lineTemplates as t (t.templateId)}
+                      <div class="qe-tmpl-row" class:is-editing={tmplEditingId === t.templateId}>
+                        <button type="button" class="qe-tmpl-row__main" on:click={() => openEditTemplate(t)} title="Edit this template">
+                          <span class="qe-tmpl-row__name">
+                            {t.name}
+                            {#if t.isDefault}<span class="qe-tmpl-badge">default</span>{/if}
+                          </span>
+                          <span class="qe-tmpl-row__meta">{t.lines.length} lines · {t.currency}</span>
+                        </button>
+                        <button type="button" class="qe-tmpl-row__del" on:click={() => removeTemplate(t)} title="Delete template" aria-label="Delete template">🗑</button>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+
+              <!-- Editor form -->
+              <div class="qe-tmpl-formcol">
+                <div class="qe-tmpl-formcol__head">
+                  <span class="qe-tmpl-formcol__label">{tmplEditingId ? 'Edit template' : 'New template'}</span>
+                  <button type="button" class="qe-tmpl-fromlines" on:click={seedTemplateFromCurrentLines} title="Pre-fill the lines below from the current quote">
+                    ⤵ Use current lines
+                  </button>
+                </div>
+                <div class="qe-tmpl-form__row">
+                  <div class="qe-tmpl-form__field qe-tmpl-form__field--grow">
+                    <label class="qe-label" for="qe-tmpl-name">Name</label>
+                    <input id="qe-tmpl-name" class="qe-input qe-input--sm" type="text" placeholder="e.g. Costa Rica — Standard" bind:value={tmplName} />
+                  </div>
+                  <div class="qe-tmpl-form__field">
+                    <label class="qe-label" for="qe-tmpl-cur">Currency</label>
+                    <select id="qe-tmpl-cur" class="qe-select qe-select--sm" bind:value={tmplCurrency}>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="MXN">MXN</option>
+                      <option value="CRC">CRC</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="qe-tmpl-form__field">
+                  <label class="qe-label" for="qe-tmpl-lines">Lines <span class="qe-tmpl-form__hint">one per line</span></label>
+                  <textarea
+                    id="qe-tmpl-lines"
+                    class="qe-textarea qe-tmpl-textarea"
+                    rows="12"
+                    placeholder={"Fondo Compensacion\nOrigin Services\nFlete Internacional\n…"}
+                    bind:value={tmplLinesText}
+                  ></textarea>
+                </div>
+                {#if tmplError}<p class="qe-field-error">⚠ {tmplError}</p>{/if}
+              </div>
+            </div>
+
+            <div class="qe-tmpl-modal__foot">
+              <button type="button" class="qe-btn qe-btn--cancel" on:click={() => (manageOpen = false)} disabled={tmplSaving}>Close</button>
+              <button type="button" class="qe-btn qe-btn--save" on:click={saveTemplate} disabled={tmplSaving}>
+                {#if tmplSaving}<span class="qe-btn-spinner"></span> Saving…{:else}{tmplEditingId ? 'Save changes' : 'Create template'}{/if}
+              </button>
+            </div>
+          </div>
+        </div>
+      {/if}
+
       <!-- Action buttons -->
       <div class="qe-actions">
         <button
@@ -799,6 +1040,7 @@
           disabled={saving}
           on:click={handleSave}
         >
+
           {#if saving}
             <span class="qe-btn-spinner"></span> Saving…
           {:else}
@@ -1773,4 +2015,334 @@
   }
   .qe-field--inline .qe-label { margin: 0; white-space: nowrap; }
   .qe-field--inline .qe-field-hint { flex: 1 0 100%; }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     Line-item templates — selector bar + manager modal (ultra-modern, on-brand)
+     ══════════════════════════════════════════════════════════════════════════ */
+  .qe-lines-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .qe-tmpl-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Template apply dropdown — pill with a leading spark glyph */
+  .qe-tmpl-select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .qe-tmpl-spark {
+    position: absolute;
+    left: 11px;
+    font-size: 11px;
+    color: #02b5bb;
+    pointer-events: none;
+    filter: drop-shadow(0 0 4px rgba(2,181,187,0.35));
+  }
+  .qe-tmpl-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background:
+      linear-gradient(135deg, rgba(2,181,187,0.06), rgba(2,181,187,0.02)),
+      #ffffff;
+    border: 1px solid rgba(2,181,187,0.28);
+    border-radius: 999px;
+    color: #0b3b3d;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 30px 7px 28px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    background-repeat: no-repeat;
+  }
+  .qe-tmpl-select:hover:not(:disabled) {
+    border-color: rgba(2,181,187,0.5);
+    box-shadow: 0 2px 10px rgba(2,181,187,0.16);
+  }
+  .qe-tmpl-select:focus {
+    border-color: rgba(2,181,187,0.6);
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.14);
+  }
+  .qe-tmpl-select:disabled { opacity: 0.6; cursor: progress; }
+
+  /* Manage button — subtle ghost that lifts on hover */
+  .qe-tmpl-manage-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    color: #475569;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+  }
+  .qe-tmpl-manage-btn:hover {
+    background: rgba(2,181,187,0.08);
+    border-color: rgba(2,181,187,0.3);
+    color: #02999e;
+    transform: translateY(-1px);
+  }
+  .qe-tmpl-manage-gear { font-size: 12px; line-height: 1; }
+
+  /* ── Modal ───────────────────────────────────────────────────────────────── */
+  .qe-tmpl-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(11,59,61,0.34);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: qe-tmpl-fade 0.18s ease;
+  }
+  @keyframes qe-tmpl-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .qe-tmpl-modal {
+    width: min(760px, 100%);
+    max-height: min(86vh, 720px);
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid rgba(2,181,187,0.16);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(11,59,61,0.28), 0 4px 18px rgba(0,0,0,0.08);
+    animation: qe-tmpl-pop 0.2s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes qe-tmpl-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .qe-tmpl-modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eef2f6;
+    background: linear-gradient(135deg, rgba(2,181,187,0.07), rgba(2,181,187,0));
+  }
+  .qe-tmpl-modal__titlewrap { display: flex; align-items: center; gap: 9px; }
+  .qe-tmpl-modal__spark {
+    font-size: 14px;
+    color: #02b5bb;
+    filter: drop-shadow(0 0 6px rgba(2,181,187,0.4));
+  }
+  .qe-tmpl-modal__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0b3b3d;
+  }
+  .qe-tmpl-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .qe-tmpl-modal__close:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+  .qe-tmpl-modal__body {
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    gap: 0;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Saved templates column */
+  .qe-tmpl-listcol {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #eef2f6;
+    background: #fbfdfe;
+    min-height: 0;
+  }
+  .qe-tmpl-listcol__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 8px;
+  }
+  .qe-tmpl-listcol__label,
+  .qe-tmpl-formcol__label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+  .qe-tmpl-newbtn {
+    background: rgba(2,181,187,0.08);
+    border: 1px solid rgba(2,181,187,0.22);
+    color: #02999e;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s;
+  }
+  .qe-tmpl-newbtn:hover, .qe-tmpl-newbtn.is-active {
+    background: rgba(2,181,187,0.16);
+    border-color: rgba(2,181,187,0.4);
+  }
+
+  .qe-tmpl-empty {
+    padding: 18px 14px;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .qe-tmpl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px 12px;
+    overflow-y: auto;
+  }
+  .qe-tmpl-row {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .qe-tmpl-row:hover { background: #ffffff; border-color: #e2e8f0; }
+  .qe-tmpl-row.is-editing {
+    background: #ffffff;
+    border-color: rgba(2,181,187,0.4);
+    box-shadow: 0 0 0 3px rgba(2,181,187,0.1);
+  }
+  .qe-tmpl-row__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 9px 10px;
+    text-align: left;
+    min-width: 0;
+  }
+  .qe-tmpl-row__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+  }
+  .qe-tmpl-badge {
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #02999e;
+    background: rgba(2,181,187,0.12);
+    border: 1px solid rgba(2,181,187,0.25);
+    border-radius: 20px;
+    padding: 1px 6px;
+  }
+  .qe-tmpl-row__meta { font-size: 11px; color: #94a3b8; }
+  .qe-tmpl-row__del {
+    align-self: center;
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .qe-tmpl-row__del:hover { background: #fef2f2; color: #dc2626; }
+
+  /* Editor form column */
+  .qe-tmpl-formcol {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px 16px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .qe-tmpl-formcol__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .qe-tmpl-fromlines {
+    background: none;
+    border: 1px dashed rgba(2,181,187,0.3);
+    color: #02999e;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 9px;
+    cursor: pointer;
+    transition: background 0.13s, border-color 0.13s;
+  }
+  .qe-tmpl-fromlines:hover { background: rgba(2,181,187,0.08); border-color: rgba(2,181,187,0.5); }
+
+  .qe-tmpl-form__row { display: flex; gap: 10px; align-items: flex-end; }
+  .qe-tmpl-form__field { display: flex; flex-direction: column; gap: 5px; }
+  .qe-tmpl-form__field--grow { flex: 1; }
+  .qe-tmpl-form__hint { text-transform: none; letter-spacing: 0; color: #cbd5e1; font-weight: 600; margin-left: 4px; }
+  .qe-tmpl-textarea {
+    font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    min-height: 180px;
+  }
+
+  .qe-tmpl-modal__foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid #eef2f6;
+    background: #fbfdfe;
+  }
+
+  @media (max-width: 560px) {
+    .qe-tmpl-modal__body { grid-template-columns: 1fr; }
+    .qe-tmpl-listcol { border-right: none; border-bottom: 1px solid #eef2f6; max-height: 180px; }
+  }
 </style>
+

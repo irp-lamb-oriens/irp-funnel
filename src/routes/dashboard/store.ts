@@ -2333,6 +2333,68 @@ export async function deleteQuoteTemplate(templateId: string): Promise<void> {
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Quote LINE-ITEM templates (pricing presets)
+//
+// Top-level Firestore collection: quote_line_templates/{templateId}
+// A QuoteLineTemplate is a named, ordered list of line-item LABELS (e.g. the
+// Costa Rica cost breakdown). Applying one in the Quote Editor seeds the
+// quote's line items with those labels (amount 0, default margin, the
+// template's default currency). Distinct from QuoteTemplate (content blocks).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface QuoteLineTemplate {
+  templateId: string;
+  name: string;
+  description?: string | null;
+  /** Default currency applied to each seeded line (e.g. 'USD'). */
+  currency: string;
+  /** Ordered list of line-item labels. */
+  lines: string[];
+  /** When true, this template is pinned first in selectors (e.g. the seeded Costa Rica preset). */
+  isDefault?: boolean;
+  order?: number;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
+}
+
+/** Fetch all quote line-item templates (defaults first, then newest). */
+export async function fetchQuoteLineTemplates(): Promise<QuoteLineTemplate[]> {
+  const data = await apiFetch('/api/dashboard/quote-line-templates');
+  return (data.templates ?? []) as QuoteLineTemplate[];
+}
+
+/** Create a new quote line-item template. Returns the created doc. */
+export async function createQuoteLineTemplate(
+  payload: Pick<QuoteLineTemplate, 'name'> & Partial<Pick<QuoteLineTemplate, 'description' | 'currency' | 'lines'>>,
+): Promise<QuoteLineTemplate> {
+  const data = await apiFetch('/api/dashboard/quote-line-templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.template as QuoteLineTemplate;
+}
+
+/** Partially update a quote line-item template. */
+export async function updateQuoteLineTemplate(
+  templateId: string,
+  updates: Partial<Pick<QuoteLineTemplate, 'name' | 'description' | 'currency' | 'lines'>>,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return apiFetch(`/api/dashboard/quote-line-templates/${templateId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Delete a quote line-item template permanently. */
+export async function deleteQuoteLineTemplate(templateId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/quote-line-templates/${templateId}`, {
+    method: 'DELETE',
+  });
+}
+
+
 /**
  * Apply a template to a quote: seeds the quote's blocks + templateId.
  * The quote's lineItems and all other existing fields are preserved.
