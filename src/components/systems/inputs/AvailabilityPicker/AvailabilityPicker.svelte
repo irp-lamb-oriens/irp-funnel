@@ -174,6 +174,11 @@
 
   function getStartDate(): Date {
     let date = convertToCST(new Date());
+    // CRM staff bypass the 2-working-day grace period entirely: the calendar
+    // grid starts from TODAY so operators can book same-day / next-day calls.
+    // The public hero form leaves staffMode=false, so the grace period below
+    // still applies to self-scheduling clients — behaviour is unchanged there.
+    if (staffMode) return date;
     let workingDaysToAdd = 2;
     while (workingDaysToAdd > 0) {
       date.setUTCDate(date.getUTCDate() + 1);
@@ -182,6 +187,7 @@
     }
     return date;
   }
+
 
   async function loadAvailableDates() {
     try {
