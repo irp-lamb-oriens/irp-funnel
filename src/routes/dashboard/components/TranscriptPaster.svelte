@@ -7,77 +7,30 @@
 
   let rawText = '';
   let parsing = false;
-  let parserType: 'happyscribe' | 'raw' = 'happyscribe';
-
-  function parseHappyScribe(text: string) {
-    const segments: { role: string; content: string }[] = [];
-    const regex = /^\[(?:\d{2}:)?\d{2}:\d{2}\.\d{2}\]\s+-\s+(.+)$/gm;
-    
-    let match;
-    let lastIndex = 0;
-    let currentSpeaker = '';
-    
-    while ((match = regex.exec(text)) !== null) {
-      if (currentSpeaker) {
-        const content = text.substring(lastIndex, match.index).trim();
-        if (content) {
-          segments.push({ role: currentSpeaker, content });
-        }
-      }
-      currentSpeaker = match[1].trim();
-      lastIndex = regex.lastIndex;
-    }
-    
-    if (currentSpeaker) {
-      const content = text.substring(lastIndex).trim();
-      if (content) {
-        segments.push({ role: currentSpeaker, content });
-      }
-    }
-    
-    return segments;
-  }
 
   async function handleSave() {
-    console.log('[TranscriptPaster] handleSave triggered', { clientId, parserType, rawTextLength: rawText.length });
+    console.log('[TranscriptPaster] handleSave triggered', { clientId, rawTextLength: rawText.length });
     if (!rawText.trim()) {
       console.log('[TranscriptPaster] No text, aborting.');
       return;
     }
     parsing = true;
     try {
+      // Raw-text only: store the pasted transcript verbatim onto the
+      // centralized notes field. No external-format (HappyScribe) parsing.
       const notesPayload = {
         text: rawText,
         source: 'manual_paste',
         fetchedAt: new Date().toISOString(),
       };
-      console.log('[TranscriptPaster] Preparing to save notes payload:', notesPayload);
+      console.log('[TranscriptPaster] Saving raw transcript payload:', notesPayload);
 
-      if (parserType === 'happyscribe') {
-        console.log('[TranscriptPaster] Parsing as HappyScribe format...');
-        const segments = parseHappyScribe(rawText);
-        if (segments.length === 0) {
-          console.error('[TranscriptPaster] No segments parsed from HappyScribe format.');
-          toasts.error('No segments parsed. Check format.');
-          parsing = false;
-          return;
-        }
-        console.log(`[TranscriptPaster] Parsed ${segments.length} segments.`);
-        
-        // Update both lastCalendarEvent.notes and chatHistory
-        await editField(clientId, 'lastCalendarEvent.notes', notesPayload);
-        console.log('[TranscriptPaster] editField call for lastCalendarEvent.notes completed.');
-        await editField(clientId, 'chatHistory', segments);
-        console.log('[TranscriptPaster] editField call for chatHistory completed.');
-        toasts.success(`Parsed ${segments.length} messages and saved to centralized notes.`);
-      } else {
-        // Just update lastCalendarEvent.notes for raw text
-        console.log('[TranscriptPaster] Saving as raw text...');
-        await editField(clientId, 'lastCalendarEvent.notes', notesPayload);
-        console.log('[TranscriptPaster] editField call for lastCalendarEvent.notes completed.');
-        toasts.success('Raw transcript saved to centralized notes.');
-      }
+      await editField(clientId, 'lastCalendarEvent.notes', notesPayload);
+      console.log('[TranscriptPaster] editField call for lastCalendarEvent.notes completed.');
+      toasts.success('Raw transcript saved to centralized notes.');
+
       rawText = '';
+
       console.log('[TranscriptPaster] Save successful, rawText cleared.');
     } catch (e: any) {
       console.error('[TranscriptPaster] Error in handleSave:', e);
@@ -91,11 +44,7 @@
 
 <div class="transcript-paster">
   <div class="tp-header">
-    <span class="tp-title">External Transcript Parser</span>
-    <select bind:value={parserType} class="tp-select">
-      <option value="happyscribe">Happy Scribe</option>
-      <option value="raw">Raw Text</option>
-    </select>
+    <span class="tp-title">Paste Transcript</span>
   </div>
   <textarea 
     bind:value={rawText} 
@@ -104,8 +53,9 @@
     class="tp-textarea"
   ></textarea>
   <button class="tp-button" on:click={handleSave} disabled={parsing || !rawText.trim()}>
-    {parsing ? 'Saving...' : 'Parse & Save'}
+    {parsing ? 'Saving...' : 'Save Transcript'}
   </button>
+
 </div>
 
 <style lang="scss">
@@ -204,40 +154,8 @@
     }
   }
 
-  // Source select — pill-shaped with custom chevron
-  .tp-select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding: 4px 26px 4px 10px;
-    border: 1.5px solid var(--tp-border);
-    border-radius: var(--tp-r-full);
-    font-size: 12px;
-    font-weight: 600;
-    font-family: inherit;
-    color: var(--tp-text-2);
-    background-color: var(--tp-surface);
-    // Custom teal chevron SVG
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2302b5bb' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 9px center;
-    cursor: pointer;
-    transition:
-      border-color 160ms var(--tp-anim),
-      box-shadow   160ms var(--tp-anim),
-      background-color 160ms var(--tp-anim);
-
-    &:focus {
-      outline: none;
-      border-color: var(--tp-accent);
-      background-color: var(--tp-accent-subtle);
-      box-shadow: 0 0 0 3px rgba(2,181,187,.14);
-    }
-    &:hover:not(:focus) {
-      border-color: rgba(2,181,187,.35);
-    }
-  }
-
   // Textarea — monospace, focus-glow, custom scrollbar
+
   .tp-textarea {
     width: 100%;
     box-sizing: border-box;
