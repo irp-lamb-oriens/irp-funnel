@@ -2409,3 +2409,44 @@ export async function applyTemplateToQuote(
     blocks: template.blocks,
   } as Partial<Quote>);
 }
+
+
+// ─── Provider RFQ (request for quote) ─────────────────────────────────────────
+// Manual, human-triggered ONLY. Contacting providers is never automatic: an
+// operator reviews the matched providers and clicks "Send RFQ". This calls the
+// shared blast service which creates quoteRequest docs and emails each provider.
+
+export interface SendRfqResult {
+  success: boolean;
+  consultationId: string;
+  counts: { created: number; skipped: number; failed: number };
+  created: Array<{ providerId: string; providerName: string }>;
+  skipped: Array<{ providerId: string; providerName: string }>;
+  failed: Array<{ providerId: string; providerName: string }>;
+  expiresAt: string | null;
+}
+
+/**
+ * Send the RFQ (request for quote) to providers for a consultation.
+ *
+ * @param clientId    the consultation/client id
+ * @param providerIds optional explicit provider targets (e.g. the matched ones
+ *                    the operator reviewed). When omitted, the server matches
+ *                    providers by the consultation's modality/category/route.
+ *
+ * Idempotent on the server: a provider with a live (pending/accepted/selected)
+ * request is skipped, so re-sending never double-contacts anyone.
+ */
+export async function sendProviderRfq(
+  clientId: string,
+  providerIds?: string[],
+): Promise<SendRfqResult> {
+  return apiFetch('/api/provider/quote-request/blast', {
+    method: 'POST',
+    body: JSON.stringify({
+      consultationId: clientId,
+      ...(providerIds && providerIds.length > 0 ? { providerIds } : {}),
+    }),
+  }) as Promise<SendRfqResult>;
+}
+
