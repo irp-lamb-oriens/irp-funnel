@@ -407,8 +407,8 @@
     <div class="cp-auth-wall">
       <div class="cp-auth-wall__card">
         <span class="cp-auth-wall__icon">🌍</span>
-        <h1 class="cp-auth-wall__title">Client Portal</h1>
-        <p class="cp-auth-wall__subtitle">Track your relocation progress</p>
+        <h1 class="cp-auth-wall__title">Your Relocation Portal</h1>
+        <p class="cp-auth-wall__subtitle">Track your move, view your quote, and chat with our team — all in one place</p>
 
         {#if loginStep === 'email'}
           <form on:submit|preventDefault={handleRequestOTP} class="cp-auth-wall__form">

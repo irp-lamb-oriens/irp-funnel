@@ -40,6 +40,17 @@
 
 	$: currentFunnel;
 
+	// --- RELOCATION PORTAL LINK ---
+	// Mirrors the server convention: the consultation doc id is the client's
+	// email with `@` and `.` replaced by `_` (see bookConsultation.emailToDocId),
+	// and the portal lives at `/status/{docId}` (see processEmailQueue's
+	// `${FRONTEND_URL}/status/${consultationDocId}`). Computing it here lets us
+	// hand the client their portal immediately on the thank-you screen — the
+	// same hub the welcome email points them to.
+	$: portalEmail = (email ?? $store.email ?? '').trim();
+	$: portalUrl = portalEmail ? `/status/${portalEmail.replace(/[@.]/g, '_')}` : null;
+
+
 	// --- SUBMIT LOGIC (from SubmitStage) ---
 	let getDisplayData: () => Record<string, any>;
 	let funnelCopyForDisplay: string | null = null;
@@ -221,8 +232,33 @@
 				{#if countryTo}<div><b>To:</b> {countryTo}</div>{/if}
 			</div>
 		{/if}
+
+		{#if portalUrl}
+			<div class="portal-card">
+				<span class="portal-card__glow" aria-hidden="true"></span>
+				<span class="portal-card__badge" aria-hidden="true">🏠</span>
+				<h3 class="portal-card__title">Your Relocation Portal is ready</h3>
+				<p class="portal-card__copy">
+					Everything about your move now lives in one place — track every stage, view your
+					quote, chat with our assistant Lily, and message our team. We've also emailed you
+					the link so it's always one tap away.
+				</p>
+				<a class="portal-card__cta" href={portalUrl}>
+					<span>Access your relocation system</span>
+					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<path d="M5 12h14" />
+						<path d="m12 5 7 7-7 7" />
+					</svg>
+				</a>
+				<span class="portal-card__pillars">
+					Track your move · View your quote · Chat with Lily
+				</span>
+			</div>
+		{/if}
+
 	</div>
 </div>
+
 
 
 <style>
@@ -308,4 +344,161 @@
 			padding: 25px;
 		}
 	}
+
+	/* --- Relocation Portal CTA card ---
+	   Token-driven so it stays in lockstep with the brand palette and the
+	   status portal it links to: teal = var(--color-highlight-2), ink text =
+	   var(--color-foreground), Kiona titles + Jost body via the font tokens. */
+	.portal-card {
+		position: relative;
+		isolation: isolate;
+		overflow: hidden;
+		width: 100%;
+		max-width: 460px;
+		margin: 8px auto 0;
+		padding: 34px 28px 30px;
+		background:
+			linear-gradient(
+				160deg,
+				rgba(var(--color-highlight-2-rgb), 0.10) 0%,
+				rgba(var(--color-highlight-2-rgb), 0.03) 46%,
+				var(--color-background) 100%
+			);
+		border: 1px solid rgba(var(--color-highlight-2-rgb), 0.28);
+		border-radius: 22px;
+		text-align: center;
+		box-shadow:
+			0 18px 44px -22px rgba(var(--color-highlight-2-rgb), 0.55),
+			0 2px 0 0 rgba(255, 255, 255, 0.7) inset;
+		-webkit-backdrop-filter: blur(6px);
+		backdrop-filter: blur(6px);
+	}
+
+	/* Soft aurora accent — a modern, GPU-cheap radial glow in the corner. */
+	.portal-card__glow {
+		position: absolute;
+		top: -45%;
+		right: -25%;
+		width: 70%;
+		height: 110%;
+		background: radial-gradient(
+			closest-side,
+			rgba(var(--color-highlight-2-rgb), 0.40),
+			rgba(var(--color-highlight-2-rgb), 0) 70%
+		);
+		filter: blur(8px);
+		z-index: -1;
+		pointer-events: none;
+	}
+
+	.portal-card__badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		margin-bottom: 14px;
+		font-size: 28px;
+		line-height: 1;
+		border-radius: 50%;
+		background: rgba(var(--color-highlight-2-rgb), 0.14);
+		box-shadow:
+			0 0 0 1px rgba(var(--color-highlight-2-rgb), 0.30) inset,
+			0 8px 20px -10px rgba(var(--color-highlight-2-rgb), 0.65);
+	}
+
+	.portal-card__title {
+		margin: 0 0 10px;
+		font-family: var(--font-title);
+		font-size: 24px;
+		font-weight: 600;
+		line-height: 1.15;
+		letter-spacing: -0.01em;
+		color: var(--color-foreground);
+	}
+
+	.portal-card__copy {
+		/* neutralise the absolute-positioned global <p> rule above */
+		position: static;
+		transform: none;
+		background: none;
+		padding: 0;
+		z-index: auto;
+		margin: 0 auto 22px;
+		max-width: 380px;
+		font-family: var(--font-paragraph);
+		font-size: 15px;
+		line-height: 1.65;
+		color: rgba(24, 24, 24, 0.74);
+	}
+
+	.portal-card__cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		padding: 15px 30px;
+		border-radius: 999px;
+		font-family: var(--font-paragraph);
+		font-size: 15px;
+		font-weight: 600;
+		letter-spacing: 0.2px;
+		text-decoration: none;
+		color: #020d10;
+		/* solid fallback first; the color-mix gradient enhances where supported */
+		background: var(--color-highlight-2);
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--color-highlight-2) 88%, white) 0%,
+			var(--color-highlight-2) 100%
+		);
+
+		box-shadow:
+			0 12px 26px -10px rgba(var(--color-highlight-2-rgb), 0.70),
+			0 0 0 1px rgba(var(--color-highlight-2-rgb), 0.40) inset;
+		transition:
+			transform 0.18s ease,
+			box-shadow 0.18s ease,
+			filter 0.18s ease;
+	}
+
+	.portal-card__cta svg {
+		transition: transform 0.18s ease;
+	}
+
+	.portal-card__cta:hover {
+		transform: translateY(-2px);
+		filter: saturate(1.05);
+		box-shadow:
+			0 18px 34px -12px rgba(var(--color-highlight-2-rgb), 0.80),
+			0 0 0 1px rgba(var(--color-highlight-2-rgb), 0.55) inset;
+	}
+
+	.portal-card__cta:hover svg {
+		transform: translateX(4px);
+	}
+
+	.portal-card__cta:focus-visible {
+		outline: 2px solid var(--color-highlight-2);
+		outline-offset: 3px;
+	}
+
+	.portal-card__pillars {
+		display: block;
+		margin-top: 16px;
+		font-family: var(--font-paragraph);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: rgba(var(--color-highlight-2-rgb), 0.85);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.portal-card__cta,
+		.portal-card__cta svg {
+			transition: none;
+		}
+	}
 </style>
+
+
