@@ -775,3 +775,52 @@
 .cp-dashboard__grid {
   margin-bottom: var(--section-gap);
 }
+
+// ── Proposal / template document framing ────────────────────────────────────
+// BlockRenderer renders staff-authored light-theme blocks (html, heading,
+// banner, accordion, quoteTable) inside the white .cp-proposal-section card.
+// In the single-landing portal these read like a polished proposal document, so
+// we give the document inner breathing room + a consistent vertical rhythm and
+// soft dividers between text blocks. (.cp-proposal-section's white background,
+// radius and shadow are defined in +page.svelte.)
+.cp-proposal-section {
+  position: relative;
+  padding: 1.9rem clamp(1rem, 4vw, 2.4rem) 1.75rem;
+
+  // Ultra-modern brand accent: a teal→sky hairline crowning the proposal
+  // document, echoing the portal's gradient-accent language (.cp-auth-wall
+  // card top bar, .qa-summary stripe). overflow:hidden on the card clips it
+  // flush to the rounded corners.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-highlight-2) 0%, #38bdf8 100%);
+    z-index: 1;
+  }
+
+  // Vertical rhythm between consecutive blocks. Full-bleed blocks
+  // (quoteTable / accept) keep their own internal padding and simply gain
+  // top spacing here.
+  .br-document > .br-block + .br-block {
+    margin-top: 1.5rem;
+  }
+
+  // Soft teal-tinted hairline around heading blocks so distinct sections of
+  // the proposal read as a structured document — cohesive with the brand teal
+  // rather than a flat neutral grey.
+  .br-document > .br-heading + .br-block,
+  .br-document > .br-block + .br-heading {
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(var(--color-highlight-2-rgb), 0.12);
+  }
+
+  @media (max-width: 640px) {
+    padding: 1.4rem 1rem 1.2rem;
+  }
+}
+
+

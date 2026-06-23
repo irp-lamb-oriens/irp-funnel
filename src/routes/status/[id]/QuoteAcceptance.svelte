@@ -249,7 +249,51 @@
         This is legally attributed to <strong>{$project?.email ?? 'your email'}</strong>.
       </p>
 
+      <!-- Terms of agreement — shown in full, never hidden behind a link only. -->
+      <details class="qa-terms" open>
+        <summary class="qa-terms__summary">
+          <span class="qa-terms__summary-label">📜 Quote Acceptance Terms</span>
+          <span class="qa-terms__summary-hint">Please read before accepting</span>
+        </summary>
+        <div class="qa-terms__body">
+          <ul class="qa-terms__list">
+            <li>
+              The amount shown
+              <strong>{targetQuote ? fmt(targetQuote.amount, targetQuote.currency) : ''}</strong>
+              is based on the move details you provided. Final destination charges
+              (customs duties, taxes, and confirmed shipment volume) may adjust the
+              total — any change is communicated and itemized before it applies.
+            </li>
+            <li>
+              By accepting, you authorize <strong>International Relocation Partners</strong>
+              to begin coordinating your relocation and to process the agreed payment(s)
+              for the services you selected.
+            </li>
+            <li>
+              Your acceptance is tied to your verified email
+              (<strong>{$project?.email ?? 'your email'}</strong>) and is recorded with a
+              timestamp and audit trail as your electronic signature.
+            </li>
+            <li>
+              Services not selected (optional items left unchecked) are not included and
+              not billed. You can ask us to add them later.
+            </li>
+            <li>
+              Cancellations and refunds follow IRP's standard relocation policy. Reach out
+              any time via this portal or to your advisor with questions before accepting.
+            </li>
+          </ul>
+          <p class="qa-terms__full">
+            Full legal text:
+            <a href="/legal/quote-acceptance" target="_blank" rel="noopener noreferrer">Quote Acceptance Terms</a>
+            ·
+            <a href="https://internationalrelocationpartner.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+          </p>
+        </div>
+      </details>
+
       <!-- Full name -->
+
       <div class="qa-field">
         <label class="qa-label" for="qa-fullname">Full Name</label>
         <input
@@ -643,6 +687,117 @@
     color: var(--color-highlight-2);
     font-weight: 600;
   }
+
+  /* ══ TERMS OF AGREEMENT — visible, never hidden behind a link only ═════
+     Mirrors the portal's ultra-modern card language (.qa-summary / .qa-consent):
+     glass surface, teal left-accent stripe, eyebrow + subtitle-font heading,
+     teal glowing bullets. */
+  .qa-terms {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(160deg, rgba(var(--color-highlight-2-rgb), 0.07) 0%, rgba(var(--color-highlight-2-rgb), 0.015) 45%, transparent 100%),
+      rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--cp-border-teal);
+    border-radius: 16px;
+    padding: 0.2rem 1.3rem 0.55rem 1.45rem;
+    margin-bottom: 1.5rem;
+    box-shadow:
+      inset 0 1px 0 rgba(var(--color-highlight-2-rgb), 0.1),
+      0 8px 28px rgba(0, 0, 0, 0.28);
+  }
+  /* Left teal accent stripe — same pattern as .qa-summary::before */
+  .qa-terms::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #00d8de 0%, var(--color-highlight-2) 100%);
+    box-shadow: 0 0 12px rgba(var(--color-highlight-2-rgb), 0.55);
+  }
+  .qa-terms__summary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    cursor: pointer;
+    list-style: none;
+    padding: 0.95rem 0;
+    user-select: none;
+  }
+  .qa-terms__summary::-webkit-details-marker { display: none; }
+  .qa-terms__summary::after {
+    content: '⌄';
+    margin-left: auto;
+    color: var(--color-highlight-2);
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: transform 0.25s ease;
+  }
+  .qa-terms[open] .qa-terms__summary::after { transform: rotate(180deg); }
+  .qa-terms__summary-label {
+    font-size: 1rem;
+    font-family: var(--font-subtitle);
+    font-weight: 800;
+    color: var(--cp-text-primary);
+    letter-spacing: -0.01em;
+  }
+  .qa-terms__summary-hint {
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-highlight-2);
+    opacity: 0.85;
+  }
+  .qa-terms__body {
+    padding: 0.95rem 0 0.6rem;
+    border-top: 1px solid var(--cp-border);
+  }
+  .qa-terms__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .qa-terms__list li {
+    position: relative;
+    padding-left: 1.4rem;
+    font-size: 0.83rem;
+    color: var(--cp-text-muted);
+    line-height: 1.65;
+  }
+  /* Teal glowing bullet — replaces the default disc for the modern look */
+  .qa-terms__list li::before {
+    content: '';
+    position: absolute;
+    left: 0.15rem;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-highlight-2);
+    box-shadow: 0 0 8px rgba(var(--color-highlight-2-rgb), 0.6);
+  }
+  .qa-terms__list strong { color: var(--cp-text-primary); font-weight: 700; }
+  .qa-terms__full {
+    margin: 1rem 0 0;
+    font-size: 0.78rem;
+    color: var(--cp-text-subtle);
+    line-height: 1.6;
+  }
+  .qa-terms__full a {
+    color: var(--color-highlight-2);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(var(--color-highlight-2-rgb), 0.3);
+    transition: border-color 0.15s ease;
+  }
+  .qa-terms__full a:hover { border-bottom-color: var(--color-highlight-2); }
+
+
 
   /* ══ FIELD ════════════════════════════════════════════════════════════ */
   .qa-field {

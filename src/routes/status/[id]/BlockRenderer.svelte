@@ -61,11 +61,24 @@
   // If any block has a section label → use section-filtered mode.
   // Otherwise → legacy single-flow (all blocks visible).
   $: hasSections = blocks.some(b => !!b.section);
-  $: visibleBlocks = (hasSections && activeSection)
-    ? blocks.filter(b => b.section === activeSection)
-    : (hasSections && !activeSection)
-      ? blocks.filter(b => !b.section) // fallback: show unsectioned blocks
-      : blocks; // legacy mode: all blocks
+
+  // Template-preview mode: the status page renders the proposal template with a
+  // stub quote (quoteId === 'template-preview'). In that mode the `accept` block
+  // is non-functional (no real quote/token) and would DUPLICATE the dedicated
+  // "Accept" section of the portal. Hide it so there is exactly ONE acceptance
+  // path for the client (no double-acceptance).
+  $: isTemplatePreview = quote?.quoteId === 'template-preview';
+
+  $: visibleBlocks = (() => {
+    let bs = (hasSections && activeSection)
+      ? blocks.filter(b => b.section === activeSection)
+      : (hasSections && !activeSection)
+        ? blocks.filter(b => !b.section) // fallback: show unsectioned blocks
+        : blocks; // legacy mode: all blocks
+    if (isTemplatePreview) bs = bs.filter(b => b.type !== 'accept');
+    return bs;
+  })();
+
 
   // ── Phase 3: interactive line-item selection ─────────────────────────────
   // Required items (isOptional = false/absent) are always selected.

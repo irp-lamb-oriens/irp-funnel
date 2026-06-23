@@ -507,10 +507,10 @@
         </div>
       </header>
 
-      <!-- ══ YOUR MOVE — shown when "Your Move" tab is active (always shown
-           when the client has no quotes yet).                               -->
-      {#if isOverviewTab}
+      <!-- ══ YOUR MOVE — always rendered (single-landing). Tabs scroll here. -->
+      {#if $project}
       <div id="cp-overview" class="cp-section-anchor">
+
 
         <!-- Consultation call banner — only shown for FUTURE dates ──────── -->
         {#if upcomingConsultation}
@@ -718,10 +718,11 @@
       </div><!-- /#cp-overview -->
       {/if}
 
-      <!-- ══ COMMENTS — dedicated tab (keeps the overview lean; visible to both
-           clients and signed-in staff so either can leave notes on the move). -->
-      {#if isCommentsTab}
+      <!-- ══ COMMENTS — always rendered (single-landing). Visible to both
+           clients and signed-in staff so either can leave notes on the move. -->
+      {#if $project}
         <div id="cp-comments" class="cp-section-anchor">
+
           <div class="cp-dashboard__full-width-section">
             <CommentsThread {projectId} />
           </div>
@@ -729,10 +730,12 @@
       {/if}
 
 
-      <!-- ══ PROPOSAL — template document (only when a template section tab
-           is active). Contains the staff template selector and BlockRenderer. -->
-      {#if isProposalTab}
+      <!-- ══ PROPOSAL — template document (single-landing: always rendered when
+           the client has quotes). Template-section tabs scroll here and filter
+           which section of the document is shown. -->
+      {#if hasQuotes}
         <div id="cp-proposal" class="cp-section-anchor">
+
 
           <!-- Staff-only template selector -->
           {#if $irpStaffIsAuthenticated && $allTemplates.length > 0}
@@ -783,8 +786,9 @@
       <!-- ══ QUOTES — shown whenever showQuoteSection is true and Quote tab is active.
            Renders QuotePanel for subcollection quotes (old flow, hasQuotes) and/or
            QuoteView for token-based pre-generated quotes (hasQuoteToken / new flow). -->
-      {#if isQuoteTab}
+      {#if showQuoteSection}
         <div id="cp-quotes" class="cp-section-anchor">
+
 
           <!-- ── Staff-only: preview / send the pricing summary email ──────── -->
           {#if $irpStaffIsAuthenticated}
@@ -837,9 +841,10 @@
         </div><!-- /#cp-quotes -->
       {/if}
 
-      <!-- ══ ACCEPT — dedicated consent / attestation form ════════════════ -->
-      {#if isAcceptTab}
+      <!-- ══ ACCEPT — dedicated consent / attestation form (single-landing). -->
+      {#if hasQuotes}
         <div id="cp-accept" class="cp-section-anchor">
+
           <div class="cp-dashboard__full-width-section">
             <QuoteAcceptance
               {projectId}
