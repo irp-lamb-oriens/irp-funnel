@@ -163,9 +163,15 @@
     padding: 0 24px;
     font-family: inherit;
     transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform, top, height, background, box-shadow;
+    /* NOTE: `transform` is intentionally omitted from will-change.
+       `will-change: transform` turns this element into the containing block
+       for fixed-positioned descendants, which made the mobile fullscreen menu
+       (rendered inside the header) inherit the pill's top/centered offset.
+       Keeping it out lets the menu's `position: fixed` resolve to the viewport. */
+    will-change: top, height, background, box-shadow;
     color: #fff;
   }
+
   .header-section.is-scrolled {
     top: 12px;
     height: 64px;

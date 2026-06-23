@@ -5,8 +5,10 @@
     import CTAButton from "./CTAButton.svelte";
     import AnimatedUnderline from "./AnimatedUnderline.svelte";
     import { page } from "$app/stores";
+    import { onDestroy } from "svelte";
     export let open: boolean = false;
     export let onToggle: () => void = () => {};
+
 
     // Menu data comes from parent (no hard-coded routes).
     type MenuItem = {
@@ -27,9 +29,21 @@
 
     $: ariaLabel = open ? labelClose : labelOpen;
 
+    // Lock the background scroll while the fullscreen menu is open.
+    // This also guarantees the floating header can't fire its scroll-hide
+    // transform mid-open (which would otherwise turn it into a containing
+    // block again and shift this fixed panel).
+    $: if (typeof document !== "undefined") {
+        document.body.style.overflow = open ? "hidden" : "";
+    }
+    onDestroy(() => {
+        if (typeof document !== "undefined") document.body.style.overflow = "";
+    });
+
     function toggle() {
         onToggle();
     }
+
 
     function closeIfOpen() {
         if (open) onToggle();
@@ -81,7 +95,13 @@
     >
     <div class="scrim" aria-hidden="true"></div>
     <div class="menu-panel">
-            <ul class="menu-list" style={`--count: ${menuItems.length || 0}`}>
+            <div class="menu-glow menu-glow--a" aria-hidden="true"></div>
+            <div class="menu-glow menu-glow--b" aria-hidden="true"></div>
+            <ul
+                class="menu-list"
+                style={`--count: ${(menuItems.length || 0) + (cta ? 1 : 0)}`}
+            >
+
                 {#each menuItems as item (item.href)}
                     <li class="menu-list-item" role="none">
                         <a
