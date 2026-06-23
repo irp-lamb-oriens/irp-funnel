@@ -737,7 +737,7 @@
 
   /* ═══ CTA Hero ═══ */
   .cta-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem;
-    &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-highlight-2); }
+    &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color:white; }
     &__title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
     &__sub { font-size: 1.05rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 440px; }
     &__btn-wrap { display: flex; justify-content: center; width: 100%; margin-top: 1rem; }
