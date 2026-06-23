@@ -70,16 +70,77 @@
     }
   ];
 
-  // Native scroll — let the browser handle the animation.
-  // If the URL already contains #hero-form the browser scrolls natively
-  // on its own; otherwise we use scrollIntoView (smooth) once the layout
-  // is stable so there's no race condition or custom easing to maintain.
+  // Gentle, interruptible auto-scroll to the Hero Form.
+  // Native smooth scroll (scrollIntoView) finishes too fast for users to see
+  // the intermediate sections and, in many browsers, can't be interrupted by
+  // user gestures. Instead we animate with requestAnimationFrame using a soft
+  // ease-in-out curve over ~10s, and cancel immediately on any user input
+  // (wheel, touch, keyboard or mouse).
+
   onMount(() => {
     if (window.location.hash === '#hero-form') return;
     const el = document.getElementById('hero-form-container');
     if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const startY = window.scrollY;
+    const targetY = el.getBoundingClientRect().top + startY;
+    const distance = targetY - startY;
+    if (Math.abs(distance) < 1) return;
+
+    // The site sets `scroll-behavior: smooth` globally (global.scss). That makes
+    // the browser re-smooth every programmatic scrollTo, which fights our
+    // per-frame updates — the page looks frozen and then "jumps" at native
+    // speed at the end. Force instant scrolling on <html> while we animate,
+    // then restore the original value on cleanup.
+    const rootStyle = document.documentElement.style;
+    const prevScrollBehavior = rootStyle.scrollBehavior;
+    rootStyle.scrollBehavior = 'auto';
+
+    // Slow, deliberate ~1s scroll so the user clearly sees each section pass by.
+    const duration = 5000; // ms
+
+    let startTime: number | null = null;
+    let rafId = 0;
+
+    const easeInOutCubic = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const cleanup = () => {
+      rootStyle.scrollBehavior = prevScrollBehavior;
+      window.removeEventListener('wheel', cancel, { capture: true } as any);
+      window.removeEventListener('touchstart', cancel, { capture: true } as any);
+      window.removeEventListener('keydown', cancel, { capture: true } as any);
+      window.removeEventListener('mousedown', cancel, { capture: true } as any);
+    };
+
+
+    const cancel = () => {
+      cancelAnimationFrame(rafId);
+      cleanup();
+    };
+
+    // Register interruptors before the animation begins.
+    window.addEventListener('wheel', cancel, { capture: true, passive: true });
+    window.addEventListener('touchstart', cancel, { capture: true, passive: true });
+    window.addEventListener('keydown', cancel, { capture: true });
+    window.addEventListener('mousedown', cancel, { capture: true });
+
+    const step = (timestamp: number) => {
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+      if (progress < 1) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        cleanup();
+      }
+    };
+
+    rafId = requestAnimationFrame(step);
+
+    return cancel;
   });
+
 </script>
 
 <Header />

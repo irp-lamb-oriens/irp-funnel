@@ -299,6 +299,7 @@
       text-transform: uppercase;
       margin: 0;
       font-weight: 300;
+      padding: 1rem;
     }
   }
 
