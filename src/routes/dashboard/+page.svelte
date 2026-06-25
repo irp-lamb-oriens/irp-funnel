@@ -334,6 +334,14 @@
 
   $: stageEntries = Object.entries(STAGE_LABELS);
 
+  // ─── Board skeleton state ────────────────────────────────────────────────
+  // True only during the very first fetch (no clients in the store yet). Drives
+  // the Trello/Jira-style shimmering placeholder cards in every Kanban column so
+  // the board reads as "loading" rather than "empty" before data arrives.
+  $: boardLoading = $loading && $clients.length === 0;
+  const SKELETON_CARDS = [0, 1, 2, 3, 4]; // five identical placeholders per column
+
+
   const stageKeys = Object.keys(STAGE_LABELS);
 
   /**
@@ -542,12 +550,15 @@
     {/if}
 
     <!-- ── Loading / Error ───────────────────────────────────── -->
-    {#if $loading && $clients.length === 0}
+    <!-- On the board, the Kanban column skeletons are the loading signal, so the
+         standalone spinner is only shown for the other (non-board) views. -->
+    {#if $loading && $clients.length === 0 && $activeView !== 'board'}
       <div class="dashboard__loading">
         <div class="spinner"></div>
         <p>Loading clients…</p>
       </div>
     {/if}
+
 
     {#if $error}
       <div class="dashboard__error">{$error}</div>
@@ -598,8 +609,24 @@
               />
             </div>
             <div class="board__column-cards">
+              {#if boardLoading}
+                <!-- Trello/Jira-style shimmering placeholders while the first
+                     fetch is in flight. Identical set per column so the whole
+                     board animates in sync. aria-hidden — purely decorative. -->
+                {#each SKELETON_CARDS as i (i)}
+                  <div class="card card--skeleton" style="--sk-delay: {i * 0.09}s" aria-hidden="true">
+                    <div class="sk-line sk-line--title"></div>
+                    <div class="sk-line sk-line--route"></div>
+                    <div class="sk-meta">
+                      <span class="sk-pill"></span>
+                      <span class="sk-pill sk-pill--sm"></span>
+                    </div>
+                  </div>
+                {/each}
+              {:else}
               {#each visibleCards as client (client.id)}
                 {@const sla = getStageSlaStatus(client, nowMs)}
+
                 <div
                   class="card"
                   class:card--missing-name={!client.nameKnown}
@@ -669,10 +696,12 @@
               {#if filteredCards.length === 0}
                 <div class="board__empty">{colQuery ? 'No matches' : 'No clients'}</div>
               {/if}
+              {/if}
             </div>
           </div>
         {/each}
       </div>
+
 
     <!-- ══════════════ LIST VIEW ══════════════ -->
     {:else if $activeView === 'list'}

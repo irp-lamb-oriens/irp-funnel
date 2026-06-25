@@ -14,7 +14,10 @@
     allTemplates, allTemplatesLoading, setSelectedTemplate, selectedTemplateId,
     // ── Quotes (loaded early so hasQuotes drives tab/section visibility) ──
     quotes, quotesLoading, loadQuotes,
+    // ── Stage ratings (reused for the overall "move complete" review) ──────
+    submitStageRating,
   } from './store.ts';
+
   import LilyChat from './LilyChat.svelte';
   import CommentsThread from './CommentsThread.svelte';
   import StageRating from './StageRating.svelte';
@@ -196,8 +199,55 @@
   const GOOGLE_REVIEW_URL =
     'https://www.google.com/search?q=international+relocation+partner&sca_esv=30fefba32417d577#lrd=0x8fa0fac744d6f277:0xb21f26ac180d3732,3,,,,';
 
+  // ─── Overall "move complete" review ───────────────────────────────────────
+  // When the project reaches the "completed" stage we ask the client for a
+  // final overall rating + comment BEFORE inviting a public Google review.
+  // This mirrors the standalone /review email flow: only delighted clients
+  // (4–5★) are routed to Google; anyone who rates 3★ or below gets a heartfelt
+  // "we'll make it right" message and the concern is surfaced to the team.
+  // Persisted via the existing stage-rating mechanism under the synthetic
+  // 'overall' key — it never collides with a real pipeline stage because stage
+  // keys come from the $stages array, which has no 'overall' entry.
+  const OVERALL_REVIEW_KEY = 'overall';
+  const OVERALL_STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+  // Ratings at or above this threshold are routed to the public Google review.
+  const GOOGLE_REVIEW_THRESHOLD = 4;
+
+  let overallStars = 0;
+  let overallHover = 0;
+  let overallComment = '';
+  let overallSubmitting = false;
+  let overallError = '';
+
+  // The persisted overall review (undefined until the client submits one).
+  $: overallReview = ($project?.stageRatings ?? {})[OVERALL_REVIEW_KEY] as
+    | { rating: number; note?: string }
+    | undefined;
+  // Only the principal end-customer can submit. Staff / non-principal viewers
+  // see the read-only result (or the legacy thank-you banner if none yet).
+  $: canSubmitOverallReview = !!$project?.viewerIsPrincipal && !$irpStaffIsAuthenticated;
+
+  async function submitOverallReview() {
+    if (overallStars < 1 || overallSubmitting) return;
+    overallSubmitting = true;
+    overallError = '';
+    try {
+      await submitStageRating(
+        projectId,
+        OVERALL_REVIEW_KEY,
+        overallStars,
+        overallComment.trim() || undefined,
+      );
+    } catch (err: any) {
+      overallError = err?.message || 'We could not save your review. Please try again.';
+    } finally {
+      overallSubmitting = false;
+    }
+  }
+
 
   // ─── Upcoming consultation (future only) ─────────────────────────────────
+
   // We only show the call banner if there is at least one scheduling date that
   // has NOT yet passed. Past dates are silently ignored.
   $: upcomingConsultation = (() => {
@@ -574,25 +624,138 @@
           </div>
         </section>
 
-        <!-- Move complete → invite a public Google review ─────────────────── -->
+        <!-- Move complete → rate first, then (if delighted) invite a Google review -->
         {#if $project.stage === 'completed'}
+          {@const reviewed = overallReview}
+          {@const goodReview = !!reviewed && reviewed.rating >= GOOGLE_REVIEW_THRESHOLD}
           <section id="cp-review" class="cp-section-anchor cp-review-banner">
-            <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
-            <h3 class="cp-review-banner__title">Your move is complete — thank you!</h3>
-            <p class="cp-review-banner__text">
-              If we made your relocation smoother, the kindest thing you can do is share it on Google.
-              It takes less than a minute — and it helps the next family taking the same leap.
-            </p>
-            <a
-              class="cp-review-banner__btn"
-              href={GOOGLE_REVIEW_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Leave a Google review →
-            </a>
+            {#if !reviewed && canSubmitOverallReview}
+              <!-- ── Step 1: rate dual-input form (stars + comment) ────────── -->
+              <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
+              <h3 class="cp-review-banner__title">Your move is complete — how did we do?</h3>
+              <p class="cp-review-banner__text">
+                Your relocation is finished. Before anything else, we'd love to hear how the journey
+                felt — your honest rating helps us, and the next family making the same leap.
+              </p>
+
+              <div class="cp-review-form">
+                <div
+                  class="cp-review-form__stars"
+                  role="radiogroup"
+                  aria-label="Rate your overall experience from 1 to 5 stars"
+                >
+                  {#each [1, 2, 3, 4, 5] as n}
+                    <button
+                      type="button"
+                      class="cp-review-form__star"
+                      class:cp-review-form__star--on={(overallHover || overallStars) >= n}
+                      role="radio"
+                      aria-checked={overallStars === n}
+                      aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                      disabled={overallSubmitting}
+                      on:mouseenter={() => (overallHover = n)}
+                      on:mouseleave={() => (overallHover = 0)}
+                      on:focus={() => (overallHover = n)}
+                      on:blur={() => (overallHover = 0)}
+                      on:click={() => (overallStars = n)}
+                    >★</button>
+                  {/each}
+                </div>
+                <p class="cp-review-form__star-label">
+                  {OVERALL_STAR_LABELS[overallHover || overallStars] || 'Tap a star'}
+                </p>
+
+                <textarea
+                  class="cp-review-form__textarea"
+                  rows="4"
+                  placeholder="Tell us about your experience (optional)"
+                  bind:value={overallComment}
+                  disabled={overallSubmitting}
+                ></textarea>
+
+                {#if overallError}
+                  <p class="cp-review-form__error">{overallError}</p>
+                {/if}
+
+                <button
+                  class="cp-review-banner__btn cp-review-form__submit"
+                  type="button"
+                  disabled={overallSubmitting || overallStars < 1}
+                  on:click={submitOverallReview}
+                >
+                  {overallSubmitting ? 'Sending…' : 'Submit my review'}
+                </button>
+              </div>
+            {:else if reviewed}
+              <!-- ── Step 2: their review + thank-you / next-step, side by side ─ -->
+              <div class="cp-review-result">
+                <!-- The review they left -->
+                <div class="cp-review-result__feedback">
+                  <span class="cp-review-result__eyebrow">Your review</span>
+                  <span
+                    class="cp-review-result__stars"
+                    aria-label={`${reviewed.rating} out of 5 stars`}
+                  >
+                    {#each [1, 2, 3, 4, 5] as n}
+                      <span
+                        class="cp-review-result__star cp-review-result__star--{n <= reviewed.rating ? 'on' : 'off'}"
+                      >★</span>
+                    {/each}
+                  </span>
+                  {#if reviewed.note}
+                    <p class="cp-review-result__note">“{reviewed.note}”</p>
+                  {/if}
+                </div>
+
+                <!-- Thank-you + next step -->
+                <div class="cp-review-result__cta">
+                  {#if goodReview}
+                    <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
+                    <h3 class="cp-review-banner__title">Your move is complete — thank you!</h3>
+                    <p class="cp-review-banner__text">
+                      So glad we got it right. If we made your relocation smoother, the kindest thing
+                      you can do is share it on Google — it takes less than a minute and helps the
+                      next family taking the same leap.
+                    </p>
+                    <a
+                      class="cp-review-banner__btn"
+                      href={GOOGLE_REVIEW_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Leave a Google review →
+                    </a>
+                  {:else}
+                    <div class="cp-review-banner__stars" aria-hidden="true">🤝</div>
+                    <h3 class="cp-review-banner__title">Thank you for your honesty</h3>
+                    <p class="cp-review-banner__text">
+                      We've shared your feedback directly with your relocation team, and someone will
+                      reach out personally to make things right. We genuinely appreciate the chance
+                      to do better.
+                    </p>
+                  {/if}
+                </div>
+              </div>
+            {:else}
+              <!-- ── Staff / non-principal viewer, no review yet ───────────── -->
+              <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
+              <h3 class="cp-review-banner__title">Your move is complete — thank you!</h3>
+              <p class="cp-review-banner__text">
+                If we made your relocation smoother, the kindest thing you can do is share it on
+                Google. It takes less than a minute — and it helps the next family taking the same leap.
+              </p>
+              <a
+                class="cp-review-banner__btn"
+                href={GOOGLE_REVIEW_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Leave a Google review →
+              </a>
+            {/if}
           </section>
         {/if}
+
 
 
         <!-- Regulations & Compliance ─────────────────────────────────────── -->

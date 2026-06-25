@@ -269,4 +269,72 @@
   }
 }
 
+/* ── Skeleton placeholder card (board loading state) ───────────────────────
+   Rendered ~5× per column while the first client fetch is in flight so the
+   board reads as "loading" instead of "empty". Reuses the `.card` shell for
+   identical sizing, disables interactivity, and paints shimmering lines via
+   the shared `skeleton-shimmer` keyframes (defined in _kanban.scss). A small
+   per-card `--sk-delay` (set inline in +page.svelte) staggers the fade-in so
+   the column fills like a wave. `prefers-reduced-motion` users get a static
+   tint with no shimmer. */
+.card--skeleton {
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  animation: card-skeleton-in 320ms $ease-out forwards;
+  animation-delay: var(--sk-delay, 0s);
+
+  &:hover {
+    border-color: $border;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.sk-line,
+.sk-pill {
+  border-radius: $r-full;
+  background: linear-gradient(90deg, $surface-3 25%, $surface-4 50%, $surface-3 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.sk-line {
+  height: 10px;
+
+  &--title { width: 70%; height: 12px; margin-bottom: 8px; }
+  &--route { width: 50%; margin-bottom: 12px; }
+}
+
+.sk-meta {
+  display: flex;
+  gap: $sp-1;
+}
+
+.sk-pill {
+  height: 16px;
+  width: 46px;
+
+  &--sm { width: 30px; }
+}
+
+@keyframes card-skeleton-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--skeleton {
+    opacity: 1;
+    animation: none;
+  }
+  .sk-line,
+  .sk-pill {
+    animation: none;
+    background: $surface-3;
+  }
+}
+
+
 
