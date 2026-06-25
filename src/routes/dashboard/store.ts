@@ -702,7 +702,17 @@ export const selectedClient = writable<Client | null>(null);
 export const metrics = writable<Metrics | null>(null);
 export const loading = writable<boolean>(false);
 export const error = writable<string | null>(null);
+// Board-specific loading state. The Kanban skeleton must track the CLIENTS
+// fetch specifically — NOT the shared `loading` flag, which fetchMetrics()
+// (running in parallel) also toggles and would otherwise end the skeleton
+// animation before the cards are actually ready.
+export const clientsLoading = writable<boolean>(false);
+// Flips true only after the FIRST successful clients fetch, so the board keeps
+// showing skeletons (never a premature empty "No clients" state) until real
+// data has arrived at least once.
+export const clientsLoadedOnce = writable<boolean>(false);
 export const searchQuery = writable<string>('');
+
 
 export interface Filters {
   stage: string;
@@ -1001,7 +1011,18 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
   if (token) headers['x-dashboard-token'] = token;
 
   const res = await fetch(url, { ...options, headers });
-  const data = await res.json();
+
+  // Parse the body defensively. A cold/slow server — or a proxy/gateway in
+  // front of it (e.g. Render waking up) — can return a NON-JSON payload such
+  // as a 502 HTML page or an empty body. Calling res.json() directly would
+  // then throw an opaque SyntaxError. We read the text first and JSON.parse
+  // inside a try so callers get a clean, retryable Error that carries the
+  // HTTP status instead.
+  const raw = await res.text();
+  let data: any = null;
+  if (raw) {
+    try { data = JSON.parse(raw); } catch { data = null; }
+  }
 
   if (!res.ok) {
     if (res.status === 401) {
@@ -1010,10 +1031,17 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
       authEmail.set(null);
       isAuthenticated.set(false);
     }
-    throw new Error(data.error || `Request failed: ${res.status}`);
+    throw new Error((data && data.error) || `Request failed: ${res.status}`);
+  }
+
+  // 2xx but the body wasn't valid JSON → treat as a transient/malformed
+  // response so retry logic can kick in rather than handing back garbage.
+  if (data === null && raw) {
+    throw new Error('Malformed response from server.');
   }
   return data;
 }
+
 
 // ─── Auth actions ───────────────────────────────────────────────────────────
 export async function requestOTP(email: string): Promise<string> {
@@ -1159,18 +1187,53 @@ export function disconnectDashboardSocket() {
 }
 
 // ─── Data actions ───────────────────────────────────────────────────────────
+/**
+ * Load all clients for the Kanban/list views.
+ *
+ * Robustness contract (fixes the "skeleton ends → empty board, stuck" bug):
+ *  • Drives the dedicated `clientsLoading` flag (NOT the shared `loading`,
+ *    which fetchMetrics() also toggles) so the board skeleton ends exactly
+ *    when the cards are ready — never when a parallel fetch happens to finish.
+ *  • Retries transient failures (cold-start 502s, dropped sockets, malformed
+ *    gateway bodies) with backoff, keeping the skeleton up across attempts so
+ *    a first-load hiccup self-heals instead of landing in a dead empty state.
+ *  • `clientsLoadedOnce` flips true only after a SUCCESSFUL load, letting the
+ *    UI distinguish "genuinely zero clients" from "failed to load".
+ */
 export async function fetchClients(): Promise<void> {
   loading.set(true);
+  clientsLoading.set(true);
   error.set(null);
-  try {
-    const data = await apiFetch('/api/dashboard/clients');
-    clients.set(data.clients);
-  } catch (err: any) {
-    error.set(err.message);
-  } finally {
-    loading.set(false);
+
+  // attempt 0 is immediate; subsequent attempts wait these many ms.
+  const RETRY_DELAYS = [600, 1200, 2400];
+  let lastErr: any = null;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    try {
+      const data = await apiFetch('/api/dashboard/clients');
+      clients.set(Array.isArray(data?.clients) ? data.clients : []);
+      clientsLoadedOnce.set(true);
+      error.set(null);
+      lastErr = null;
+      break;
+    } catch (err: any) {
+      lastErr = err;
+      // A cleared auth token means the failure was a 401 (session expired) —
+      // not transient. Stop retrying and let the auth gate take over.
+      if (!get(authToken)) break;
+      if (attempt < RETRY_DELAYS.length) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+      }
+    }
   }
+
+  if (lastErr) error.set(lastErr.message ?? 'Failed to load clients.');
+
+  clientsLoading.set(false);
+  loading.set(false);
 }
+
 
 export async function fetchClientDetail(id: string): Promise<Client> {
   const data = await apiFetch(`/api/dashboard/clients/${id}`);

@@ -5,7 +5,9 @@
   import {
     isAuthenticated, authEmail, authToken,
     clients, selectedClient, metrics, loading, error,
+    clientsLoading, clientsLoadedOnce,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
+
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES,
     requestOTP, verifyOTP, checkAuth, logout,
     fetchClients, fetchClientDetail, updateClientStage,
@@ -335,11 +337,18 @@
   $: stageEntries = Object.entries(STAGE_LABELS);
 
   // ─── Board skeleton state ────────────────────────────────────────────────
-  // True only during the very first fetch (no clients in the store yet). Drives
-  // the Trello/Jira-style shimmering placeholder cards in every Kanban column so
-  // the board reads as "loading" rather than "empty" before data arrives.
-  $: boardLoading = $loading && $clients.length === 0;
+  // Drives the Trello/Jira-style shimmering placeholder cards in every Kanban
+  // column. Tied to the CLIENTS fetch specifically (clientsLoading) — NOT the
+  // shared `loading` flag that fetchMetrics() also toggles — so the animation
+  // ends exactly when the cards are ready, never prematurely. We also keep the
+  // skeleton up until the first SUCCESSFUL load (clientsLoadedOnce) so a failed
+  // first fetch never collapses into a misleading empty "No clients" board.
+  $: boardLoading = $clientsLoading || (!$clientsLoadedOnce && !$error);
+  // Board failed to load (after retries) and has no data yet → offer a retry
+  // instead of leaving the operator staring at empty columns.
+  $: boardLoadError = !!$error && !$clientsLoadedOnce && !$clientsLoading;
   const SKELETON_CARDS = [0, 1, 2, 3, 4]; // five identical placeholders per column
+
 
 
   const stageKeys = Object.keys(STAGE_LABELS);
@@ -561,8 +570,14 @@
 
 
     {#if $error}
-      <div class="dashboard__error">{$error}</div>
+      <div class="dashboard__error">
+        <span>{$error}</span>
+        {#if boardLoadError}
+          <button class="dashboard__retry" on:click={() => fetchClients()}>Retry</button>
+        {/if}
+      </div>
     {/if}
+
 
     <!-- ══════════════ BOARD VIEW ══════════════ -->
     {#if $activeView === 'board'}
@@ -693,10 +708,11 @@
                   Show more ({filteredCards.length - pageSize} remaining)
                 </button>
               {/if}
-              {#if filteredCards.length === 0}
+              {#if filteredCards.length === 0 && $clientsLoadedOnce}
                 <div class="board__empty">{colQuery ? 'No matches' : 'No clients'}</div>
               {/if}
               {/if}
+
             </div>
           </div>
         {/each}
@@ -840,8 +856,30 @@
 <Footer />
 
 <style>
+  /* ══ Board load-error retry button ═════════════════════════════════════ */
+  .dashboard__retry {
+    margin-left: 0.75rem;
+    padding: 0.3rem 0.9rem;
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.12s;
+  }
+  .dashboard__retry:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+  .dashboard__retry:active {
+    transform: translateY(0);
+  }
+
   /* ══ Add Client button — ultra-modern ══════════════════════════════════ */
   .topbar__add-client {
+
     display: inline-flex;
     align-items: center;
     gap: 0.42rem;
