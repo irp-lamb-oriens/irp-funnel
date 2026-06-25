@@ -1020,8 +1020,13 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
   // HTTP status instead.
   const raw = await res.text();
   let data: any = null;
+  // `parsedOk` distinguishes "body parsed fine" (incl. an empty body or a
+  // legitimate JSON `null`) from "body was non-JSON garbage". This keeps the
+  // wrapper 100% backward compatible: valid responses behave exactly as before
+  // (res.json()), and only a genuinely malformed body becomes a retryable error.
+  let parsedOk = true;
   if (raw) {
-    try { data = JSON.parse(raw); } catch { data = null; }
+    try { data = JSON.parse(raw); } catch { parsedOk = false; }
   }
 
   if (!res.ok) {
@@ -1034,13 +1039,14 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
     throw new Error((data && data.error) || `Request failed: ${res.status}`);
   }
 
-  // 2xx but the body wasn't valid JSON → treat as a transient/malformed
-  // response so retry logic can kick in rather than handing back garbage.
-  if (data === null && raw) {
+  // 2xx but the body wasn't valid JSON (e.g. a cold-start gateway HTML page) →
+  // surface a clean, retryable error rather than handing back garbage.
+  if (!parsedOk) {
     throw new Error('Malformed response from server.');
   }
   return data;
 }
+
 
 
 // ─── Auth actions ───────────────────────────────────────────────────────────
