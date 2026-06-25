@@ -737,22 +737,24 @@
                 </div>
               </div>
             {:else}
-              <!-- ── Staff / non-principal viewer, no review yet ───────────── -->
+              <!-- ── Staff / non-principal viewer, no review yet ─────────────
+                   The public Google-review CTA is intentionally withheld until
+                   the client has actually submitted their overall review (and
+                   only when it's a good one). Here we just acknowledge the
+                   completed move and note we're awaiting their feedback. -->
               <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
               <h3 class="cp-review-banner__title">Your move is complete — thank you!</h3>
               <p class="cp-review-banner__text">
-                If we made your relocation smoother, the kindest thing you can do is share it on
-                Google. It takes less than a minute — and it helps the next family taking the same leap.
+                {#if $irpStaffIsAuthenticated}
+                  The client hasn't shared their overall review yet. Once they rate their
+                  experience here, a 4–5★ review unlocks the public Google-review invite.
+                {:else}
+                  Thank you for trusting us with your relocation. We'd love to hear how it went —
+                  your relocation lead will make sure your feedback reaches the right people.
+                {/if}
               </p>
-              <a
-                class="cp-review-banner__btn"
-                href={GOOGLE_REVIEW_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Leave a Google review →
-              </a>
             {/if}
+
           </section>
         {/if}
 
