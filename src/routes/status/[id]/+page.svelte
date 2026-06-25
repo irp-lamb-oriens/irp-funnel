@@ -191,6 +191,12 @@
 
   $: currentStageIndex = $project ? $stages.indexOf($project.stage) : -1;
 
+  // Public Google review deep-link (mirrors server helper/reviewConfig.ts).
+  // Shown to delighted clients once their move reaches the "completed" stage.
+  const GOOGLE_REVIEW_URL =
+    'https://www.google.com/search?q=international+relocation+partner&sca_esv=30fefba32417d577#lrd=0x8fa0fac744d6f277:0xb21f26ac180d3732,3,,,,';
+
+
   // ─── Upcoming consultation (future only) ─────────────────────────────────
   // We only show the call banner if there is at least one scheduling date that
   // has NOT yet passed. Past dates are silently ignored.
@@ -568,8 +574,29 @@
           </div>
         </section>
 
+        <!-- Move complete → invite a public Google review ─────────────────── -->
+        {#if $project.stage === 'completed'}
+          <section id="cp-review" class="cp-section-anchor cp-review-banner">
+            <div class="cp-review-banner__stars" aria-hidden="true">⭐️⭐️⭐️⭐️⭐️</div>
+            <h3 class="cp-review-banner__title">Your move is complete — thank you!</h3>
+            <p class="cp-review-banner__text">
+              If we made your relocation smoother, the kindest thing you can do is share it on Google.
+              It takes less than a minute — and it helps the next family taking the same leap.
+            </p>
+            <a
+              class="cp-review-banner__btn"
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Leave a Google review →
+            </a>
+          </section>
+        {/if}
+
 
         <!-- Regulations & Compliance ─────────────────────────────────────── -->
+
         <div class="cp-dashboard__full-width-section">
           <RegulationsLanding
             destinationCountry={$project.destinationCountry ?? ''}
@@ -1146,8 +1173,12 @@
     }
   }
 
+  /* ── Move-complete review banner: see .cp-review-banner in status.scss ── */
+
   /* ── Staff Template Selector ────────────────────────────────────────── */
+
   :global(.cp-template-selector) {
+
     background: linear-gradient(135deg, rgba(2,182,188,0.06) 0%, rgba(2,28,42,0.6) 100%);
     border: 1px solid rgba(2, 182, 188, 0.2);
     border-radius: 12px;

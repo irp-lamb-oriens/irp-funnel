@@ -823,4 +823,101 @@
   }
 }
 
+// ─── MOVE-COMPLETE REVIEW BANNER ─────────────────────────────────────────────
+// Shown once the project reaches the `completed` stage. Cohesive with the dark
+// portal surface + the .cp-call-banner gradient language, but warmed with a
+// celebratory gold accent (the only place gold appears) so the "you made it"
+// moment feels distinct from the teal operational chrome.
+.cp-review-banner {
+  // Gold decomposition — local to this celebratory banner only.
+  --cp-gold: #f5b50a;
+  --cp-gold-rgb: 245, 181, 10;
+
+  position: relative;
+  margin: 0 var(--cp-h-pad) 2.5rem;
+  padding: 2.25rem 1.75rem;
+  text-align: center;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 80% at 50% -10%, rgba(var(--cp-gold-rgb), 0.16) 0%, transparent 60%),
+    linear-gradient(135deg, #020d10 0%, #0a1620 60%, #06121a 100%);
+  border: 1px solid rgba(var(--cp-gold-rgb), 0.28);
+  box-shadow:
+    0 4px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(var(--cp-gold-rgb), 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  // Gold hairline crowning the card — echoes the proposal-doc + auth-card accent.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cp-gold) 0%, #ffd874 50%, var(--cp-gold) 100%);
+    z-index: 1;
+  }
+
+  &__stars {
+    font-size: 1.6rem;
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-bottom: 0.7rem;
+    filter: drop-shadow(0 0 14px rgba(var(--cp-gold-rgb), 0.45));
+  }
+
+  &__title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #fff8e7;
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+
+  &__text {
+    font-size: 0.88rem;
+    color: rgba(248, 250, 252, 0.6);
+    line-height: 1.6;
+    margin: 0 auto 1.5rem;
+    max-width: 460px;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 2rem;
+    background: linear-gradient(135deg, var(--cp-gold) 0%, #ffc73d 100%);
+    color: #3d2e00;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 0.92rem;
+    font-family: var(--font-paragraph);
+    box-shadow: 0 6px 20px rgba(var(--cp-gold-rgb), 0.32);
+    transition: filter 0.18s ease, transform 0.16s ease, box-shadow 0.18s ease;
+
+    &:hover {
+      filter: brightness(1.06);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(var(--cp-gold-rgb), 0.46);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 640px) {
+    padding: 1.9rem 1.1rem;
+
+    &__btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
 
