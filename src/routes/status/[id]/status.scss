@@ -1837,5 +1837,135 @@
   }
 }
 
+// ─── STAFF "AWAITING REVIEW" INSIGHT CARD ────────────────────────────────────
+// Rendered inside .cp-review-banner for IRP staff when the client hasn't yet
+// submitted their overall review. Cohesive with the banner's dark surface +
+// --cp-gold accent, but framed as an internal insight (eye eyebrow, routing
+// flow) rather than a client-facing celebration.
+.cp-review-staff {
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  &__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(var(--cp-gold-rgb), 0.95);
+    background: rgba(var(--cp-gold-rgb), 0.1);
+    border: 1px solid rgba(var(--cp-gold-rgb), 0.3);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+
+    svg { opacity: 0.9; }
+  }
+
+  &__icon {
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 0.6rem;
+    filter: drop-shadow(0 0 14px rgba(var(--cp-gold-rgb), 0.35));
+    animation: cp-staff-float 3s ease-in-out infinite;
+  }
+
+  &__title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff8e7;
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+
+  &__text {
+    font-size: 0.86rem;
+    color: rgba(248, 250, 252, 0.6);
+    line-height: 1.6;
+    margin: 0 auto 1.4rem;
+    max-width: 420px;
+  }
+
+  // ── Routing flow: what happens on 4–5★ vs 1–3★ ──────────────────────────
+  &__flow {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__step {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.16s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    // Left accent colour conveys the outcome (green = good, amber = recovery)
+    &--good {
+      border-left: 3px solid #34d399;
+      &:hover { border-color: rgba(52, 211, 153, 0.4); border-left-color: #34d399; }
+      .cp-review-staff__step-badge {
+        color: #062a1c;
+        background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      }
+    }
+    &--low {
+      border-left: 3px solid var(--cp-gold, #f5b50a);
+      &:hover { border-color: rgba(var(--cp-gold-rgb), 0.45); border-left-color: var(--cp-gold); }
+      .cp-review-staff__step-badge {
+        color: #3d2e00;
+        background: linear-gradient(135deg, var(--cp-gold, #f5b50a) 0%, #ffc73d 100%);
+      }
+    }
+  }
+
+  &__step-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 4px 10px;
+    border-radius: 8px;
+    min-width: 46px;
+    text-align: center;
+  }
+
+  &__step-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(248, 250, 252, 0.82);
+    line-height: 1.45;
+  }
+
+  @media (max-width: 480px) {
+    &__step {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.45rem;
+    }
+  }
+}
+
+@keyframes cp-staff-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
 
 
