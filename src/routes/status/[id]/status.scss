@@ -745,6 +745,90 @@
         z-index: 1;
         pointer-events: none;
       }
+      // A second, smaller trailing pulse for a richer "data flowing" feel
+      &__spine-flow--2 {
+        width: 4px;
+        height: 30px;
+        filter: blur(2px);
+        opacity: 0;
+      }
+
+      // ── Beacons: "Now" head (top) + "Journey start" origin (bottom) ─────
+      &__beacon {
+        position: relative;
+        z-index: 3;
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        pointer-events: none;
+      }
+      &__beacon--now {
+        margin-bottom: 0.6rem;
+      }
+      &__beacon--origin {
+        margin-top: 0.4rem;
+      }
+      // Live pulsing "Now" dot with expanding halo rings
+      &__beacon-pulse {
+        position: relative;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 40%, #7df0f5 0%, #02b5bb 60%, #018d92 100%);
+        box-shadow: 0 0 0 4px #ffffff, 0 0 12px rgba(2, 181, 187, 0.6);
+
+        &::before,
+        &::after {
+          content: '';
+          position: absolute;
+          inset: -3px;
+          border-radius: 50%;
+          border: 2px solid rgba(2, 181, 187, 0.5);
+        }
+      }
+      // Origin diamond marking where the journey began
+      &__beacon-diamond {
+        width: 12px;
+        height: 12px;
+        background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%);
+        transform: rotate(45deg);
+        border-radius: 2px;
+        box-shadow: 0 0 0 4px #ffffff, 0 1px 4px rgba(0, 0, 0, 0.18);
+      }
+      &__beacon-label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 1px 7px;
+        border-radius: 999px;
+      }
+      &__beacon--now .timeline__beacon-label {
+        color: #0a7e82;
+        background: rgba(2, 181, 187, 0.1);
+        border: 1px solid rgba(2, 181, 187, 0.25);
+      }
+      &__beacon--origin .timeline__beacon-label {
+        color: #64748b;
+        background: rgba(100, 116, 139, 0.08);
+        border: 1px solid rgba(100, 116, 139, 0.2);
+      }
+
+      // ── Latest item: a permanent soft aura so the newest event pops ─────
+      &__item--latest {
+        .timeline__node {
+          box-shadow:
+            0 0 0 4px #ffffff,
+            0 0 0 6px color-mix(in srgb, var(--k, #02b5bb) 30%, transparent),
+            0 0 18px color-mix(in srgb, var(--k, #02b5bb) 45%, transparent);
+        }
+        .timeline__card {
+          border-color: color-mix(in srgb, var(--k, #02b5bb) 35%, transparent);
+          box-shadow: 0 4px 18px color-mix(in srgb, var(--k, #02b5bb) 14%, transparent);
+        }
+      }
 
       // ── Each timeline item ─────────────────────────────────────────────
       &__item {
@@ -781,7 +865,7 @@
         }
       }
 
-      // ── Node (circle on the spine) ─────────────────────────────────────
+      // ── Node (circle on the spine) — colour-coded by activity type (--k) ─
       &__node {
         position: relative;
         z-index: 2;
@@ -789,7 +873,7 @@
         height: 32px;
         border-radius: 50%;
         background: #ffffff;
-        border: 2px solid rgba(2, 181, 187, 0.35);
+        border: 2px solid color-mix(in srgb, var(--k, #02b5bb) 55%, transparent);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -798,22 +882,35 @@
         margin-left: -17px; // pin node on spine for left items
         box-shadow:
           0 0 0 4px #ffffff,
-          0 0 0 5px rgba(2, 181, 187, 0.12);
+          0 0 0 5px color-mix(in srgb, var(--k, #02b5bb) 16%, transparent),
+          0 2px 8px color-mix(in srgb, var(--k, #02b5bb) 22%, transparent);
         transition: border-color 0.18s, box-shadow 0.18s, transform 0.14s;
       }
+      // Expanding ripple ring that radiates out of each node on entrance
+      &__node-ring {
+        position: absolute;
+        inset: -2px;
+        border-radius: 50%;
+        border: 1.5px solid color-mix(in srgb, var(--k, #02b5bb) 50%, transparent);
+        opacity: 0;
+        pointer-events: none;
+      }
       &__node-icon {
+        position: relative;
+        z-index: 1;
         font-size: 0.82rem;
         line-height: 1;
-        color: #0a7e82;
+        color: color-mix(in srgb, var(--k, #02b5bb) 78%, #0f172a);
+        font-weight: 700;
       }
 
-      // ── Card (the content bubble) ──────────────────────────────────────
+      // ── Card (the content bubble) — tinted by activity type (--k) ──────
       &__card {
         position: relative;
         flex: 1;
         min-width: 0;
-        background: #f8fafa;
-        border: 1px solid rgba(2, 181, 187, 0.12);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--k, #02b5bb) 6%, #ffffff) 0%, #f8fafa 100%);
+        border: 1px solid color-mix(in srgb, var(--k, #02b5bb) 18%, transparent);
         border-radius: 12px;
         padding: 0.75rem 1rem;
         transition: border-color 0.18s, box-shadow 0.18s, transform 0.14s;
@@ -828,7 +925,7 @@
           height: 0;
           border-style: solid;
           border-width: 6px 0 6px 6px;
-          border-color: transparent transparent transparent #f0fafa;
+          border-color: transparent transparent transparent color-mix(in srgb, var(--k, #02b5bb) 6%, #ffffff);
         }
       }
 
@@ -846,26 +943,39 @@
       }
 
       &__card-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
         font-size: 0.68rem;
-        font-weight: 600;
-        color: #94a3b8;
+        font-weight: 700;
+        color: color-mix(in srgb, var(--k, #02b5bb) 65%, #475569);
         letter-spacing: 0.02em;
+
+        // A tiny coloured dot before the time, matching the activity type
+        &::before {
+          content: '';
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: var(--k, #02b5bb);
+          flex-shrink: 0;
+        }
       }
 
-      // ── Hover state: lift + teal glow ──────────────────────────────────
+      // ── Hover state: lift + type-coloured glow ─────────────────────────
       &__item:hover {
         .timeline__node {
-          border-color: #02b5bb;
+          border-color: var(--k, #02b5bb);
           box-shadow:
             0 0 0 4px #ffffff,
-            0 0 0 6px rgba(2, 181, 187, 0.22);
-          transform: scale(1.1);
+            0 0 0 6px color-mix(in srgb, var(--k, #02b5bb) 28%, transparent);
+          transform: scale(1.12);
         }
         .timeline__card {
-          border-color: rgba(2, 181, 187, 0.3);
+          border-color: color-mix(in srgb, var(--k, #02b5bb) 38%, transparent);
           box-shadow:
-            0 2px 12px rgba(0, 0, 0, 0.06),
-            0 0 0 2px rgba(2, 181, 187, 0.08);
+            0 4px 16px rgba(0, 0, 0, 0.07),
+            0 0 0 2px color-mix(in srgb, var(--k, #02b5bb) 12%, transparent);
           transform: translateY(-2px);
         }
       }
@@ -897,6 +1007,33 @@
           animation: tl-icon-in 0.42s ease backwards;
           animation-delay: calc(var(--i, 0) * 0.09s + 0.44s);
         }
+        // A delayed, smaller second pulse trailing the first down the path
+        .timeline__spine-flow--2 {
+          animation: tl-spine-flow 3.4s cubic-bezier(0.45, 0, 0.55, 1) 2.1s infinite;
+        }
+        // Each node fires a single expanding ripple ring as it pops in
+        .timeline__node-ring {
+          animation: tl-ring-ripple 0.9s ease-out backwards;
+          animation-delay: calc(var(--i, 0) * 0.09s + 0.34s);
+        }
+        // The newest event's node breathes a continuous coloured glow
+        .timeline__item--latest .timeline__node {
+          animation: tl-latest-glow 2.4s ease-in-out 1.2s infinite;
+        }
+        // "Now" beacon: live halo rings expanding forever + diamond fade-in
+        .timeline__beacon-pulse::before {
+          animation: tl-beacon-ring 2.2s ease-out infinite;
+        }
+        .timeline__beacon-pulse::after {
+          animation: tl-beacon-ring 2.2s ease-out 1.1s infinite;
+        }
+        .timeline__beacon--now {
+          animation: tl-icon-in 0.5s ease 0.1s backwards;
+        }
+        .timeline__beacon--origin {
+          animation: tl-icon-in 0.5s ease backwards;
+          animation-delay: calc(var(--count, 8) * 0.09s + 0.5s);
+        }
       }
 
       // ── Keyframes (hoisted to global scope by the compiler) ────────────
@@ -926,6 +1063,31 @@
       @keyframes tl-icon-in {
         from { opacity: 0; transform: scale(0.5); }
         to   { opacity: 1; transform: scale(1); }
+      }
+      // Single expanding ripple ring out of each node as it appears
+      @keyframes tl-ring-ripple {
+        0%   { opacity: 0.85; transform: scale(0.55); }
+        100% { opacity: 0;    transform: scale(2.6); }
+      }
+      // Continuous breathing glow on the newest event's node
+      @keyframes tl-latest-glow {
+        0%, 100% {
+          box-shadow:
+            0 0 0 4px #ffffff,
+            0 0 0 6px color-mix(in srgb, var(--k, #02b5bb) 28%, transparent),
+            0 0 16px color-mix(in srgb, var(--k, #02b5bb) 40%, transparent);
+        }
+        50% {
+          box-shadow:
+            0 0 0 4px #ffffff,
+            0 0 0 7px color-mix(in srgb, var(--k, #02b5bb) 48%, transparent),
+            0 0 28px color-mix(in srgb, var(--k, #02b5bb) 70%, transparent);
+        }
+      }
+      // Expanding halo rings emanating from the live "Now" beacon
+      @keyframes tl-beacon-ring {
+        0%   { opacity: 0.7; transform: scale(0.8); }
+        100% { opacity: 0;   transform: scale(2.8); }
       }
 
       // ── Accessibility: honour reduced-motion — show everything instantly ─

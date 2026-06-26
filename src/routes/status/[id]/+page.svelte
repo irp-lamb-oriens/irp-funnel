@@ -168,22 +168,38 @@
     });
   }
 
+  // ─── Activity visual identity ─────────────────────────────────────────────
+  // Each activity type gets a distinct icon + accent colour so the journey
+  // timeline reads as a richly colour-coded story rather than a monotone list.
+  // Keyword matching keeps it robust against the many concrete event names
+  // (email_sent, email_suggested, quote_accepted, field_edit, …).
   function getActivityIcon(type: string): string {
-    switch (type) {
-      case "stage_change":
-        return "→";
-      case "note_added":
-        return "📝";
-      case "email_triggered":
-        return "📧";
-      case "field_update":
-        return "✏️";
-      case "action_executed":
-        return "⚡";
-      default:
-        return "•";
-    }
+    const t = (type || "").toLowerCase();
+    if (t.includes("quote")) return "📋";
+    if (t.includes("email")) return "📧";
+    if (t === "stage_change" || t.includes("stage") || t.includes("moved")) return "→";
+    if (t.includes("field")) return "✏️";
+    if (t.includes("action")) return "⚡";
+    if (t.includes("call") || t.includes("consult") || t.includes("resched")) return "📞";
+    if (t.includes("payment") || t.includes("pay") || t.includes("refund")) return "💳";
+    if (t.includes("note") || t.includes("comment")) return "📝";
+    return "•";
   }
+
+  /** Accent colour (hex) for an activity type — drives the node + card --k var. */
+  function getActivityColor(type: string): string {
+    const t = (type || "").toLowerCase();
+    if (t.includes("quote")) return "#f5b50a";   // gold
+    if (t.includes("email")) return "#0ea5e9";   // sky
+    if (t === "stage_change" || t.includes("stage") || t.includes("moved")) return "#02b5bb"; // teal
+    if (t.includes("field")) return "#f97316";   // orange
+    if (t.includes("action")) return "#8b5cf6";  // violet
+    if (t.includes("call") || t.includes("consult") || t.includes("resched")) return "#10b981"; // emerald
+    if (t.includes("payment") || t.includes("pay") || t.includes("refund")) return "#16a34a"; // green
+    if (t.includes("note") || t.includes("comment")) return "#64748b"; // slate
+    return "#02b5bb";
+  }
+
 
   function getActivityText(entry: any): string {
     switch (entry.type) {
@@ -1296,10 +1312,22 @@
                 <div class="timeline" class:timeline--play={activityOpen}>
                   <div class="timeline__spine" aria-hidden="true">
                     <span class="timeline__spine-flow"></span>
+                    <span class="timeline__spine-flow timeline__spine-flow--2"></span>
+                  </div>
+                  <!-- "Now" beacon — the live pulsing head of the journey -->
+                  <div class="timeline__beacon timeline__beacon--now" aria-hidden="true">
+                    <span class="timeline__beacon-pulse"></span>
+                    <span class="timeline__beacon-label">Now</span>
                   </div>
                   {#each [...$project.activityLog].reverse() as entry, idx}
-                    <div class="timeline__item" class:timeline__item--right={idx % 2 === 1} style="--i:{idx}">
+                    <div
+                      class="timeline__item"
+                      class:timeline__item--right={idx % 2 === 1}
+                      class:timeline__item--latest={idx === 0}
+                      style="--i:{idx}; --k:{getActivityColor(entry.type)}"
+                    >
                       <div class="timeline__node">
+                        <span class="timeline__node-ring" aria-hidden="true"></span>
                         <span class="timeline__node-icon">{getActivityIcon(entry.type)}</span>
                       </div>
                       <div class="timeline__card">
@@ -1312,6 +1340,11 @@
                       </div>
                     </div>
                   {/each}
+                  <!-- Origin marker — where the journey began -->
+                  <div class="timeline__beacon timeline__beacon--origin" aria-hidden="true">
+                    <span class="timeline__beacon-diamond"></span>
+                    <span class="timeline__beacon-label">Journey start</span>
+                  </div>
                 </div>
               {:else}
                 <p style="color: #64748b; font-size: 0.95rem;">
