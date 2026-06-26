@@ -1063,11 +1063,13 @@
             </button>
             <div class="cp-collapsible__body" class:cp-collapsible__body--open={regulationsOpen}>
               <div class="cp-collapsible__inner">
-                <RegulationsLanding
-                  destinationCountry={$project.destinationCountry ?? ""}
-                  originCountry={$project.originCountry ?? ""}
-                  onOpenLily={handleLilyDeepLink}
-                />
+                <div class="cp-collapsible__scroll">
+                  <RegulationsLanding
+                    destinationCountry={$project.destinationCountry ?? ""}
+                    originCountry={$project.originCountry ?? ""}
+                    onOpenLily={handleLilyDeepLink}
+                  />
+                </div><!-- /__scroll -->
               </div>
             </div>
           </div>
@@ -1091,6 +1093,7 @@
             </button>
             <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen}>
               <div class="cp-collapsible__inner">
+                <div class="cp-collapsible__scroll">
                 {#if editingDetails}
                   <div class="cp-edit-form">
                     <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-oc">Origin City</label><input id="ef-oc" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.originCity} /></div>
@@ -1266,6 +1269,7 @@
               {/if}
             </section>
 
+                </div><!-- /__scroll -->
               </div><!-- /details inner -->
             </div><!-- /details body -->
           </div><!-- /details collapsible -->
@@ -1286,6 +1290,7 @@
             </button>
             <div class="cp-collapsible__body" class:cp-collapsible__body--open={activityOpen}>
               <div class="cp-collapsible__inner">
+                <div class="cp-collapsible__scroll">
                 <section class="cp-dashboard__activity">
                   <h3>Activity Log</h3>
               {#if $project.activityLog && $project.activityLog.length > 0}
@@ -1312,6 +1317,7 @@
                 </p>
               {/if}
                 </section>
+                </div><!-- /__scroll -->
               </div><!-- /activity inner -->
             </div><!-- /activity body -->
           </div><!-- /activity collapsible -->

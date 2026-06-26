@@ -164,7 +164,9 @@
     {#each ranked as card (card.id)}
       <div class="rl__card">
         <div class="rl__card-top">
-          <span class="rl__icon" role="img">{card.icon}</span>
+          <div class="rl__icon-wrap">
+            <span class="rl__icon" role="img">{card.icon}</span>
+          </div>
           {#if card.tag}
             <span
               class="rl__tag"
@@ -199,146 +201,196 @@
 </section>
 
 <style>
+  /* ── Wrapper ── */
   .rl {
-    margin-bottom: 2.5rem;
+    padding-top: 0.75rem;
   }
 
-  /* Header */
+  /* ── Header ── */
   .rl__header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.4rem;
   }
   .rl__title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--color-text-primary, #f1f5f9);
-    margin: 0 0 0.35rem;
+    color: #0f172a;
+    margin: 0 0 0.3rem;
+    letter-spacing: 0.01em;
   }
   .rl__subtitle {
-    font-size: 0.875rem;
-    color: var(--color-text-muted, #94a3b8);
+    font-size: 0.82rem;
+    color: #64748b;
     margin: 0;
+    line-height: 1.5;
   }
   .rl__subtitle strong {
-    color: var(--color-text-primary, #f1f5f9);
+    color: #0f172a;
+    font-weight: 700;
   }
 
-  /* List layout */
+  /* ── Two-column card grid ── */
   .rl__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  /* ── Card ── */
+  .rl__card {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 14px;
+    padding: 1rem 1rem 0.85rem 1.1rem;
     display: flex;
     flex-direction: column;
     gap: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.16s ease;
+    overflow: hidden;
+
+    /* Left teal accent bar */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, rgba(2, 181, 187, 0.6) 0%, rgba(2, 181, 187, 0.15) 100%);
+      border-radius: 14px 0 0 14px;
+      transition: background 0.18s ease;
+    }
+
+    &:hover {
+      border-color: rgba(2, 181, 187, 0.28);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 6px 20px rgba(0, 0, 0, 0.08),
+        0 0 0 3px rgba(2, 181, 187, 0.06);
+      transform: translateY(-2px);
+
+      &::before {
+        background: linear-gradient(180deg, #02b5bb 0%, rgba(2, 181, 187, 0.4) 100%);
+      }
+    }
   }
 
-  /* Item row */
-  .rl__card {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
-    border-radius: 0;
-    padding: 1.1rem 0.25rem;
-    display: grid;
-    grid-template-columns: 2.5rem 1fr auto;
-    gap: 0.75rem 1rem;
-    align-items: start;
-    transition: background 0.12s;
-  }
-  .rl__card:last-child {
-    border-bottom: none;
-  }
-  .rl__card:hover {
-    background: rgba(2, 181, 187, 0.03);
-  }
-
+  /* ── Top row: icon bubble + tag ── */
   .rl__card-top {
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: 0;
-    grid-column: 1;
-    padding-top: 0.1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
   }
+
+  .rl__icon-wrap {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(2, 181, 187, 0.07);
+    border: 1px solid rgba(2, 181, 187, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
   .rl__icon {
-    font-size: 1.35rem;
+    font-size: 1.1rem;
     line-height: 1;
   }
+
   .rl__tag {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 2px 8px;
+    letter-spacing: 0.07em;
+    padding: 2px 7px;
     border-radius: 999px;
     border: 1px solid;
     white-space: nowrap;
   }
 
+  /* ── Title ── */
   .rl__card-title {
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 700;
-    color: var(--color-text-primary, #0f172a);
-    margin: 0 0 0.2rem;
+    color: #0f172a;
+    margin: 0 0 0.35rem;
     line-height: 1.35;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
   }
+
+  /* ── Body text ── */
   .rl__card-body {
-    font-size: 0.8rem;
-    color: var(--color-text-muted, #475569);
-    margin: 0;
-    line-height: 1.5;
+    font-size: 0.76rem;
+    color: #475569;
+    margin: 0 0 0.85rem;
+    line-height: 1.55;
     flex: 1;
   }
 
-  /* Actions */
+  /* ── Action buttons ── */
   .rl__card-actions {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.45rem;
     flex-wrap: wrap;
-    margin-top: 0.25rem;
+    margin-top: auto;
   }
+
   .rl__link {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
     border-radius: 7px;
-    border: none;
+    border: 1px solid;
     cursor: pointer;
     text-decoration: none;
-    transition: opacity 0.12s;
+    letter-spacing: 0.01em;
+    transition: background 0.14s ease, box-shadow 0.14s ease, transform 0.1s ease;
   }
+
   .rl__link--guide {
-    background: rgba(2, 132, 199, 0.08);
-    color: #0284c7;
-    border: 1px solid rgba(2, 132, 199, 0.2);
+    background: rgba(3, 105, 161, 0.06);
+    color: #0369a1;
+    border-color: rgba(3, 105, 161, 0.2);
+
+    &:hover {
+      background: rgba(3, 105, 161, 0.12);
+      box-shadow: 0 2px 8px rgba(3, 105, 161, 0.15);
+      transform: translateY(-1px);
+    }
   }
-  .rl__link--guide:hover { opacity: 0.8; }
 
-
-  /* Lily button — teal background tint, text darkened to #0a7e82 (~4.7:1) for readability */
+  /* Lily button */
   .rl__link--lily {
-    background: rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.1);
-    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1 on tint) → #0a7e82 (~4.7:1); keeps brand palette */
-    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3);
+    background: rgba(2, 181, 187, 0.07);
+    color: #0a7e82;
+    border-color: rgba(2, 181, 187, 0.22);
+
+    &:hover {
+      background: rgba(2, 181, 187, 0.14);
+      box-shadow: 0 2px 8px rgba(2, 181, 187, 0.18);
+      transform: translateY(-1px);
+    }
   }
-  .rl__link--lily:hover { opacity: 0.8; }
 
   .rl__lily-avatar {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
   }
 
-  @media (max-width: 480px) {
+  /* ── Responsive: single column on narrow ── */
+  @media (max-width: 600px) {
     .rl__grid {
       grid-template-columns: 1fr;
     }
