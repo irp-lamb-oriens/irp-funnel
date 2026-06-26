@@ -1294,16 +1294,17 @@
                   <h3>Activity Log</h3>
               {#if $project.activityLog && $project.activityLog.length > 0}
                 <div class="timeline">
-                  {#each [...$project.activityLog].reverse() as entry}
-                    <div class="timeline__item">
-                      <div class="timeline__item-icon">
-                        {getActivityIcon(entry.type)}
+                  <div class="timeline__spine" aria-hidden="true"></div>
+                  {#each [...$project.activityLog].reverse() as entry, idx}
+                    <div class="timeline__item" class:timeline__item--right={idx % 2 === 1}>
+                      <div class="timeline__node">
+                        <span class="timeline__node-icon">{getActivityIcon(entry.type)}</span>
                       </div>
-                      <div class="timeline__item-content">
-                        <div class="timeline__item-text">
+                      <div class="timeline__card">
+                        <div class="timeline__card-text">
                           {@html getActivityText(entry)}
                         </div>
-                        <div class="timeline__item-time">
+                        <div class="timeline__card-time">
                           {formatDateTime(entry.timestamp)}
                         </div>
                       </div>
