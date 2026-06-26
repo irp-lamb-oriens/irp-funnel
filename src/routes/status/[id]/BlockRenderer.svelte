@@ -346,7 +346,7 @@
     border: 1.5px dashed #e2e8f0;
     border-radius: 12px;
     text-align: center;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     font-size: 0.9rem;
   }
 
@@ -390,7 +390,7 @@
     text-align: left;
     font-size: 10.5px;
     font-weight: 800;
-    color: #94a3b8;
+    color: #475569;   /* raised from #94a3b8 (~2.5:1) → #475569 (~7.5:1) on gradient header */
     padding: 10px 16px;
     border-bottom: 2px solid #e2e8f0;
     text-transform: uppercase;
@@ -428,7 +428,7 @@
   }
   .br-item-notes {
     display: block;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     font-size: 11.5px;
     margin-top: 3px;
     font-weight: 400;
@@ -505,13 +505,13 @@
   .br-item-row--optional:hover { background: rgba(2, 182, 188, 0.04); }
   .br-item-row--unselected { opacity: 0.45; }
   .br-item-row--unselected:hover { opacity: 0.65; }
-  .br-item-label--dim { color: #94a3b8; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }
-  .br-optional-tag { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: #94a3b8; background: #f1f5f9; border-radius: 4px; padding: 2px 7px; margin-left: 7px; vertical-align: middle; text-decoration: none !important; }
-  .br-amt-dim { color: #94a3b8 !important; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }
+  .br-item-label--dim { color: #64748b; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }  /* #94a3b8→#64748b */
+  .br-optional-tag { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: #64748b; background: #f1f5f9; border-radius: 4px; padding: 2px 7px; margin-left: 7px; vertical-align: middle; text-decoration: none !important; }  /* #94a3b8→#64748b */
+  .br-amt-dim { color: #64748b !important; text-decoration: line-through; text-decoration-color: #cbd5e1; text-decoration-thickness: 1.5px; }  /* #94a3b8→#64748b */
 
   /* ── Notes card ──────────────────────────────────────────────────────── */
   .br-notes-card { background: linear-gradient(135deg, #f8fafc 0%, #f1fdfe 100%); border-radius: 12px; padding: 16px 20px; border-left: 3px solid #02b6bc; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
-  .br-notes-label { font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 7px; }
+  .br-notes-label { font-size: 10.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 7px; }  /* #94a3b8→#64748b */
   .br-notes-text { margin: 0; color: #334155; font-size: 14px; line-height: 1.7; }
   .br-client-description { background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfe 100%); border-left-color: #0ea5e9; margin-top: 16px; }
   .br-client-description .br-notes-label { color: #0284c7; }
@@ -556,8 +556,8 @@
   }
   .br-consent__check { margin-top: 2px; width: 18px; height: 18px; accent-color: #02b6bc; flex-shrink: 0; cursor: pointer; }
   .br-consent__text { font-size: 13px; color: #475569; line-height: 1.55; }
-  .br-legal-link { color: #02b6bc; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(2, 182, 188, 0.32); transition: border-color 0.15s ease; }
-  .br-legal-link:hover { border-color: #02b6bc; }
+  .br-legal-link { color: #0a7e82; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(10, 126, 130, 0.32); transition: border-color 0.15s ease; }  /* #02b6bc→#0a7e82: passes AA (~4.7:1) */
+  .br-legal-link:hover { border-color: #0a7e82; }
 
   .br-name-input {
     width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px;
@@ -566,7 +566,7 @@
     transition: border-color 0.18s, box-shadow 0.18s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  .br-name-input::placeholder { color: #94a3b8; }
+  .br-name-input::placeholder { color: #64748b; }  /* #94a3b8→#64748b */
   .br-name-input:focus { border-color: #02b6bc; box-shadow: 0 0 0 4px rgba(2, 182, 188, 0.12), 0 1px 3px rgba(0,0,0,0.04); }
   .br-accept-btn {
     background: linear-gradient(135deg, #02b6bc 0%, #08a89e 60%, #0e9f8e 100%);

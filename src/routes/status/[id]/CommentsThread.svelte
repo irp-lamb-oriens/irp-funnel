@@ -236,7 +236,7 @@
 
   .ct__header-count {
     background: rgba(2,181,187,0.12);
-    color: #02b5bb;
+    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1 on tint) → #0a7e82 (~4.7:1) */
     font-size: 0.72rem;
     font-weight: 700;
     padding: 1px 7px;
@@ -263,7 +263,7 @@
     align-items: center;
     gap: 0.6rem;
     padding: 2.5rem 1rem;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     text-align: center;
 
     p {
@@ -321,7 +321,7 @@
 
     &--staff {
       background: rgba(2,181,187,0.15);
-      color: #02b5bb;
+      color: #0a7e82;   /* darkened from #02b5bb (~2.5:1 on tint) → #0a7e82 (~4.7:1) */
     }
   }
 
@@ -349,7 +349,7 @@
   .ct__msg-badge {
     font-size: 0.62rem;
     background: rgba(2,181,187,0.12);
-    color: #02b5bb;
+    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1 on tint) → #0a7e82 (~4.7:1) */
     padding: 1px 5px;
     border-radius: 4px;
     font-weight: 800;
@@ -360,12 +360,12 @@
 
   .ct__msg-time {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
   }
 
   .ct__msg-edited {
     font-size: 0.66rem;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     font-style: italic;
   }
 
@@ -396,7 +396,7 @@
 
   .ct__msg-ctrl {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     background: none;
     border: none;
     cursor: pointer;
@@ -410,7 +410,7 @@
   }
 
   .ct__msg-ctrl-sep {
-    color: #cbd5e1;
+    color: #94a3b8;   /* bumped from #cbd5e1 (~1.6:1) → #94a3b8 (~2.5:1) — decorative separator */
     font-size: 0.7rem;
     user-select: none;
   }
@@ -513,7 +513,7 @@
     min-height: 1.5rem;
     max-height: 200px;
 
-    &::placeholder { color: #94a3b8; }
+    &::placeholder { color: #64748b; }  /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     &:disabled { opacity: 0.55; }
   }
 
@@ -528,7 +528,7 @@
     justify-content: center;
     flex-shrink: 0;
     background: #e2e8f0;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) on #e2e8f0 */
     transition: background 0.15s, color 0.15s, transform 0.1s;
 
     &--ready {
@@ -553,7 +553,7 @@
 
   .ct__composer-hint {
     font-size: 0.7rem;
-    color: #b0bec5;
+    color: #64748b;   /* raised from #b0bec5 (~1.9:1) → #64748b (~4.8:1) */
     margin: 0;
     padding-left: 0.25rem;
   }

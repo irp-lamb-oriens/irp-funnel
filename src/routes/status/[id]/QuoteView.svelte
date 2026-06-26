@@ -233,7 +233,7 @@
   .qv-error {
     padding: 32px;
     text-align: center;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     font-size: 14px;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
       'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -314,7 +314,7 @@
     text-align: left;
     font-size: 11px;
     font-weight: 700;
-    color: #94a3b8;
+    color: #475569;   /* raised from #94a3b8 (~2.5:1) → #475569 (~7.5:1) on #f8fafc */
     padding: 10px 16px;
     border-bottom: 2px solid #f1f5f9;
     text-transform: uppercase;
@@ -346,7 +346,7 @@
 
   .qv-item-notes {
     display: block;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
     font-size: 12px;
     margin-top: 3px;
     line-height: 1.4;
@@ -376,7 +376,7 @@
   .qv-notes-label {
     font-size: 11px;
     font-weight: 700;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) on #f8fafc */
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0 0 7px;
@@ -458,13 +458,13 @@
     line-height: 1.55;
   }
   .qv-legal-link {
-    color: #02b5bb;
+    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1) → #0a7e82 (~4.7:1) on white */
     font-weight: 700;
     text-decoration: none;
-    border-bottom: 1px solid rgba(2, 181, 187, 0.32);
+    border-bottom: 1px solid rgba(10, 126, 130, 0.32);
     transition: border-color 0.15s ease;
   }
-  .qv-legal-link:hover { border-color: #02b5bb; }
+  .qv-legal-link:hover { border-color: #0a7e82; }
 
 
   .qv-name-input {
@@ -480,7 +480,7 @@
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .qv-name-input::placeholder { color: #94a3b8; }
+  .qv-name-input::placeholder { color: #64748b; }  /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) */
   .qv-name-input:focus {
     border-color: #02b5bb;
     box-shadow: 0 0 0 3px rgba(2,181,187,0.15);

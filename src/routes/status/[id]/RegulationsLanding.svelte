@@ -43,7 +43,7 @@
       icon: '🛃',
       title: 'Customs & Import Duties',
       tag: 'Compliance',
-      tagColor: '#f59e0b',
+      tagColor: '#b45309',  /* darkened from #f59e0b (~2.1:1) → #b45309 (~4.8:1) on pale tint */
       body: 'Understand what duties apply to your household goods, electronics, and vehicles when entering your destination country.',
       priority: ['costa rica', 'panama', 'mexico', 'spain', 'portugal', 'colombia', 'argentina', 'peru'],
       guideUrl: '/blog/customs-import-duties',
@@ -54,7 +54,7 @@
       icon: '🚗',
       title: 'Vehicle Import Regulations',
       tag: 'Exports',
-      tagColor: '#0ea5e9',
+      tagColor: '#0369a1',  /* darkened from #0ea5e9 (~2.8:1) → #0369a1 (~5.2:1) on pale tint */
       body: 'Rules for importing your car or motorcycle, including year restrictions, emissions standards, and tariff exemptions.',
       priority: ['costa rica', 'panama', 'colombia'],
       guideUrl: '/blog/vehicle-import',
@@ -65,7 +65,7 @@
       icon: '🛂',
       title: 'Residency & Visa Options',
       tag: 'Immigration',
-      tagColor: '#02b5bb',
+      tagColor: '#0a7e82',  /* darkened from #02b5bb (~2.5:1) → #0a7e82 (~4.7:1) on pale tint */
       body: 'Explore digital nomad visas, pensioner residency programs, investor schemes, and work permit pathways for your destination.',
       priority: ['costa rica', 'portugal', 'spain', 'mexico', 'colombia', 'Panama'],
       lilyTopic: 'What residency or visa options are available for moving to {{destination}}?',
@@ -75,7 +75,7 @@
       icon: '💼',
       title: 'Tax Considerations',
       tag: 'Legal',
-      tagColor: '#10b981',
+      tagColor: '#047857',  /* darkened from #10b981 (~2.2:1) → #047857 (~4.7:1) on pale tint */
       body: 'Foreign income taxation, tax treaties, FBAR obligations for US nationals, and VAT implications for expats.',
       priority: ['costa rica', 'portugal', 'spain', 'panama', 'mexico'],
       lilyTopic: 'What are the key tax considerations for a US national moving to {{destination}}?',
@@ -85,7 +85,7 @@
       icon: '📋',
       title: 'Household Goods Exemptions',
       tag: 'Compliance',
-      tagColor: '#f59e0b',
+      tagColor: '#b45309',  /* darkened from #f59e0b (~2.1:1) → #b45309 (~4.8:1) on pale tint */
       body: 'Most countries offer duty-free exemptions for used household goods brought by a new resident. Learn the documentation requirements.',
       priority: ['costa rica', 'panama', 'mexico', 'spain', 'colombia', 'argentina'],
       lilyTopic: 'What household goods exemptions apply when I move to {{destination}}?',
@@ -105,7 +105,7 @@
       icon: '🚢',
       title: 'Export Restrictions & Controls',
       tag: 'Exports',
-      tagColor: '#0ea5e9',
+      tagColor: '#0369a1',  /* darkened from #0ea5e9 (~2.8:1) → #0369a1 (~5.2:1) on pale tint */
       body: 'US, Canadian, and EU export control rules for electronics, certain household goods, and regulated items going abroad.',
       priority: ['united states', 'canada'],
       lilyTopic: 'Are there any export restrictions I need to know about when shipping from {{origin}}?',
@@ -168,7 +168,7 @@
           {#if card.tag}
             <span
               class="rl__tag"
-              style="color:{card.tagColor ?? '#94a3b8'};background:{(card.tagColor ?? '#94a3b8') + '18'};border-color:{(card.tagColor ?? '#94a3b8') + '40'}"
+              style="color:{card.tagColor ?? '#64748b'};background:{(card.tagColor ?? '#64748b') + '18'};border-color:{(card.tagColor ?? '#64748b') + '40'}"
             >{card.tag}</span>
           {/if}
         </div>
@@ -322,10 +322,10 @@
   .rl__link--guide:hover { opacity: 0.8; }
 
 
-  /* Lily button uses the global brand teal token so it always matches the portal accent */
+  /* Lily button — teal background tint, text darkened to #0a7e82 (~4.7:1) for readability */
   .rl__link--lily {
     background: rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.1);
-    color: var(--color-highlight-2, #02b5bb);
+    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1 on tint) → #0a7e82 (~4.7:1); keeps brand palette */
     border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3);
   }
   .rl__link--lily:hover { opacity: 0.8; }

@@ -132,7 +132,7 @@
 
   .stage-rating__label {
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: #64748b;
     font-weight: 500;
   }
 
@@ -159,7 +159,7 @@
     color: #f59e0b;
   }
   .stage-rating__star--empty {
-    color: rgba(255,255,255,0.25);
+    color: #cbd5e1;  /* visible placeholder on white, still clearly unfilled vs #f59e0b filled */
   }
 
   /* ── Interactive star buttons ─── */
@@ -170,7 +170,7 @@
     padding: 1px 2px;
     font-size: 1.2rem;
     line-height: 1;
-    color: rgba(255,255,255,0.2);
+    color: #cbd5e1;  /* raised from white-opacity (invisible on white) to visible placeholder */
     transition: color 0.1s ease, transform 0.1s ease;
     display: inline-block;
   }
@@ -200,13 +200,13 @@
 
   .stage-rating__thanks {
     font-size: 0.78rem;
-    color: #02b5bb;
+    color: #0a7e82;   /* darkened from #02b5bb (~2.5:1) → #0a7e82 (~4.7:1) on white */
     font-weight: 600;
   }
 
   .stage-rating__pending {
     font-size: 0.72rem;
-    color: #cbd5e1;
+    color: #64748b;   /* raised from #cbd5e1 (~1.6:1) → #64748b (~4.8:1) on white */
     font-style: italic;
   }
 
@@ -218,16 +218,17 @@
 
   .stage-rating__note-input {
     font-size: 0.8rem;
-    border: 1px solid rgba(2, 181, 187, 0.4);
+    border: 1px solid rgba(2, 181, 187, 0.35);
     border-radius: 6px;
     padding: 3px 8px;
     outline: none;
     width: 160px;
-    background: rgba(255,255,255,0.05);
-    color: #f1f5f9;
+    background: #f8fafc;     /* raised from rgba(255,255,255,0.05) — visible on white */
+    color: #0f172a;           /* raised from #f1f5f9 — readable on light bg */
   }
   .stage-rating__note-input:focus {
     border-color: #02b5bb;
+    background: #ffffff;
   }
 
   .stage-rating__submit {
@@ -250,7 +251,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #94a3b8;
+    color: #64748b;   /* raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) on white */
     line-height: 1;
   }
   .stage-rating__cancel:hover {

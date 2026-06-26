@@ -23,7 +23,7 @@
   // Light-theme text hierarchy
   --cp-text-primary  : #0f172a;
   --cp-text-muted    : #475569;
-  --cp-text-subtle   : #94a3b8;
+  --cp-text-subtle   : #64748b;   // raised from #94a3b8 (~2.5:1) → #64748b (~4.8:1) for WCAG AA
   // Aliases so child components using var(--color-text-primary) / var(--color-text-muted)
   // (QuotePanel, RegulationsLanding, BlockRenderer) receive coherent portal values
   // rather than each component's own inline fallback.
@@ -938,7 +938,7 @@
     font-size: 2.6rem;
     line-height: 1;
     padding: 0 0.1rem;
-    color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.35);   /* raised from 0.18 (~1.6:1) → 0.35 (~3.1:1) on dark review banner */
     transition: color 0.12s ease, transform 0.08s ease;
 
     &--on {
@@ -1090,7 +1090,7 @@
     }
 
     &-chevron {
-      color: #94a3b8;
+      color: #64748b;
       transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
       flex-shrink: 0;
 
@@ -1266,7 +1266,7 @@
       text-shadow: 0 0 12px rgba(var(--cp-gold-rgb), 0.4);
     }
     &--off {
-      color: rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.35);   /* raised from 0.18 (~1.6:1) → 0.35 (~3.1:1) on dark card */
     }
   }
 
