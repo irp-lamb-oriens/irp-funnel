@@ -53,7 +53,7 @@
     checkIrpStaff,
     clearIrpStaff,
   } from "../../../lib/auth/irpStaff.ts";
-  import { sendLilyMessage } from "./store.ts";
+  import { sendLilyMessage, updateProjectDetails } from "./store.ts";
   import "./status.scss";
 
   $: projectId = $page.params.id;
@@ -69,7 +69,7 @@
   onMount(async () => {
     // ─── 0. Match portal background on the body so the pt-space gap above
     //        .client-portal doesn't expose the body background colour.
-    document.body.style.setProperty("background-color", "#1a1a2e");
+    document.body.style.setProperty("background-color", "#fbfcfc");
 
     // ─── 1. IRP organization-agent bypass ────────────────────────────────
     // If a /dashboard session is present, every /api/client-status request
@@ -260,6 +260,48 @@
 
   let overallStars = 0;
   let overallHover = 0;
+
+  // ── Section collapsibles ──────────────────────────────────────────────────
+  let detailsOpen = false;
+  let activityOpen = false;
+  let regulationsOpen = false;
+
+  // ── Client project details editing ───────────────────────────────────────
+  let editingDetails = false;
+  let detailsSaving = false;
+  let detailsEditError = '';
+  let detailsEditForm = {
+    originCity: '', originCountry: '',
+    destinationCity: '', destinationCountry: '',
+    size: '', immigrationStatus: '',
+    propertyTypeFrom: '', propertyTypeTo: '',
+  };
+
+  function startEditDetails() {
+    detailsEditForm = {
+      originCity: $project?.originCity ?? '',
+      originCountry: $project?.originCountry ?? '',
+      destinationCity: $project?.destinationCity ?? '',
+      destinationCountry: $project?.destinationCountry ?? '',
+      size: $project?.size ?? '',
+      immigrationStatus: $project?.immigrationStatus ?? '',
+      propertyTypeFrom: $project?.propertyTypeFrom ?? '',
+      propertyTypeTo: $project?.propertyTypeTo ?? '',
+    };
+    editingDetails = true;
+    detailsOpen = true;
+  }
+  function cancelEditDetails() { editingDetails = false; detailsEditError = ''; }
+  async function saveDetails() {
+    detailsSaving = true; detailsEditError = '';
+    try {
+      await updateProjectDetails(projectId, detailsEditForm);
+      editingDetails = false;
+    } catch (err: any) {
+      detailsEditError = err?.message ?? 'Failed to save changes.';
+    } finally { detailsSaving = false; }
+  }
+
   let overallComment = "";
   let overallSubmitting = false;
   let overallError = "";
@@ -1008,19 +1050,65 @@
             </section>
           {/if}
 
-          <!-- Regulations & Compliance ─────────────────────────────────────── -->
-
-          <div class="cp-dashboard__full-width-section">
-            <RegulationsLanding
-              destinationCountry={$project.destinationCountry ?? ""}
-              originCountry={$project.originCountry ?? ""}
-              onOpenLily={handleLilyDeepLink}
-            />
+          <!-- Regulations, Exports & Services collapsible ─────────────────── -->
+          <div class="cp-collapsible">
+            <button class="cp-collapsible__trigger" type="button" on:click={() => (regulationsOpen = !regulationsOpen)} aria-expanded={regulationsOpen}>
+              <span class="cp-collapsible__trigger-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2,#02b5bb)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Regulations, Exports &amp; Services
+              </span>
+              <span class="cp-collapsible__trigger-right">
+                <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={regulationsOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </button>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={regulationsOpen}>
+              <div class="cp-collapsible__inner">
+                <RegulationsLanding
+                  destinationCountry={$project.destinationCountry ?? ""}
+                  originCountry={$project.originCountry ?? ""}
+                  onOpenLily={handleLilyDeepLink}
+                />
+              </div>
+            </div>
           </div>
 
-          <!-- Project details + activity log grid ────────────────────────── -->
-          <div class="cp-dashboard__grid">
-            <!-- DETAILS BOX -->
+          <!-- Project Details collapsible ───────────────────────────────── -->
+          <div class="cp-collapsible">
+            <button class="cp-collapsible__trigger" type="button" on:click={() => (detailsOpen = !detailsOpen)} aria-expanded={detailsOpen}>
+              <span class="cp-collapsible__trigger-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2,#02b5bb)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Project Details
+              </span>
+              <span class="cp-collapsible__trigger-right">
+                {#if $project?.viewerIsPrincipal && !editingDetails}
+                  <button class="cp-collapsible__trigger-edit" type="button" on:click|stopPropagation={startEditDetails}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                  </button>
+                {/if}
+                <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={detailsOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </button>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen}>
+              <div class="cp-collapsible__inner">
+                {#if editingDetails}
+                  <div class="cp-edit-form">
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-oc">Origin City</label><input id="ef-oc" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.originCity} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-ok">Origin Country</label><input id="ef-ok" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.originCountry} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-dc">Destination City</label><input id="ef-dc" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.destinationCity} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-dk">Destination Country</label><input id="ef-dk" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.destinationCountry} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-sz">Move Size</label><input id="ef-sz" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.size} placeholder="e.g. 2BR Apartment" /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-im">Immigration Status</label><input id="ef-im" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.immigrationStatus} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-pf">Property Moving From</label><input id="ef-pf" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.propertyTypeFrom} /></div>
+                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-pt">Property Looking For</label><input id="ef-pt" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.propertyTypeTo} /></div>
+                    {#if detailsEditError}<p style="grid-column:1/-1;color:#dc2626;font-size:0.82rem;margin:0;">{detailsEditError}</p>{/if}
+                    <div class="cp-edit-form__actions">
+                      <button class="cp-edit-form__cancel" type="button" on:click={cancelEditDetails}>Cancel</button>
+                      <button class="cp-edit-form__save" type="button" on:click={saveDetails} disabled={detailsSaving}>{detailsSaving ? "Saving…" : "Save changes"}</button>
+                    </div>
+                  </div>
+                {/if}
+                <!-- DETAILS BOX -->
             <section class="cp-dashboard__details">
               <h3>
                 <svg
@@ -1178,9 +1266,28 @@
               {/if}
             </section>
 
-            <!-- ACTIVITY TIMELINE -->
-            <section class="cp-dashboard__activity">
-              <h3>Activity Log</h3>
+              </div><!-- /details inner -->
+            </div><!-- /details body -->
+          </div><!-- /details collapsible -->
+
+          <!-- Activity Log collapsible ──────────────────────────────────── -->
+          <div class="cp-collapsible">
+            <button class="cp-collapsible__trigger" type="button" on:click={() => (activityOpen = !activityOpen)} aria-expanded={activityOpen}>
+              <span class="cp-collapsible__trigger-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2,#02b5bb)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Activity Log
+              </span>
+              <span class="cp-collapsible__trigger-right">
+                {#if ($project?.activityLog?.length ?? 0) > 0}
+                  <span class="cp-collapsible__trigger-count">{$project.activityLog.length}</span>
+                {/if}
+                <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={activityOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </button>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={activityOpen}>
+              <div class="cp-collapsible__inner">
+                <section class="cp-dashboard__activity">
+                  <h3>Activity Log</h3>
               {#if $project.activityLog && $project.activityLog.length > 0}
                 <div class="timeline">
                   {#each [...$project.activityLog].reverse() as entry}
@@ -1204,10 +1311,13 @@
                   No activity recorded yet.
                 </p>
               {/if}
-            </section>
-          </div>
+                </section>
+              </div><!-- /activity inner -->
+            </div><!-- /activity body -->
+          </div><!-- /activity collapsible -->
         </div>
         <!-- /#cp-overview -->
+
       {/if}
 
       <!-- ══ COMMENTS — always rendered (single-landing). Visible to both

@@ -2,13 +2,13 @@
 
 .client-portal {
   min-height: 100vh;
-  background-color: #1a1a2e;
+  background-color: #fbfcfc;
   // ── Font: inherit the global brand font (Jost) defined in global.scss ──────
   font-family: var(--font-paragraph);
 
   // ── Portal-scoped token extensions ──────────────────────────────────────────
   // These EXTEND (not override) the global :root token system, adding portal-
-  // specific needs (RGB decomposition for rgba() usage, dark-theme text tokens)
+  // specific needs (RGB decomposition for rgba() usage, light-theme text tokens)
   // without touching the global color palette.
   //
   // Brand palette reference (from global.scss):
@@ -20,23 +20,24 @@
   //   --font-subtitle     : "Spartan Black", serif
   --color-highlight-2-rgb: 2, 181, 187;   // RGB decomposition of --color-highlight-2
   --color-highlight-1-rgb: 198, 36, 38;   // RGB decomposition of --color-highlight-1
-  // Dark-theme text hierarchy (portal-only, not in global)
-  --cp-text-primary  : #f1f5f9;
-  --cp-text-muted    : #94a3b8;
-  --cp-text-subtle   : #64748b;
+  // Light-theme text hierarchy
+  --cp-text-primary  : #0f172a;
+  --cp-text-muted    : #475569;
+  --cp-text-subtle   : #94a3b8;
   // Aliases so child components using var(--color-text-primary) / var(--color-text-muted)
   // (QuotePanel, RegulationsLanding, BlockRenderer) receive coherent portal values
   // rather than each component's own inline fallback.
   --color-text-primary: var(--cp-text-primary);
   --color-text-muted  : var(--cp-text-muted);
-  // Dark-theme surface tokens
-  --cp-surface       : rgba(15, 23, 42, 0.55);
+  // Light-theme surface tokens
+  --cp-surface       : #ffffff;
   --cp-surface-card  : #ffffff;
-  --cp-border        : rgba(148, 163, 184, 0.12);
+  --cp-border        : rgba(0, 0, 0, 0.08);
   --cp-border-teal   : rgba(var(--color-highlight-2-rgb), 0.28);
   // Horizontal padding used for section-level gutters
   --cp-h-pad: 1.5rem;
 }
+
 
 // ─── LOGIN GATE ─────────────────────────────────────────────────────────────
 .cp-auth-wall {
@@ -227,7 +228,7 @@
   & + .cp-section-anchor {
     margin-top: 2.5rem;
     padding-top: 2rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
   }
 
   @media (max-width: 768px) {
@@ -375,14 +376,14 @@
   }
 
   // ─── PIPELINE STAGE ───
-  // Dark-glass card — cohesive with the rest of the dark portal.
   &__pipeline {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--cp-border, rgba(148, 163, 184, 0.12));
+    background: #ffffff;
+    border: 1px solid var(--cp-border, rgba(0, 0, 0, 0.08));
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+
 
     h3 {
       font-size: 1.1rem;
@@ -410,7 +411,7 @@
         left: 60px;
         right: 60px;
         height: 4px;
-        background: rgba(148, 163, 184, 0.18);
+        background: #e2e8f0;
         z-index: 0;
         border-radius: 2px;
       }
@@ -429,8 +430,9 @@
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: rgba(148, 163, 184, 0.2);
-          border: 4px solid rgba(15, 23, 42, 0.8);
+          background: #e2ecf3;
+          border: 4px solid #ffffff;
+          box-shadow: 0 0 0 2px #cbd5e1;
           margin-bottom: 0.75rem;
           transition: all 0.3s ease;
         }
@@ -451,7 +453,7 @@
           font-weight: 600;
           color: var(--cp-text-subtle, #64748b);
           text-align: center;
-          background: rgba(148, 163, 184, 0.1);
+          background: #f1f5f9;
           padding: 0.2rem 0.5rem;
           border-radius: 8px;
           margin-top: 0.25rem;
@@ -498,24 +500,20 @@
     font-family: var(--font-subtitle);
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: var(--cp-text-muted, #94a3b8);
+    color: var(--cp-text-muted, #475569);
     margin: 2rem 0 1.25rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   // ─── DETAILS BOX ───
-  // Dark-glass card — matches portal dark theme.
   &__details {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--cp-border, rgba(148, 163, 184, 0.12));
+    background: #ffffff;
+    border: 1px solid var(--cp-border, rgba(0, 0, 0, 0.08));
     border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-    max-height: 520px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+
 
     h3 {
       font-size: 1.1rem;
@@ -540,14 +538,14 @@
         display: flex;
         align-items: flex-start;
         gap: 1rem;
-        background: rgba(15, 23, 42, 0.5);
-        border: 1px solid rgba(148, 163, 184, 0.1);
+        background: #f8fafc;
+        border: 1px solid rgba(0, 0, 0, 0.06);
         padding: 1.25rem;
         border-radius: 12px;
         transition: border-color 0.2s ease, background 0.2s ease;
 
         &:hover {
-          border-color: rgba(var(--color-highlight-2-rgb), 0.25);
+          border-color: rgba(var(--color-highlight-2-rgb), 0.3);
           background: rgba(var(--color-highlight-2-rgb), 0.04);
         }
       }
@@ -559,14 +557,14 @@
       &__icon {
         font-size: 1.5rem;
         line-height: 1;
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.03);
         width: 40px;
         height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 10px;
-        border: 1px solid rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.07);
         flex-shrink: 0;
       }
 
@@ -644,11 +642,10 @@
       }
     }
 
-    // Pills & Badges — dark versions
     .tag-pill {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      color: var(--cp-text-muted, #94a3b8);
+      background: #f1f5f9;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: var(--cp-text-muted, #475569);
       padding: 0.3rem 0.7rem;
       border-radius: 20px;
       font-size: 0.82rem;
@@ -665,9 +662,9 @@
       font-weight: 600;
 
       &--success {
-        background: rgba(74, 222, 128, 0.12);
-        color: #4ade80;
-        border: 1px solid rgba(74, 222, 128, 0.25);
+        background: rgba(21, 128, 61, 0.1);
+        color: #15803d;
+        border: 1px solid rgba(21, 128, 61, 0.2);
       }
       &--danger {
         background: rgba(var(--color-highlight-1-rgb), 0.12);
@@ -678,17 +675,12 @@
   }
 
   // ─── ACTIVITY TIMELINE ───
-  // Dark-glass card — matches portal dark theme.
   &__activity {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--cp-border, rgba(148, 163, 184, 0.12));
+    background: #ffffff;
+    border: 1px solid var(--cp-border, rgba(0, 0, 0, 0.08));
     border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
-    max-height: 520px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
 
     h3 {
       font-size: 1.1rem;
@@ -727,10 +719,10 @@
 
         &-content {
           flex: 1;
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(0, 0, 0, 0.02);
           padding: 0.875rem 1rem;
           border-radius: 8px;
-          border: 1px solid rgba(148, 163, 184, 0.08);
+          border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         &-text {
@@ -1017,12 +1009,229 @@
   }
 }
 
+// ─── COLLAPSIBLE SECTION SYSTEM ──────────────────────────────────────────────
+// Used for Project Details, Activity Log, and Regulations/Services sections.
+// Collapsed by default; chevron animates on open.
+// The CSS grid-template-rows trick gives a smooth height transition with no JS.
+.cp-collapsible {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+
+  &__trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 1rem;
+    transition: background 0.15s;
+    font-family: var(--font-paragraph);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    &-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      font-family: var(--font-subtitle);
+      letter-spacing: 0.02em;
+    }
+
+    &-count {
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(2, 181, 187, 0.1);
+      color: var(--color-highlight-2);
+      border: 1px solid rgba(2, 181, 187, 0.2);
+      padding: 1px 7px;
+      border-radius: 20px;
+      letter-spacing: 0;
+    }
+
+    &-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--color-highlight-2);
+      background: rgba(2, 181, 187, 0.08);
+      border: 1px solid rgba(2, 181, 187, 0.2);
+      border-radius: 8px;
+      padding: 0.3rem 0.65rem;
+      cursor: pointer;
+      font-family: var(--font-paragraph);
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+
+      &:hover {
+        background: rgba(2, 181, 187, 0.16);
+      }
+    }
+
+    &-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    &-chevron {
+      color: #94a3b8;
+      transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+      flex-shrink: 0;
+
+      &--open {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  &__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &--open {
+      grid-template-rows: 1fr;
+    }
+  }
+
+  &__inner {
+    overflow: hidden;
+    padding: 0 1.5rem 1.5rem;
+
+    // Remove top margin from the first heading inside (the collapsible header IS the heading)
+    > section,
+    > div > section {
+      background: none;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+
+      h3 { display: none; } // heading is in the trigger, not repeated inside
+    }
+  }
+}
+
+// ─── CLIENT EDIT FORM (inside Project Details collapsible) ───────────────────
+.cp-edit-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+  }
+
+  &__input {
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 9px;
+    font-size: 0.9rem;
+    font-family: var(--font-paragraph);
+    background: #f8fafc;
+    color: #0f172a;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-highlight-2);
+      box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.12);
+      background: #ffffff;
+    }
+  }
+
+  &__actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 0.6rem;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0,0,0,0.07);
+    margin-top: 0.25rem;
+  }
+
+  &__save {
+    padding: 0.55rem 1.4rem;
+    background: var(--color-highlight-2);
+    color: #ffffff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-paragraph);
+    transition: background 0.15s, transform 0.1s;
+
+    &:hover:not(:disabled) {
+      background: #019fa4;
+      transform: translateY(-1px);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__cancel {
+    padding: 0.55rem 1.1rem;
+    background: none;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 9px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    font-family: var(--font-paragraph);
+    transition: background 0.15s;
+
+    &:hover {
+      background: rgba(0,0,0,0.04);
+    }
+  }
+}
+
 .cp-review-result {
   display: flex;
   gap: 1.5rem;
   align-items: stretch;
   text-align: left;
   flex-wrap: wrap;
+
 
   &__feedback {
     flex: 1 1 200px;

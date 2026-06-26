@@ -225,37 +225,43 @@
     color: var(--color-text-primary, #f1f5f9);
   }
 
-  /* Grid */
+  /* List layout */
   .rl__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 0.875rem;
-  }
-
-  /* Card */
-  .rl__card {
-    background: rgba(15, 23, 42, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    border-radius: 14px;
-    padding: 1.1rem 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    transition: border-color 0.15s, background 0.15s;
+    gap: 0;
+  }
+
+  /* Item row */
+  .rl__card {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 0;
+    padding: 1.1rem 0.25rem;
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    gap: 0.75rem 1rem;
+    align-items: start;
+    transition: background 0.12s;
+  }
+  .rl__card:last-child {
+    border-bottom: none;
   }
   .rl__card:hover {
-    border-color: rgba(14, 165, 233, 0.3);
-    background: rgba(14, 165, 233, 0.05);
+    background: rgba(2, 181, 187, 0.03);
   }
 
   .rl__card-top {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+    grid-column: 1;
+    padding-top: 0.1rem;
   }
   .rl__icon {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     line-height: 1;
   }
   .rl__tag {
@@ -270,17 +276,21 @@
   }
 
   .rl__card-title {
-    font-size: 0.925rem;
+    font-size: 0.9rem;
     font-weight: 700;
-    color: var(--color-text-primary, #f1f5f9);
-    margin: 0;
+    color: var(--color-text-primary, #0f172a);
+    margin: 0 0 0.2rem;
     line-height: 1.35;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
   }
   .rl__card-body {
-    font-size: 0.82rem;
-    color: var(--color-text-muted, #94a3b8);
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #475569);
     margin: 0;
-    line-height: 1.55;
+    line-height: 1.5;
     flex: 1;
   }
 
@@ -305,11 +315,12 @@
     transition: opacity 0.12s;
   }
   .rl__link--guide {
-    background: rgba(14, 165, 233, 0.12);
-    color: #38bdf8;
-    border: 1px solid rgba(14, 165, 233, 0.25);
+    background: rgba(2, 132, 199, 0.08);
+    color: #0284c7;
+    border: 1px solid rgba(2, 132, 199, 0.2);
   }
   .rl__link--guide:hover { opacity: 0.8; }
+
 
   /* Lily button uses the global brand teal token so it always matches the portal accent */
   .rl__link--lily {

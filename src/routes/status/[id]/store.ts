@@ -294,8 +294,22 @@ export async function editComment(
   }
 }
 
+export async function updateProjectDetails(
+  projectId: string,
+  fields: Record<string, string>,
+): Promise<void> {
+  const data = await apiFetch(`/api/client-status/project/${projectId}/details`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  });
+  // Optimistic local update so the UI reflects changes without re-fetching
+  project.update((p) => (p ? { ...p, ...fields } : p));
+}
+
 export async function deleteComment(projectId: string, commentId: string): Promise<void> {
   // Server-side this is a SOFT delete (the row is retained, flagged `deleted`,
+
   // for the CRM audit trail). We mirror that locally by marking the comment
   // deleted — the thread component filters out `deleted` entries from view.
   const data = await apiFetch(`/api/client-status/project/${projectId}/comment/${commentId}`, {
