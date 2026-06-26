@@ -1157,7 +1157,7 @@
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(2, 181, 187, 0.25) transparent;
-    padding: 0 1.5rem 1.4rem;
+    padding: 1rem 1.5rem 1.4rem;
 
     &::-webkit-scrollbar { width: 5px; }
     &::-webkit-scrollbar-track { background: transparent; }
@@ -1274,6 +1274,95 @@
     }
   }
 }
+
+// ─── INLINE WYSIWYG EDITING (Project Details) ────────────────────────────────
+// When editingDetails = true, each editable field card switches to an
+// inline-edit state: the value text is replaced by a frameless input that
+// visually matches the card's read typography. The card gains a teal left
+// accent bar so it reads as "active for editing" without any modal/drawer.
+.field--editable {
+  border-color: rgba(2, 181, 187, 0.28) !important;
+  background: rgba(2, 181, 187, 0.025) !important;
+  position: relative;
+
+  // Teal left accent bar — WYSIWYG "active" signal
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #02b5bb 0%, rgba(2, 181, 187, 0.3) 100%);
+    border-radius: 12px 0 0 12px;
+  }
+
+  .field__label {
+    color: #0a7e82;
+  }
+}
+
+// Frameless inline input — looks like plain text until hovered/focused
+.field__inline-input {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(2, 181, 187, 0.25);
+  border-radius: 0;
+  padding: 0.15rem 0 0.15rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0f172a;
+  font-family: var(--font-paragraph);
+  outline: none;
+  line-height: 1.4;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  &:focus {
+    border-bottom-color: #02b5bb;
+    box-shadow: 0 2px 0 rgba(2, 181, 187, 0.14);
+  }
+}
+
+// Row containing two side-by-side inline inputs (city + country)
+.field__inline-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+// Tiny sub-label inside an inline-row (Property from / Property to)
+.field__inline-sub {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  margin-top: 0.4rem;
+  margin-bottom: 0;
+}
+
+// Save / Cancel bar that appears at the bottom of the field-grid in editing mode
+.cp-details-edit-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  padding-top: 0.85rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 .cp-review-result {
   display: flex;

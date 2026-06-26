@@ -1094,180 +1094,179 @@
             <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen}>
               <div class="cp-collapsible__inner">
                 <div class="cp-collapsible__scroll">
-                {#if editingDetails}
-                  <div class="cp-edit-form">
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-oc">Origin City</label><input id="ef-oc" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.originCity} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-ok">Origin Country</label><input id="ef-ok" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.originCountry} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-dc">Destination City</label><input id="ef-dc" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.destinationCity} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-dk">Destination Country</label><input id="ef-dk" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.destinationCountry} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-sz">Move Size</label><input id="ef-sz" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.size} placeholder="e.g. 2BR Apartment" /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-im">Immigration Status</label><input id="ef-im" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.immigrationStatus} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-pf">Property Moving From</label><input id="ef-pf" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.propertyTypeFrom} /></div>
-                    <div class="cp-edit-form__group"><label class="cp-edit-form__label" for="ef-pt">Property Looking For</label><input id="ef-pt" class="cp-edit-form__input" type="text" bind:value={detailsEditForm.propertyTypeTo} /></div>
-                    {#if detailsEditError}<p style="grid-column:1/-1;color:#dc2626;font-size:0.82rem;margin:0;">{detailsEditError}</p>{/if}
-                    <div class="cp-edit-form__actions">
-                      <button class="cp-edit-form__cancel" type="button" on:click={cancelEditDetails}>Cancel</button>
-                      <button class="cp-edit-form__save" type="button" on:click={saveDetails} disabled={detailsSaving}>{detailsSaving ? "Saving…" : "Save changes"}</button>
-                    </div>
-                  </div>
-                {/if}
-                <!-- DETAILS BOX -->
-            <section class="cp-dashboard__details">
-              <h3>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--color-highlight-2)"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  ><rect x="3" y="4" width="18" height="18" rx="2" ry="2"
-                  ></rect><line x1="16" y1="2" x2="16" y2="6"></line><line
-                    x1="8"
-                    y1="2"
-                    x2="8"
-                    y2="6"
-                  ></line><line x1="3" y1="10" x2="21" y2="10"></line></svg
-                >
-                Project Details
-              </h3>
-              <div class="field-grid">
-                {#if $project.budget}
-                  <div class="field field--card">
-                    <span class="field__icon">💰</span>
-                    <div class="field__content">
-                      <span class="field__label">Estimated Budget</span>
-                      <span class="field__value field__value--highlight"
-                        >{$project.budget}</span
-                      >
-                    </div>
-                  </div>
-                {/if}
-                {#if $project.size}
-                  <div class="field field--card">
-                    <span class="field__icon">📦</span>
-                    <div class="field__content">
-                      <span class="field__label">Move Size</span>
-                      <span class="field__value">{$project.size}</span>
-                    </div>
-                  </div>
-                {/if}
-                {#if $project.immigrationStatus}
-                  <div class="field field--card">
-                    <span class="field__icon">🛂</span>
-                    <div class="field__content">
-                      <span class="field__label">Immigration Status</span>
-                      <span class="field__value field__value--badge"
-                        >{$project.immigrationStatus}</span
-                      >
-                    </div>
-                  </div>
-                {/if}
-                {#if $project.propertyTypeFrom || $project.propertyTypeTo}
-                  <div class="field field--card field--full">
-                    <span class="field__icon">🏠</span>
-                    <div class="field__content">
-                      <span class="field__label">Property Requirements</span>
-                      <div class="field__row">
-                        {#if $project.propertyTypeFrom}
-                          <span class="field__tag"
-                            >Moving from: <strong
-                              >{$project.propertyTypeFrom}</strong
-                            ></span
-                          >
-                        {/if}
-                        {#if $project.propertyTypeTo}
-                          <span class="field__tag"
-                            >Looking for: <strong
-                              >{$project.propertyTypeTo}</strong
-                            ></span
-                          >
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-                {/if}
-                {#if $project.vehicles && $project.vehicles.length > 0}
-                  <div class="field field--card field--full">
-                    <span class="field__icon">🚗</span>
-                    <div class="field__content">
-                      <span class="field__label">Vehicles to Ship</span>
-                      <div class="field__tags">
-                        {#each $project.vehicles as vehicle}
-                          <span class="tag-pill"
-                            >{typeof vehicle === "object" && vehicle !== null
-                              ? [vehicle.year, vehicle.make, vehicle.model]
-                                  .filter(Boolean)
-                                  .join(" ")
-                              : vehicle}</span
-                          >
-                        {/each}
-                      </div>
-                    </div>
-                  </div>
-                {/if}
-                {#if upcomingConsultation}
-                  <div class="field field--card">
-                    <span class="field__icon">📅</span>
-                    <div class="field__content">
-                      <span class="field__label">Next Consultation</span>
-                      <span class="field__value"
-                        >{formatDate(upcomingConsultation)}</span
-                      >
-                    </div>
-                  </div>
-                {/if}
-              </div>
+                  <!-- DETAILS BOX — WYSIWYG inline edit: each editable field
+                       shows a frameless input in edit mode instead of a
+                       separate form above. Non-editable fields stay as text. -->
+                  <section class="cp-dashboard__details">
+                    <h3>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Project Details
+                    </h3>
+                    <div class="field-grid">
 
-              {#if Object.keys($project.customFields || {}).length > 0}
-                <h4 class="cp-dashboard__subheading">Additional Information</h4>
-                <div class="field-grid">
-                  {#each Object.entries($project.customFields || {}) as [key, val]}
-                    <div
-                      class="field field--card"
-                      class:field--full={isLongText(val) || Array.isArray(val)}
-                    >
-                      <div class="field__content">
-                        <span class="field__label">{formatKeyLabel(key)}</span>
+                      <!-- ── Origin ── (editable) -->
+                      <div class="field field--card" class:field--editable={editingDetails}>
+                        <span class="field__icon">🌍</span>
+                        <div class="field__content">
+                          <span class="field__label">Origin</span>
+                          {#if editingDetails}
+                            <div class="field__inline-row">
+                              <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.originCity} />
+                              <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.originCountry} />
+                            </div>
+                          {:else}
+                            <span class="field__value">
+                              {[$project.originCity, $project.originCountry].filter(Boolean).join(', ') || '—'}
+                            </span>
+                          {/if}
+                        </div>
+                      </div>
 
-                        {#if Array.isArray(val)}
-                          <div class="field__tags" style="margin-top: 0.5rem;">
-                            {#each val as item}
-                              <span class="tag-pill">{item}</span>
-                            {/each}
+                      <!-- ── Destination ── (editable) -->
+                      <div class="field field--card" class:field--editable={editingDetails}>
+                        <span class="field__icon">📍</span>
+                        <div class="field__content">
+                          <span class="field__label">Destination</span>
+                          {#if editingDetails}
+                            <div class="field__inline-row">
+                              <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.destinationCity} />
+                              <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.destinationCountry} />
+                            </div>
+                          {:else}
+                            <span class="field__value">
+                              {[$project.destinationCity, $project.destinationCountry].filter(Boolean).join(', ') || '—'}
+                            </span>
+                          {/if}
+                        </div>
+                      </div>
+
+                      <!-- ── Budget ── (read-only) -->
+                      {#if $project.budget}
+                        <div class="field field--card">
+                          <span class="field__icon">💰</span>
+                          <div class="field__content">
+                            <span class="field__label">Estimated Budget</span>
+                            <span class="field__value field__value--highlight">{$project.budget}</span>
                           </div>
-                        {:else if typeof val === "boolean"}
-                          <div
-                            class="field__value"
-                            style="margin-top: 0.25rem;"
-                          >
-                            {#if val}
-                              <span class="badge badge--success">✓ Yes</span>
+                        </div>
+                      {/if}
+
+                      <!-- ── Move Size ── (editable) -->
+                      {#if $project.size || editingDetails}
+                        <div class="field field--card" class:field--editable={editingDetails}>
+                          <span class="field__icon">📦</span>
+                          <div class="field__content">
+                            <span class="field__label">Move Size</span>
+                            {#if editingDetails}
+                              <input class="field__inline-input" type="text" placeholder="e.g. 40ft container" bind:value={detailsEditForm.size} />
                             {:else}
-                              <span class="badge badge--danger">✗ No</span>
+                              <span class="field__value">{$project.size}</span>
                             {/if}
                           </div>
-                        {:else if isUrl(val)}
-                          <a
-                            href={val}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="field__value field__value--link"
-                          >
-                            View Document ↗
-                          </a>
-                        {:else}
-                          <span class="field__value">{val}</span>
-                        {/if}
+                        </div>
+                      {/if}
+
+                      <!-- ── Immigration Status ── (editable) -->
+                      {#if $project.immigrationStatus || editingDetails}
+                        <div class="field field--card" class:field--editable={editingDetails}>
+                          <span class="field__icon">🛂</span>
+                          <div class="field__content">
+                            <span class="field__label">Immigration Status</span>
+                            {#if editingDetails}
+                              <input class="field__inline-input" type="text" placeholder="e.g. Residency, Visa, Citizen" bind:value={detailsEditForm.immigrationStatus} />
+                            {:else}
+                              <span class="field__value field__value--badge">{$project.immigrationStatus}</span>
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
+
+                      <!-- ── Property Requirements ── (editable) -->
+                      {#if $project.propertyTypeFrom || $project.propertyTypeTo || editingDetails}
+                        <div class="field field--card field--full" class:field--editable={editingDetails}>
+                          <span class="field__icon">🏠</span>
+                          <div class="field__content">
+                            <span class="field__label">Property Requirements</span>
+                            {#if editingDetails}
+                              <div class="field__inline-row">
+                                <span class="field__inline-sub">Moving from</span>
+                                <input class="field__inline-input" type="text" placeholder="house / apartment…" bind:value={detailsEditForm.propertyTypeFrom} />
+                                <span class="field__inline-sub">Looking for</span>
+                                <input class="field__inline-input" type="text" placeholder="house / apartment…" bind:value={detailsEditForm.propertyTypeTo} />
+                              </div>
+                            {:else}
+                              <div class="field__row">
+                                {#if $project.propertyTypeFrom}<span class="field__tag">Moving from: <strong>{$project.propertyTypeFrom}</strong></span>{/if}
+                                {#if $project.propertyTypeTo}<span class="field__tag">Looking for: <strong>{$project.propertyTypeTo}</strong></span>{/if}
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+                      {/if}
+
+                      <!-- ── Vehicles ── (read-only) -->
+                      {#if $project.vehicles && $project.vehicles.length > 0}
+                        <div class="field field--card field--full">
+                          <span class="field__icon">🚗</span>
+                          <div class="field__content">
+                            <span class="field__label">Vehicles to Ship</span>
+                            <div class="field__tags">
+                              {#each $project.vehicles as vehicle}
+                                <span class="tag-pill">{typeof vehicle === "object" && vehicle !== null ? [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ") : vehicle}</span>
+                              {/each}
+                            </div>
+                          </div>
+                        </div>
+                      {/if}
+
+                      <!-- ── Next Consultation ── (read-only) -->
+                      {#if upcomingConsultation}
+                        <div class="field field--card">
+                          <span class="field__icon">📅</span>
+                          <div class="field__content">
+                            <span class="field__label">Next Consultation</span>
+                            <span class="field__value">{formatDate(upcomingConsultation)}</span>
+                          </div>
+                        </div>
+                      {/if}
+
+                      <!-- ── Save / Cancel row (only in edit mode) ── -->
+                      {#if editingDetails}
+                        <div class="cp-details-edit-actions">
+                          {#if detailsEditError}<span style="color:#dc2626;font-size:0.82rem;margin-right:auto;">{detailsEditError}</span>{/if}
+                          <button class="cp-edit-form__cancel" type="button" on:click={cancelEditDetails}>Cancel</button>
+                          <button class="cp-edit-form__save" type="button" on:click={saveDetails} disabled={detailsSaving}>{detailsSaving ? "Saving…" : "Save changes"}</button>
+                        </div>
+                      {/if}
+
+                    </div><!-- /field-grid -->
+
+                    {#if Object.keys($project.customFields || {}).length > 0}
+                      <h4 class="cp-dashboard__subheading">Additional Information</h4>
+                      <div class="field-grid">
+                        {#each Object.entries($project.customFields || {}) as [key, val]}
+                          <div class="field field--card" class:field--full={isLongText(val) || Array.isArray(val)}>
+                            <div class="field__content">
+                              <span class="field__label">{formatKeyLabel(key)}</span>
+                              {#if Array.isArray(val)}
+                                <div class="field__tags" style="margin-top: 0.5rem;">
+                                  {#each val as item}<span class="tag-pill">{item}</span>{/each}
+                                </div>
+                              {:else if typeof val === "boolean"}
+                                <div class="field__value" style="margin-top: 0.25rem;">
+                                  {#if val}<span class="badge badge--success">✓ Yes</span>{:else}<span class="badge badge--danger">✗ No</span>{/if}
+                                </div>
+                              {:else if isUrl(val)}
+                                <a href={val} target="_blank" rel="noopener noreferrer" class="field__value field__value--link">View Document ↗</a>
+                              {:else}
+                                <span class="field__value">{val}</span>
+                              {/if}
+                            </div>
+                          </div>
+                        {/each}
                       </div>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </section>
+                    {/if}
+                  </section>
 
                 </div><!-- /__scroll -->
               </div><!-- /details inner -->
