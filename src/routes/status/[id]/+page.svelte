@@ -1293,10 +1293,12 @@
                 <section class="cp-dashboard__activity">
                   <h3>Activity Log</h3>
               {#if $project.activityLog && $project.activityLog.length > 0}
-                <div class="timeline">
-                  <div class="timeline__spine" aria-hidden="true"></div>
+                <div class="timeline" class:timeline--play={activityOpen}>
+                  <div class="timeline__spine" aria-hidden="true">
+                    <span class="timeline__spine-flow"></span>
+                  </div>
                   {#each [...$project.activityLog].reverse() as entry, idx}
-                    <div class="timeline__item" class:timeline__item--right={idx % 2 === 1}>
+                    <div class="timeline__item" class:timeline__item--right={idx % 2 === 1} style="--i:{idx}">
                       <div class="timeline__node">
                         <span class="timeline__node-icon">{getActivityIcon(entry.type)}</span>
                       </div>
