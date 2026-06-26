@@ -860,7 +860,6 @@
 
           .timeline__node {
             margin-left: 0;
-            margin-right: -17px; // pin on spine
           }
         }
       }
@@ -879,7 +878,6 @@
         justify-content: center;
         flex-shrink: 0;
         margin-right: 0;
-        margin-left: -17px; // pin node on spine for left items
         box-shadow:
           0 0 0 4px #ffffff,
           0 0 0 5px color-mix(in srgb, var(--k, #02b5bb) 16%, transparent),
