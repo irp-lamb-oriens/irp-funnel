@@ -1902,7 +1902,7 @@
       0 1px 0 rgba(0, 0, 0, 0.04);
   }
 
-  /* ── Lily FAB ─────────────────────────────────────────────────────────── */
+  /* ── Lily FAB — hyper-modern floating action button ───────────────────── */
   .lily-fab {
     position: fixed;
     bottom: 1.75rem;
@@ -1910,63 +1910,72 @@
     z-index: 1200;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 1.1rem 0.5rem 0.5rem;
-    background: var(--chat-glass-header, #08080f);
-    color: var(--cp-text-primary, #f8fafc);
-    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3);
+    gap: 0.65rem;
+    padding: 0.5rem 1.2rem 0.5rem 0.5rem;
+    /* ↓ EXPLICIT white text — never inherits portal's dark --cp-text-primary */
+    color: #f1f5f9;
+    background: linear-gradient(135deg, #0a0e17 0%, #0f1a24 100%);
+    border: 1px solid rgba(2, 181, 187, 0.32);
     border-radius: 9999px;
     font-size: 0.875rem;
     font-weight: 600;
     font-family: var(--font-paragraph);
     cursor: pointer;
     box-shadow:
-      0 4px 24px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.15),
-      0 0 20px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.08);
+      0 4px 28px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(2, 181, 187, 0.12),
+      0 0 24px rgba(2, 181, 187, 0.1);
     transition:
       transform 0.18s ease,
       box-shadow 0.18s ease,
-      background 0.18s ease;
+      border-color 0.18s ease;
   }
   .lily-fab:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    border-color: rgba(2, 181, 187, 0.55);
     box-shadow:
-      0 6px 32px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.3),
-      0 0 30px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.14);
+      0 8px 40px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(2, 181, 187, 0.25),
+      0 0 40px rgba(2, 181, 187, 0.18);
   }
   .lily-fab__label {
     white-space: nowrap;
     font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
+    color: #e2e8f0; /* explicit light — never inherit portal dark text */
   }
 
   .lily-fab__avatar-wrap {
     position: relative;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
   }
   .lily-fab__avatar {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1.5px solid rgba(2, 181, 187, 0.4);
+    border: 2px solid rgba(2, 181, 187, 0.45);
     display: block;
+    box-shadow: 0 0 12px rgba(2, 181, 187, 0.2);
   }
   .lily-fab__online-dot {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #4ade80;
-    border: 2px solid var(--chat-glass-header, #08080f);
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
+    border: 2px solid #0a0e17;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+    animation: lily-online-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes lily-online-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(74, 222, 128, 0.8); }
+    50% { box-shadow: 0 0 16px rgba(74, 222, 128, 1), 0 0 4px rgba(74, 222, 128, 0.6); }
   }
 
   /* ── Lily Drawer ──────────────────────────────────────────────────────── */
