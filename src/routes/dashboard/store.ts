@@ -129,12 +129,21 @@ export interface Client {
    */
   pricingSentAt?: string | null;
   /**
+   * The quote proposal template currently selected for THIS client (persisted
+   * on the consultation doc by the AI auto-selector or a manual staff pick in
+   * the quoting step). Drives the proposal rendered on the status page and the
+   * default shown in the per-client template selector. `null`/absent → not yet
+   * resolved (the quoting step will auto-resolve it on open). Backward-compatible.
+   */
+  selectedQuoteTemplateId?: string | null;
+  /**
    * Full Firestore document (server strips a few large branches before
    * sending). Front-end uses this to show every key on the card and let
    * operators edit any field via the schema-agnostic PATCH endpoint.
    */
   rawDoc?: Record<string, any>;
 }
+
 
 export interface Note {
   text: string;
@@ -2400,6 +2409,95 @@ export async function deleteQuoteTemplate(templateId: string): Promise<void> {
   await apiFetch(`/api/dashboard/quote-templates/${templateId}`, {
     method: 'DELETE',
   });
+}
+
+// ─── Quote Template Map (destination → template "main configuration") ─────────
+//
+// Firestore: dashboard_config/quoteTemplateMap (single editable config doc).
+// Decides WHICH quote_templates/{id} document is shown by DEFAULT for a given
+// destination configuration. Consulted by the AI auto-selector before the
+// legacy hardcoded rules, and surfaced in the Templates section's ⚙️ Config
+// panel + the per-client selector in the quoting step. Mirrors the server
+// types in `quoteTemplateMapRouter.ts`.
+
+export interface TemplateMapRule {
+  /** Stable id (server assigns a nanoid when absent). */
+  id: string;
+  /** Optional human-readable label, e.g. "Costa Rica — RoRo". */
+  label?: string | null;
+  /** Required destination country match key (fuzzy, case-insensitive). */
+  destinationCountry: string;
+  /** Optional destination city narrowing. */
+  destinationCity?: string | null;
+  /** Optional shipping-mode narrowing (from transcriptInsights). */
+  shippingMode?: string | null;
+  /** Which template to show when this rule matches. */
+  templateId: string;
+  /** Tie-break among equally-specific rules (lower number wins). */
+  priority: number;
+}
+
+export interface QuoteTemplateMap {
+  /** Global fallback template used when no rule matches. */
+  defaultTemplateId: string;
+  rules: TemplateMapRule[];
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+/** Fetch the editable destination → template mapping config. */
+export async function fetchQuoteTemplateMap(): Promise<QuoteTemplateMap> {
+  const data = await apiFetch('/api/dashboard/quote-template-map');
+  return data.map as QuoteTemplateMap;
+}
+
+/** Persist the full destination → template mapping config. */
+export async function saveQuoteTemplateMap(
+  map: Pick<QuoteTemplateMap, 'defaultTemplateId' | 'rules'>,
+): Promise<QuoteTemplateMap> {
+  const data = await apiFetch('/api/dashboard/quote-template-map', {
+    method: 'PUT',
+    body: JSON.stringify(map),
+  });
+  return data.map as QuoteTemplateMap;
+}
+
+/** Result returned by the per-client template resolver / selector. */
+export interface InferTemplateResult {
+  templateId: string;
+  name: string;
+  source: 'manual' | 'map' | 'rules' | 'llm' | 'default';
+  reasoning: string;
+}
+
+/**
+ * Resolve & persist the template a specific client should see, using the AI
+ * auto-selector (manual override → editable map → legacy rules → LLM →
+ * default). Pass `overrideTemplateId` for an explicit manual staff pick.
+ * Persists `selectedQuoteTemplateId` on the consultation doc server-side and
+ * mirrors it into the local client stores for instant UI feedback.
+ */
+export async function inferClientTemplate(
+  clientId: string,
+  overrideTemplateId?: string,
+): Promise<InferTemplateResult> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/infer-template`, {
+    method: 'POST',
+    body: JSON.stringify(overrideTemplateId ? { overrideTemplateId } : {}),
+  });
+  const result = data as InferTemplateResult;
+  // Mirror the resolved template into local stores so any open card reflects it.
+  const patchSel = (c: Client | null): Client | null => {
+    if (!c || c.id !== clientId) return c;
+    const next: any = { ...c, selectedQuoteTemplateId: result.templateId };
+    if (next.rawDoc) {
+      next.rawDoc = { ...next.rawDoc, selectedQuoteTemplateId: result.templateId };
+    }
+    return next as Client;
+  };
+  clients.update((list) => list.map((c) => patchSel(c) ?? c));
+  selectedClient.update((c) => patchSel(c));
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

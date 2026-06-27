@@ -1,13 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
+  import { writable, get } from 'svelte/store';
   import {
     fetchQuotes,
     deleteQuote,
     QUOTE_STATUS_LABEL,
+    fetchQuoteTemplates,
+    inferClientTemplate,
+    selectedClient,
+    type QuoteTemplate,
+    type InferTemplateResult,
   } from '../store.ts';
   import type { Quote } from '../store.ts';
   import QuoteEditor from './QuoteEditor.svelte';
+  import Select, { type SelectOption } from './ui/Select.svelte';
 
   export let clientId: string;
 
@@ -17,6 +23,31 @@
   let error = '';
   let showEditor = false;
   let editingQuoteId: string | null = null;
+
+  // ── Per-client proposal template selector ──────────────────────────────────
+  let templates: QuoteTemplate[] = [];
+  let templatesLoading = true;
+  let selectedTemplateId = '';
+  let templateSource: InferTemplateResult['source'] | null = null;
+  let resolvingTemplate = false;
+
+  $: templateOptions = templates.map((t): SelectOption => ({
+    value: t.templateId,
+    label: t.name,
+    description: t.category ?? (t.isDefault ? 'Default proposal document' : null),
+    badge: t.isDefault ? 'Default' : null,
+  }));
+
+  $: sourceBadge = (() => {
+    switch (templateSource) {
+      case 'manual':  return { text: '✏️ Manual',  cls: 'is-manual'  };
+      case 'map':     return { text: '🗺️ Mapped',  cls: 'is-auto'    };
+      case 'rules':   return { text: '🤖 Auto',    cls: 'is-auto'    };
+      case 'llm':     return { text: '🤖 AI',      cls: 'is-auto'    };
+      case 'default': return { text: '◇ Default',  cls: 'is-default' };
+      default:        return null;
+    }
+  })();
 
   // ── Load quotes ────────────────────────────────────────────────────────────
   async function loadQuotes() {
@@ -32,7 +63,66 @@
     }
   }
 
-  onMount(() => { loadQuotes(); });
+  // ── Load templates + resolve this client's selection ───────────────────────
+  async function loadTemplateSelection() {
+    templatesLoading = true;
+    try {
+      templates = await fetchQuoteTemplates();
+      const current = get(selectedClient);
+      const existing =
+        (current?.selectedQuoteTemplateId as string | undefined) ??
+        (current?.rawDoc?.selectedQuoteTemplateId as string | undefined) ??
+        '';
+      if (existing) {
+        selectedTemplateId = existing;
+        templateSource = null; // already chosen previously
+      } else {
+        // No template chosen yet → auto-resolve from the destination mapping.
+        // inferClientTemplate persists `selectedQuoteTemplateId` (additive, safe).
+        await autoResolveTemplate();
+      }
+    } catch {
+      /* non-fatal — the selector just stays empty */
+    } finally {
+      templatesLoading = false;
+    }
+  }
+
+  /** Re-run the AI/mapping auto-selector (destination → template). */
+  async function autoResolveTemplate() {
+    resolvingTemplate = true;
+    try {
+      const res = await inferClientTemplate(clientId);
+      selectedTemplateId = res.templateId;
+      templateSource = res.source;
+    } catch {
+      /* keep current selection */
+    } finally {
+      resolvingTemplate = false;
+    }
+  }
+
+  /** Staff manually overrode the template for this client. */
+  async function handleTemplateChange(e: CustomEvent<{ value: string }>) {
+    const newId = e.detail.value;
+    if (!newId || newId === selectedTemplateId) return;
+    const prev = selectedTemplateId;
+    selectedTemplateId = newId;
+    templateSource = 'manual';
+    try {
+      await inferClientTemplate(clientId, newId);
+    } catch (err: any) {
+      selectedTemplateId = prev; // revert on failure
+      templateSource = null;
+      alert('Could not save template selection: ' + (err?.message ?? err));
+    }
+  }
+
+  onMount(() => {
+    loadQuotes();
+    loadTemplateSelection();
+  });
+
 
   // ── Actions ────────────────────────────────────────────────────────────────
   function openNewQuote() {
@@ -102,12 +192,73 @@
       on:cancelled={handleEditorCancelled}
     />
   {:else}
+    <!-- ── Per-client proposal template selector (outside the quote list, ──
+         inside the quoting step). Decides which proposal document this
+         specific client is shown; defaults from the destination mapping. -->
+    <div class="qt-template">
+      <div class="qt-template__head">
+        <div class="qt-template__title">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Proposal template</span>
+        </div>
+        {#if sourceBadge}
+          <span class="qt-template__source {sourceBadge.cls}">{sourceBadge.text}</span>
+        {/if}
+      </div>
+
+      <div class="qt-template__row">
+        {#if templatesLoading}
+          <div class="qt-template__loading">
+            <span class="qt-template__dot"></span>
+            <span>Loading templates…</span>
+          </div>
+        {:else}
+          <div class="qt-template__select">
+            <Select
+              options={templateOptions}
+              value={selectedTemplateId}
+              placeholder="Choose the template this client sees…"
+              searchable={templateOptions.length > 6}
+              ariaLabel="Proposal template for this client"
+              disabled={resolvingTemplate}
+              on:change={handleTemplateChange}
+            />
+          </div>
+          <button
+            class="qt-template__redetect"
+            class:is-busy={resolvingTemplate}
+            title="Re-detect from the destination → template mapping"
+            aria-label="Re-detect template"
+            on:click={autoResolveTemplate}
+            disabled={resolvingTemplate}
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+        {/if}
+      </div>
+
+      <p class="qt-template__hint">
+        Shown to this client inside their proposal. Defaults from the destination → template mapping; override anytime.
+      </p>
+    </div>
+
     <div class="quotes-tab__toolbar">
       <h3 class="quotes-tab__heading">Quotes</h3>
       <button class="quotes-tab__new-btn" on:click={openNewQuote}>
         New Quote +
       </button>
     </div>
+
 
     {#if loading}
       <div class="quotes-tab__loading">
@@ -202,6 +353,117 @@
     font-feature-settings: 'cv02','cv03','cv04','cv11';
   }
 
+  /* ── Proposal template selector card ──────────────────────────────────── */
+  .qt-template {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdfe 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.05), 0 1px 10px rgba(2,181,187,0.04);
+  }
+
+  .qt-template__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .qt-template__title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .qt-template__title svg { color: #02b6bc; flex-shrink: 0; }
+
+  .qt-template__source {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+  .qt-template__source.is-auto {
+    color: #0d9488;
+    background: rgba(2,182,188,0.1);
+    border-color: rgba(2,182,188,0.24);
+  }
+  .qt-template__source.is-manual {
+    color: #7c3aed;
+    background: rgba(124,58,237,0.09);
+    border-color: rgba(124,58,237,0.22);
+  }
+  .qt-template__source.is-default {
+    color: #64748b;
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+  }
+
+  .qt-template__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .qt-template__select { flex: 1; min-width: 0; }
+
+  .qt-template__redetect {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #475569;
+    cursor: pointer;
+    transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.14s;
+  }
+  .qt-template__redetect:hover:not(:disabled) {
+    background: #f0fdfe;
+    border-color: rgba(2,182,188,0.35);
+    color: #02b6bc;
+    transform: translateY(-1px);
+  }
+  .qt-template__redetect:disabled { opacity: 0.6; cursor: not-allowed; }
+  .qt-template__redetect.is-busy svg { animation: qt-spin 0.7s linear infinite; }
+
+  .qt-template__loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 12.5px;
+    padding: 9px 2px;
+  }
+  .qt-template__dot {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #02b5bb;
+    border-radius: 50%;
+    animation: qt-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .qt-template__hint {
+    margin: 8px 0 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #94a3b8;
+  }
+
   /* ── Toolbar ──────────────────────────────────────────────────────────── */
   .quotes-tab__toolbar {
     display: flex;
@@ -210,6 +472,7 @@
     margin-bottom: 16px;
     gap: 0.5rem;
   }
+
 
   .quotes-tab__heading {
     margin: 0;
