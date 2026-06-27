@@ -1888,25 +1888,25 @@
   :global(.cp-template-selector) {
     background: linear-gradient(
       135deg,
-      rgba(2, 182, 188, 0.06) 0%,
-      rgba(2, 28, 42, 0.6) 100%
+      rgba(2, 181, 187, 0.09) 0%,
+      rgba(2, 181, 187, 0.02) 100%
     );
-    border: 1px solid rgba(2, 182, 188, 0.2);
-    border-radius: 12px;
-    padding: 0.85rem 1.25rem;
+    border: 1px solid rgba(2, 181, 187, 0.22);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
   :global(.cp-template-selector__inner) {
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.5rem;
   }
   :global(.cp-template-selector__eyebrow) {
     font-size: 0.68rem;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    color: var(--color-highlight-2);
-    opacity: 0.8;
+    color: #0a7e82;
   }
   :global(.cp-template-selector__row) {
     display: flex;
@@ -1917,33 +1917,35 @@
   :global(.cp-template-selector__label) {
     font-size: 0.82rem;
     font-weight: 700;
-    color: rgba(248, 250, 252, 0.75);
+    color: var(--cp-text-primary, #0f172a);
     white-space: nowrap;
   }
   :global(.cp-template-selector__select) {
     flex: 1;
     min-width: 180px;
     max-width: 360px;
-    padding: 0.4rem 0.75rem;
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.3);
-    border-radius: 8px;
-    color: #f1f5f9;
+    padding: 0.5rem 0.8rem;
+    background: #ffffff;
+    border: 1.5px solid rgba(2, 181, 187, 0.28);
+    border-radius: 9px;
+    color: var(--cp-text-primary, #0f172a);
     font-size: 0.84rem;
+    font-weight: 600;
     font-family: var(--font-paragraph);
     outline: none;
     cursor: pointer;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
   :global(.cp-template-selector__select:focus) {
     border-color: var(--color-highlight-2);
-    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb, 2, 181, 187), 0.15);
   }
   :global(.cp-template-selector__hint) {
     font-size: 0.72rem;
-    color: rgba(248, 250, 252, 0.4);
+    color: var(--cp-text-subtle, #64748b);
     font-style: italic;
   }
+
 
   /* ── Proposal document section ───────────────────────────────────────── */
   :global(.cp-proposal-section) {

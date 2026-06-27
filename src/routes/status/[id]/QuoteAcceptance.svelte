@@ -413,7 +413,7 @@
     text-align: center;
     box-shadow:
       0 0 0 1px rgba(0, 233, 163, 0.06) inset,
-      0 24px 80px rgba(0, 0, 0, 0.55),
+      0 24px 80px rgba(15, 23, 42, 0.12),
       0 0 60px rgba(0, 233, 163, 0.06);
   }
   /* Top glow bar */
@@ -440,7 +440,7 @@
     font-size: 1.75rem;
     font-family: var(--font-subtitle);
     font-weight: 800;
-    background: linear-gradient(135deg, #00e9a3 0%, #00d8de 100%);
+    background: linear-gradient(135deg, #047857 0%, #0a7e82 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -457,7 +457,7 @@
   .qa-receipt__details {
     background:
       linear-gradient(180deg, rgba(0, 233, 163, 0.04) 0%, transparent 100%),
-      rgba(0, 0, 0, 0.35);
+      #ffffff;
     border: 1px solid rgba(0, 233, 163, 0.16);
     border-radius: 14px;
     padding: 1.5rem 1.75rem;
@@ -472,7 +472,7 @@
     font-size: 2.5rem;
     font-weight: 900;
     letter-spacing: -0.04em;
-    background: linear-gradient(135deg, #00e9a3 0%, #00d8de 100%);
+    background: linear-gradient(135deg, #047857 0%, #0a7e82 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -533,7 +533,7 @@
     border-radius: 20px;
     padding: 3rem 2rem;
     text-align: center;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.1);
   }
   .qa-empty__icon {
     font-size: 3rem;
@@ -576,7 +576,7 @@
     padding: 1.4rem 1.6rem;
     box-shadow:
       inset 0 1px 0 rgba(var(--color-highlight-2-rgb), 0.1),
-      0 8px 32px rgba(0, 0, 0, 0.35);
+      0 8px 32px #ffffff;
   }
   /* Left teal accent stripe — matches QuotePanel .qp-section--accepted style */
   .qa-summary::before {
@@ -625,7 +625,7 @@
     font-weight: 900;
     letter-spacing: -0.045em;
     line-height: 1;
-    background: linear-gradient(135deg, #00d8de 0%, #38bdf8 100%);
+    background: linear-gradient(135deg, #0a7e82 0%, #0284c7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -658,7 +658,7 @@
     padding: 2rem 2.25rem 1.75rem;
     box-shadow:
       0 0 0 1px rgba(255,255,255,0.03) inset,
-      0 32px 80px rgba(0,0,0,0.55),
+      0 32px 80px rgba(15, 23, 42, 0.12),
       0 1px 0 rgba(255,255,255,0.05) inset;
   }
   /* Top shimmer — same pattern used in .cp-call-banner */
@@ -697,7 +697,7 @@
     overflow: hidden;
     background:
       linear-gradient(160deg, rgba(var(--color-highlight-2-rgb), 0.07) 0%, rgba(var(--color-highlight-2-rgb), 0.015) 45%, transparent 100%),
-      rgba(0, 0, 0, 0.28);
+      #ffffff;
     border: 1px solid var(--cp-border-teal);
     border-radius: 16px;
     padding: 0.2rem 1.3rem 0.55rem 1.45rem;
@@ -817,7 +817,7 @@
   /* Input — mirrors .cp-auth-wall__input pattern but dark-theme */
   .qa-input {
     padding: 0.9rem 1.1rem;
-    background: rgba(0, 0, 0, 0.4);
+    background: #ffffff;
     border: 1px solid var(--cp-border);
     border-radius: 10px;
     color: var(--cp-text-primary);
@@ -847,7 +847,7 @@
       0 0 12px rgba(245, 158, 11, 0.06);
   }
   .qa-input::placeholder {
-    color: rgba(148, 163, 184, 0.35);
+    color: rgba(100, 116, 139, 0.7);
     font-weight: 400;
   }
   .qa-input:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -855,7 +855,7 @@
   /* Select — same surface/border language as input */
   .qa-select {
     padding: 0.75rem 1.1rem;
-    background: rgba(0, 0, 0, 0.4);
+    background: #ffffff;
     border: 1px solid var(--cp-border);
     border-radius: 10px;
     color: var(--cp-text-primary);
@@ -881,12 +881,12 @@
     font-weight: 500;
   }
   .qa-hint--warn {
-    color: #f59e0b;
+    color: #b45309;
     background: rgba(245, 158, 11, 0.08);
     border-left: 2px solid rgba(245, 158, 11, 0.5);
   }
   .qa-hint--ok {
-    color: #00e9a3;
+    color: #047857;
     background: rgba(0, 233, 163, 0.06);
     border-left: 2px solid rgba(0, 233, 163, 0.4);
   }
@@ -899,7 +899,7 @@
     align-items: flex-start;
     cursor: pointer;
     padding: 1.1rem 1.25rem;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(2, 181, 187, 0.03);
     border: 1px solid var(--cp-border);
     border-radius: 14px;
     margin-bottom: 1.5rem;
@@ -959,7 +959,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.8rem;
-    color: #f59e0b;
+    color: #b45309;
     background: rgba(245, 158, 11, 0.06);
     border: 1px solid rgba(245, 158, 11, 0.2);
     border-radius: 10px;
@@ -972,7 +972,7 @@
   /* ══ ERROR ════════════════════════════════════════════════════════════ */
   .qa-error {
     font-size: 0.875rem;
-    color: #f87171;
+    color: #b91c1c;
     background: rgba(var(--color-highlight-1-rgb, 198, 36, 38), 0.07);
     border: 1px solid rgba(var(--color-highlight-1-rgb, 198, 36, 38), 0.22);
     border-radius: 10px;
@@ -1006,9 +1006,10 @@
       border-color 0.25s ease;
     margin-bottom: 1.1rem;
     /* Disabled ghost */
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(148, 163, 184, 0.35);
+    background: #f1f5f9;
+    color: #94a3b8;
     box-shadow: none;
+
   }
   .qa-btn[disabled] {
     cursor: not-allowed;
@@ -1049,8 +1050,9 @@
   /* ══ SPINNERS ═════════════════════════════════════════════════════════ */
   .qa-spinner,
   .qa-spinner-inline {
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(2, 181, 187, 0.18);
     border-top-color: var(--color-highlight-2);
+
     border-radius: 50%;
     animation: qapin 0.65s linear infinite;
     flex-shrink: 0;
