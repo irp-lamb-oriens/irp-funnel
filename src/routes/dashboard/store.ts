@@ -137,12 +137,20 @@ export interface Client {
    */
   selectedQuoteTemplateId?: string | null;
   /**
+   * How `selectedQuoteTemplateId` was set: 'manual' (a deliberate staff
+   * override, respected on reload) or 'auto' (resolved from the destination
+   * mapping/AI — re-resolved when the panel re-opens so it tracks the live
+   * mapping + destination). `null`/absent → treated as auto. Backward-compatible.
+   */
+  selectedQuoteTemplateSource?: 'manual' | 'auto' | null;
+  /**
    * Full Firestore document (server strips a few large branches before
    * sending). Front-end uses this to show every key on the card and let
    * operators edit any field via the schema-agnostic PATCH endpoint.
    */
   rawDoc?: Record<string, any>;
 }
+
 
 
 export interface Note {
@@ -2486,15 +2494,25 @@ export async function inferClientTemplate(
     body: JSON.stringify(overrideTemplateId ? { overrideTemplateId } : {}),
   });
   const result = data as InferTemplateResult;
-  // Mirror the resolved template into local stores so any open card reflects it.
+  const newSource: 'manual' | 'auto' = result.source === 'manual' ? 'manual' : 'auto';
+  // Mirror the resolved template + source into local stores so any open card reflects it.
   const patchSel = (c: Client | null): Client | null => {
     if (!c || c.id !== clientId) return c;
-    const next: any = { ...c, selectedQuoteTemplateId: result.templateId };
+    const next: any = {
+      ...c,
+      selectedQuoteTemplateId: result.templateId,
+      selectedQuoteTemplateSource: newSource,
+    };
     if (next.rawDoc) {
-      next.rawDoc = { ...next.rawDoc, selectedQuoteTemplateId: result.templateId };
+      next.rawDoc = {
+        ...next.rawDoc,
+        selectedQuoteTemplateId: result.templateId,
+        selectedQuoteTemplateSource: newSource,
+      };
     }
     return next as Client;
   };
+
   clients.update((list) => list.map((c) => patchSel(c) ?? c));
   selectedClient.update((c) => patchSel(c));
   return result;

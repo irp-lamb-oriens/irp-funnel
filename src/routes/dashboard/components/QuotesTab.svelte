@@ -73,14 +73,23 @@
         (current?.selectedQuoteTemplateId as string | undefined) ??
         (current?.rawDoc?.selectedQuoteTemplateId as string | undefined) ??
         '';
-      if (existing) {
+      const existingSource =
+        (current?.selectedQuoteTemplateSource as 'manual' | 'auto' | null | undefined) ??
+        (current?.rawDoc?.selectedQuoteTemplateSource as 'manual' | 'auto' | null | undefined) ??
+        null;
+
+      if (existing && existingSource === 'manual') {
+        // Respect a deliberate manual override — never auto-overwrite it.
         selectedTemplateId = existing;
-        templateSource = null; // already chosen previously
+        templateSource = 'manual';
       } else {
-        // No template chosen yet → auto-resolve from the destination mapping.
-        // inferClientTemplate persists `selectedQuoteTemplateId` (additive, safe).
+        // No selection yet, OR a previous AUTO/legacy pick → re-resolve from the
+        // live destination → template mapping so the default always tracks the
+        // client's current destination + the latest rules. This fixes stale auto
+        // picks (e.g. a Panama client still showing an old Costa Rica template).
         await autoResolveTemplate();
       }
+
     } catch {
       /* non-fatal — the selector just stays empty */
     } finally {
