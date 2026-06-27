@@ -449,6 +449,15 @@
   // Quotes are loaded early in onMount so this is resolved quickly.
   $: hasQuotes = $quotes.length > 0;
   $: hasQuoteToken = !!$page.url.searchParams.get("quoteToken");
+  // hasAssignedProposal — true when a proposal template has been assigned to
+  // this client (mapped from the destination, or a staff override) AND its
+  // blocks have loaded. This lets the proposal document render right after the
+  // overview/activity section even BEFORE any quote exists. Staff always see it
+  // (preview), since their session auto-infers a template when none is mapped.
+  $: hasAssignedProposal =
+    $templateBlocks.length > 0 &&
+    (!!($project as any)?.selectedQuoteTemplateId || $irpStaffIsAuthenticated);
+
   // showQuoteSection — gates the Quote tab and all quote-related sections.
   // True when either the subcollection has displayable quotes OR a quoteToken
   // (pre-generated, sent-to-client quote) is present in the URL.
@@ -1389,11 +1398,15 @@
         </div>
       {/if}
 
-      <!-- ══ PROPOSAL — template document (single-landing: always rendered when
-           the client has quotes). Template-section tabs scroll here and filter
-           which section of the document is shown. -->
-      {#if hasQuotes}
+      <!-- ══ PROPOSAL — template document. Rendered right after the overview/
+           activity section and before the quote. Shows whenever the client has
+           an assigned proposal template (mapped from their destination, or a
+           staff override) — even before any quote exists — OR once quotes
+           arrive. When there are quotes, the per-section tabs scroll here and
+           filter the visible section; pre-quote we show the WHOLE document. -->
+      {#if hasQuotes || hasAssignedProposal}
         <div id="cp-proposal" class="cp-section-anchor">
+
           <!-- Staff-only template selector -->
           {#if $irpStaffIsAuthenticated && $allTemplates.length > 0}
             <div class="cp-dashboard__full-width-section">
@@ -1439,9 +1452,11 @@
                 accepted={false}
                 accepting={false}
                 acceptError=""
-                activeSection={$activeSection}
+                activeSection={hasQuotes ? $activeSection : null}
+                showAllSections={!hasQuotes}
                 clientSummary={$project ?? {}}
               />
+
             </div>
           {/if}
         </div>

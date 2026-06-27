@@ -43,8 +43,16 @@
    */
   export let activeSection: string | null = null;
 
+  /**
+   * When true, render the ENTIRE document regardless of section labels
+   * (ignores `activeSection`). Used by the status page to show the full
+   * proposal pre-quote, when the per-section navigation tabs aren't present.
+   */
+  export let showAllSections = false;
+
   // Internal only — BlockRenderer owns the input value for the accept block
   let acceptedByInput = '';
+
   // Binding-consent checkbox for the accept block (client electronic signature).
   let consentChecked = false;
   /** True when an IRP staff member is viewing — they cannot accept for the client. */
@@ -70,14 +78,17 @@
   $: isTemplatePreview = quote?.quoteId === 'template-preview';
 
   $: visibleBlocks = (() => {
-    let bs = (hasSections && activeSection)
-      ? blocks.filter(b => b.section === activeSection)
-      : (hasSections && !activeSection)
-        ? blocks.filter(b => !b.section) // fallback: show unsectioned blocks
-        : blocks; // legacy mode: all blocks
+    let bs = showAllSections
+      ? blocks // full document — ignore section filtering (pre-quote proposal)
+      : (hasSections && activeSection)
+        ? blocks.filter(b => b.section === activeSection)
+        : (hasSections && !activeSection)
+          ? blocks.filter(b => !b.section) // fallback: show unsectioned blocks
+          : blocks; // legacy mode: all blocks
     if (isTemplatePreview) bs = bs.filter(b => b.type !== 'accept');
     return bs;
   })();
+
 
 
   // ── Phase 3: interactive line-item selection ─────────────────────────────
