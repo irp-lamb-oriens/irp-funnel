@@ -42,7 +42,22 @@
   // ── Form state ─────────────────────────────────────────────────────────────
   let title = '';
   let notes = '';
+  // ── Line-item GROUPS (Phase 5) — the editable source of truth ──────────────
+  // Each group bundles line items under a title + a selection `role`. Staff add
+  // one group per applied template and flip each between Required (one is chosen
+  // on the status page) and Optional (an add-on the client can tick). The flat
+  // `lineItems` array below is DERIVED from the groups and feeds every existing
+  // finance reactive + the save payload unchanged.
+  type EditGroup = {
+    groupId: string;
+    title: string;
+    role: 'required' | 'optional';
+    lineItems: QuoteLineItem[];
+  };
+  let lineGroups: EditGroup[] = [];
   let lineItems: QuoteLineItem[] = [];
+  $: lineItems = lineGroups.flatMap(g => g.lineItems);
+
   let providerIds: string[] = [];
   let providerSnapshots: Quote['providerSnapshots'] = [];
 
@@ -94,25 +109,58 @@
   // Per-currency buckets kept for the currency selector in handleSave
   $: totalBuckets = aggregateByCurrency(lineItems, null);
 
-  // ── Line item helpers ──────────────────────────────────────────────────────
+  // ── Group + line helpers ────────────────────────────────────────────────────
   function makeLineId(): string {
     return 'li_' + Math.random().toString(36).slice(2, 10);
   }
-
-  function addLine() {
-    lineItems = [
-      ...lineItems,
-      { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency: 'USD', providerId: null, notes: null },
-    ];
+  function makeGroupId(): string {
+    return 'grp_' + Math.random().toString(36).slice(2, 10);
+  }
+  function makeBlankLine(currency = 'USD'): QuoteLineItem {
+    return { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency, providerId: null, notes: null };
+  }
+  function makeBlankGroup(role: 'required' | 'optional' = 'required', title = ''): EditGroup {
+    return { groupId: makeGroupId(), title, role, lineItems: [makeBlankLine()] };
+  }
+  /** Guarantee at least one group (with one line) always exists. */
+  function ensureGroups() {
+    if (lineGroups.length === 0) lineGroups = [makeBlankGroup('required')];
   }
 
-  function removeLine(lineId: string) {
-    lineItems = lineItems.filter(li => li.lineId !== lineId);
+  function addGroup(role: 'required' | 'optional' = 'optional') {
+    lineGroups = [...lineGroups, makeBlankGroup(role)];
+  }
+  function removeGroup(groupId: string) {
+    lineGroups = lineGroups.filter(g => g.groupId !== groupId);
+    ensureGroups();
+  }
+  function setGroupRole(groupId: string, role: 'required' | 'optional') {
+    lineGroups = lineGroups.map(g => g.groupId === groupId ? { ...g, role } : g);
+  }
+  function updateGroupTitle(groupId: string, value: string) {
+    lineGroups = lineGroups.map(g => g.groupId === groupId ? { ...g, title: value } : g);
   }
 
-  function updateLine(lineId: string, field: keyof QuoteLineItem, value: any) {
-    lineItems = lineItems.map(li => li.lineId === lineId ? { ...li, [field]: value } : li);
+  function addLine(groupId: string) {
+    lineGroups = lineGroups.map(g => g.groupId === groupId
+      ? { ...g, lineItems: [...g.lineItems, makeBlankLine(g.lineItems[0]?.currency || 'USD')] }
+      : g);
   }
+  function removeLine(groupId: string, lineId: string) {
+    lineGroups = lineGroups.map(g => g.groupId === groupId
+      ? { ...g, lineItems: g.lineItems.filter(li => li.lineId !== lineId) }
+      : g);
+  }
+  function updateLine(groupId: string, lineId: string, field: keyof QuoteLineItem, value: any) {
+    lineGroups = lineGroups.map(g => g.groupId === groupId
+      ? { ...g, lineItems: g.lineItems.map(li => li.lineId === lineId ? { ...li, [field]: value } : li) }
+      : g);
+  }
+  /** Per-group client subtotal (cost + margin) shown in the group header. */
+  function groupClientTotal(g: EditGroup): number {
+    return Math.round(g.lineItems.reduce((s, li) => s + lineClientPrice(li), 0) * 100) / 100;
+  }
+
 
   // ── Line-item templates (pricing presets) ───────────────────────────────────
   let lineTemplates: QuoteLineTemplate[] = [];
@@ -139,34 +187,40 @@
     }
   }
 
-  /** True when every current line is still blank (no label and no amount). */
-  function linesAreBlank(): boolean {
-    return lineItems.every(li => !String(li.label ?? '').trim() && !(Number(li.amount) > 0));
-  }
-
-  /** Seed the quote's line items from a saved template (labels only; amounts stay editable at 0). */
-  function applyLineTemplate(templateId: string) {
+  /**
+   * Add a saved line-item template as a NEW group. The first template added to a
+   * fresh quote becomes the base 'required' option; subsequent templates default
+   * to 'optional' add-ons. Staff can flip any group's role afterwards.
+   */
+  function addTemplateAsGroup(templateId: string) {
     const tmpl = lineTemplates.find(t => t.templateId === templateId);
     if (!tmpl) { selectedLineTemplateId = ''; return; }
-    if (!linesAreBlank()) {
-      const ok = confirm(`Replace the current ${lineItems.length} line item(s) with the "${tmpl.name}" template?`);
-      if (!ok) { selectedLineTemplateId = ''; return; }
-    }
     const cur = tmpl.currency || 'USD';
-    lineItems = tmpl.lines.map(label => ({
-      lineId: makeLineId(),
-      label,
-      amount: 0,
-      marginPct: defaultMarginPct,
-      marginMode: 'pct' as const,
-      marginFlat: null,
-      currency: cur,
-      providerId: null,
-      notes: null,
-    }));
-    if (lineItems.length === 0) addLine();
+    // Treat a single still-blank starter group as "empty" so the first applied
+    // template replaces it rather than leaving a stray empty group behind.
+    const onlyBlankStarter =
+      lineGroups.length === 1 &&
+      lineGroups[0].lineItems.every(li => !String(li.label ?? '').trim() && !(Number(li.amount) > 0));
+    const newGroup: EditGroup = {
+      groupId: makeGroupId(),
+      title: tmpl.name || 'Services',
+      role: (lineGroups.length === 0 || onlyBlankStarter) ? 'required' : 'optional',
+      lineItems: (tmpl.lines.length ? tmpl.lines : ['']).map(label => ({
+        lineId: makeLineId(),
+        label,
+        amount: 0,
+        marginPct: defaultMarginPct,
+        marginMode: 'pct' as const,
+        marginFlat: null,
+        currency: cur,
+        providerId: null,
+        notes: null,
+      })),
+    };
+    lineGroups = onlyBlankStarter ? [newGroup] : [...lineGroups, newGroup];
     selectedLineTemplateId = ''; // reset so the same template can be re-applied
   }
+
 
   // ── Manage panel actions ─────────────────────────────────────────────────────
   function openCreateTemplate() {
@@ -232,11 +286,25 @@
 
 
   // ── Load existing quote ────────────────────────────────────────────────────
+  function normalizeLine(li: any): QuoteLineItem {
+    return {
+      lineId: li.lineId || makeLineId(),
+      label: li.label ?? '',
+      amount: typeof li.amount === 'number' ? li.amount : (parseFloat(li.amount) || 0),
+      marginPct: typeof li.marginPct === 'number' ? li.marginPct : 20,
+      marginMode: li.marginMode === 'flat' ? 'flat' as const : 'pct' as const,
+      marginFlat: typeof li.marginFlat === 'number' ? li.marginFlat : null,
+      currency: li.currency || 'USD',
+      providerId: li.providerId ?? null,
+      notes: li.notes ?? null,
+    };
+  }
+
   async function loadQuote() {
     if (!quoteId) {
-      // New quote — start with one empty line
+      // New quote — start with one empty required group
       quote = null;
-      addLine();
+      lineGroups = [makeBlankGroup('required')];
       return;
     }
     loadingQuote = true;
@@ -249,16 +317,25 @@
       serviceType = q.serviceType ?? '';
       defaultMarginPct = typeof q.defaultMarginPct === 'number' ? q.defaultMarginPct : 20;
       clientDescription = q.clientDescription ?? '';
-      lineItems = (q.lineItems ?? []).map(li => ({
-        ...li,
-        marginPct: typeof li.marginPct === 'number' ? li.marginPct : 20,
-        marginMode: li.marginMode === 'flat' ? 'flat' as const : 'pct' as const,
-        marginFlat: typeof li.marginFlat === 'number' ? li.marginFlat : null,
-      }));
+      const savedGroups = Array.isArray((q as any).lineGroups) ? (q as any).lineGroups : null;
+      if (savedGroups && savedGroups.length > 0) {
+        // Grouped quote — hydrate the groups directly.
+        lineGroups = savedGroups.map((g: any) => ({
+          groupId: g.groupId || makeGroupId(),
+          title: g.title ?? '',
+          role: g.role === 'optional' ? 'optional' as const : 'required' as const,
+          lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
+        }));
+      } else {
+        // Legacy flat quote — wrap its line items in a single required group.
+        const flat = (q.lineItems ?? []).map(normalizeLine);
+        lineGroups = [{ groupId: makeGroupId(), title: '', role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
+      }
       providerIds = [...(q.providerIds ?? [])];
       providerSnapshots = [...(q.providerSnapshots ?? [])];
-      if (lineItems.length === 0) addLine();
+      ensureGroups();
     } catch (err: any) {
+
       errorMsg = 'Error loading quote: ' + (err?.message ?? err);
     } finally {
       loadingQuote = false;
@@ -388,6 +465,14 @@
         title: title.trim(),
         notes: notes.trim() || null,
         lineItems,
+        // Phase 5 — grouped line items. The server derives the flat lineItems +
+        // totals from these when present, so the two stay consistent.
+        lineGroups: lineGroups.map(g => ({
+          groupId: g.groupId,
+          title: (g.title ?? '').trim(),
+          role: g.role,
+          lineItems: g.lineItems,
+        })) as any,
         providerIds,
         providerSnapshots,
         total: clientTotal,
@@ -590,11 +675,12 @@
               <select
                 class="qe-tmpl-select"
                 bind:value={selectedLineTemplateId}
-                on:change={() => selectedLineTemplateId && applyLineTemplate(selectedLineTemplateId)}
+                on:change={() => selectedLineTemplateId && addTemplateAsGroup(selectedLineTemplateId)}
                 disabled={lineTemplatesLoading}
-                title="Apply a saved line-item template"
+                title="Add a saved line-item template as a group"
               >
-                <option value="">{lineTemplatesLoading ? 'Loading templates…' : 'Apply a template…'}</option>
+                <option value="">{lineTemplatesLoading ? 'Loading templates…' : '+ Add template as group…'}</option>
+
                 {#each lineTemplates as t (t.templateId)}
                   <option value={t.templateId}>{t.name} · {t.lines.length} lines</option>
                 {/each}
@@ -610,118 +696,151 @@
             </button>
           </div>
         </div>
-        {#if lineItems.length > 0}
 
-          <div class="qe-lines-wrap">
-            <table class="qe-lines-table">
-              <thead>
-                <tr>
-                  <th class="qe-th-desc">Description</th>
-                  <th class="qe-th-num">Cost</th>
-                  <th class="qe-th-pct">Margin %</th>
-                  <th class="qe-th-num qe-th-price">Client price</th>
-                  <th class="qe-th-cur">Currency</th>
-                  <th class="qe-th-notes">Notes</th>
-                  <th class="qe-th-del"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each lineItems as li (li.lineId)}
-                  <tr>
-                    <td>
-                      <input
-                        class="qe-input qe-input--sm"
-                        type="text"
-                        placeholder="Description"
-                        value={li.label}
-                        on:input={(e) => updateLine(li.lineId, 'label', (e.target as HTMLInputElement).value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        class="qe-input qe-input--sm qe-input--num"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={li.amount}
-                        on:input={(e) => updateLine(li.lineId, 'amount', parseFloat((e.target as HTMLInputElement).value) || 0)}
-                      />
-                    </td>
-                    <td class="qe-td-pct">
-                      <div class="qe-margin-cell">
-                        <!-- Mode toggle: % or flat currency -->
-                        <button
-                          type="button"
-                          class="qe-margin-mode-btn"
-                          class:qe-margin-mode-btn--pct={li.marginMode !== 'flat'}
-                          title="{li.marginMode === 'flat' ? 'Flat amount — click to switch to %' : 'Percentage — click to switch to flat amount'}"
-                          on:click={() => updateLine(li.lineId, 'marginMode', li.marginMode === 'flat' ? 'pct' : 'flat')}
-                        >{li.marginMode === 'flat' ? (li.currency || '$') : '%'}</button>
-                        {#if li.marginMode === 'flat'}
+        <p class="qe-groups-hint">
+          Add one or more templates as groups, then mark each
+          <strong>Required</strong> (the client picks one option) or
+          <strong>Optional</strong> (an add-on the client can tick). A single
+          Required group is auto-selected for the client.
+        </p>
+
+        {#each lineGroups as g, gi (g.groupId)}
+          <div class="qe-group" class:qe-group--optional={g.role === 'optional'}>
+            <div class="qe-group__head">
+              <input
+                class="qe-input qe-input--sm qe-group__title"
+                type="text"
+                placeholder={`Group ${gi + 1} name (e.g. Standard package)`}
+                value={g.title}
+                on:input={(e) => updateGroupTitle(g.groupId, (e.target as HTMLInputElement).value)}
+              />
+              <div class="qe-role-toggle" role="group" aria-label="Group role">
+                <button type="button" class="qe-role-btn" class:is-active={g.role === 'required'} on:click={() => setGroupRole(g.groupId, 'required')}>Required</button>
+                <button type="button" class="qe-role-btn qe-role-btn--opt" class:is-active={g.role === 'optional'} on:click={() => setGroupRole(g.groupId, 'optional')}>Optional</button>
+              </div>
+              <span class="qe-group__subtotal" title="Client price for this group">{formatTotal(groupClientTotal(g))}</span>
+              {#if lineGroups.length > 1}
+                <button type="button" class="qe-group__del" title="Remove group" on:click={() => removeGroup(g.groupId)}>✕</button>
+              {/if}
+            </div>
+
+            {#if g.lineItems.length > 0}
+              <div class="qe-lines-wrap">
+                <table class="qe-lines-table">
+                  <thead>
+                    <tr>
+                      <th class="qe-th-desc">Description</th>
+                      <th class="qe-th-num">Cost</th>
+                      <th class="qe-th-pct">Margin %</th>
+                      <th class="qe-th-num qe-th-price">Client price</th>
+                      <th class="qe-th-cur">Currency</th>
+                      <th class="qe-th-notes">Notes</th>
+                      <th class="qe-th-del"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each g.lineItems as li (li.lineId)}
+                      <tr>
+                        <td>
                           <input
-                            class="qe-input qe-input--sm qe-input--num qe-input--margin"
+                            class="qe-input qe-input--sm"
+                            type="text"
+                            placeholder="Description"
+                            value={li.label}
+                            on:input={(e) => updateLine(g.groupId, li.lineId, 'label', (e.target as HTMLInputElement).value)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            class="qe-input qe-input--sm qe-input--num"
                             type="number"
                             min="0"
                             step="0.01"
                             placeholder="0.00"
-                            value={typeof li.marginFlat === 'number' ? li.marginFlat : 0}
-                            on:input={(e) => updateLine(li.lineId, 'marginFlat', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                            value={li.amount}
+                            on:input={(e) => updateLine(g.groupId, li.lineId, 'amount', parseFloat((e.target as HTMLInputElement).value) || 0)}
                           />
-                        {:else}
+                        </td>
+                        <td class="qe-td-pct">
+                          <div class="qe-margin-cell">
+                            <!-- Mode toggle: % or flat currency -->
+                            <button
+                              type="button"
+                              class="qe-margin-mode-btn"
+                              class:qe-margin-mode-btn--pct={li.marginMode !== 'flat'}
+                              title="{li.marginMode === 'flat' ? 'Flat amount — click to switch to %' : 'Percentage — click to switch to flat amount'}"
+                              on:click={() => updateLine(g.groupId, li.lineId, 'marginMode', li.marginMode === 'flat' ? 'pct' : 'flat')}
+                            >{li.marginMode === 'flat' ? (li.currency || '$') : '%'}</button>
+                            {#if li.marginMode === 'flat'}
+                              <input
+                                class="qe-input qe-input--sm qe-input--num qe-input--margin"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={typeof li.marginFlat === 'number' ? li.marginFlat : 0}
+                                on:input={(e) => updateLine(g.groupId, li.lineId, 'marginFlat', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                              />
+                            {:else}
+                              <input
+                                class="qe-input qe-input--sm qe-input--num qe-input--margin"
+                                type="number"
+                                min="0"
+                                max="500"
+                                step="1"
+                                placeholder="20"
+                                value={typeof li.marginPct === 'number' ? li.marginPct : 20}
+                                on:input={(e) => updateLine(g.groupId, li.lineId, 'marginPct', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                              />
+                            {/if}
+                          </div>
+                        </td>
+                        <td class="qe-td-price">
+                          <span class="qe-computed-price">{lineClientPrice(li).toFixed(2)}</span>
+                        </td>
+                        <td>
+                          <select
+                            class="qe-select qe-select--sm"
+                            value={li.currency}
+                            on:change={(e) => updateLine(g.groupId, li.lineId, 'currency', (e.target as HTMLSelectElement).value)}
+                          >
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="MXN">MXN</option>
+                            <option value="CRC">CRC</option>
+                          </select>
+                        </td>
+                        <td>
                           <input
-                            class="qe-input qe-input--sm qe-input--num qe-input--margin"
-                            type="number"
-                            min="0"
-                            max="500"
-                            step="1"
-                            placeholder="20"
-                            value={typeof li.marginPct === 'number' ? li.marginPct : 20}
-                            on:input={(e) => updateLine(li.lineId, 'marginPct', parseFloat((e.target as HTMLInputElement).value) || 0)}
+                            class="qe-input qe-input--sm"
+                            type="text"
+                            placeholder="Optional note"
+                            value={li.notes ?? ''}
+                            on:input={(e) => updateLine(g.groupId, li.lineId, 'notes', (e.target as HTMLInputElement).value || null)}
                           />
-                        {/if}
-                      </div>
-                    </td>
-                    <td class="qe-td-price">
-                      <span class="qe-computed-price">{lineClientPrice(li).toFixed(2)}</span>
-                    </td>
-                    <td>
-                      <select
-                        class="qe-select qe-select--sm"
-                        value={li.currency}
-                        on:change={(e) => updateLine(li.lineId, 'currency', (e.target as HTMLSelectElement).value)}
-                      >
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="MXN">MXN</option>
-                        <option value="CRC">CRC</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        class="qe-input qe-input--sm"
-                        type="text"
-                        placeholder="Optional note"
-                        value={li.notes ?? ''}
-                        on:input={(e) => updateLine(li.lineId, 'notes', (e.target as HTMLInputElement).value || null)}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        class="qe-del-btn"
-                        title="Remove line"
-                        on:click={() => removeLine(li.lineId)}
-                      >✕</button>
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            class="qe-del-btn"
+                            title="Remove line"
+                            on:click={() => removeLine(g.groupId, li.lineId)}
+                          >✕</button>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+            <button type="button" class="qe-add-line-btn" on:click={() => addLine(g.groupId)}>
+              + Add line
+            </button>
           </div>
-        {/if}
-        <button type="button" class="qe-add-line-btn" on:click={addLine}>
-          + Add line
+        {/each}
+
+        <button type="button" class="qe-add-group-btn" on:click={() => addGroup('optional')}>
+          ✚ Add optional add-on group
         </button>
       </div>
 
@@ -1303,6 +1422,105 @@
     letter-spacing: 0.01em;
   }
   .qe-add-line-btn:hover {
+    border-color: #02b5bb;
+    background: rgba(2,181,187,0.08);
+    color: #02999e;
+  }
+
+  /* ── Line-item GROUPS (Phase 5) ───────────────────────────────────────────── */
+  .qe-groups-hint {
+    margin: 0 0 2px;
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .qe-groups-hint strong { color: #0f172a; font-weight: 700; }
+
+  .qe-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .qe-group--optional {
+    background: #fbfdff;
+    border-style: dashed;
+  }
+  .qe-group__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .qe-group__title { flex: 1 1 200px; font-weight: 700; }
+  .qe-group__subtotal {
+    font-size: 13px;
+    font-weight: 800;
+    color: #02b5bb;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .qe-group__del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 7px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .qe-group__del:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+  /* Required / Optional segmented toggle */
+  .qe-role-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+  .qe-role-btn {
+    border: none;
+    background: none;
+    color: #64748b;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.14s, color 0.14s, box-shadow 0.14s;
+  }
+  .qe-role-btn.is-active {
+    background: #ffffff;
+    color: #02999e;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  }
+  .qe-role-btn--opt.is-active { color: #b45309; }
+
+  .qe-add-group-btn {
+    background: none;
+    border: 1.5px dashed rgba(2,181,187,0.30);
+    color: #02b5bb;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    align-self: flex-start;
+    letter-spacing: 0.01em;
+  }
+  .qe-add-group-btn:hover {
     border-color: #02b5bb;
     background: rgba(2,181,187,0.08);
     color: #02999e;

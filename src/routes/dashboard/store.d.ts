@@ -102,6 +102,21 @@ export interface Client {
      */
     pricingSentAt?: string | null;
     /**
+     * The quote proposal template currently selected for THIS client (persisted
+     * on the consultation doc by the AI auto-selector or a manual staff pick in
+     * the quoting step). Drives the proposal rendered on the status page and the
+     * default shown in the per-client template selector. `null`/absent → not yet
+     * resolved (the quoting step will auto-resolve it on open). Backward-compatible.
+     */
+    selectedQuoteTemplateId?: string | null;
+    /**
+     * How `selectedQuoteTemplateId` was set: 'manual' (a deliberate staff
+     * override, respected on reload) or 'auto' (resolved from the destination
+     * mapping/AI — re-resolved when the panel re-opens so it tracks the live
+     * mapping + destination). `null`/absent → treated as auto. Backward-compatible.
+     */
+    selectedQuoteTemplateSource?: 'manual' | 'auto' | null;
+    /**
      * Full Firestore document (server strips a few large branches before
      * sending). Front-end uses this to show every key on the card and let
      * operators edit any field via the schema-agnostic PATCH endpoint.
@@ -272,6 +287,8 @@ export declare const selectedClient: import("svelte/store").Writable<Client | nu
 export declare const metrics: import("svelte/store").Writable<Metrics | null>;
 export declare const loading: import("svelte/store").Writable<boolean>;
 export declare const error: import("svelte/store").Writable<string | null>;
+export declare const clientsLoading: import("svelte/store").Writable<boolean>;
+export declare const clientsLoadedOnce: import("svelte/store").Writable<boolean>;
 export declare const searchQuery: import("svelte/store").Writable<string>;
 export interface Filters {
     stage: string;
@@ -420,6 +437,19 @@ export declare function checkAuth(): Promise<boolean>;
 export declare function logout(): void;
 export declare function initDashboardSocket(): Promise<void>;
 export declare function disconnectDashboardSocket(): void;
+/**
+ * Load all clients for the Kanban/list views.
+ *
+ * Robustness contract (fixes the "skeleton ends → empty board, stuck" bug):
+ *  • Drives the dedicated `clientsLoading` flag (NOT the shared `loading`,
+ *    which fetchMetrics() also toggles) so the board skeleton ends exactly
+ *    when the cards are ready — never when a parallel fetch happens to finish.
+ *  • Retries transient failures (cold-start 502s, dropped sockets, malformed
+ *    gateway bodies) with backoff, keeping the skeleton up across attempts so
+ *    a first-load hiccup self-heals instead of landing in a dead empty state.
+ *  • `clientsLoadedOnce` flips true only after a SUCCESSFUL load, letting the
+ *    UI distinguish "genuinely zero clients" from "failed to load".
+ */
 export declare function fetchClients(): Promise<void>;
 export declare function fetchClientDetail(id: string): Promise<Client>;
 export declare function updateClientStage(id: string, stage: string): Promise<void>;
@@ -810,11 +840,28 @@ export interface QuoteBlock {
      */
     section?: string | null;
 }
+/**
+ * A bundle of line items the client chooses between / adds on the status page
+ * (Phase 5 — line-item template groups). When a quote has `lineGroups`, the flat
+ * `lineItems` array is the server-derived concatenation of every group's items.
+ *
+ *   role: 'required'  → mutually-exclusive choice rendered as a radio. A single
+ *                       required group is auto-included (no radio shown).
+ *   role: 'optional'  → an add-on rendered as a checkbox (unchecked by default).
+ */
+export interface QuoteLineGroup {
+    groupId: string;
+    title: string;
+    role: 'required' | 'optional';
+    lineItems: QuoteLineItem[];
+}
 export interface Quote {
     quoteId: string;
     consultationId: string;
     title: string;
     lineItems: QuoteLineItem[];
+    /** Optional grouped line items (Phase 5). Null/absent ⇒ legacy flat quote. */
+    lineGroups?: QuoteLineGroup[] | null;
     currency: string;
     total: number;
     providerIds: string[];
@@ -947,7 +994,9 @@ export declare function fetchQuoteByToken(consultationId: string, token: string)
  * Phase 3: pass `selectedLineItemIds` so the server records which optional
  * services the client specifically agreed to and calculates `finalBilledTotal`.
  */
-export declare function acceptQuoteAsClient(consultationId: string, token: string, acceptedBy?: string, selectedLineItemIds?: string[]): Promise<{
+export declare function acceptQuoteAsClient(consultationId: string, token: string, acceptedBy?: string, selectedLineItemIds?: string[], 
+/** Phase 5 — which line-item groups (packages/add-ons) the client chose. */
+selectedGroupIds?: string[]): Promise<{
     success: boolean;
     status: string;
 }>;
@@ -979,6 +1028,48 @@ export declare function updateQuoteTemplate(templateId: string, updates: Partial
 }>;
 /** Delete a quote template permanently. */
 export declare function deleteQuoteTemplate(templateId: string): Promise<void>;
+export interface TemplateMapRule {
+    /** Stable id (server assigns a nanoid when absent). */
+    id: string;
+    /** Optional human-readable label, e.g. "Costa Rica — RoRo". */
+    label?: string | null;
+    /** Required destination country match key (fuzzy, case-insensitive). */
+    destinationCountry: string;
+    /** Optional destination city narrowing. */
+    destinationCity?: string | null;
+    /** Optional shipping-mode narrowing (from transcriptInsights). */
+    shippingMode?: string | null;
+    /** Which template to show when this rule matches. */
+    templateId: string;
+    /** Tie-break among equally-specific rules (lower number wins). */
+    priority: number;
+}
+export interface QuoteTemplateMap {
+    /** Global fallback template used when no rule matches. */
+    defaultTemplateId: string;
+    rules: TemplateMapRule[];
+    updatedAt: string | null;
+    updatedBy: string | null;
+}
+/** Fetch the editable destination → template mapping config. */
+export declare function fetchQuoteTemplateMap(): Promise<QuoteTemplateMap>;
+/** Persist the full destination → template mapping config. */
+export declare function saveQuoteTemplateMap(map: Pick<QuoteTemplateMap, 'defaultTemplateId' | 'rules'>): Promise<QuoteTemplateMap>;
+/** Result returned by the per-client template resolver / selector. */
+export interface InferTemplateResult {
+    templateId: string;
+    name: string;
+    source: 'manual' | 'map' | 'rules' | 'llm' | 'default';
+    reasoning: string;
+}
+/**
+ * Resolve & persist the template a specific client should see, using the AI
+ * auto-selector (manual override → editable map → legacy rules → LLM →
+ * default). Pass `overrideTemplateId` for an explicit manual staff pick.
+ * Persists `selectedQuoteTemplateId` on the consultation doc server-side and
+ * mirrors it into the local client stores for instant UI feedback.
+ */
+export declare function inferClientTemplate(clientId: string, overrideTemplateId?: string): Promise<InferTemplateResult>;
 export interface QuoteLineTemplate {
     templateId: string;
     name: string;
@@ -1013,3 +1104,37 @@ export declare function applyTemplateToQuote(clientId: string, quoteId: string, 
     success: boolean;
     updatedFields: string[];
 }>;
+export interface SendRfqResult {
+    success: boolean;
+    consultationId: string;
+    counts: {
+        created: number;
+        skipped: number;
+        failed: number;
+    };
+    created: Array<{
+        providerId: string;
+        providerName: string;
+    }>;
+    skipped: Array<{
+        providerId: string;
+        providerName: string;
+    }>;
+    failed: Array<{
+        providerId: string;
+        providerName: string;
+    }>;
+    expiresAt: string | null;
+}
+/**
+ * Send the RFQ (request for quote) to providers for a consultation.
+ *
+ * @param clientId    the consultation/client id
+ * @param providerIds optional explicit provider targets (e.g. the matched ones
+ *                    the operator reviewed). When omitted, the server matches
+ *                    providers by the consultation's modality/category/route.
+ *
+ * Idempotent on the server: a provider with a live (pending/accepted/selected)
+ * request is skipped, so re-sending never double-contacts anyone.
+ */
+export declare function sendProviderRfq(clientId: string, providerIds?: string[]): Promise<SendRfqResult>;

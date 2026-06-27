@@ -2059,13 +2059,32 @@ export interface QuoteBlock {
   section?: string | null;
 }
 
+/**
+ * A bundle of line items the client chooses between / adds on the status page
+ * (Phase 5 — line-item template groups). When a quote has `lineGroups`, the flat
+ * `lineItems` array is the server-derived concatenation of every group's items.
+ *
+ *   role: 'required'  → mutually-exclusive choice rendered as a radio. A single
+ *                       required group is auto-included (no radio shown).
+ *   role: 'optional'  → an add-on rendered as a checkbox (unchecked by default).
+ */
+export interface QuoteLineGroup {
+  groupId: string;
+  title: string;
+  role: 'required' | 'optional';
+  lineItems: QuoteLineItem[];
+}
+
 export interface Quote {
   quoteId: string;
   consultationId: string;
   title: string;
   lineItems: QuoteLineItem[];
+  /** Optional grouped line items (Phase 5). Null/absent ⇒ legacy flat quote. */
+  lineGroups?: QuoteLineGroup[] | null;
   currency: string;
   total: number;
+
   providerIds: string[];
   providerSnapshots: Array<{
     id: string; name: string; country: string;
@@ -2346,6 +2365,8 @@ export async function acceptQuoteAsClient(
   token: string,
   acceptedBy?: string,
   selectedLineItemIds?: string[],
+  /** Phase 5 — which line-item groups (packages/add-ons) the client chose. */
+  selectedGroupIds?: string[],
 ): Promise<{ success: boolean; status: string }> {
   return apiFetch(`/api/status/${consultationId}/quote/accept`, {
     method: 'POST',
@@ -2353,9 +2374,11 @@ export async function acceptQuoteAsClient(
       token,
       acceptedBy: acceptedBy?.trim() || '',
       ...(selectedLineItemIds ? { selectedLineItemIds } : {}),
+      ...(selectedGroupIds && selectedGroupIds.length > 0 ? { selectedGroupIds } : {}),
     }),
   });
 }
+
 
 // ─── Quote Templates ──────────────────────────────────────────────────────────
 //
