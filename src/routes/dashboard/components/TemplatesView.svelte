@@ -310,11 +310,16 @@
   // ─── Template selection ───────────────────────────────────────────────────────
   function selectTemplate(tmpl: QuoteTemplate) {
     selectedTemplate = tmpl;
-    editing = false;
     creatingNew = false;
     saveMsg = '';
     saveError = '';
+    // WYSIWYG-first: drop straight into the editor so staff immediately see the
+    // real what-you-see-is-what-you-get document — no preliminary block-summary
+    // list, no extra "Edit" click. selectedTemplate is set above, so startEdit()
+    // populates the working copy and flips `editing` on.
+    startEdit();
   }
+
 
   function startEdit() {
     if (!selectedTemplate) return;
@@ -328,10 +333,13 @@
   }
 
   function cancelEdit() {
-    editing = false;
+    // No separate preview mode anymore — "Revert" discards unsaved edits by
+    // re-loading the working copy from the saved template, staying in WYSIWYG.
+    if (selectedTemplate) startEdit();
     saveMsg = '';
     saveError = '';
   }
+
 
   // ─── Block editor helpers ─────────────────────────────────────────────────────
   function addBlock(type: QuoteBlockType) {
@@ -384,8 +392,11 @@
         selectedTemplate = templates.find(t => t.templateId === selectedTemplate!.templateId) ?? null;
         saveMsg = `✓ Template "${editName.trim()}" saved.`;
       }
-      editing = false;
+      // Stay in the WYSIWYG editor after saving — there is no preview mode to
+      // fall back to; the document remains visible and editable.
+      editing = true;
     } catch (err: any) {
+
       saveError = '✗ ' + (err?.message ?? 'Save failed');
     } finally {
       saving = false;
@@ -727,7 +738,11 @@
           </p>
       </div>
 
-    <!-- ── Edit Mode ────────────────────────────────────────────────────────── -->
+    <!-- ── Selected template — WYSIWYG-first ────────────────────────────────────
+         Selecting a template drops staff straight into the true
+         what-you-see-is-what-you-get editor: no preliminary block-summary list,
+         no extra "Edit" click. The document itself is visible and editable from
+         the very first render; Save / Revert / Delete live in the header. -->
     {:else if editing}
       <div class="tv-panel">
         <div class="tv-panel__header">
@@ -736,7 +751,8 @@
             <input class="tv-input tv-input--sub" bind:value={editCategory} placeholder="Category (optional)" />
           </div>
           <div class="tv-panel__actions">
-            <button class="tv-btn tv-btn--ghost" on:click={cancelEdit} disabled={saving}>Cancel</button>
+            <button class="tv-btn tv-btn--danger-ghost" on:click={handleDelete} title="Delete this template">🗑 Delete</button>
+            <button class="tv-btn tv-btn--ghost" on:click={cancelEdit} disabled={saving} title="Discard unsaved changes">↺ Revert</button>
             <button class="tv-btn tv-btn--primary" on:click={handleSave} disabled={saving || !editName.trim()}>
               {saving ? '⏳ Saving…' : '💾 Save'}
             </button>
@@ -745,6 +761,15 @@
 
         {#if saveMsg}<div class="tv-success-msg">{saveMsg}</div>{/if}
         {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
+
+        {#if selectedTemplate}
+          <div class="tv-meta-row">
+            <span>Created by <strong>{selectedTemplate.createdBy.split('@')[0]}</strong> · {formatDate(selectedTemplate.createdAt)}</span>
+            {#if selectedTemplate.updatedAt}
+              <span>· Last updated {formatDate(selectedTemplate.updatedAt)}</span>
+            {/if}
+          </div>
+        {/if}
 
         <div class="tv-form-group">
           <label class="tv-label">Description</label>
@@ -761,62 +786,13 @@
                • Add-block palette built-in
              bind:blocks keeps editBlocks in sync with the parent save flow. -->
         <WysiwygEditor bind:blocks={editBlocks} />
-      </div>
-
-    <!-- ── View / Preview Mode ──────────────────────────────────────────────── -->
-    {:else}
-      <div class="tv-panel">
-        <div class="tv-panel__header">
-          <div>
-            <h3 class="tv-panel__title">{selectedTemplate.name}</h3>
-            {#if selectedTemplate.category}
-              <span class="tv-cat-badge">{selectedTemplate.category}</span>
-            {/if}
-            {#if selectedTemplate.description}
-              <p class="tv-panel__desc">{selectedTemplate.description}</p>
-            {/if}
-          </div>
-          <div class="tv-panel__actions">
-            <button class="tv-btn tv-btn--danger-ghost" on:click={handleDelete} title="Delete this template">🗑 Delete</button>
-            <button class="tv-btn tv-btn--primary" on:click={startEdit}>✏️ Edit</button>
-          </div>
-        </div>
-
-        {#if saveMsg}<div class="tv-success-msg">{saveMsg}</div>{/if}
-        {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
-
-        <div class="tv-meta-row">
-          <span>Created by <strong>{selectedTemplate.createdBy.split('@')[0]}</strong> · {formatDate(selectedTemplate.createdAt)}</span>
-          {#if selectedTemplate.updatedAt}
-            <span>· Last updated {formatDate(selectedTemplate.updatedAt)}</span>
-          {/if}
-        </div>
-
-        <!-- Block summary list -->
-        {#if selectedTemplate.blocks.length === 0}
-          <div class="tv-blocks-empty">This template has no blocks. Click Edit to add some.</div>
-        {:else}
-          <div class="tv-preview-list">
-            {#each selectedTemplate.blocks as block, i (block.id)}
-              <div class="tv-preview-item">
-                <span class="tv-preview-item__num">{i + 1}</span>
-                <span class="tv-preview-item__icon">{blockTypeIcon(block.type)}</span>
-                <span class="tv-preview-item__type">{blockTypeLabel(block.type)}</span>
-                {#if block.html}
-                  <span class="tv-preview-item__html-preview">
-                    {block.html.replace(/<[^>]+>/g, ' ').slice(0, 80).trim()}{block.html.length > 80 ? '…' : ''}
-                  </span>
-                {/if}
-              </div>
-            {/each}
-          </div>
-        {/if}
 
         <div class="tv-apply-hint">
           💡 To apply this template to a quote, open the <strong>QuoteEditor</strong> → <em>"Use Template"</em> button.
         </div>
       </div>
     {/if}
+
 
     {/if}
   </main>
