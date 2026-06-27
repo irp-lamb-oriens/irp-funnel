@@ -402,12 +402,12 @@
       position: relative;
       width: max-content;
       min-width: 100%;
-      padding: 0 1rem;
+      padding: 1rem;
       
       &::before {
         content: '';
         position: absolute;
-        top: 14px;
+        top: 30px;
         left: 60px;
         right: 60px;
         height: 4px;
