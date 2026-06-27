@@ -85,6 +85,22 @@
       quote = await fetchQuoteByToken(consultationId, token);
       if (!quote) loadError = 'Quote not found.';
       if (quote?.status === 'client_accepted') accepted = true;
+
+      // Phase 5 — if the quote was already accepted, restore the exact packages /
+      // add-ons the client picked (server returns `selectedGroupIds`) so the cards
+      // reflect their real choice rather than resetting to the auto-default.
+      const acc = quote as any;
+      if (Array.isArray(acc?.selectedGroupIds) && acc.selectedGroupIds.length > 0) {
+        const selIds: string[] = acc.selectedGroupIds;
+        const gs: any[] = Array.isArray(acc.lineGroups) ? acc.lineGroups : [];
+        const reqSel = gs.find((g) => g.role !== 'optional' && selIds.includes(g.groupId));
+        if (reqSel) selectedRequiredGroupId = reqSel.groupId;
+        selectedOptionalGroupIds = new Set(
+          gs.filter((g) => g.role === 'optional' && selIds.includes(g.groupId)).map((g) => g.groupId),
+        );
+        groupSelectionInit = true; // lock so the auto-default reactive can't overwrite it
+      }
+
     } catch (e: any) {
       loadError = e.message ?? 'Error loading quote.';
     } finally {
@@ -535,18 +551,20 @@
                 box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
                 transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
+  /* Brand teal sourced from the global design tokens (global.scss) per the
+     style bible — `--color-highlight-2` (#02b5bb) + its rgb channel token. */
   .qv-group:hover {
-    border-color: rgba(2, 181, 187, 0.45);
-    box-shadow: 0 6px 18px -8px rgba(2, 181, 187, 0.4);
+    border-color: rgba(var(--color-highlight-2-rgb), 0.45);
+    box-shadow: 0 6px 18px -8px rgba(var(--color-highlight-2-rgb), 0.4);
     transform: translateY(-1px);
   }
   .qv-group--active {
-    border-color: rgba(2, 181, 187, 0.6);
-    background: linear-gradient(135deg, rgba(2, 181, 187, 0.06) 0%, #f0fdfe 100%);
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
+    border-color: rgba(var(--color-highlight-2-rgb), 0.6);
+    background: linear-gradient(135deg, rgba(var(--color-highlight-2-rgb), 0.06) 0%, #f0fdfe 100%);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1);
   }
   .qv-group--active:hover {
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1), 0 6px 18px -8px rgba(2, 181, 187, 0.45);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1), 0 6px 18px -8px rgba(var(--color-highlight-2-rgb), 0.45);
   }
   /* Locked-in look once the quote is accepted — no pointer affordance. */
   .qv-group:has(.qv-group__input:disabled) {
@@ -575,7 +593,7 @@
   }
   .qv-group__marker--radio { border-radius: 999px; }
   .qv-group__marker--check { border-radius: 6px; }
-  .qv-group--active .qv-group__marker { border-color: #02b5bb; background: #02b5bb; }
+  .qv-group--active .qv-group__marker { border-color: var(--color-highlight-2); background: var(--color-highlight-2); }
   /* Radio inner dot */
   .qv-group--active .qv-group__marker--radio::after {
     content: '';
@@ -597,7 +615,7 @@
     transform: rotate(45deg);
   }
   .qv-group__input:focus-visible + .qv-group__marker {
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.3);
+    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.3);
   }
   .qv-group__input:disabled ~ .qv-group__body { opacity: 0.85; }
   .qv-group__body { flex: 1; min-width: 0; }
@@ -875,7 +893,7 @@
     /* Disable the hover-lift on touch so cards don't feel "stuck" after a tap. */
     .qv-group { padding: 13px 14px; }
     .qv-group:hover { transform: none; box-shadow: none; }
-    .qv-group--active:hover { box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1); }
+    .qv-group--active:hover { box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1); }
     .qv-group__title,
     .qv-group__price { font-size: 14.5px; }
   }
