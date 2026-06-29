@@ -325,7 +325,7 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="email-preview-overlay" on:click={closePresend} role="presentation"></div>
 
-  <aside class="email-preview-drawer email-preview-drawer--presend" role="dialog" aria-label="Pre-send email preview">
+  <div class="email-preview-drawer email-preview-drawer--presend" role="dialog" aria-modal="true" aria-label="Pre-send email preview">
 
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
     <header class="email-preview-drawer__header">
@@ -592,7 +592,7 @@
         </button>
       </div>
     </footer>
-  </aside>
+  </div>
 
 <!-- ════════════════════════════════════════════════════════════════════════
      HISTORICAL MODE (unchanged)
@@ -601,7 +601,7 @@
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="email-preview-overlay" on:click={closeHistorical} role="presentation"></div>
-  <aside class="email-preview-drawer" role="dialog" aria-label="Email preview">
+  <div class="email-preview-drawer" role="dialog" aria-modal="true" aria-label="Email preview">
     <header class="email-preview-drawer__header">
       <button class="email-preview-drawer__close" on:click={closeHistorical} aria-label="Close email preview">✕</button>
       {#if loading}
@@ -717,8 +717,9 @@
         {/if}
       </section>
     {/if}
-  </aside>
+  </div>
 {/if}
+
 
 <style>
   /* ── Visual-mode iframe edit border ──────────────────────────────────────── */
