@@ -145,7 +145,7 @@
             <div class="qa-receipt__row">
               <dt>Name on record</dt><dd>{receipt.typedFullName}</dd>
             </div>
-          {*if}
+          {/if}
           <div class="qa-receipt__row">
             <dt>Accepted on</dt><dd>{fmtDate(receipt.acceptedAt)}</dd>
           </div>

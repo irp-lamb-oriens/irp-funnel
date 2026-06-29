@@ -1119,7 +1119,21 @@
 
           <!-- Project Details collapsible ───────────────────────────────── -->
           <div class="cp-collapsible">
-            <button class="cp-collapsible__trigger" type="button" on:click={() => (detailsOpen = !detailsOpen)} aria-expanded={detailsOpen}>
+            <!-- Trigger is a <div role="button"> (NOT a <button>) because it nests
+                 the "Edit" <button> below. A <button> may not contain another
+                 button: under SSR the HTML parser auto-closes the outer button, the
+                 hydrated DOM no longer matches Svelte's template, and the toggle
+                 handler binds to the wrong node — so the dropdown only "flashes".
+                 A div with role="button" + Enter/Space keydown keeps full keyboard
+                 a11y while making the nested Edit button valid. -->
+            <div
+              class="cp-collapsible__trigger"
+              role="button"
+              tabindex="0"
+              aria-expanded={detailsOpen}
+              on:click={() => (detailsOpen = !detailsOpen)}
+              on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); detailsOpen = !detailsOpen; } }}
+            >
               <span class="cp-collapsible__trigger-left">
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-highlight-2,#02b5bb)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 Project Details
@@ -1133,7 +1147,7 @@
                 {/if}
                 <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={detailsOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
-            </button>
+            </div>
             <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen}>
               <div class="cp-collapsible__inner">
                 <div class="cp-collapsible__scroll">

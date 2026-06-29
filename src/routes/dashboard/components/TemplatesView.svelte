@@ -69,6 +69,9 @@
   let newDescription = '';
   let newCategory = '';
 
+  // Inline row action: which template is currently being duplicated (spinner state).
+  let duplicatingId: string | null = null;
+
   // ─── ⚙️ Main configuration: destination → template mapping ─────────────────
   // A SEPARATE panel (toggled from the sidebar header) from the searchable
   // template list. Lets staff edit which template is shown by default for a
@@ -453,6 +456,43 @@
     }
   }
 
+  // ─── Duplicate (inline, from the list row) ────────────────────────────────────
+  /**
+   * Clone a template straight from its list row — the same "copy" affordance the
+   * block editor offers per-section, lifted to the TEMPLATE level. Creates a new
+   * "<name> (Copy)" document with a deep, fresh-id copy of the source blocks, then
+   * opens it so staff can immediately tweak the duplicate. Delete intentionally
+   * stays inside the open template (header) so the list row stays clutter-free.
+   */
+  async function duplicateTemplate(tmpl: QuoteTemplate) {
+    if (duplicatingId) return;
+    duplicatingId = tmpl.templateId;
+    saveMsg = '';
+    saveError = '';
+    listError = '';
+    try {
+      const created = await createQuoteTemplate({
+        name: `${tmpl.name} (Copy)`,
+        description: tmpl.description ?? null,
+        category: tmpl.category ?? null,
+        // Deep copy with fresh block ids so the duplicate is fully independent.
+        blocks: tmpl.blocks.map((b) => ({
+          ...b,
+          id: `blk-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        })),
+      } as any);
+      await loadTemplates();
+      selectedTemplate = templates.find((t) => t.templateId === created.templateId) ?? created;
+      creatingNew = false;
+      startEdit();
+      saveMsg = `✓ Duplicated "${tmpl.name}" → "${created.name}".`;
+    } catch (err: any) {
+      listError = '✗ Duplicate failed: ' + (err?.message ?? 'unknown error');
+    } finally {
+      duplicatingId = null;
+    }
+  }
+
   function formatDate(iso: string): string {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -517,21 +557,38 @@
           <li
             class="tv-list__item"
             class:tv-list__item--active={selectedTemplate?.templateId === tmpl.templateId}
-            on:click={() => selectTemplate(tmpl)}
-            role="button"
-            tabindex="0"
-            on:keydown={(e) => e.key === 'Enter' && selectTemplate(tmpl)}
           >
-            <div class="tv-list__name-row">
-              <span class="tv-list__name">{tmpl.name}</span>
-              {#if tmpl.isDefault}
-                <span class="tv-list__default-badge">Default</span>
-              {/if}
-            </div>
-            <span class="tv-list__meta">
-              {tmpl.blocks.length} block{tmpl.blocks.length !== 1 ? 's' : ''}
-              {#if tmpl.category}<span class="tv-list__cat">· {tmpl.category}</span>{/if}
-            </span>
+            <!-- Primary row action — a real, keyboard-accessible button. -->
+            <button
+              type="button"
+              class="tv-list__select"
+              title={tmpl.name}
+              on:click={() => selectTemplate(tmpl)}
+            >
+              <span class="tv-list__name-row">
+                <span class="tv-list__name">{tmpl.name}</span>
+                {#if tmpl.isDefault}
+                  <span class="tv-list__default-badge">Default</span>
+                {/if}
+              </span>
+              <span class="tv-list__meta">
+                {tmpl.blocks.length} block{tmpl.blocks.length !== 1 ? 's' : ''}
+                {#if tmpl.category}<span class="tv-list__cat">· {tmpl.category}</span>{/if}
+              </span>
+            </button>
+
+            <!-- Inline hover action: duplicate this template (delete lives inside
+                 the open template, not here). A separate real button — never
+                 nested in the select button — so it stays keyboard-accessible
+                 and stopPropagation keeps it from triggering row selection. -->
+            <button
+              type="button"
+              class="tv-list__dup"
+              title="Duplicate this template"
+              aria-label={`Duplicate template ${tmpl.name}`}
+              disabled={duplicatingId === tmpl.templateId}
+              on:click|stopPropagation={() => duplicateTemplate(tmpl)}
+            >{duplicatingId === tmpl.templateId ? '⏳' : '⧉'}</button>
           </li>
         {/each}
         {#if filteredTemplates.length === 0 && sidebarSearch}
@@ -619,7 +676,7 @@
 
                     <div class="tv-config__rule-grid">
                       <div class="tv-config__field tv-config__field--country">
-                        <label class="tv-label tv-label--sm">Destination country <span class="tv-required">*</span></label>
+                        <span class="tv-label tv-label--sm">Destination country <span class="tv-required">*</span></span>
                         <input
                           class="tv-input tv-input--cfg"
                           bind:value={rule.destinationCountry}
@@ -628,7 +685,7 @@
                       </div>
 
                       <div class="tv-config__field">
-                        <label class="tv-label tv-label--sm">City <span class="tv-config__opt">(optional)</span></label>
+                        <span class="tv-label tv-label--sm">City <span class="tv-config__opt">(optional)</span></span>
                         <input
                           class="tv-input tv-input--cfg"
                           value={rule.destinationCity ?? ''}
@@ -638,7 +695,7 @@
                       </div>
 
                       <div class="tv-config__field">
-                        <label class="tv-label tv-label--sm">Shipping mode <span class="tv-config__opt">(optional)</span></label>
+                        <span class="tv-label tv-label--sm">Shipping mode <span class="tv-config__opt">(optional)</span></span>
                         <Select
                           size="sm"
                           options={shippingModeOptions}
@@ -649,7 +706,7 @@
                       </div>
 
                       <div class="tv-config__field tv-config__field--template">
-                        <label class="tv-label tv-label--sm">Show template <span class="tv-required">*</span></label>
+                        <span class="tv-label tv-label--sm">Show template <span class="tv-required">*</span></span>
                         <Select
                           size="sm"
                           options={templateSelectOptions}
@@ -662,7 +719,7 @@
                       </div>
 
                       <div class="tv-config__field tv-config__field--priority">
-                        <label class="tv-label tv-label--sm">Priority</label>
+                        <span class="tv-label tv-label--sm">Priority</span>
                         <input
                           class="tv-input tv-input--cfg"
                           type="number"
@@ -704,17 +761,17 @@
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Name <span class="tv-required">*</span></label>
+          <span class="tv-label">Name <span class="tv-required">*</span></span>
           <input class="tv-input" bind:value={newName} placeholder="e.g. Costa Rica — Standard FCL" />
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Category</label>
+          <span class="tv-label">Category</span>
           <input class="tv-input" bind:value={newCategory} placeholder="e.g. costa-rica, mexico-container…" />
         </div>
 
         <div class="tv-form-group">
-          <label class="tv-label">Description</label>
+          <span class="tv-label">Description</span>
           <textarea class="tv-textarea tv-textarea--sm" bind:value={newDescription} placeholder="Describe when to use this template…" rows="2"></textarea>
         </div>
 
@@ -772,7 +829,7 @@
         {/if}
 
         <div class="tv-form-group">
-          <label class="tv-label">Description</label>
+          <span class="tv-label">Description</span>
           <input class="tv-input" bind:value={editDescription} placeholder="Optional description…" />
         </div>
 
@@ -828,14 +885,6 @@
     padding: 1.1rem 1.2rem 0.8rem;
     border-bottom: 1px solid #f1f5f9;
     flex-shrink: 0;
-  }
-
-  .tv-sidebar__title {
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: #0f172a;
-    margin: 0;
-    letter-spacing: -0.01em;
   }
 
   .tv-new-btn {
@@ -908,16 +957,32 @@
   }
 
   .tv-list__item {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 0.7rem 1.2rem;
-    cursor: pointer;
+    position: relative;
     border-left: 3px solid transparent;
     transition: background 0.12s, border-color 0.12s;
   }
   .tv-list__item:hover { background: #f8fafc; border-left-color: #e2e8f0; }
   .tv-list__item--active { background: #f0fdfe; border-left-color: #02b6bc; }
+
+  /* Primary row action — a real, accessible button that fills the row. */
+  .tv-list__select {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 0.7rem 2.4rem 0.7rem 1.2rem; /* right gutter for the hover action */
+    background: transparent;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .tv-list__select:focus-visible {
+    outline: 2px solid #02b6bc;
+    outline-offset: -2px;
+    border-radius: 6px;
+  }
 
   .tv-list__name {
     font-size: 0.84rem;
@@ -933,6 +998,37 @@
     color: #94a3b8;
   }
   .tv-list__cat { color: #02b6bc; font-weight: 600; }
+
+  /* Inline "duplicate" row action — hidden until the row is hovered/focused. */
+  .tv-list__dup {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    border-radius: 7px;
+    color: #475569;
+    font-size: 0.82rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-2px);
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+    transition: opacity 0.12s, transform 0.12s, background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .tv-list__item:hover .tv-list__dup,
+  .tv-list__item:focus-within .tv-list__dup { opacity: 1; transform: translateY(0); }
+  .tv-list__dup:hover:not(:disabled) {
+    background: #f0fdfe;
+    color: #02b6bc;
+    border-color: rgba(2,182,188,0.4);
+  }
+  .tv-list__dup:disabled { opacity: 1; cursor: progress; color: #94a3b8; }
 
   /* ─── Main ───────────────────────────────────────────────────────────────── */
   .tv-main {
@@ -1181,76 +1277,8 @@
   }
   .tv-textarea:focus { border-color: #02b6bc; box-shadow: 0 0 0 3px rgba(2,182,188,0.10); }
   .tv-textarea--sm { min-height: 50px; }
-  .tv-textarea--code {
-    font-family: 'SF Mono','Fira Code','JetBrains Mono',monospace;
-    font-size: 0.8rem;
-    min-height: 100px;
-    line-height: 1.55;
-    tab-size: 2;
-  }
 
-  /* ─── Blocks section ─────────────────────────────────────────────────────── */
-  .tv-blocks-section { display: flex; flex-direction: column; gap: 0.6rem; }
-
-  .tv-blocks-section__header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.8rem;
-  }
-  .tv-blocks-section__hint {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    font-style: italic;
-  }
-
-  .tv-blocks-empty {
-    text-align: center;
-    color: #94a3b8;
-    padding: 1.5rem;
-    background: #f8fafc;
-    border-radius: 10px;
-    border: 1px dashed #e2e8f0;
-    font-size: 0.82rem;
-  }
-
-  .tv-blocks-list { display: flex; flex-direction: column; gap: 0.6rem; }
-
-  /* ─── Block card ─────────────────────────────────────────────────────────── */
-  .tv-block-card {
-    background: #fafbfc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .tv-block-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.55rem 0.9rem;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e2e8f0;
-  }
-
-  .tv-block-card__type-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .tv-block-card__icon { font-size: 1rem; }
-  .tv-block-card__label { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
-  .tv-block-card__id {
-    font-family: 'SF Mono', monospace;
-    font-size: 0.67rem;
-    color: #94a3b8;
-    background: #e2e8f0;
-    border-radius: 4px;
-    padding: 0.1em 0.45em;
-  }
-
-  .tv-block-card__controls { display: flex; gap: 0.3rem; }
-
+  /* ─── Config-rule icon buttons (↑ ↓ ✕) ───────────────────────────────────── */
   .tv-icon-btn {
     width: 26px;
     height: 26px;
@@ -1271,86 +1299,10 @@
   .tv-icon-btn--danger { color: #ef4444; border-color: rgba(239,68,68,0.2); }
   .tv-icon-btn--danger:hover:not(:disabled) { background: rgba(239,68,68,0.08); color: #dc2626; }
 
-  .tv-block-card__body { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; }
-  .tv-block-card__body--info {
-    background: #f0fdfe;
-    border-top: 1px solid #e2e8f0;
-  }
-  .tv-block-card__auto-label { font-size: 0.78rem; color: #0d9488; font-style: italic; }
-
-  /* ─── Block palette ──────────────────────────────────────────────────────── */
-  .tv-palette {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .tv-palette__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    gap: 0.45rem;
-  }
-
-  .tv-palette__btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.55rem 0.4rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s, transform 0.12s;
-  }
-  .tv-palette__btn:hover { background: #f0fdfe; border-color: rgba(2,182,188,0.3); transform: translateY(-1px); }
-
-  .tv-palette__icon { font-size: 1.2rem; }
-  .tv-palette__label { font-size: 0.67rem; font-weight: 600; color: #475569; text-align: center; line-height: 1.3; }
-
-  /* ─── Preview mode ───────────────────────────────────────────────────────── */
+  /* ─── Edit-header meta row ───────────────────────────────────────────────── */
   .tv-meta-row {
     font-size: 0.76rem;
     color: #94a3b8;
-  }
-
-  .tv-preview-list { display: flex; flex-direction: column; gap: 0.4rem; }
-
-  .tv-preview-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.55rem 0.85rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 0.82rem;
-  }
-
-  .tv-preview-item__num {
-    font-size: 0.65rem;
-    font-weight: 800;
-    color: #94a3b8;
-    width: 18px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .tv-preview-item__icon { font-size: 0.95rem; flex-shrink: 0; }
-  .tv-preview-item__type { font-weight: 700; color: #334155; white-space: nowrap; }
-
-  .tv-preview-item__html-preview {
-    font-size: 0.72rem;
-    color: #94a3b8;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-    font-family: 'SF Mono', monospace;
   }
 
   .tv-apply-hint {
@@ -1360,20 +1312,6 @@
     padding: 0.7rem 1rem;
     font-size: 0.8rem;
     color: #0d9488;
-  }
-
-  .tv-cat-badge {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(2,182,188,0.08);
-    color: #0d9488;
-    border: 1px solid rgba(2,182,188,0.2);
-    border-radius: 999px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 0.15em 0.6em;
-    letter-spacing: 0.04em;
-    margin-left: 0.5rem;
   }
 
   /* ─── Status messages ────────────────────────────────────────────────────── */
@@ -1453,161 +1391,4 @@
     white-space: nowrap;
   }
 
-  /* ─── Insert-field button + picker ──────────────────────────────────────── */
-  .tv-block-card__html-label-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.2rem;
-  }
-  .tv-block-card__html-label-row .tv-label { margin-bottom: 0; }
-
-  .tv-insert-field-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    background: rgba(2,182,188,0.08);
-    border: 1px solid rgba(2,182,188,0.25);
-    border-radius: 6px;
-    color: #0d9488;
-    font-size: 0.72rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-    letter-spacing: 0.02em;
-  }
-  .tv-insert-field-btn:hover {
-    background: rgba(2,182,188,0.15);
-    border-color: rgba(2,182,188,0.4);
-    color: #02b6bc;
-  }
-
-  /* Field picker popover */
-  .tv-field-picker {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow:
-      0 4px 20px rgba(0,0,0,0.10),
-      0 1px 4px rgba(0,0,0,0.06);
-    margin-bottom: 0.5rem;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tv-field-picker__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.55rem 0.9rem 0.4rem;
-    border-bottom: 1px solid #f1f5f9;
-    background: #f8fafc;
-  }
-  .tv-field-picker__title {
-    font-size: 0.72rem;
-    font-weight: 800;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .tv-field-picker__close {
-    width: 22px;
-    height: 22px;
-    background: none;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.12s, color 0.12s;
-  }
-  .tv-field-picker__close:hover { background: #f1f5f9; color: #0f172a; }
-
-  .tv-field-picker__search {
-    margin: 0.5rem 0.8rem;
-    padding: 0.38rem 0.75rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    font-size: 0.78rem;
-    color: #0f172a;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.14s;
-  }
-  .tv-field-picker__search:focus { border-color: #02b6bc; }
-
-  .tv-field-picker__groups {
-    overflow-y: auto;
-    max-height: 260px;
-    padding: 0 0.5rem 0.5rem;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(2,182,188,0.15) transparent;
-  }
-
-  .tv-field-picker__group { margin-bottom: 0.2rem; }
-  .tv-field-picker__group-label {
-    display: block;
-    font-size: 0.62rem;
-    font-weight: 800;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding: 0.45rem 0.5rem 0.25rem;
-  }
-
-  .tv-field-picker__field {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.42rem 0.65rem;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.1s;
-    font-family: inherit;
-  }
-  .tv-field-picker__field:hover { background: #f0fdfe; }
-
-  .tv-field-picker__field-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #0f172a;
-    white-space: nowrap;
-    flex-shrink: 0;
-    min-width: 90px;
-  }
-  .tv-field-picker__field-token {
-    font-size: 0.7rem;
-    color: #02b6bc;
-    background: rgba(2,182,188,0.08);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-family: 'SF Mono','Fira Code',monospace;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .tv-field-picker__field-example {
-    font-size: 0.68rem;
-    color: #94a3b8;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .tv-field-picker__empty {
-    padding: 0.7rem 0.65rem;
-    font-size: 0.78rem;
-    color: #94a3b8;
-    text-align: center;
-  }
 </style>

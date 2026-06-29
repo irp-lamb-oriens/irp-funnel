@@ -38,6 +38,10 @@
   import { tick, createEventDispatcher } from 'svelte';
   import type { QuoteBlock, QuoteBlockType } from '../routes/dashboard/store.ts';
   import { MERGE_FIELDS, mergeFieldsByGroup } from './mergeFields.ts';
+  // Block catalog + per-type helpers + blank-block factory — single source of truth.
+  import { BLOCK_CATALOG, createBlock, blockIcon, blockLabel, isEditable } from './blocks/registry.ts';
+  // Ready-made, content-filled section presets (the "Content library").
+  import { PRESETS_BY_CATEGORY, createPresetBlock } from './blocks/presets.ts';
 
   // ── Props ────────────────────────────────────────────────────────────────────
   export let blocks: QuoteBlock[] = [];
@@ -127,24 +131,25 @@
     f.token.toLowerCase().includes(pickerSearch.toLowerCase())
   );
 
-  // ── Block type catalog ────────────────────────────────────────────────────────
-  const EDITABLE_TYPES = new Set<QuoteBlockType>(['html', 'heading', 'banner', 'accordion']);
+  // ── Add-block palette state ────────────────────────────────────────────────────
+  // BLOCK_CATALOG + blockIcon/blockLabel/isEditable + createBlock are imported from
+  // the central registry (blocks/registry.ts) — the single source of truth — and the
+  // content presets come from blocks/presets.ts. The editor no longer owns a private
+  // catalog, so a new block type lights up in the palette and the renderer from ONE
+  // place, and "add a block" can no longer produce a stale placeholder box.
+  //
+  // The palette opens on the CONTENT LIBRARY tab (ready-made, fully-written sections)
+  // so the common path drops REAL content. The BLOCKS tab keeps blank starter blocks
+  // for advanced/custom authoring.
+  let paletteTab: 'library' | 'blocks' = 'library';
 
-  const BLOCK_CATALOG: { type: QuoteBlockType; label: string; icon: string; hint: string }[] = [
-    { type: 'html',         label: 'Rich Text',   icon: '📝', hint: 'Free-form HTML — headings, paragraphs, tables' },
-    { type: 'heading',      label: 'Heading',      icon: '📌', hint: 'Standalone heading block' },
-    { type: 'banner',       label: 'Banner',       icon: '🖼️', hint: 'Full-width hero section' },
-    { type: 'accordion',    label: 'Accordion',    icon: '📋', hint: 'Expandable T&Cs / FAQ section' },
-    { type: 'quoteTable',   label: 'Quote Table',  icon: '💰', hint: 'Live pricing from quote line-items' },
-    { type: 'accept',       label: 'Accept CTA',   icon: '✅', hint: '"Book Your Move" acceptance button' },
-    { type: 'testimonials', label: 'Testimonials', icon: '🌟', hint: 'Customer testimonials section' },
-    { type: 'reviews',      label: 'Reviews',      icon: '⭐', hint: 'Google reviews section' },
-    { type: 'partners',     label: 'Partners',     icon: '🤝', hint: 'Partner logos section' },
-  ];
-
-  function blockIcon(type: QuoteBlockType) { return BLOCK_CATALOG.find(b => b.type === type)?.icon ?? '📦'; }
-  function blockLabel(type: QuoteBlockType) { return BLOCK_CATALOG.find(b => b.type === type)?.label ?? type; }
-  function isEditable(type: QuoteBlockType) { return EDITABLE_TYPES.has(type); }
+  const PRESET_CATEGORY_LABELS: Record<string, string> = {
+    content: 'Content',
+    media: 'Media',
+    commerce: 'Pricing & CTA',
+    'social-proof': 'Social proof',
+    legal: 'Legal',
+  };
 
   // ── Svelte action: liveHtmlBlock ─────────────────────────────────────────────
   // Pre-render: injects contenteditable on ALL elements + draggable/.we-draggable
@@ -360,16 +365,8 @@
     emit();
   }
 
-  function addBlock(type: QuoteBlockType, section: string) {
-    const id = `blk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const newBlock: any = {
-      id, type,
-      html: EDITABLE_TYPES.has(type)
-        ? `<p style="font-family:sans-serif;font-size:1rem;line-height:1.7;color:#334155;">Click to edit your ${blockLabel(type).toLowerCase()} content here…</p>`
-        : null,
-      data: null, section,
-    };
-    // Insert after the last block in this section (or at end of array)
+  /** Insert a freshly-built block immediately after the last block of `section`. */
+  function insertBlockInSection(newBlock: QuoteBlock, section: string) {
     const lastIdx = blocks.reduce((acc, b, i) => b.section === section ? i : acc, -1);
     const arr = [...blocks];
     arr.splice(lastIdx + 1, 0, newBlock);
@@ -377,9 +374,27 @@
     emit();
     addBlockSection = null;
     tick().then(() => {
-      const el = document.querySelector<HTMLElement>(`[data-block-preview="${id}"]`);
+      const el = document.querySelector<HTMLElement>(`[data-block-preview="${newBlock.id}"]`);
       if (el) el.focus();
     });
+  }
+
+  /**
+   * Add a BLANK starter block of `type`. The body comes from the registry
+   * factory (createBlock) — html types get a minimal on-brand starter, never the
+   * old "Click to edit your … content here" placeholder box.
+   */
+  function addBlock(type: QuoteBlockType, section: string) {
+    insertBlockInSection(createBlock(type, section), section);
+  }
+
+  /**
+   * Add a ready-made CONTENT preset by id (real, client-ready copy from the
+   * content library). No-op for an unknown id.
+   */
+  function addPreset(presetId: string, section: string) {
+    const newBlock = createPresetBlock(presetId, section);
+    if (newBlock) insertBlockInSection(newBlock, section);
   }
 
   function removeBlock(blockId: string) {
@@ -752,12 +767,17 @@
                   </div>
                 {/if}
                 {#if isEditable(block.type)}
+                  <!-- NOTE: read `htmlModeBlocks` DIRECTLY (not via isHtmlMode()) so
+                       Svelte tracks it as a dependency and the toggle re-renders
+                       immediately — a function call hides the dependency and the
+                       view would otherwise only update on the next reactive tick
+                       (e.g. a hover), making the toggle appear "stuck". -->
                   <button
                     class="we-frame__btn we-frame__btn--code"
-                    class:we-frame__btn--code-active={isHtmlMode(block.id)}
-                    title={isHtmlMode(block.id) ? 'Switch to preview' : 'Edit HTML source'}
+                    class:we-frame__btn--code-active={htmlModeBlocks.has(block.id)}
+                    title={htmlModeBlocks.has(block.id) ? 'Switch to preview' : 'Edit HTML source'}
                     on:click|stopPropagation={() => toggleHtmlMode(block.id)}
-                  >{isHtmlMode(block.id) ? '👁 Preview' : '</> HTML'}</button>
+                  >{htmlModeBlocks.has(block.id) ? '👁 Preview' : '</> HTML'}</button>
                 {/if}
                 <button class="we-frame__btn" title="Duplicate block" on:click={() => duplicateBlock(block.id)}>⎘</button>
                 <button class="we-frame__btn we-frame__btn--danger" title="Delete block" on:click={() => removeBlock(block.id)}>✕</button>
@@ -765,7 +785,7 @@
             </div>
 
             <!-- Formatting toolbar (focused editable blocks) -->
-            {#if focusedBlockId === block.id && isEditable(block.type) && !isHtmlMode(block.id)}
+            {#if focusedBlockId === block.id && isEditable(block.type) && !htmlModeBlocks.has(block.id)}
               <div class="we-bar" role="toolbar" aria-label="Text formatting">
                 <button class="we-bar__btn" on:click={() => fmt('bold')} title="Bold"><strong>B</strong></button>
                 <button class="we-bar__btn" on:click={() => fmt('italic')} title="Italic"><em>I</em></button>
@@ -823,7 +843,7 @@
             <!-- ── Block preview ────────────────────────────────────────── -->
             <div class="we-block-preview">
               {#if isEditable(block.type)}
-                {#if isHtmlMode(block.id)}
+                {#if htmlModeBlocks.has(block.id)}
                   <!-- HTML source mode: raw textarea for block.html -->
                   <textarea
                     class="we-html-source"
@@ -900,15 +920,56 @@
         <!-- Add block to this section ──────────────────────────────────── -->
         {#if addBlockSection === section}
           <div class="we-palette">
-            <span class="we-palette__label">Choose a block type:</span>
-            <div class="we-palette__grid">
-              {#each BLOCK_CATALOG as bt (bt.type)}
-                <button class="we-palette__btn" on:click={() => addBlock(bt.type, section)} title={bt.hint}>
-                  <span class="we-palette__icon">{bt.icon}</span>
-                  <span class="we-palette__name">{bt.label}</span>
-                </button>
-              {/each}
+            <!-- Tab switch: ready-made content library vs blank starter blocks -->
+            <div class="we-palette__tabs" role="tablist">
+              <button
+                class="we-palette__tab"
+                class:we-palette__tab--active={paletteTab === 'library'}
+                role="tab" aria-selected={paletteTab === 'library'}
+                on:click={() => paletteTab = 'library'}
+              >📚 Content library</button>
+              <button
+                class="we-palette__tab"
+                class:we-palette__tab--active={paletteTab === 'blocks'}
+                role="tab" aria-selected={paletteTab === 'blocks'}
+                on:click={() => paletteTab = 'blocks'}
+              >🧱 Blank blocks</button>
             </div>
+
+            {#if paletteTab === 'blocks'}
+              <span class="we-palette__label">Start from a blank block</span>
+              <div class="we-palette__grid">
+                {#each BLOCK_CATALOG as bt (bt.type)}
+                  <button class="we-palette__btn" on:click={() => addBlock(bt.type, section)} title={bt.hint}>
+                    <span class="we-palette__icon">{bt.icon}</span>
+                    <span class="we-palette__name">{bt.label}</span>
+                  </button>
+                {/each}
+              </div>
+            {:else}
+              <span class="we-palette__label">Insert a ready-made section — fully written &amp; on-brand</span>
+              {#each PRESETS_BY_CATEGORY as group (group.category)}
+                <div class="we-palette__cat">{PRESET_CATEGORY_LABELS[group.category] ?? group.category}</div>
+                <div class="we-palette__grid we-palette__grid--presets">
+                  {#each group.presets as preset (preset.id)}
+                    <button
+                      class="we-palette__btn we-palette__btn--preset"
+                      on:click={() => addPreset(preset.id, section)}
+                      title={preset.description}
+                    >
+                      <span class="we-palette__preset-head">
+                        <span class="we-palette__icon">{preset.icon}</span>
+                        <span class="we-palette__name">{preset.label}</span>
+                      </span>
+                      {#if preset.variantLabel}
+                        <span class="we-palette__variant">{preset.variantLabel}</span>
+                      {/if}
+                    </button>
+                  {/each}
+                </div>
+              {/each}
+            {/if}
+
             <button class="we-palette__cancel" on:click={() => addBlockSection = null}>Cancel</button>
           </div>
         {:else}
@@ -1131,11 +1192,15 @@
     cursor: grabbing;
   }
 
-  /* Block overlay toolbar (appears on hover/focus) */
+  /* Block control strip (type · HTML/Preview switch · move · duplicate · delete).
+     STICKY (top: 0) so it stays pinned while scrolling a tall block. It reserves
+     a 30px header zone at the top of every block frame so the formatting bar can
+     stack directly beneath it (.we-bar → top: 30px) with NO gap — both strips
+     travel together. Hidden via opacity until the block is hovered/focused, so
+     the reserved zone simply reads as a little breathing room when idle. */
   .we-frame__overlay {
-    position: absolute;
-    top: -32px;
-    left: 0; right: 0;
+    position: sticky;
+    top: 0;
     height: 30px;
     background: #0f172a;
     border-radius: 7px 7px 0 0;
@@ -1146,7 +1211,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
-    z-index: 10;
+    z-index: 12;
     border: 1px solid #1e293b;
     font-size: 0.72rem;
   }
@@ -1260,8 +1325,8 @@
     border-radius: 6px 6px 0 0;
     flex-wrap: wrap;
     position: sticky;
-    top: 0;
-    z-index: 5;
+    top: 30px; /* stack directly beneath the sticky control strip (30px tall) */
+    z-index: 11;
   }
   .we-bar__btn {
     min-width: 26px; height: 24px;
@@ -1528,6 +1593,66 @@
     transition: background 0.1s;
   }
   .we-palette__cancel:hover { background: #f1f5f9; color: #475569; }
+
+  /* Palette tabs (Content library ↔ Blank blocks) */
+  .we-palette__tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0.7rem;
+    background: #eef2f6;
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .we-palette__tab {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+  }
+  .we-palette__tab--active {
+    background: #fff;
+    color: #02b5bb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* Preset category sub-heading */
+  .we-palette__cat {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0.5rem 0 0.35rem;
+  }
+
+  /* Preset cards: wider, left-aligned, with an optional variant chip */
+  .we-palette__grid--presets {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+  .we-palette__btn--preset {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    gap: 4px;
+  }
+  .we-palette__preset-head { display: flex; align-items: center; gap: 6px; }
+  .we-palette__btn--preset .we-palette__name { font-size: 0.72rem; color: #0f172a; text-align: left; }
+  .we-palette__variant {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #02b5bb;
+    background: rgba(2,181,187,0.08);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
 
   /* ═══════════════════════════════════════════════════════════════════════════
    * ADD SECTION
