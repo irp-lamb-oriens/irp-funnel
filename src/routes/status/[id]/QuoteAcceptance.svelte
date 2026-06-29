@@ -422,7 +422,7 @@
   }
   .qa-receipt__title {
     font-size: 1.75rem;
-    font-family: var(--font-subtitle);
+    font-family: var(--font-title);
     font-weight: 800;
     color: var(--_qa-success);
     margin: 0 0 0.5rem;
@@ -622,7 +622,7 @@
   }
   .qa-card__title {
     font-size: 1.35rem;
-    font-family: var(--font-subtitle);
+    font-family: var(--font-title);
     font-weight: 800;
     color: var(--_qa-text-primary);
     margin: 0 0 0.45rem;
@@ -679,7 +679,7 @@
  
   .qa-terms__summary-label {
     font-size: 1.05rem;
-    font-family: var(--font-subtitle);
+    font-family: var(--font-title);
     font-weight: 800;
     color: var(--_qa-text-primary);
     letter-spacing: -0.01em;

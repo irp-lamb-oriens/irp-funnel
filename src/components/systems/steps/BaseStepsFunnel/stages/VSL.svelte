@@ -226,7 +226,7 @@
     font-size: clamp(9px,4vw,30px);
     line-height: 1.1;
     margin: 0;
-	font-family: var(--font-subtitle);
+	font-family: var(--font-title);
 	color: var(--color-background);
   }
   .subhead {

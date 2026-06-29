@@ -292,7 +292,7 @@
       margin-bottom: 1rem;
       // Use the brand subtitle font (Spartan Black) for the greeting so it
       // reads with the same weight/personality as other branded headings.
-      font-family: var(--font-subtitle);
+      font-family: var(--font-title);
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
       letter-spacing: -0.5px;
     }
@@ -387,7 +387,7 @@
 
     h3 {
       font-size: 1.1rem;
-      font-family: var(--font-subtitle);
+      font-family: var(--font-title);
       font-weight: 700;
       letter-spacing: 0.02em;
       margin-bottom: 1.5rem;
@@ -497,7 +497,7 @@
   // ─── SUBHEADING ───
   &__subheading {
     font-size: 0.95rem;
-    font-family: var(--font-subtitle);
+    font-family: var(--font-title);
     font-weight: 700;
     letter-spacing: 0.04em;
     color: var(--cp-text-muted, #475569);
@@ -517,7 +517,7 @@
 
     h3 {
       font-size: 1.1rem;
-      font-family: var(--font-subtitle);
+      font-family: var(--font-title);
       font-weight: 700;
       letter-spacing: 0.02em;
       margin-bottom: 1.5rem;
@@ -686,7 +686,7 @@
 
     h3 {
       font-size: 1.1rem;
-      font-family: var(--font-subtitle);
+      font-family: var(--font-title);
       font-weight: 700;
       letter-spacing: 0.02em;
       margin-bottom: 1.5rem;
@@ -1470,7 +1470,7 @@
       font-size: 0.98rem;
       font-weight: 700;
       color: #0f172a;
-      font-family: var(--font-subtitle);
+      font-family: var(--font-title);
       letter-spacing: 0.02em;
     }
 
@@ -1966,6 +1966,389 @@
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-5px); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EmailPreviewDrawer — portal-route theming (staff "Preview & Send" modal)
+   ═══════════════════════════════════════════════════════════════════════════
+   The drawer component (dashboard/components/EmailPreviewDrawer.svelte) gets its
+   fixed-overlay + slide-over positioning from `dashboard/styles/_email-preview-
+   drawer.scss`, which is ONLY bundled on the /dashboard route. On the public
+   /status portal that partial isn't loaded, so the overlay + aside collapsed
+   into normal document flow ("not opening as a modal").
+
+   This block is route-local (status.scss is imported only by the portal page),
+   so it CANNOT affect the dashboard — it simply re-supplies the modal chrome,
+   restyled white-based / dark-foreground / teal-accent to match the client
+   portal + style bible. Layered above the staff bar + Lily chat (max z 1200). */
+
+$epd-bg:        #ffffff;
+$epd-bg-2:      #f8fafc;
+$epd-bg-3:      #f1f5f9;
+$epd-border:    #e2e8f0;
+$epd-border-h:  #cbd5e1;
+$epd-text:      #0f172a;
+$epd-text-2:    #334155;
+$epd-muted:     #64748b;
+$epd-dim:       #94a3b8;
+$epd-accent:    var(--color-highlight-2, #02b5bb);
+$epd-accent-h:  #0a7e82;
+$epd-warning:   #b45309;
+
+@keyframes epd-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes epd-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes epd-spin { to { transform: rotate(360deg); } }
+
+.email-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 4000;
+  animation: epd-fade-in 200ms ease-out;
+}
+
+.email-preview-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 640px;
+  max-width: 100vw;
+  height: 100dvh;
+  background: $epd-bg;
+  border-left: 1px solid $epd-border;
+  z-index: 4001;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -18px 0 60px rgba(15, 23, 42, 0.22);
+  animation: epd-slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: $epd-text;
+
+  &--presend { border-left: 3px solid $epd-accent; }
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
+  &__header {
+    flex: 0 0 auto;
+    padding: 1.4rem 1.4rem 1.1rem;
+    border-bottom: 1px solid $epd-border;
+    background: linear-gradient(180deg, $epd-bg-2 0%, $epd-bg 100%);
+    position: relative;
+  }
+  &__close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $epd-bg;
+    border: 1px solid $epd-border;
+    border-radius: 8px;
+    color: $epd-muted;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.14s, color 0.14s, border-color 0.14s;
+    &:hover { color: $epd-text; background: $epd-bg-3; border-color: $epd-border-h; }
+  }
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 0.5rem;
+    padding-right: 2.4rem;
+  }
+  &__icon { font-size: 20px; line-height: 1; }
+  &__title {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+    color: $epd-text;
+    letter-spacing: -0.2px;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+  }
+  &__title--loading { color: $epd-muted; font-style: italic; }
+  &__error { color: #dc2626; font-size: 13px; margin: 0.5rem 0 0; }
+  &__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(2, 181, 187, 0.10);
+    color: $epd-accent-h;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid rgba(2, 181, 187, 0.30);
+  }
+  &__badge--presend {
+    background: rgba(2, 181, 187, 0.12);
+    color: $epd-accent-h;
+    border-color: rgba(2, 181, 187, 0.32);
+  }
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 12px;
+    color: $epd-muted;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    strong { color: $epd-text-2; font-weight: 600; }
+  }
+  &__meta-dot { color: $epd-dim; }
+  &__meta-type { font-size: 12px; color: $epd-accent-h; font-weight: 600; }
+  &__subject {
+    font-size: 14px;
+    font-weight: 600;
+    color: $epd-text;
+    background: $epd-bg-2;
+    border: 1px solid $epd-border;
+    border-left: 3px solid $epd-accent;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  &__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.7rem; }
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid $epd-border;
+    background: $epd-bg-2;
+    color: $epd-text-2;
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+      background: $epd-bg-3;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: $epd-text-2;
+    }
+    &--template { color: $epd-accent-h; border-color: rgba(2, 181, 187, 0.3); background: rgba(2, 181, 187, 0.06); }
+    &--variant { color: $epd-warning; border-color: rgba(180, 83, 9, 0.3); background: rgba(180, 83, 9, 0.07); }
+  }
+  &__caveat {
+    margin: 0.7rem 0 0;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: rgba(180, 83, 9, 0.07);
+    border: 1px solid rgba(180, 83, 9, 0.22);
+    color: #92400e;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* ── Segmented mode tabs (override component dark theme → light/teal) ─── */
+  .epd-mode-tabs {
+    background: $epd-bg-3;
+    border: 1px solid $epd-border;
+    border-radius: 8px;
+    padding: 2px;
+
+    .epd-mode-tab {
+      color: $epd-muted;
+      &:hover { background: rgba(15, 23, 42, 0.04); color: $epd-text-2; }
+    }
+    .epd-mode-tab--active {
+      background: $epd-bg;
+      color: $epd-accent-h;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+    }
+  }
+
+  /* ── Formatting toolbar (visual mode) override ───────────────────────── */
+  .epd-format-toolbar {
+    border-top-color: $epd-border;
+
+    .epd-fmt-btn {
+      background: $epd-bg;
+      border: 1px solid $epd-border;
+      color: $epd-text-2;
+      &:hover { background: $epd-bg-3; color: $epd-text; border-color: $epd-border-h; }
+      &--active { background: rgba(2, 181, 187, 0.10); color: $epd-accent-h; border-color: rgba(2, 181, 187, 0.4); }
+    }
+    .epd-fmt-sep { background: $epd-border; }
+  }
+
+  /* ── Snippet picker dropdown override ────────────────────────────────── */
+  .epd-snippet-picker {
+    .epd-snippet-menu {
+      background: $epd-bg;
+      border: 1px solid $epd-border;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    }
+    .epd-snippet-group__label { color: $epd-dim; }
+    .epd-snippet-item {
+      color: $epd-text-2;
+      &:hover { background: $epd-bg-3; }
+    }
+  }
+
+  /* ── Body (iframe / raw-HTML textarea) ───────────────────────────────── */
+  &__body {
+    flex: 1 1 auto;
+    min-height: 260px;
+    border-bottom: 1px solid $epd-border;
+    background: $epd-bg-3;
+    display: flex;
+  }
+  &__iframe { width: 100%; height: 100%; border: 0; background: $epd-bg; display: block; }
+  &__editable-body {
+    width: 100%;
+    height: 100%;
+    min-height: 260px;
+    flex: 1;
+    resize: none;
+    border: 0;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: $epd-text-2;
+    background: $epd-bg-2;
+    box-sizing: border-box;
+    &:focus { outline: none; box-shadow: inset 0 0 0 2px rgba(2, 181, 187, 0.35); }
+  }
+
+  /* ── Engagement (historical mode) ────────────────────────────────────── */
+  &__engagement,
+  &__context {
+    flex: 0 0 auto;
+    padding: 0.85rem 1.4rem;
+    border-bottom: 1px solid $epd-border;
+  }
+  &__h3 {
+    margin: 0 0 0.5rem;
+    font-size: 12px;
+    font-weight: 700;
+    color: $epd-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  &__engagement-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  &__engagement-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid $epd-border;
+    border-radius: 8px;
+    background: $epd-bg-2;
+    font-size: 12px;
+    color: $epd-muted;
+    span:first-child { font-size: 14px; }
+    &--on { background: rgba(5, 150, 105, 0.08); border-color: rgba(5, 150, 105, 0.3); color: #047857; }
+  }
+  &__engagement-hint { margin: 0.5rem 0 0; font-size: 11px; color: $epd-dim; font-style: italic; }
+
+  /* ── Context table ───────────────────────────────────────────────────── */
+  &__context-toggle {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px dashed $epd-border;
+    border-radius: 8px;
+    background: transparent;
+    color: $epd-muted;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.14s, color 0.14s, border-color 0.14s;
+    &:hover { background: $epd-bg-2; color: $epd-text-2; border-color: $epd-border-h; }
+  }
+  &__context-table {
+    margin: 0.7rem 0 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: $epd-text-2;
+    th, td { padding: 6px 0.5rem; border-bottom: 1px solid $epd-border; vertical-align: top; text-align: left; }
+    th { width: 40%; color: $epd-muted; font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    td { word-break: break-word; }
+  }
+  &__context-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    background: $epd-bg-2;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  &__context-nullish { color: $epd-dim; font-style: italic; }
+
+  /* ── Footer (Send / Cancel) ──────────────────────────────────────────── */
+  &__footer {
+    flex-shrink: 0;
+    padding: 0.8rem 1.25rem 1rem;
+    border-top: 1px solid $epd-border;
+    background: $epd-bg;
+  }
+  &__footer-attribution {
+    font-size: 11px;
+    color: $epd-warning;
+    margin: 0 0 0.5rem;
+    padding: 6px 10px;
+    background: rgba(180, 83, 9, 0.07);
+    border-radius: 8px;
+    border: 1px solid rgba(180, 83, 9, 0.2);
+  }
+  &__footer-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+  &__footer-cancel {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid $epd-border;
+    background: transparent;
+    color: $epd-muted;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.14s, border-color 0.14s, color 0.14s;
+    &:hover:not(:disabled) { background: $epd-bg-3; border-color: $epd-border-h; color: $epd-text-2; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+  &__footer-send {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: $epd-accent;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.14s, box-shadow 0.14s, transform 0.14s;
+    &:hover:not(:disabled) { background: $epd-accent-h; box-shadow: 0 4px 14px rgba(2, 181, 187, 0.32); transform: translateY(-1px); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  .actions-card__spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: epd-spin 0.7s linear infinite;
+    display: inline-block;
+  }
+}
+
+@media (max-width: 560px) {
+  .email-preview-drawer { width: 100vw; border-left: none; }
+  .email-preview-drawer--presend { border-left: none; border-top: 3px solid $epd-accent; }
+}
+
 
 
 
