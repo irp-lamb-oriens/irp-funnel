@@ -676,6 +676,12 @@
                         🌍 Guide Lead
                       </span>
                     {/if}
+                    {#if client.rawDoc?.source === 'users-migration'}
+                      <span class="card__source-badge" title="Legacy lead migrated from the users collection — booked via the old Zoho flow but was never recorded in the CRM">
+                        📥 Migrated Lead
+                      </span>
+                    {/if}
+
                     {#if client.budget}<span class="card__tag">{client.budget}</span>{/if}
                     <span
                       class="card__sla"
