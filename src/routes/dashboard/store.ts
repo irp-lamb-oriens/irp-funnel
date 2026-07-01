@@ -2075,9 +2075,16 @@ export interface QuoteBlock {
 export interface QuoteLineGroup {
   groupId: string;
   title: string;
+  /**
+   * Optional reference to a reusable, agnostic {@link QuoteLabel}. When set, the
+   * group's `title` mirrors the label's name so the client-facing status page
+   * (which reads `title`) keeps working unchanged. Absent/null ⇒ legacy free-text.
+   */
+  labelId?: string | null;
   role: 'required' | 'optional';
   lineItems: QuoteLineItem[];
 }
+
 
 export interface Quote {
   quoteId: string;
@@ -2356,6 +2363,28 @@ export async function fetchQuoteByToken(
     return null;
   }
 }
+
+/**
+ * Phase D — public, token-gated fetch of the client-facing AI description.
+ * Lazily generates + caches the description server-side on first view when the
+ * quote doesn't have one yet, and respects any staff-authored description.
+ * Non-fatal: returns '' on any error so the status page just omits the card.
+ */
+export async function fetchClientQuoteDescription(
+  consultationId: string,
+  token: string,
+): Promise<string> {
+  try {
+    const data = await apiFetch(
+      `/api/status/${consultationId}/quote/generate-description?token=${encodeURIComponent(token)}`,
+      { method: 'POST', body: JSON.stringify({ token }) },
+    );
+    return (data.clientDescription ?? '') as string;
+  } catch {
+    return '';
+  }
+}
+
 
 /**
  * Accept a quote as the client (called from the public status page).
@@ -2662,6 +2691,85 @@ export async function deleteServiceType(serviceTypeId: string): Promise<void> {
   await apiFetch(`/api/dashboard/service-types/${serviceTypeId}`, {
     method: 'DELETE',
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom QUOTE LABELS (agnostic line-group labels)
+//
+// Top-level Firestore collection: quote_labels/{labelId}
+// A QuoteLabel is a small, editable, fully-agnostic label (e.g. "Origin
+// services", "Destination services", "Insurance") operators attach to a
+// quote's line-item GROUPS via `group.labelId`. Labels are NOT hard-coded to
+// origin/destination — operators create whatever taxonomy suits them. A group
+// keeps its free-text `title` (mirrored from the chosen label) so the
+// client-facing status page and legacy quotes are completely unaffected.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface QuoteLabel {
+  labelId: string;
+  /** Human-readable label shown in the group label chooser. */
+  label: string;
+  /** Short emoji/icon shown beside the label. */
+  icon: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
+}
+
+/** Fetch all custom quote-line group labels, newest first. */
+export async function fetchQuoteLabels(): Promise<QuoteLabel[]> {
+  const data = await apiFetch('/api/dashboard/quote-labels');
+  return (data.quoteLabels ?? []) as QuoteLabel[];
+}
+
+/** Create a new custom quote label. Returns the created doc. */
+export async function createQuoteLabel(
+  payload: Pick<QuoteLabel, 'label'> & Partial<Pick<QuoteLabel, 'icon'>>,
+): Promise<QuoteLabel> {
+  const data = await apiFetch('/api/dashboard/quote-labels', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.quoteLabel as QuoteLabel;
+}
+
+/** Partially update a custom quote label. */
+export async function updateQuoteLabel(
+  labelId: string,
+  updates: Partial<Pick<QuoteLabel, 'label' | 'icon'>>,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return apiFetch(`/api/dashboard/quote-labels/${labelId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Delete a custom quote label permanently. */
+export async function deleteQuoteLabel(labelId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/quote-labels/${labelId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Trigger server-side AI (re)generation of a quote's client-facing description.
+ * The server composes a short, client-safe paragraph from the quote's line
+ * labels + group titles (never cost/margin/provider detail), caches it on the
+ * quote (`clientDescription` + a content hash), and returns the text. Only
+ * regenerates when the quote content changed since the last generation.
+ */
+export async function generateQuoteClientDescription(
+  clientId: string,
+  quoteId: string,
+): Promise<{ clientDescription: string; cached: boolean }> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${clientId}/quotes/${quoteId}/generate-description`,
+    { method: 'POST', body: JSON.stringify({}) },
+  );
+  return {
+    clientDescription: data.clientDescription ?? '',
+    cached: !!data.cached,
+  };
 }
 
 

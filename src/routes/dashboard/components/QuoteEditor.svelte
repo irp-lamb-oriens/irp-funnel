@@ -34,8 +34,15 @@
     createServiceType,
     updateServiceType,
     deleteServiceType,
+    // ── Phase B — agnostic quote-line group labels ──
+    fetchQuoteLabels,
+    createQuoteLabel,
+    updateQuoteLabel,
+    deleteQuoteLabel,
+    // ── Phase D — AI-generated client description ──
+    generateQuoteClientDescription,
   } from '../store.ts';
-  import type { Quote, QuoteLineItem, QuoteLineTemplate, ServiceType } from '../store.ts';
+  import type { Quote, QuoteLineItem, QuoteLineTemplate, ServiceType, QuoteLabel } from '../store.ts';
 
   import StarRating from './StarRating.svelte';
 
@@ -58,6 +65,8 @@
   type EditGroup = {
     groupId: string;
     title: string;
+    /** Phase B — optional reference to a reusable QuoteLabel (title mirrors it). */
+    labelId?: string | null;
     role: 'required' | 'optional';
     lineItems: QuoteLineItem[];
   };
@@ -206,7 +215,7 @@
     return { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency, providerId: null, notes: null };
   }
   function makeBlankGroup(role: 'required' | 'optional' = 'required', title = ''): EditGroup {
-    return { groupId: makeGroupId(), title, role, lineItems: [makeBlankLine()] };
+    return { groupId: makeGroupId(), title, labelId: null, role, lineItems: [makeBlankLine()] };
   }
   /** Guarantee at least one group (with one line) always exists. */
   function ensureGroups() {
@@ -253,6 +262,146 @@
   /** Per-group margin only (client price − cost). */
   function groupMargin(g: EditGroup): number {
     return Math.round((groupClientTotal(g) - groupCost(g)) * 100) / 100;
+  }
+
+  // ── Phase B — agnostic quote-line group LABELS ──────────────────────────────
+  // Reusable, fully generic labels (e.g. "Origin services", "Insurance") that an
+  // operator attaches to a group. Choosing one mirrors the label's name into the
+  // group `title` so the client-facing status page keeps working unchanged.
+  let customLabels: QuoteLabel[] = [];
+  let labelsLoading = false;
+  $: labelById = Object.fromEntries((customLabels ?? []).map((l) => [l.labelId, l])) as Record<string, QuoteLabel>;
+
+  async function loadQuoteLabels() {
+    labelsLoading = true;
+    try {
+      customLabels = await fetchQuoteLabels();
+    } catch {
+      customLabels = []; // non-fatal — the group label chooser simply shows none
+    } finally {
+      labelsLoading = false;
+      syncLabelEdits();
+    }
+  }
+
+  /** Choose a label for a group. Mirrors the label's name into `title` (fallback). */
+  function setGroupLabel(groupId: string, labelId: string) {
+    const lbl = labelById[labelId];
+    lineGroups = lineGroups.map(g => g.groupId === groupId
+      ? { ...g, labelId: labelId || null, title: lbl ? lbl.label : g.title }
+      : g);
+  }
+
+  // ── Label manager (modal) — mirrors the service-type manager ────────────────
+  let labelManageOpen = false;
+  let labelSaving = false;
+  let labelError = '';
+  let newLabelName = '';
+  let newLabelIcon = '';
+  let labelEdits: Array<{ labelId: string; label: string; icon: string }> = [];
+
+  function syncLabelEdits() {
+    labelEdits = customLabels.map((l) => ({ labelId: l.labelId, label: l.label, icon: l.icon || '' }));
+  }
+  function openLabelManager() {
+    labelError = '';
+    newLabelName = '';
+    newLabelIcon = '';
+    syncLabelEdits();
+    labelManageOpen = true;
+  }
+  async function addLabel() {
+    const label = newLabelName.trim();
+    if (!label) { labelError = 'Enter a name for the new label.'; return; }
+    labelSaving = true; labelError = '';
+    try {
+      await createQuoteLabel({ label, icon: newLabelIcon.trim() || undefined });
+      newLabelName = ''; newLabelIcon = '';
+      await loadQuoteLabels();
+    } catch (err: any) {
+      labelError = 'Error adding label: ' + (err?.message ?? err);
+    } finally { labelSaving = false; }
+  }
+  async function saveLabel(row: { labelId: string; label: string; icon: string }) {
+    const label = row.label.trim();
+    if (!label) { labelError = 'Name cannot be empty.'; return; }
+    labelSaving = true; labelError = '';
+    try {
+      await updateQuoteLabel(row.labelId, { label, icon: row.icon.trim() });
+      // Keep any groups already using this label in sync with the renamed value.
+      lineGroups = lineGroups.map(g => g.labelId === row.labelId ? { ...g, title: label } : g);
+      await loadQuoteLabels();
+    } catch (err: any) {
+      labelError = 'Error saving label: ' + (err?.message ?? err);
+    } finally { labelSaving = false; }
+  }
+  async function removeLabel(row: { labelId: string; label: string }) {
+    if (!confirm(`Delete the "${row.label}" label? Groups already using it keep their title.`)) return;
+    labelSaving = true; labelError = '';
+    try {
+      await deleteQuoteLabel(row.labelId);
+      // Detach from any groups (their free-text title remains as the fallback).
+      lineGroups = lineGroups.map(g => g.labelId === row.labelId ? { ...g, labelId: null } : g);
+      await loadQuoteLabels();
+    } catch (err: any) {
+      labelError = 'Error deleting label: ' + (err?.message ?? err);
+    } finally { labelSaving = false; }
+  }
+
+  // ── Phase B — drag & drop line rows between groups ──────────────────────────
+  let dragLine: { groupId: string; lineId: string } | null = null;
+  let dragOverGroupId: string | null = null;
+
+  function onLineDragStart(groupId: string, lineId: string, e: DragEvent) {
+    dragLine = { groupId, lineId };
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', lineId); } catch { /* some browsers restrict */ }
+    }
+  }
+  function onLineDragEnd() {
+    dragLine = null;
+    dragOverGroupId = null;
+  }
+  function onGroupDragOver(groupId: string, e: DragEvent) {
+    if (!dragLine) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    dragOverGroupId = groupId;
+  }
+  function onGroupDragLeave(groupId: string) {
+    if (dragOverGroupId === groupId) dragOverGroupId = null;
+  }
+  function onGroupDrop(targetGroupId: string, e: DragEvent) {
+    e.preventDefault();
+    const src = dragLine;
+    dragOverGroupId = null;
+    dragLine = null;
+    if (!src || src.groupId === targetGroupId) return;
+    const srcGroup = lineGroups.find(g => g.groupId === src.groupId);
+    const moved = srcGroup?.lineItems.find(li => li.lineId === src.lineId);
+    if (!moved) return;
+    lineGroups = lineGroups.map(g => {
+      if (g.groupId === src.groupId) return { ...g, lineItems: g.lineItems.filter(li => li.lineId !== src.lineId) };
+      if (g.groupId === targetGroupId) return { ...g, lineItems: [...g.lineItems, moved] };
+      return g;
+    });
+  }
+
+  // ── Phase D — AI-generated client description ───────────────────────────────
+  let descGenerating = false;
+  let descError = '';
+  async function generateClientDescriptionAI() {
+    if (!quoteId) { descError = 'Save the quote once before generating a description.'; return; }
+    descGenerating = true; descError = '';
+    try {
+      const { clientDescription: text } = await generateQuoteClientDescription(clientId, quoteId);
+      if (text) clientDescription = text;
+    } catch (err: any) {
+      descError = 'Could not generate a description: ' + (err?.message ?? err);
+    } finally {
+      descGenerating = false;
+    }
   }
 
 
@@ -507,13 +656,14 @@
         lineGroups = savedGroups.map((g: any) => ({
           groupId: g.groupId || makeGroupId(),
           title: g.title ?? '',
+          labelId: typeof g.labelId === 'string' ? g.labelId : null,
           role: g.role === 'optional' ? 'optional' as const : 'required' as const,
           lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
         }));
       } else {
         // Legacy flat quote — wrap its line items in a single required group.
         const flat = (q.lineItems ?? []).map(normalizeLine);
-        lineGroups = [{ groupId: makeGroupId(), title: '', role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
+        lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
       }
       providerIds = [...(q.providerIds ?? [])];
       providerSnapshots = [...(q.providerSnapshots ?? [])];
@@ -561,6 +711,7 @@
     await loadQuote();
     resolveServiceType();
     loadLineTemplates(); // non-fatal; populates the template selector
+    loadQuoteLabels();   // non-fatal; populates the group label chooser (Phase B)
 
     // Eagerly hydrate the live action-permissions store so canApproveQuotes
     // switches from the static fallback to the live Firestore map on first render.
@@ -669,6 +820,7 @@
         lineGroups: lineGroups.map(g => ({
           groupId: g.groupId,
           title: (g.title ?? '').trim(),
+          labelId: g.labelId ?? null,
           role: g.role,
           lineItems: g.lineItems,
         })) as any,
@@ -927,8 +1079,30 @@
         </p>
 
         {#each lineGroups as g, gi (g.groupId)}
-          <div class="qe-group" class:qe-group--optional={g.role === 'optional'}>
+          <div
+            class="qe-group"
+            class:qe-group--optional={g.role === 'optional'}
+            class:qe-group--dropactive={dragOverGroupId === g.groupId}
+            role="group"
+            on:dragover={(e) => onGroupDragOver(g.groupId, e)}
+            on:dragleave={() => onGroupDragLeave(g.groupId)}
+            on:drop={(e) => onGroupDrop(g.groupId, e)}
+          >
             <div class="qe-group__head">
+              <div class="qe-group__labelwrap">
+                <select
+                  class="qe-select qe-select--sm qe-group__labelsel"
+                  value={g.labelId ?? ''}
+                  on:change={(e) => setGroupLabel(g.groupId, (e.target as HTMLSelectElement).value)}
+                  title="Attach a reusable label to this group"
+                >
+                  <option value="">— No label —</option>
+                  {#each customLabels as lbl (lbl.labelId)}
+                    <option value={lbl.labelId}>{lbl.icon} {lbl.label}</option>
+                  {/each}
+                </select>
+                <button type="button" class="qe-label-manage-btn" on:click={openLabelManager} title="Create, rename or delete labels" aria-label="Manage labels">⚙</button>
+              </div>
               <input
                 class="qe-input qe-input--sm qe-group__title"
                 type="text"
@@ -980,13 +1154,25 @@
                     {#each g.lineItems as li (li.lineId)}
                       <tr>
                         <td>
-                          <input
-                            class="qe-input qe-input--sm"
-                            type="text"
-                            placeholder="Description"
-                            value={li.label}
-                            on:input={(e) => updateLine(g.groupId, li.lineId, 'label', (e.target as HTMLInputElement).value)}
-                          />
+                          <div class="qe-desc-cell">
+                            <span
+                              class="qe-drag-handle"
+                              draggable="true"
+                              role="button"
+                              tabindex="-1"
+                              title="Drag to move this line to another group"
+                              aria-label="Drag line to another group"
+                              on:dragstart={(e) => onLineDragStart(g.groupId, li.lineId, e)}
+                              on:dragend={onLineDragEnd}
+                            >⋮⋮</span>
+                            <input
+                              class="qe-input qe-input--sm"
+                              type="text"
+                              placeholder="Description"
+                              value={li.label}
+                              on:input={(e) => updateLine(g.groupId, li.lineId, 'label', (e.target as HTMLInputElement).value)}
+                            />
+                          </div>
                         </td>
                         <td>
                           <input
@@ -1108,6 +1294,11 @@
                   </tbody>
                 </table>
               </div>
+            {:else}
+              <div class="qe-group__empty">
+                <span class="qe-group__empty-icon" aria-hidden="true">⤵</span>
+                <span class="qe-group__empty-text">Drag a line here, or add a new one</span>
+              </div>
             {/if}
             <button type="button" class="qe-add-line-btn" on:click={() => addLine(g.groupId)}>
               + Add line
@@ -1147,6 +1338,15 @@
         <label class="qe-label" for="qe-client-desc">
           Client description
           <span class="qe-label-badge">client-visible</span>
+          <button
+            type="button"
+            class="qe-ai-desc-btn"
+            on:click={generateClientDescriptionAI}
+            disabled={descGenerating || !quoteId}
+            title={quoteId ? 'Generate a client-facing description with AI from the quote scope' : 'Save the quote once to enable AI generation'}
+          >
+            {#if descGenerating}<span class="qe-ai-spin" aria-hidden="true"></span> Generating…{:else}✨ Generate with AI{/if}
+          </button>
         </label>
         <textarea
           id="qe-client-desc"
@@ -1155,7 +1355,8 @@
           rows="4"
           bind:value={clientDescription}
         ></textarea>
-        <p class="qe-field-hint">Describe the scope shown to the client. Providers, costs, and margins are never shown.</p>
+        {#if descError}<p class="qe-field-hint qe-field-hint--err">{descError}</p>{/if}
+        <p class="qe-field-hint">Describe the scope shown to the client — or generate it with AI. Providers, costs, and margins are never shown.</p>
       </div>
 
       <!-- Notes -->
@@ -1357,6 +1558,62 @@
                   on:keydown={(e) => e.key === 'Enter' && addServiceType()}
                 />
                 <button type="button" class="qe-svc-add-btn" on:click={addServiceType} disabled={svcSaving}>+ Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      <!-- ── Group-label manager (modal) — Phase B ───────────────────────────── -->
+      {#if labelManageOpen}
+        <div class="qe-tmpl-backdrop" on:click|self={() => (labelManageOpen = false)} role="presentation">
+          <div class="qe-tmpl-modal qe-svc-modal" role="dialog" aria-modal="true" aria-label="Group labels">
+            <div class="qe-tmpl-modal__head">
+              <div class="qe-tmpl-modal__titlewrap">
+                <span class="qe-tmpl-modal__spark" aria-hidden="true">🏷️</span>
+                <h4 class="qe-tmpl-modal__title">Group labels</h4>
+              </div>
+              <button type="button" class="qe-tmpl-modal__close" on:click={() => (labelManageOpen = false)} aria-label="Close">✕</button>
+            </div>
+
+            <div class="qe-svc-body">
+              <p class="qe-svc-intro">
+                Labels are reusable, fully agnostic tags you attach to a quote's line
+                groups (e.g. “Origin services”, “Insurance”). Create your own — they
+                appear in every quote's group label chooser.
+              </p>
+
+              {#if labelError}<p class="qe-svc-error">⚠ {labelError}</p>{/if}
+
+              <div class="qe-svc-section-label">
+                Your labels
+                {#if labelsLoading}<span class="qe-svc-loading">· loading…</span>{/if}
+              </div>
+              <div class="qe-svc-list">
+                {#if labelEdits.length === 0}
+                  <div class="qe-svc-empty">No labels yet. Add one below ↓</div>
+                {:else}
+                  {#each labelEdits as row (row.labelId)}
+                    <div class="qe-svc-row">
+                      <input class="qe-svc-emoji-input" maxlength="4" bind:value={row.icon} placeholder="🏷️" aria-label="Icon" />
+                      <input class="qe-svc-name-input" bind:value={row.label} placeholder="Label name" aria-label="Name" />
+                      <button type="button" class="qe-svc-save" on:click={() => saveLabel(row)} disabled={labelSaving} title="Save changes">Save</button>
+                      <button type="button" class="qe-svc-del" on:click={() => removeLabel(row)} disabled={labelSaving} title="Delete" aria-label="Delete">🗑</button>
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+
+              <div class="qe-svc-add">
+                <input class="qe-svc-emoji-input" maxlength="4" bind:value={newLabelIcon} placeholder="📦" aria-label="New icon" />
+                <input
+                  class="qe-svc-name-input"
+                  bind:value={newLabelName}
+                  placeholder="New label name"
+                  aria-label="New name"
+                  on:keydown={(e) => e.key === 'Enter' && addLabel()}
+                />
+                <button type="button" class="qe-svc-add-btn" on:click={addLabel} disabled={labelSaving}>+ Add</button>
               </div>
             </div>
           </div>
@@ -2831,6 +3088,63 @@
   .qe-svc-add-btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
   .qe-svc-save:disabled,
   .qe-svc-add-btn:disabled { opacity: 0.55; cursor: progress; }
+
+  /* ── Phase B — group label chooser + drag & drop · Phase D AI button ─────── */
+  .qe-group__labelwrap { display: inline-flex; align-items: center; gap: 4px; }
+  .qe-group__labelsel { max-width: 190px; }
+  .qe-label-manage-btn {
+    border: 1px solid #e2e8f0; background: #fff; border-radius: 8px;
+    width: 28px; height: 28px; cursor: pointer; font-size: 13px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #475569; transition: background .15s, border-color .15s, color .15s;
+  }
+  .qe-label-manage-btn:hover { background: #f0fdfe; border-color: rgba(2,181,187,.5); color: #0a7e82; }
+
+  .qe-group { transition: box-shadow .16s ease, background .16s ease, border-color .16s ease; }
+  .qe-group--dropactive {
+    border-color: rgba(2,181,187,.65) !important;
+    background: linear-gradient(135deg, rgba(2,181,187,.06) 0%, #f0fdfe 100%);
+    box-shadow: 0 0 0 3px rgba(2,181,187,.14);
+  }
+
+  .qe-desc-cell { display: flex; align-items: center; gap: 6px; }
+  .qe-drag-handle {
+    cursor: grab; user-select: none; color: #94a3b8; font-size: 13px; line-height: 1;
+    letter-spacing: -2px; padding: 2px 3px; border-radius: 5px; flex-shrink: 0;
+    transition: color .15s, background .15s;
+  }
+  .qe-drag-handle:hover { color: #02b5bb; background: #f0fdfe; }
+  .qe-drag-handle:active { cursor: grabbing; }
+
+  .qe-group__empty {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 18px 14px; margin: 4px 0 2px;
+    border: 1.5px dashed #cbd5e1; border-radius: 12px;
+    color: #64748b; font-size: 13px; font-weight: 600;
+    background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px);
+    transition: border-color .16s ease, color .16s ease, background .16s ease;
+  }
+  .qe-group--dropactive .qe-group__empty {
+    border-color: rgba(2,181,187,.7); color: #0a7e82;
+    background: linear-gradient(135deg, rgba(2,181,187,.08) 0%, #ecfeff 100%);
+  }
+  .qe-group__empty-icon { font-size: 15px; }
+
+  .qe-ai-desc-btn {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(2,181,187,.35); background: linear-gradient(135deg,#f0fdfe,#ffffff);
+    color: #0a7e82; font-size: 12px; font-weight: 700; padding: 4px 11px;
+    border-radius: 999px; cursor: pointer; transition: box-shadow .16s, transform .16s, filter .16s;
+  }
+  .qe-ai-desc-btn:hover:not(:disabled) { box-shadow: 0 4px 14px -6px rgba(2,181,187,.6); transform: translateY(-1px); }
+  .qe-ai-desc-btn:disabled { opacity: .55; cursor: not-allowed; }
+  .qe-ai-spin {
+    width: 11px; height: 11px; border-radius: 50%;
+    border: 2px solid rgba(2,181,187,.3); border-top-color: #02b5bb;
+    display: inline-block; animation: qeAiSpin .7s linear infinite;
+  }
+  @keyframes qeAiSpin { to { transform: rotate(360deg); } }
+  .qe-field-hint--err { color: #dc2626; font-weight: 600; }
   .qe-svc-del {
     background: var(--qe-surface);
     border: 1px solid var(--qe-border);

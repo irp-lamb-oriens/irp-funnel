@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import type { Quote } from '../../dashboard/store.ts';
-  import { fetchQuoteByToken, acceptQuoteAsClient } from '../../dashboard/store.ts';
+  import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription } from '../../dashboard/store.ts';
   import BlockRenderer from './BlockRenderer.svelte';
   import { project } from './store.ts';
   import { irpStaffIsAuthenticated } from '../../../lib/auth/irpStaff.ts';
@@ -25,6 +25,11 @@
   // Phase 3 — selections captured from BlockRenderer's accept event
   let selectedLineItemIds: string[] = [];
 
+  // Phase D — AI client description shown below the title, with a loading state
+  // while it is lazily generated on first view.
+  let clientDesc = '';
+  let descLoading = false;
+
   // ── Phase 5 — line-item group selection (status-page packages + add-ons) ──
   //   required groups → ONE is chosen via radio (first auto-selected)
   //   optional groups → each toggled independently via checkbox (off by default)
@@ -37,10 +42,20 @@
   $: requiredGroups = groups.filter((g) => g.role !== 'optional');
   $: optionalGroups = groups.filter((g) => g.role === 'optional');
 
-  // Auto-select the first required group exactly once, after the quote loads.
+  // Auto-select the MOST EXPENSIVE required group exactly once, after the quote
+  // loads. Optional add-ons stay OFF by default (see selectedOptionalGroupIds).
   $: if (hasGroups && !groupSelectionInit) {
-    selectedRequiredGroupId = requiredGroups[0]?.groupId ?? '';
+    selectedRequiredGroupId = mostExpensiveRequiredGroupId();
     groupSelectionInit = true;
+  }
+
+  /** The groupId of the priciest required block (by client price). '' when none. */
+  function mostExpensiveRequiredGroupId(): string {
+    if (requiredGroups.length === 0) return '';
+    return requiredGroups.reduce(
+      (best, g) => (groupClientTotal(g) > groupClientTotal(best) ? g : best),
+      requiredGroups[0],
+    ).groupId;
   }
 
   function groupClientTotal(g: any): number {
@@ -85,6 +100,20 @@
       quote = await fetchQuoteByToken(consultationId, token);
       if (!quote) loadError = 'Quote not found.';
       if (quote?.status === 'client_accepted') accepted = true;
+
+      // Phase D — surface the AI client description; lazily generate it on first
+      // view when the quote doesn't have one yet (a brief loading state shows).
+      clientDesc = (quote as any)?.clientDescription ?? '';
+      const qAny = quote as any;
+      const hasScope =
+        (Array.isArray(qAny?.lineGroups) && qAny.lineGroups.length > 0) ||
+        (Array.isArray(qAny?.lineItems) && qAny.lineItems.length > 0);
+      if (quote && !clientDesc && hasScope) {
+        descLoading = true;
+        fetchClientQuoteDescription(consultationId, token)
+          .then((t) => { if (t) clientDesc = t; })
+          .finally(() => { descLoading = false; });
+      }
 
       // Phase 5 — if the quote was already accepted, restore the exact packages /
       // add-ons the client picked (server returns `selectedGroupIds`) so the cards
@@ -320,10 +349,20 @@
 
     <!-- Providers intentionally hidden — clients never see provider names or cost detail -->
 
-    {#if (quote as any).clientDescription}
+    {#if clientDesc}
       <div class="qv-notes">
         <p class="qv-notes-label">About this service</p>
-        <p class="qv-notes-text">{(quote as any).clientDescription}</p>
+        <p class="qv-notes-text">{clientDesc}</p>
+      </div>
+    {:else if descLoading}
+      <div class="qv-notes qv-notes--loading" aria-live="polite">
+        <p class="qv-notes-label">About this service</p>
+        <div class="qv-desc-skeleton" aria-hidden="true">
+          <span class="qv-skel-line"></span>
+          <span class="qv-skel-line"></span>
+          <span class="qv-skel-line qv-skel-line--short"></span>
+        </div>
+        <p class="qv-desc-loading-hint">✨ Preparing your personalized summary…</p>
       </div>
     {/if}
 
@@ -704,6 +743,29 @@
     color: #334155;
     font-size: 14px;
     line-height: 1.65;
+  }
+
+  /* ── Phase D — AI description loading state (shimmer) ─────────────────────── */
+  .qv-notes--loading { position: relative; }
+  .qv-desc-skeleton { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 10px; }
+  .qv-skel-line {
+    height: 11px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e2e8f0 25%, #eef2f7 37%, #e2e8f0 63%);
+    background-size: 400% 100%;
+    animation: qvShimmer 1.3s ease-in-out infinite;
+  }
+  .qv-skel-line--short { width: 55%; }
+  @keyframes qvShimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+  }
+  .qv-desc-loading-hint {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #0a7e82;
+    letter-spacing: 0.01em;
   }
 
   /* ── Accept section ───────────────────────────────────────────────────── */
