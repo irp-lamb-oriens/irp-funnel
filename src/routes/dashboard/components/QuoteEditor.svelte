@@ -83,6 +83,42 @@
   let defaultMarginPct = 20;
   let clientDescription = '';
 
+  // ── Smart default title (NEW quotes only) ──────────────────────────────────
+  // Compose a human-readable default title from what the CRM/AI already knows
+  // about the move: "{Client} · {Origin} → {Destination} · {Service}". Only the
+  // pieces that are actually known are included — nothing is invented, so if a
+  // piece can't be inferred it's simply omitted (an empty suggestion falls back
+  // to the "Initial Quote" placeholder). The service type is the AI-detected
+  // packingTier, so the suggestion sharpens once insights resolve.
+  let titleTouched = false; // flips true the moment the agent edits the field
+
+  function buildSuggestedTitle(client: any, svcKey: string): string {
+    if (!client) return '';
+    const clean = (v: unknown) => String(v ?? '').trim();
+    const name = [client.name, client.surname].map(clean).filter(Boolean).join(' ');
+    const origin = [client.originCity, client.originCountry].map(clean).filter(Boolean).join(', ');
+    const destination = [client.destinationCity, client.destinationCountry].map(clean).filter(Boolean).join(', ');
+    const route = origin && destination ? `${origin} → ${destination}` : (origin || destination);
+    const service = svcKey
+      ? clean((PACKING_TIER_LABEL as Record<string, { icon: string; label: string }>)[svcKey]?.label)
+      : '';
+
+    return [name, route, service].map(clean).filter(Boolean).join(' · ');
+  }
+
+  // Reactive suggestion — recomputes as the selected client or detected service
+  // type changes. Drives both the prefilled value (new quotes) and the placeholder.
+  $: suggestedTitle = buildSuggestedTitle($selectedClient, serviceType);
+
+  // Keep a NEW quote's title synced to the smart suggestion until the agent
+  // types their own. Never clobbers an existing quote (quoteId set) or a title
+  // the agent has already edited (titleTouched). Does not read `title`, so this
+  // assignment can never loop.
+  $: if (!quoteId && !titleTouched) {
+    title = suggestedTitle;
+  }
+
+
   // ── Approval workflow state ────────────────────────────────────────────────
   let quote: Quote | null = null;
   let noteToApprovers = '';
@@ -614,16 +650,25 @@
     <div class="quote-editor__body">
 
       <!-- Title -->
+      <!-- Smart default (new quotes): auto-composed from the client's move —
+           "{Client} · {Origin} → {Destination} · {Service}" — using only the
+           pieces we actually know. Shown as the prefilled value AND mirrored in
+           the placeholder; freezes the instant the agent edits it. -->
       <div class="qe-field">
         <label class="qe-label" for="qe-title">Title <span class="qe-required">*</span></label>
         <input
           id="qe-title"
           class="qe-input"
           type="text"
-          placeholder="Initial Quote"
+          placeholder={suggestedTitle || 'Initial Quote'}
           bind:value={title}
+          on:input={() => (titleTouched = true)}
         />
+        {#if !quoteId && suggestedTitle}
+          <p class="qe-field-hint">✦ Auto-composed from the client's move details — edit freely.</p>
+        {/if}
       </div>
+
 
       <!-- Service type (required) — auto-populated from AI transcript insights -->
       <div class="qe-field" class:qe-field--error={serviceTypeError}>
