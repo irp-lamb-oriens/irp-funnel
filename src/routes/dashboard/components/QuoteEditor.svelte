@@ -31,6 +31,7 @@
     deleteQuoteLineTemplate,
   } from '../store.ts';
   import type { Quote, QuoteLineItem, QuoteLineTemplate } from '../store.ts';
+  import StarRating from './StarRating.svelte';
 
   import { aggregateByCurrency } from '$lib/money.ts';
 
@@ -63,7 +64,8 @@
 
   // ── Provider search ────────────────────────────────────────────────────────
   let providerSearchQuery = '';
-  let providerSearchResults: Array<{ id: string; name: string; country: string; modality: string; serviceCategory: string }> = [];
+  let providerSearchResults: Array<{ id: string; name: string; country: string; modality: string; serviceCategory: string; score: number | null }> = [];
+
   let providerSearchLoading = false;
   let providerDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -420,7 +422,9 @@
           country:         (p.originRegions?.[0] ?? p.destinationRegions?.[0] ?? ''),
           modality:        (p.shippingModalities?.[0] ?? ''),
           serviceCategory: (p.serviceCategories?.[0] ?? ''),
+          score:           (typeof p.score === 'number' ? p.score : null),
         }));
+
     } catch (err: any) {
       providerSearchResults = [];
     } finally {
@@ -902,10 +906,23 @@
                     checked={providerIds.includes(provider.id)}
                     on:change={() => toggleProvider(provider)}
                   />
-                  <span class="qe-provider-result__name">{provider.name}</span>
-                  <span class="qe-provider-result__meta">{provider.country} · {provider.modality}</span>
+                  <span class="qe-provider-result__body">
+                    <span class="qe-provider-result__name">{provider.name}</span>
+                    <span class="qe-provider-result__details">
+                      {#if provider.serviceCategory}<span class="qe-provider-chip">{provider.serviceCategory}</span>{/if}
+                      {#if provider.modality}<span class="qe-provider-chip qe-provider-chip--muted">{provider.modality}</span>{/if}
+                      {#if provider.country}<span class="qe-provider-chip qe-provider-chip--muted">{provider.country}</span>{/if}
+                      {#if !provider.serviceCategory && !provider.modality && !provider.country}
+                        <span class="qe-provider-result__meta">No extra details</span>
+                      {/if}
+                    </span>
+                  </span>
+                  <span class="qe-provider-result__score">
+                    <StarRating value={provider.score} readonly size={13} />
+                  </span>
                 </label>
               {/each}
+
             </div>
           {/if}
         </div>
@@ -1615,9 +1632,9 @@
 
   .qe-provider-result {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    padding: 9px 14px;
+    padding: 10px 14px;
     cursor: pointer;
     font-size: 13px;
     color: #0f172a;
@@ -1626,9 +1643,29 @@
   }
   .qe-provider-result:last-child { border-bottom: none; }
   .qe-provider-result:hover { background: #f8fafc; }
-  .qe-provider-result input[type="checkbox"] { accent-color: #02b5bb; flex-shrink: 0; }
-  .qe-provider-result__name { font-weight: 600; flex: 1; color: #0f172a; }
+  .qe-provider-result input[type="checkbox"] { accent-color: #02b5bb; flex-shrink: 0; margin-top: 2px; }
+  .qe-provider-result__body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .qe-provider-result__name { font-weight: 700; color: #0f172a; }
+  .qe-provider-result__details { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .qe-provider-chip {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(2,181,187,0.08);
+    color: #02999e;
+    border: 1px solid rgba(2,181,187,0.18);
+    white-space: nowrap;
+  }
+  .qe-provider-chip--muted {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+  }
   .qe-provider-result__meta { color: #94a3b8; font-size: 11.5px; white-space: nowrap; }
+  .qe-provider-result__score { flex-shrink: 0; padding-top: 1px; }
+
 
   /* ── Error message ────────────────────────────────────────────────────── */
   .qe-error {

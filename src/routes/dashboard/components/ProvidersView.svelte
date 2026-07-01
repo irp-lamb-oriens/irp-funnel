@@ -17,6 +17,8 @@
    */
   import { onMount } from 'svelte';
   import { authToken } from '../store.ts';
+  import StarRating from './StarRating.svelte';
+
 
   // ── Constants ────────────────────────────────────────────────────────────
 
@@ -99,11 +101,14 @@
     originRegions?: string[];
     destinationRegions?: string[];
     notes?: string;
+    /** Operator quality score 0–5 (half-star steps); null/undefined = unrated. */
+    score?: number | null;
     active: boolean;
     createdAt: string;
     createdBy: string;
     updatedAt?: string;
   };
+
 
   let providers: Provider[] = [];
   let loading = false;
@@ -151,8 +156,10 @@
       originRegions: '',
       destinationRegions: '',
       notes: '',
+      score: null as number | null,
     };
   }
+
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -241,8 +248,10 @@
       destinationRegions: form.destinationRegions
         ? form.destinationRegions.split(',').map((s: string) => s.trim()).filter(Boolean)
         : undefined,
+      score: typeof form.score === 'number' ? form.score : null,
       ...(Object.keys(customFieldsPayload).length > 0 ? { customFields: customFieldsPayload } : {}),
     };
+
 
     try {
       loading = true;
@@ -281,8 +290,10 @@
       originRegions: (p.originRegions || []).join(', '),
       destinationRegions: (p.destinationRegions || []).join(', '),
       notes: p.notes || '',
+      score: p.score ?? null,
     };
     // Merge: start with blanks for all known fields, then fill in provider's actual values
+
     formCustomFields = {};
     for (const name of knownCustomFieldNames) formCustomFields[name] = '';
     for (const [k, v] of Object.entries(p.customFields ?? {})) {
@@ -339,6 +350,26 @@
     }
   }
 
+  /**
+   * Inline score update from the table — optimistic, non-blocking.
+   * Persists via PATCH; reverts on failure.
+   */
+  async function setScoreInline(p: Provider, next: number) {
+    const prev = p.score ?? null;
+    providers = providers.map(pr => pr.id === p.id ? { ...pr, score: next } : pr);
+    try {
+      await apiFetch(`/api/dashboard/providers/${p.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ score: next }),
+      });
+    } catch (err: any) {
+      // revert on failure
+      providers = providers.map(pr => pr.id === p.id ? { ...pr, score: prev } : pr);
+      error = err.message;
+    }
+  }
+
+
   function toggleCheckbox(arr: string[], value: string): string[] {
     return arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
   }
@@ -389,10 +420,21 @@
           <label>Website</label>
           <input bind:value={form.website} placeholder="https://shippingco.com" />
         </div>
-        <div class="form-field form-field--full">
+        <div class="form-field">
           <label>Contact Person</label>
           <input bind:value={form.contactPerson} placeholder="e.g. Juan Arias" />
         </div>
+        <div class="form-field">
+          <label>Quality Score <span class="hint">(drag the stars)</span></label>
+          <div class="score-field">
+            <StarRating
+              value={form.score}
+              size={24}
+              on:change={(e) => form.score = e.detail}
+            />
+          </div>
+        </div>
+
 
         <!-- Service Categories -->
         <div class="form-field form-field--full">
@@ -558,12 +600,14 @@
         <thead>
           <tr>
             <th>Provider</th>
+            <th>Score</th>
             <th>Service Categories</th>
             <th>Modalities</th>
             <th>Regions</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
+
         </thead>
         <tbody>
           {#each filteredProviders as p (p.id)}
@@ -579,8 +623,16 @@
                 {/if}
               </td>
               <td>
+                <StarRating
+                  value={p.score}
+                  size={17}
+                  on:change={(e) => setScoreInline(p, e.detail)}
+                />
+              </td>
+              <td>
                 <div class="tag-list">
                   {#each (p.serviceCategories || []) as cat}
+
                     <span class="tag tag-cat">{CATEGORY_EMOJI[cat] || ''} {SERVICE_CATEGORY_OPTIONS.find(o => o.value === cat)?.label ?? cat}</span>
                   {/each}
                 </div>
