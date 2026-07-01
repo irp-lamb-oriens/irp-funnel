@@ -68,12 +68,24 @@
   let providerIds: string[] = [];
   let providerSnapshots: Quote['providerSnapshots'] = [];
 
-  // ── Provider search ────────────────────────────────────────────────────────
+  // ── Per-line provider attach (backward compatible) ──────────────────────────
+  // Providers are attached to INDIVIDUAL quote lines via `li.providerId`. We keep
+  // a shared typeahead (one popover open at a time, tracked by activeProviderLineId)
+  // and derive the quote-level providerIds/providerSnapshots union from the lines
+  // on save. Legacy quotes with quote-level providers but no per-line ids keep them.
   let providerSearchQuery = '';
   let providerSearchResults: Array<{ id: string; name: string; country: string; modality: string; serviceCategory: string; score: number | null }> = [];
-
   let providerSearchLoading = false;
   let providerDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  // Which line's provider search popover is currently open (null = none).
+  let activeProviderLineId: string | null = null;
+  // id → snapshot, derived from providerSnapshots so each row can render its provider.
+  $: providerById = Object.fromEntries((providerSnapshots ?? []).map((s) => [s.id, s])) as Record<string, { id: string; name: string; country: string; modality: string; serviceCategory: string }>;
+  // Union of providers actually referenced by lines — used to keep the quote-level
+  // providerIds/providerSnapshots consistent on save (legacy fallback below).
+  $: usedProviderIds = Array.from(new Set(lineItems.map((li) => li.providerId).filter(Boolean))) as string[];
+  $: usedProviderSnapshots = (providerSnapshots ?? []).filter((s) => usedProviderIds.includes(s.id));
+
 
   // ── UI state ───────────────────────────────────────────────────────────────
   let saving = false;
@@ -230,10 +242,19 @@
       ? { ...g, lineItems: g.lineItems.map(li => li.lineId === lineId ? { ...li, [field]: value } : li) }
       : g);
   }
-  /** Per-group client subtotal (cost + margin) shown in the group header. */
+  /** Per-group internal cost (what IRP pays) — sum of line amounts. */
+  function groupCost(g: EditGroup): number {
+    return Math.round(g.lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0) * 100) / 100;
+  }
+  /** Per-group client price (cost + margin) shown in the group header. */
   function groupClientTotal(g: EditGroup): number {
     return Math.round(g.lineItems.reduce((s, li) => s + lineClientPrice(li), 0) * 100) / 100;
   }
+  /** Per-group margin only (client price − cost). */
+  function groupMargin(g: EditGroup): number {
+    return Math.round((groupClientTotal(g) - groupCost(g)) * 100) / 100;
+  }
+
 
 
   // ── Line-item templates (pricing presets) ───────────────────────────────────
@@ -593,26 +614,39 @@
     }
   }
 
-  function toggleProvider(provider: { id: string; name: string; country: string; modality: string; serviceCategory: string }) {
-    if (providerIds.includes(provider.id)) {
-      providerIds = providerIds.filter(id => id !== provider.id);
-      providerSnapshots = providerSnapshots.filter(s => s.id !== provider.id);
-    } else {
-      providerIds = [...providerIds, provider.id];
-      providerSnapshots = [...providerSnapshots, {
-        id: provider.id,
-        name: provider.name,
-        country: provider.country,
-        modality: provider.modality,
-        serviceCategory: provider.serviceCategory,
-      }];
-    }
+  function openLineProviderSearch(lineId: string) {
+    activeProviderLineId = activeProviderLineId === lineId ? null : lineId;
+    providerSearchQuery = '';
+    providerSearchResults = [];
   }
 
-  function removeProvider(id: string) {
-    providerIds = providerIds.filter(pid => pid !== id);
-    providerSnapshots = providerSnapshots.filter(s => s.id !== id);
+  function selectLineProvider(
+    groupId: string,
+    lineId: string,
+    provider: { id: string; name: string; country: string; modality: string; serviceCategory: string },
+  ) {
+    updateLine(groupId, lineId, 'providerId', provider.id);
+    if (!(providerSnapshots ?? []).some((s) => s.id === provider.id)) {
+      providerSnapshots = [
+        ...(providerSnapshots ?? []),
+        {
+          id: provider.id,
+          name: provider.name,
+          country: provider.country,
+          modality: provider.modality,
+          serviceCategory: provider.serviceCategory,
+        },
+      ];
+    }
+    activeProviderLineId = null;
+    providerSearchQuery = '';
+    providerSearchResults = [];
   }
+
+  function clearLineProvider(groupId: string, lineId: string) {
+    updateLine(groupId, lineId, 'providerId', null);
+  }
+
 
   // ── Save ───────────────────────────────────────────────────────────────────
   async function handleSave() {
@@ -638,8 +672,11 @@
           role: g.role,
           lineItems: g.lineItems,
         })) as any,
-        providerIds,
-        providerSnapshots,
+        // Provider union derived from per-line providerIds; legacy fallback keeps
+        // any quote-level providers when no line has one attached (zero regression).
+        providerIds: usedProviderIds.length ? usedProviderIds : providerIds,
+        providerSnapshots: usedProviderIds.length ? usedProviderSnapshots : providerSnapshots,
+
         total: clientTotal,
         costSubtotal,
         earnings,
@@ -903,7 +940,21 @@
                 <button type="button" class="qe-role-btn" class:is-active={g.role === 'required'} on:click={() => setGroupRole(g.groupId, 'required')}>Required</button>
                 <button type="button" class="qe-role-btn qe-role-btn--opt" class:is-active={g.role === 'optional'} on:click={() => setGroupRole(g.groupId, 'optional')}>Optional</button>
               </div>
-              <span class="qe-group__subtotal" title="Client price for this group">{formatTotal(groupClientTotal(g))}</span>
+              <div class="qe-group__nums" title="Cost · Client · Margin for this group">
+                <span class="qe-gnum">
+                  <span class="qe-gnum__lbl">Cost</span>
+                  <span class="qe-gnum__val">{formatTotal(groupCost(g))}</span>
+                </span>
+                <span class="qe-gnum">
+                  <span class="qe-gnum__lbl">Client</span>
+                  <span class="qe-gnum__val qe-gnum__val--accent">{formatTotal(groupClientTotal(g))}</span>
+                </span>
+                <span class="qe-gnum">
+                  <span class="qe-gnum__lbl">Margin</span>
+                  <span class="qe-gnum__val qe-gnum__val--earn">{formatTotal(groupMargin(g))}</span>
+                </span>
+              </div>
+
               {#if lineGroups.length > 1}
                 <button type="button" class="qe-group__del" title="Remove group" on:click={() => removeGroup(g.groupId)}>✕</button>
               {/if}
@@ -919,7 +970,9 @@
                       <th class="qe-th-pct">Margin %</th>
                       <th class="qe-th-num qe-th-price">Client price</th>
                       <th class="qe-th-cur">Currency</th>
+                      <th class="qe-th-prov">Provider</th>
                       <th class="qe-th-notes">Notes</th>
+
                       <th class="qe-th-del"></th>
                     </tr>
                   </thead>
@@ -995,11 +1048,49 @@
                             <option value="CRC">CRC</option>
                           </select>
                         </td>
+                        <td class="qe-td-prov">
+                          {#if li.providerId && providerById[li.providerId]}
+                            <span class="qe-prov-chip" title={providerById[li.providerId].name}>
+                              <span class="qe-prov-chip__name">{providerById[li.providerId].name}</span>
+                              <button type="button" class="qe-prov-chip__x" title="Detach provider" aria-label="Detach provider" on:click={() => clearLineProvider(g.groupId, li.lineId)}>✕</button>
+                            </span>
+                          {:else}
+                            <button type="button" class="qe-prov-add" on:click={() => openLineProviderSearch(li.lineId)}>＋ Provider</button>
+                          {/if}
+                          {#if activeProviderLineId === li.lineId}
+                            <div class="qe-prov-pop">
+                              <input
+                                class="qe-input qe-input--sm"
+                                type="text"
+                                placeholder="Search provider…"
+                                bind:value={providerSearchQuery}
+                                on:input={onProviderSearchInput}
+                              />
+                              {#if providerSearchLoading}<div class="qe-prov-pop__loading">Searching…</div>{/if}
+                              {#if providerSearchResults.length > 0}
+                                <div class="qe-prov-pop__results">
+                                  {#each providerSearchResults as provider (provider.id)}
+                                    <button type="button" class="qe-prov-opt" on:click={() => selectLineProvider(g.groupId, li.lineId, provider)}>
+                                      <span class="qe-prov-opt__name">{provider.name}</span>
+                                      <span class="qe-prov-opt__meta">
+                                        {#if provider.serviceCategory}<span class="qe-provider-chip">{provider.serviceCategory}</span>{/if}
+                                        {#if provider.modality}<span class="qe-provider-chip qe-provider-chip--muted">{provider.modality}</span>{/if}
+                                        {#if provider.country}<span class="qe-provider-chip qe-provider-chip--muted">{provider.country}</span>{/if}
+                                        <span class="qe-prov-opt__score"><StarRating value={provider.score} readonly size={12} /></span>
+                                      </span>
+                                    </button>
+                                  {/each}
+                                </div>
+                              {/if}
+                            </div>
+                          {/if}
+                        </td>
                         <td>
                           <input
                             class="qe-input qe-input--sm"
                             type="text"
                             placeholder="Optional note"
+
                             value={li.notes ?? ''}
                             on:input={(e) => updateLine(g.groupId, li.lineId, 'notes', (e.target as HTMLInputElement).value || null)}
                           />
@@ -1050,66 +1141,8 @@
         </div>
       </div>
 
-      <!-- Provider search -->
-      <div class="qe-field">
-        <label class="qe-label" for="qe-prov-search">Providers (optional)</label>
-
-        <!-- Selected providers as tags -->
-        {#if providerSnapshots.length > 0}
-          <div class="qe-provider-tags">
-            {#each providerSnapshots as snap (snap.id)}
-              <span class="qe-provider-tag">
-                {snap.name}
-                <button type="button" class="qe-provider-tag__remove" on:click={() => removeProvider(snap.id)}>✕</button>
-              </span>
-            {/each}
-          </div>
-        {/if}
-
-        <div class="qe-provider-search">
-          <input
-            id="qe-prov-search"
-            class="qe-input"
-            type="text"
-            placeholder="Search provider…"
-            bind:value={providerSearchQuery}
-            on:input={onProviderSearchInput}
-          />
-          {#if providerSearchLoading}
-            <span class="qe-provider-searching">Searching…</span>
-          {/if}
-          {#if providerSearchResults.length > 0}
-            <div class="qe-provider-results">
-              {#each providerSearchResults as provider (provider.id)}
-                <label class="qe-provider-result">
-                  <input
-                    type="checkbox"
-                    checked={providerIds.includes(provider.id)}
-                    on:change={() => toggleProvider(provider)}
-                  />
-                  <span class="qe-provider-result__body">
-                    <span class="qe-provider-result__name">{provider.name}</span>
-                    <span class="qe-provider-result__details">
-                      {#if provider.serviceCategory}<span class="qe-provider-chip">{provider.serviceCategory}</span>{/if}
-                      {#if provider.modality}<span class="qe-provider-chip qe-provider-chip--muted">{provider.modality}</span>{/if}
-                      {#if provider.country}<span class="qe-provider-chip qe-provider-chip--muted">{provider.country}</span>{/if}
-                      {#if !provider.serviceCategory && !provider.modality && !provider.country}
-                        <span class="qe-provider-result__meta">No extra details</span>
-                      {/if}
-                    </span>
-                  </span>
-                  <span class="qe-provider-result__score">
-                    <StarRating value={provider.score} readonly size={13} />
-                  </span>
-                </label>
-              {/each}
-
-            </div>
-          {/if}
-        </div>
-      </div>
-
       <!-- Client description (broad summary shown to client; no cost/margin detail) -->
+
       <div class="qe-field">
         <label class="qe-label" for="qe-client-desc">
           Client description
@@ -1916,6 +1949,63 @@
   }
   .qe-provider-result__meta { color: #94a3b8; font-size: 11.5px; white-space: nowrap; }
   .qe-provider-result__score { flex-shrink: 0; padding-top: 1px; }
+
+  /* ── Per-block finance numbers (Cost · Client · Margin) ─────────────────── */
+  .qe-group__nums { display: flex; align-items: stretch; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .qe-gnum {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    padding: 3px 9px; border-radius: 8px; line-height: 1.1;
+    background: #f8fafc; border: 1px solid #eef2f7;
+  }
+  .qe-gnum__lbl { font-size: 8px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+  .qe-gnum__val { font-size: 12px; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .qe-gnum__val--accent { color: #02b5bb; }
+  .qe-gnum__val--earn { color: #22c55e; }
+
+  /* ── Per-line provider cell + search popover ────────────────────────────── */
+  .qe-th-prov { width: 160px; }
+  .qe-td-prov { position: relative; }
+  .qe-prov-add {
+    background: rgba(2,181,187,0.06);
+    border: 1px dashed rgba(2,181,187,0.28);
+    color: #02999e; font-size: 11.5px; font-weight: 700;
+    padding: 5px 10px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .qe-prov-add:hover { background: rgba(2,181,187,0.12); border-color: rgba(2,181,187,0.45); }
+  .qe-prov-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(2,181,187,0.08); border: 1px solid rgba(2,181,187,0.22);
+    color: #02999e; font-size: 12px; font-weight: 600;
+    padding: 3px 4px 3px 10px; border-radius: 999px; max-width: 100%;
+  }
+  .qe-prov-chip__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 108px; }
+  .qe-prov-chip__x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: none; border: none; color: rgba(2,153,158,0.65); cursor: pointer; font-size: 10px; flex-shrink: 0;
+  }
+  .qe-prov-chip__x:hover { color: #02999e; background: rgba(2,181,187,0.16); }
+  .qe-prov-pop {
+    position: absolute; z-index: 40; top: calc(100% + 4px); left: 0;
+    width: 300px; max-width: 80vw;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12); overflow: hidden;
+  }
+  .qe-prov-pop .qe-input { border: none; border-bottom: 1px solid #eef2f7; border-radius: 0; background: #fff; }
+  .qe-prov-pop__loading { padding: 8px 12px; font-size: 11.5px; color: #94a3b8; background: #f8fafc; }
+  .qe-prov-pop__results { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+  .qe-prov-opt {
+    display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+    padding: 8px 12px; background: none; border: none; border-bottom: 1px solid #f1f5f9;
+    cursor: pointer; text-align: left; width: 100%;
+  }
+  .qe-prov-opt:last-child { border-bottom: none; }
+  .qe-prov-opt:hover { background: #f8fafc; }
+  .qe-prov-opt__name { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .qe-prov-opt__meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .qe-prov-opt__score { display: inline-flex; align-items: center; }
+
 
 
   /* ── Error message ────────────────────────────────────────────────────── */
