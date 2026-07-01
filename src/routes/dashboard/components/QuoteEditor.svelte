@@ -29,8 +29,14 @@
     createQuoteLineTemplate,
     updateQuoteLineTemplate,
     deleteQuoteLineTemplate,
+    // ── Custom service types (merged on top of built-in packing tiers) ──
+    fetchServiceTypes,
+    createServiceType,
+    updateServiceType,
+    deleteServiceType,
   } from '../store.ts';
-  import type { Quote, QuoteLineItem, QuoteLineTemplate } from '../store.ts';
+  import type { Quote, QuoteLineItem, QuoteLineTemplate, ServiceType } from '../store.ts';
+
   import StarRating from './StarRating.svelte';
 
   import { aggregateByCurrency } from '$lib/money.ts';
@@ -83,6 +89,15 @@
   let defaultMarginPct = 20;
   let clientDescription = '';
 
+  // ── Custom service types (dashboard-managed extras) ─────────────────────────
+  // Merged ON TOP of the built-in PACKING_TIER_LABEL entries so operators can
+  // add bespoke service types (e.g. "Storage only") without a code change. A
+  // quote persists `serviceType` as an opaque key — a built-in PackingTier key
+  // OR a custom serviceTypeId — so existing quotes are unaffected.
+  let customServiceTypes: ServiceType[] = [];
+  let serviceTypesLoading = false;
+
+
   // ── Smart default title (NEW quotes only) ──────────────────────────────────
   // Compose a human-readable default title from what the CRM/AI already knows
   // about the move: "{Client} · {Origin} → {Destination} · {Service}". Only the
@@ -92,23 +107,44 @@
   // packingTier, so the suggestion sharpens once insights resolve.
   let titleTouched = false; // flips true the moment the agent edits the field
 
-  function buildSuggestedTitle(client: any, svcKey: string): string {
+  function buildSuggestedTitle(
+    client: any,
+    svcKey: string,
+    labelMap: Record<string, { icon: string; label: string }>,
+  ): string {
     if (!client) return '';
     const clean = (v: unknown) => String(v ?? '').trim();
     const name = [client.name, client.surname].map(clean).filter(Boolean).join(' ');
     const origin = [client.originCity, client.originCountry].map(clean).filter(Boolean).join(', ');
     const destination = [client.destinationCity, client.destinationCountry].map(clean).filter(Boolean).join(', ');
     const route = origin && destination ? `${origin} → ${destination}` : (origin || destination);
-    const service = svcKey
-      ? clean((PACKING_TIER_LABEL as Record<string, { icon: string; label: string }>)[svcKey]?.label)
-      : '';
+    const service = svcKey ? clean(labelMap[svcKey]?.label) : '';
 
     return [name, route, service].map(clean).filter(Boolean).join(' · ');
   }
 
+  // ── Merged service-type option list ────────────────────────────────────────
+  // Built-in packing tiers (always available) + dashboard-managed custom types.
+  // Both the <select> and the smart-title builder read from the SAME derived
+  // list + lookup map, so a custom type shows everywhere the moment it's added.
+  $: builtinServiceOptions = Object.entries(PACKING_TIER_LABEL).map(
+    ([key, meta]) => ({ key, icon: meta.icon, label: meta.label, builtin: true }),
+  );
+  $: customServiceOptions = customServiceTypes.map((s) => ({
+    key: s.serviceTypeId,
+    icon: s.icon || '🧩',
+    label: s.label,
+    builtin: false,
+  }));
+  $: serviceTypeOptions = [...builtinServiceOptions, ...customServiceOptions];
+  $: serviceLabelMap = Object.fromEntries(
+    serviceTypeOptions.map((o) => [o.key, { icon: o.icon, label: o.label }]),
+  ) as Record<string, { icon: string; label: string }>;
+
   // Reactive suggestion — recomputes as the selected client or detected service
   // type changes. Drives both the prefilled value (new quotes) and the placeholder.
-  $: suggestedTitle = buildSuggestedTitle($selectedClient, serviceType);
+  $: suggestedTitle = buildSuggestedTitle($selectedClient, serviceType, serviceLabelMap);
+
 
   // Keep a NEW quote's title synced to the smart suggestion until the agent
   // types their own. Never clobbers an existing quote (quoteId set) or a title
@@ -214,7 +250,17 @@
   let tmplSaving = false;
   let tmplError = '';
 
+  // ── Service-type manager state (custom extras) ──────────────────────────────
+  let svcManageOpen = false;
+  let svcSaving = false;
+  let svcError = '';
+  let newSvcLabel = '';
+  let newSvcIcon = '';
+  // Editable working copies (label + icon) of each custom type, keyed by id.
+  let svcEdits: Array<{ serviceTypeId: string; label: string; icon: string }> = [];
+
   async function loadLineTemplates() {
+
     lineTemplatesLoading = true;
     try {
       lineTemplates = await fetchQuoteLineTemplates();
@@ -321,6 +367,85 @@
       tmplError = 'Error deleting template: ' + (err?.message ?? err);
     }
   }
+
+  // ── Service-type manager actions ────────────────────────────────────────────
+  async function loadServiceTypes() {
+    serviceTypesLoading = true;
+    try {
+      customServiceTypes = await fetchServiceTypes();
+    } catch {
+      customServiceTypes = []; // non-fatal — only the built-in tiers show
+    } finally {
+      serviceTypesLoading = false;
+      syncSvcEdits();
+    }
+  }
+
+  /** Refresh the editable row copies from the loaded custom types. */
+  function syncSvcEdits() {
+    svcEdits = customServiceTypes.map((s) => ({
+      serviceTypeId: s.serviceTypeId,
+      label: s.label,
+      icon: s.icon || '',
+    }));
+  }
+
+  function openServiceTypeManager() {
+    svcError = '';
+    newSvcLabel = '';
+    newSvcIcon = '';
+    syncSvcEdits();
+    svcManageOpen = true;
+  }
+
+  async function addServiceType() {
+    const label = newSvcLabel.trim();
+    if (!label) { svcError = 'Enter a name for the new service type.'; return; }
+    svcSaving = true;
+    svcError = '';
+    try {
+      await createServiceType({ label, icon: newSvcIcon.trim() || undefined });
+      newSvcLabel = '';
+      newSvcIcon = '';
+      await loadServiceTypes();
+    } catch (err: any) {
+      svcError = 'Error adding service type: ' + (err?.message ?? err);
+    } finally {
+      svcSaving = false;
+    }
+  }
+
+  async function saveServiceType(row: { serviceTypeId: string; label: string; icon: string }) {
+    const label = row.label.trim();
+    if (!label) { svcError = 'Name cannot be empty.'; return; }
+    svcSaving = true;
+    svcError = '';
+    try {
+      await updateServiceType(row.serviceTypeId, { label, icon: row.icon.trim() });
+      await loadServiceTypes();
+    } catch (err: any) {
+      svcError = 'Error saving service type: ' + (err?.message ?? err);
+    } finally {
+      svcSaving = false;
+    }
+  }
+
+  async function removeServiceType(row: { serviceTypeId: string; label: string }) {
+    if (!confirm(`Delete the "${row.label}" service type? Quotes already using it keep their value.`)) return;
+    svcSaving = true;
+    svcError = '';
+    try {
+      await deleteServiceType(row.serviceTypeId);
+      // If the currently-selected type was the one deleted, clear the field.
+      if (serviceType === row.serviceTypeId) serviceType = '';
+      await loadServiceTypes();
+    } catch (err: any) {
+      svcError = 'Error deleting service type: ' + (err?.message ?? err);
+    } finally {
+      svcSaving = false;
+    }
+  }
+
 
 
   // ── Load existing quote ────────────────────────────────────────────────────
@@ -672,10 +797,20 @@
 
       <!-- Service type (required) — auto-populated from AI transcript insights -->
       <div class="qe-field" class:qe-field--error={serviceTypeError}>
-        <label class="qe-label qe-label--required" for="qe-service-type">
-          Service type
-          {#if refreshingInsights}<span class="qe-insights-spinner" title="Detecting from call notes…"></span>{/if}
-        </label>
+        <div class="qe-label-row">
+          <label class="qe-label qe-label--required" for="qe-service-type">
+            Service type
+            {#if refreshingInsights}<span class="qe-insights-spinner" title="Detecting from call notes…"></span>{/if}
+          </label>
+          <button
+            type="button"
+            class="qe-tmpl-manage-btn qe-svc-manage-btn"
+            on:click={openServiceTypeManager}
+            title="Add, rename or remove custom service types"
+          >
+            <span class="qe-tmpl-manage-gear" aria-hidden="true">⚙</span> Manage
+          </button>
+        </div>
         <select
           id="qe-service-type"
           class="qe-select"
@@ -685,10 +820,11 @@
           on:change={() => { serviceTypeError = false; insightsHint = ''; }}
         >
           <option value="">— Select service type —</option>
-          {#each Object.entries(PACKING_TIER_LABEL) as [key, meta]}
-            <option value={key}>{meta.icon} {meta.label}</option>
+          {#each serviceTypeOptions as opt (opt.key)}
+            <option value={opt.key}>{opt.icon} {opt.label}</option>
           {/each}
         </select>
+
         {#if serviceTypeError}
           <p class="qe-field-error">⚠ Service type is required before saving this quote.</p>
         {:else if insightsHint}
@@ -1125,8 +1261,78 @@
         </div>
       {/if}
 
+      <!-- ── Service-type manager (modal) ────────────────────────────────────── -->
+      {#if svcManageOpen}
+        <div class="qe-tmpl-backdrop" on:click|self={() => (svcManageOpen = false)} role="presentation">
+          <div class="qe-tmpl-modal qe-svc-modal" role="dialog" aria-modal="true" aria-label="Service types">
+            <div class="qe-tmpl-modal__head">
+              <div class="qe-tmpl-modal__titlewrap">
+                <span class="qe-tmpl-modal__spark" aria-hidden="true">✦</span>
+                <h4 class="qe-tmpl-modal__title">Service types</h4>
+              </div>
+              <button type="button" class="qe-tmpl-modal__close" on:click={() => (svcManageOpen = false)} aria-label="Close">✕</button>
+            </div>
+
+            <div class="qe-svc-body">
+              <p class="qe-svc-intro">
+                The built-in service types are always available. Add your own custom
+                types below — they appear in the selector for every quote.
+              </p>
+
+              {#if svcError}<p class="qe-svc-error">⚠ {svcError}</p>{/if}
+
+              <!-- Built-in (locked) -->
+              <div class="qe-svc-section-label">Built-in</div>
+              <div class="qe-svc-list">
+                {#each builtinServiceOptions as b (b.key)}
+                  <div class="qe-svc-row qe-svc-row--locked">
+                    <span class="qe-svc-emoji" aria-hidden="true">{b.icon}</span>
+                    <span class="qe-svc-name">{b.label}</span>
+                    <span class="qe-svc-lock" title="Built-in — always available">🔒 built-in</span>
+                  </div>
+                {/each}
+              </div>
+
+              <!-- Custom (editable) -->
+              <div class="qe-svc-section-label">
+                Custom
+                {#if serviceTypesLoading}<span class="qe-svc-loading">· loading…</span>{/if}
+              </div>
+              <div class="qe-svc-list">
+                {#if svcEdits.length === 0}
+                  <div class="qe-svc-empty">No custom service types yet. Add one below ↓</div>
+                {:else}
+                  {#each svcEdits as row (row.serviceTypeId)}
+                    <div class="qe-svc-row">
+                      <input class="qe-svc-emoji-input" maxlength="4" bind:value={row.icon} placeholder="🧩" aria-label="Icon" />
+                      <input class="qe-svc-name-input" bind:value={row.label} placeholder="Service type name" aria-label="Name" />
+                      <button type="button" class="qe-svc-save" on:click={() => saveServiceType(row)} disabled={svcSaving} title="Save changes">Save</button>
+                      <button type="button" class="qe-svc-del" on:click={() => removeServiceType(row)} disabled={svcSaving} title="Delete" aria-label="Delete">🗑</button>
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+
+              <!-- Add new -->
+              <div class="qe-svc-add">
+                <input class="qe-svc-emoji-input" maxlength="4" bind:value={newSvcIcon} placeholder="🚗" aria-label="New icon" />
+                <input
+                  class="qe-svc-name-input"
+                  bind:value={newSvcLabel}
+                  placeholder="New service type name"
+                  aria-label="New name"
+                  on:keydown={(e) => e.key === 'Enter' && addServiceType()}
+                />
+                <button type="button" class="qe-svc-add-btn" on:click={addServiceType} disabled={svcSaving}>+ Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+
       <!-- ── Line-item template manager (modal) ─────────────────────────────── -->
       {#if manageOpen}
+
         <div class="qe-tmpl-backdrop" on:click|self={() => (manageOpen = false)} role="presentation">
           <div class="qe-tmpl-modal" role="dialog" aria-modal="true" aria-label="Line-item templates">
             <div class="qe-tmpl-modal__head">
@@ -2430,6 +2636,135 @@
     transform: translateY(-1px);
   }
   .qe-tmpl-manage-gear { font-size: 12px; line-height: 1; }
+
+  /* ── Service-type field header row + manager modal ──────────────────────── */
+  .qe-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .qe-svc-manage-btn { padding: 5px 12px; font-size: 12px; }
+
+  .qe-svc-modal { width: min(520px, 100%); }
+  .qe-svc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px 20px;
+    overflow-y: auto;
+  }
+  .qe-svc-intro { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--qe-text-muted); }
+  .qe-svc-error { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--qe-danger); }
+  .qe-svc-section-label {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--qe-text-dim);
+  }
+  .qe-svc-loading { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--qe-text-muted); }
+  .qe-svc-list { display: flex; flex-direction: column; gap: 6px; }
+  .qe-svc-empty {
+    font-size: 12.5px;
+    color: var(--qe-text-muted);
+    padding: 8px 10px;
+    border: 1px dashed var(--qe-border);
+    border-radius: var(--qe-r-sm);
+  }
+  .qe-svc-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--qe-border);
+    border-radius: var(--qe-r-sm);
+    background: var(--qe-surface-2);
+  }
+  .qe-svc-row--locked { opacity: 0.85; }
+  .qe-svc-emoji { font-size: 16px; width: 22px; text-align: center; }
+  .qe-svc-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--qe-text); }
+  .qe-svc-lock {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--qe-text-dim);
+    background: var(--qe-surface);
+    border: 1px solid var(--qe-border);
+    border-radius: var(--qe-r-pill);
+    padding: 2px 8px;
+  }
+  .qe-svc-emoji-input {
+    width: 42px;
+    text-align: center;
+    font-size: 15px;
+    padding: 6px 4px;
+    border: 1px solid var(--qe-border);
+    border-radius: var(--qe-r-sm);
+    background: var(--qe-surface);
+    color: var(--qe-text);
+    font-family: inherit;
+    outline: none;
+  }
+  .qe-svc-name-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--qe-border);
+    border-radius: var(--qe-r-sm);
+    background: var(--qe-surface);
+    color: var(--qe-text);
+    font-family: inherit;
+    outline: none;
+  }
+  .qe-svc-emoji-input:focus,
+  .qe-svc-name-input:focus {
+    border-color: color-mix(in srgb, var(--qe-accent) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--qe-accent) 14%, transparent);
+  }
+  .qe-svc-save,
+  .qe-svc-add-btn {
+    background: var(--qe-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--qe-r-sm);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: filter var(--qe-ease) 0.15s, transform var(--qe-ease) 0.15s;
+  }
+  .qe-svc-save:hover:not(:disabled),
+  .qe-svc-add-btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+  .qe-svc-save:disabled,
+  .qe-svc-add-btn:disabled { opacity: 0.55; cursor: progress; }
+  .qe-svc-del {
+    background: var(--qe-surface);
+    border: 1px solid var(--qe-border);
+    border-radius: var(--qe-r-sm);
+    color: var(--qe-text-dim);
+    font-size: 13px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background var(--qe-ease) 0.12s, border-color var(--qe-ease) 0.12s, color var(--qe-ease) 0.12s;
+  }
+  .qe-svc-del:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--qe-danger) 8%, transparent);
+    border-color: color-mix(in srgb, var(--qe-danger) 30%, transparent);
+    color: var(--qe-danger);
+  }
+  .qe-svc-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--qe-border);
+  }
+
 
   /* ── Modal ───────────────────────────────────────────────────────────────── */
   .qe-tmpl-backdrop {

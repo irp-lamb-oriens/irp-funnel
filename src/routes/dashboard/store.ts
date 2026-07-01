@@ -33,7 +33,9 @@ export type PackingTier =
   | 'self_pack_self_load'
   | 'self_pack_assisted_load'
   | 'full_pack_full_load'
-  | 'lcl_full_service';
+  | 'lcl_full_service'
+  | 'vehicle_only';
+
 
 export interface TranscriptInsights {
   shippingMode: ShippingMode | null;
@@ -642,7 +644,9 @@ export const PACKING_TIER_LABEL: Record<PackingTier, { icon: string; label: stri
   self_pack_assisted_load: { icon: '👥',  label: 'Self pack, crew loads' },
   full_pack_full_load:     { icon: '🛡️',  label: 'Full pack & load'      },
   lcl_full_service:        { icon: '🚚',  label: 'LCL — full service'    },
+  vehicle_only:            { icon: '🚗',  label: 'Vehicle only'          },
 };
+
 
 /** Human-friendly labels for canonical Firestore field paths. */
 export const FIELD_LABEL: Record<string, string> = {
@@ -2601,6 +2605,65 @@ export async function deleteQuoteLineTemplate(templateId: string): Promise<void>
     method: 'DELETE',
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom SERVICE TYPES (dashboard-managed extras)
+//
+// Top-level Firestore collection: quote_service_types/{serviceTypeId}
+// The built-in service types live in code (PACKING_TIER_LABEL) and are ALWAYS
+// available. Custom service types are additive, editable documents the Quote
+// Editor merges on TOP of the built-ins — so operators can add e.g. a bespoke
+// "Storage only" service without a code change. A quote persists `serviceType`
+// as an opaque string key (a built-in PackingTier key OR a custom
+// serviceTypeId), so nothing about existing quotes changes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ServiceType {
+  serviceTypeId: string;
+  /** Human-readable label shown in the service-type selector. */
+  label: string;
+  /** Short emoji/icon shown beside the label. */
+  icon: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
+}
+
+/** Fetch all custom (dashboard-managed) service types, newest first. */
+export async function fetchServiceTypes(): Promise<ServiceType[]> {
+  const data = await apiFetch('/api/dashboard/service-types');
+  return (data.serviceTypes ?? []) as ServiceType[];
+}
+
+/** Create a new custom service type. Returns the created doc. */
+export async function createServiceType(
+  payload: Pick<ServiceType, 'label'> & Partial<Pick<ServiceType, 'icon'>>,
+): Promise<ServiceType> {
+  const data = await apiFetch('/api/dashboard/service-types', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.serviceType as ServiceType;
+}
+
+/** Partially update a custom service type. */
+export async function updateServiceType(
+  serviceTypeId: string,
+  updates: Partial<Pick<ServiceType, 'label' | 'icon'>>,
+): Promise<{ success: boolean; updatedFields: string[] }> {
+  return apiFetch(`/api/dashboard/service-types/${serviceTypeId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Delete a custom service type permanently. */
+export async function deleteServiceType(serviceTypeId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/service-types/${serviceTypeId}`, {
+    method: 'DELETE',
+  });
+}
+
 
 
 /**
