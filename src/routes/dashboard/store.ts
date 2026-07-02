@@ -2825,16 +2825,120 @@ export interface SendRfqResult {
  * Idempotent on the server: a provider with a live (pending/accepted/selected)
  * request is skipped, so re-sending never double-contacts anyone.
  */
+export interface SendRfqOptions {
+  /** Explicit CC recipients (e.g. the RFQ pricing inbox). */
+  cc?: string[];
+  /** Operator-edited subject (supports {{providerName}} personalization). */
+  subject?: string;
+  /**
+   * Operator-edited RFQ HTML body (an edited, pre-translated Sondeo preview).
+   * {{providerName}} / {{submitUrl}} are personalized per provider server-side.
+   */
+  bodyHtml?: string;
+}
+
 export async function sendProviderRfq(
   clientId: string,
   providerIds?: string[],
+  options: SendRfqOptions = {},
 ): Promise<SendRfqResult> {
   return apiFetch('/api/provider/quote-request/blast', {
     method: 'POST',
     body: JSON.stringify({
       consultationId: clientId,
       ...(providerIds && providerIds.length > 0 ? { providerIds } : {}),
+      ...(options.cc && options.cc.length > 0 ? { cc: options.cc } : {}),
+      ...(options.subject ? { subject: options.subject } : {}),
+      ...(options.bodyHtml ? { bodyHtml: options.bodyHtml } : {}),
     }),
   }) as Promise<SendRfqResult>;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RFQ provider RESPONSES (dashboard side — Providers tab: P2 field-map + P3 calc)
+// Backed by providerRfqDashboardRouter.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A vendor's submitted rate for a quote request. */
+export interface QuoteRequestProviderResponse {
+  price: number | null;
+  currency: string | null;
+  notes: string;
+  respondedAt: string;
+}
+
+/** The operator's edited value (kept separate from the vendor-submitted one). */
+export interface QuoteRequestOperatorOverride {
+  price: number | null;
+  currency: string | null;
+  notes: string;
+  overriddenBy?: string;
+  overriddenAt?: string;
+}
+
+export interface QuoteRequestRow {
+  requestId: string;
+  providerId: string;
+  providerName: string;
+  providerEmail: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'selected' | 'confirmed';
+  sentAt: string | null;
+  expiresAt: string | null;
+  providerResponse: QuoteRequestProviderResponse | null;
+  operatorOverride: QuoteRequestOperatorOverride | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  /** Provider quality score 0–5 (half-steps); null = unrated. */
+  providerScore: number | null;
+}
+
+export interface QuoteRequestsResult {
+  quoteRequests: QuoteRequestRow[];
+  expectedMarginPct: number;
+  pendingReviewCount: number;
+}
+
+/** Fetch all RFQ provider responses for a client (dashboard view). */
+export async function fetchQuoteRequests(clientId: string): Promise<QuoteRequestsResult> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/quote-requests`);
+  return {
+    quoteRequests: (data.quoteRequests ?? []) as QuoteRequestRow[],
+    expectedMarginPct: typeof data.expectedMarginPct === 'number' ? data.expectedMarginPct : 20,
+    pendingReviewCount: data.pendingReviewCount ?? 0,
+  };
+}
+
+/**
+ * Set (or clear) the operator's rate override on one response, and/or mark it
+ * reviewed. The vendor-submitted value is preserved separately server-side.
+ */
+export async function updateQuoteRequestOverride(
+  clientId: string,
+  requestId: string,
+  payload: {
+    price?: number | null;
+    currency?: string | null;
+    notes?: string;
+    clearOverride?: boolean;
+    markReviewed?: boolean;
+  },
+): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/quote-requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Set the per-client expected margin (%) used by the best-option calc. */
+export async function setRfqExpectedMargin(
+  clientId: string,
+  expectedMarginPct: number,
+): Promise<number> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/rfq-expected-margin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ expectedMarginPct }),
+  });
+  return typeof data.expectedMarginPct === 'number' ? data.expectedMarginPct : expectedMarginPct;
+}
+
 

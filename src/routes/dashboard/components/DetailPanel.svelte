@@ -20,6 +20,7 @@
     cancelPendingEmail,
     sendPendingEmailNow,
     fetchCollaborators,
+    fetchQuoteRequests,
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
@@ -30,6 +31,8 @@
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
   import QuotesTab from './QuotesTab.svelte';
+  import ProvidersRfqPanel from './ProvidersRfqPanel.svelte';
+  import ProviderResponsesPanel from './ProviderResponsesPanel.svelte';
   import ShipmentTrackingCard from './ShipmentTrackingCard.svelte';
   import VendorMatchCard from './VendorMatchCard.svelte';
   import { exactTime, relativeTime } from '../utils/relativeTime.ts';
@@ -55,6 +58,20 @@
   // ── Schedule / Reschedule modal state ────────────────────────────────────
   let showScheduleModal = false;
 
+  // ── Providers tab pending badge (unreviewed vendor responses) ─────────────
+  // Lightweight per-client fetch so the "📨 Providers" tab lights up the moment
+  // a vendor replies — even before the operator opens the tab.
+  let providersPendingCount = 0;
+  let providersPendingLoadedFor = '';
+  $: if ($selectedClient && $selectedClient.id !== providersPendingLoadedFor) {
+    providersPendingLoadedFor = $selectedClient.id;
+    providersPendingCount = 0;
+    fetchQuoteRequests($selectedClient.id)
+      .then((r) => { providersPendingCount = r.pendingReviewCount ?? 0; })
+      .catch(() => { /* non-fatal — badge stays hidden */ });
+  }
+
+
   export let stageChanging: boolean;
   export let handleStageChange: (clientId: string, newStage: string) => Promise<void>;
   export let closeDetail: () => void;
@@ -75,7 +92,7 @@
   let emailSentMessage = '';
   let newFieldKey = '';
   let newFieldValue = '';
-  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' = 'overview';
+  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' | 'providers' = 'overview';
   let stageEntries = Object.entries(STAGE_LABELS);
 
   // ── Pipeline-stage chip + popover (replaces the giant emoji strip) ─────
@@ -649,6 +666,10 @@
       <button class:active={detailTab === 'quotes'} on:click={() => detailTab = 'quotes'}>
         💰 Quotes
         <PendingBadge count={pendingTabCounts.quotes ?? 0} variant="tab" />
+      </button>
+      <button class:active={detailTab === 'providers'} on:click={() => detailTab = 'providers'}>
+        📨 Providers
+        <PendingBadge count={(pendingTabCounts.providers ?? 0) + providersPendingCount} variant="tab" />
       </button>
     </nav>
 
@@ -1914,6 +1935,13 @@
         <section class="tab-content">
           {#if $selectedClient}
             <QuotesTab clientId={$selectedClient.id} />
+          {/if}
+        </section>
+      {:else if detailTab === 'providers'}
+        <section class="tab-content">
+          {#if $selectedClient}
+            <ProvidersRfqPanel client={$selectedClient} />
+            <ProviderResponsesPanel client={$selectedClient} />
           {/if}
         </section>
       {/if}
