@@ -8,7 +8,7 @@
     clientsLoading, clientsLoadedOnce,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
 
-    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES,
+    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, HIDDEN_STAGES,
     requestOTP, verifyOTP, checkAuth, logout,
     fetchClients, fetchClientDetail, updateClientStage,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
@@ -33,6 +33,7 @@
   import PostsView from './components/PostsView.svelte';
   import AdminView from './components/AdminView.svelte';
   import TemplatesView from './components/TemplatesView.svelte';
+  import AutomationView from './components/AutomationView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
   import './dashboard.scss';
@@ -334,7 +335,14 @@
     draggedClient = null;
   }
 
-  $: stageEntries = Object.entries(STAGE_LABELS);
+  // Board columns. The retired "private feedback" columns are hidden from the
+  // board (their emails are now sent automatically by the Automations engine),
+  // BUT they reappear automatically if a legacy client is still parked in one —
+  // so a client is never hidden/lost before being migrated off. Fully
+  // backward-compatible & non-destructive.
+  $: stageEntries = Object.entries(STAGE_LABELS).filter(
+    ([key]) => !HIDDEN_STAGES.has(key) || (($clientsByStage[key]?.length ?? 0) > 0),
+  );
 
   // ─── Board skeleton state ────────────────────────────────────────────────
   // Drives the Trello/Jira-style shimmering placeholder cards in every Kanban
@@ -494,6 +502,9 @@
           {/if}
           {#if allowedViews.includes('templates')}
             <button class:active={$activeView === 'templates'} on:click={() => switchView('templates')} title="Quote document templates builder">Templates</button>
+          {/if}
+          {#if allowedViews.includes('automations')}
+            <button class:active={$activeView === 'automations'} on:click={() => switchView('automations')} title="Stage email automation rules & templates">Automations</button>
           {/if}
         </nav>
       </div>
@@ -809,6 +820,9 @@
     <!-- ══════════════ TEMPLATES VIEW ══════════════ -->
     {:else if $activeView === 'templates'}
       <TemplatesView />
+    <!-- ══════════════ AUTOMATIONS VIEW ══════════════ -->
+    {:else if $activeView === 'automations'}
+      <AutomationView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

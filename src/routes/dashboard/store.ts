@@ -782,7 +782,19 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations'>('board');
+
+/**
+ * Stages hidden from the board/list UI. The three "private feedback" columns
+ * were retired: their emails are now sent automatically by the Stage Email
+ * Automation engine (Automations tab), attached to the preceding real stage.
+ * Legacy docs are moved off these stages by scripts/migrate-off-feedback-stages.ts.
+ */
+export const HIDDEN_STAGES = new Set<string>([
+  'private_feedback_a',
+  'private_feedback_b',
+  'private_feedback_c',
+]);
 export const detailPanelOpen = writable<boolean>(false);
 
 /**
@@ -930,7 +942,7 @@ export const filteredClients = derived([clients, searchQuery, filters], ([$clien
 
 // ─── Derived: clients grouped by stage ──────────────────────────────────────
 export const clientsByStage = derived(filteredClients, ($filtered) => {
-  const stages = Object.keys(STAGE_LABELS);
+  const stages = Object.keys(STAGE_LABELS).filter((s) => !HIDDEN_STAGES.has(s));
   const grouped: Record<string, Client[]> = {};
   for (const s of stages) grouped[s] = [];
 
@@ -2963,5 +2975,137 @@ export async function setRfqExpectedMargin(
   });
   return typeof data.expectedMarginPct === 'number' ? data.expectedMarginPct : expectedMarginPct;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stage Email Automation (Automations tab)
+//
+// Configures, per pipeline stage, WHICH email fires, under WHICH condition, and
+// whether it AUTO-sends or is left as an operator SUGGESTION — plus editable
+// email TEMPLATE overrides (subject + body). Fully field-agnostic; the retired
+// feedback A/B/C columns are just three seeded `auto` rules.
+// Backed by API/dashboard/emailAutomationRouter.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RuleCondition = 'always' | 'has_transcript_insights' | 'ai_client_present';
+export type RuleMode = 'auto' | 'suggest';
+
+export interface StageEmailRule {
+  id: string;
+  triggerStage: string;
+  emailType: string;
+  condition: RuleCondition;
+  mode: RuleMode;
+  enabled: boolean;
+  delayHours: number;
+  label: string;
+  isSeed?: boolean;
+  updatedBy?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export interface EmailTemplateRow {
+  emailType: string;
+  label: string;
+  subject: string;
+  category: 'sales' | 'ops' | 'followup';
+  enabled: boolean;
+  hasOverride: boolean;
+  isCustom: boolean;
+  bodyHtml: string;
+}
+
+export interface AutomationMeta {
+  stages: string[];
+  emailTypes: EmailTypeDescriptor[];
+  conditions: RuleCondition[];
+  modes: RuleMode[];
+  feedbackMigration: Record<string, string>;
+}
+
+/** Human labels for rule conditions (UI only). */
+export const RULE_CONDITION_LABELS: Record<RuleCondition, string> = {
+  always: 'Always (every client that reaches the stage)',
+  has_transcript_insights: 'Only if a transcript / insights exist',
+  ai_client_present: 'Only if the AI inferred the client attended the call',
+};
+
+export async function fetchAutomationMeta(): Promise<AutomationMeta> {
+  const data = await apiFetch('/api/dashboard/automation/meta');
+  return {
+    stages: Array.isArray(data?.stages) ? data.stages : [],
+    emailTypes: Array.isArray(data?.emailTypes) ? data.emailTypes : [],
+    conditions: Array.isArray(data?.conditions) ? data.conditions : ['always'],
+    modes: Array.isArray(data?.modes) ? data.modes : ['auto', 'suggest'],
+    feedbackMigration: data?.feedbackMigration ?? {},
+  };
+}
+
+export async function fetchAutomationRules(): Promise<StageEmailRule[]> {
+  const data = await apiFetch('/api/dashboard/automation/rules');
+  return (data?.rules ?? []) as StageEmailRule[];
+}
+
+/** Create or replace a rule (server keys it by triggerStage__emailType). */
+export async function saveAutomationRule(rule: Partial<StageEmailRule>): Promise<StageEmailRule> {
+  const data = await apiFetch('/api/dashboard/automation/rules', {
+    method: 'POST',
+    body: JSON.stringify(rule),
+  });
+  return data.rule as StageEmailRule;
+}
+
+/** Partially update an existing rule by id. */
+export async function patchAutomationRule(
+  id: string,
+  updates: Partial<StageEmailRule>,
+): Promise<StageEmailRule> {
+  const data = await apiFetch(`/api/dashboard/automation/rules/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  return data.rule as StageEmailRule;
+}
+
+export async function deleteAutomationRule(id: string): Promise<void> {
+  await apiFetch(`/api/dashboard/automation/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export async function fetchAutomationTemplates(): Promise<EmailTemplateRow[]> {
+  const data = await apiFetch('/api/dashboard/automation/templates');
+  return (data?.templates ?? []) as EmailTemplateRow[];
+}
+
+/** Upsert a template override (subject / body / enabled) for one email type. */
+export async function saveAutomationTemplate(
+  emailType: string,
+  payload: Partial<Pick<EmailTemplateRow, 'subject' | 'bodyHtml' | 'label' | 'category' | 'enabled'>>,
+): Promise<EmailTemplateRow> {
+  const data = await apiFetch(`/api/dashboard/automation/templates/${encodeURIComponent(emailType)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return data.template as EmailTemplateRow;
+}
+
+/** Revert a template back to the hardcoded default (deletes the override). */
+export async function deleteAutomationTemplate(emailType: string): Promise<void> {
+  await apiFetch(`/api/dashboard/automation/templates/${encodeURIComponent(emailType)}`, {
+    method: 'DELETE',
+  });
+}
+
+/** Render a live preview of a template (optionally a draft body being edited). */
+export async function previewAutomationTemplate(
+  emailType: string,
+  opts: { bodyHtml?: string; data?: Record<string, unknown> } = {},
+): Promise<string> {
+  const data = await apiFetch(`/api/dashboard/automation/templates/${encodeURIComponent(emailType)}/preview`, {
+    method: 'POST',
+    body: JSON.stringify(opts),
+  });
+  return (data?.html ?? '') as string;
+}
+
 
 
