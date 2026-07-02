@@ -1998,7 +1998,6 @@
 
   /* ── Line items table ─────────────────────────────────────────────────── */
   .qe-lines-wrap {
-    overflow-x: auto;
     border-radius: 10px;
     border: 1px solid #e2e8f0;
     background: #ffffff;
