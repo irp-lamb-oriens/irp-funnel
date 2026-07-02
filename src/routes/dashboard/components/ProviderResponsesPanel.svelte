@@ -393,32 +393,40 @@
   /* Token-driven scoped-var layer — cohesive with the dashboard --irp-* tokens
      (safe fallbacks keep it working outside :root too). */
   .pr {
-    --pr-accent:        var(--irp-accent, #02b5bb);
-    --pr-accent-hover:  var(--irp-accent-hover, #02999e);
-    --pr-accent-subtle: var(--irp-accent-subtle, rgba(2, 181, 187, 0.1));
-    --pr-surface:       var(--irp-surface, #ffffff);
-    --pr-surface-2:     var(--irp-surface-2, #f8f9fa);
-    --pr-surface-3:     var(--irp-surface-3, #f1f3f5);
-    --pr-border:        var(--irp-border, rgba(0, 0, 0, 0.08));
-    --pr-border-focus:  var(--irp-border-focus, rgba(2, 181, 187, 0.5));
-    --pr-text:          var(--irp-text, #181818);
-    --pr-text-2:        var(--irp-text-2, #343a40);
-    --pr-text-muted:    var(--irp-text-muted, #495057);
-    --pr-text-dim:      var(--irp-text-dim, #868e96);
-    --pr-danger:        var(--irp-danger, #c62426);
-    --pr-warning:       var(--irp-warning, #f59e0b);
-    --pr-warn-bg:       #fff7ed;
-    --pr-warn-border:   #fed7aa;
-    --pr-warn-text:     #9a3412;
+    /* Bound to the global style-bible tokens (teal --color-highlight-2, Jost)
+       with the slate neutral scale used across the CRM dashboard. */
+    --pr-accent:        var(--color-highlight-2, #02b5bb);
+    --pr-accent-hover:  #02999e;
+    --pr-accent-subtle: rgba(2, 181, 187, 0.10);
+    --pr-surface:       #ffffff;
+    --pr-surface-2:     #f8fafc;
+    --pr-surface-3:     #f1f5f9;
+    --pr-border:        #e2e8f0;
+    --pr-border-focus:  rgba(2, 181, 187, 0.5);
+    --pr-text:          #0f172a;
+    --pr-text-2:        #334155;
+    --pr-text-muted:    #64748b;
+    --pr-text-dim:      #94a3b8;
+    --pr-danger:        var(--color-highlight-1, #c62426);
+    --pr-warning:       #d97706;
+    --pr-warn-bg:       #fffbeb;
+    --pr-warn-border:   #fde68a;
+    --pr-warn-text:     #b45309;
     --pr-ok-bg:         #f0fdf4;
     --pr-ok-border:     #bbf7d0;
-    --pr-ok-text:       #166534;
+    --pr-ok-text:       #16a34a;
     --pr-t:             150ms cubic-bezier(0.16, 1, 0.3, 1);
-    padding: var(--irp-sp-2, 8px) 2px var(--irp-sp-6, 24px);
-    margin-top: var(--irp-sp-2, 8px);
-    border-top: 1px solid var(--pr-border);
-    font-family: var(--irp-font, inherit);
+    /* Self-contained card, cohesive with AdminView / AutomationView surfaces */
+    padding: 16px 18px 20px;
+    margin-top: 16px;
+    border: 1px solid var(--pr-border);
+    border-radius: 16px;
+    background: var(--pr-surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    color: var(--pr-text);
   }
+
 
   .pr-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 12px 0 10px; }
   .pr-title { margin: 0 0 3px; font-size: 15px; font-weight: 800; color: var(--pr-text); display: flex; align-items: center; gap: var(--irp-sp-2, 8px); }
@@ -470,8 +478,8 @@
   .pr-btn { border: 1px solid var(--pr-border); background: var(--pr-surface); border-radius: var(--irp-r-xs, 6px); padding: 4px 9px; font-size: 11.5px; font-weight: 700; color: var(--pr-text-muted); cursor: pointer; transition: border-color var(--pr-t), color var(--pr-t), filter var(--pr-t); }
   .pr-btn:hover:not(:disabled) { border-color: var(--pr-border-focus); color: var(--pr-accent-hover); }
   .pr-btn--sm { padding: 3px 8px; }
-  .pr-btn--primary { background: var(--pr-accent); border-color: var(--pr-accent); color: #fff; }
-  .pr-btn--primary:hover:not(:disabled) { filter: brightness(1.05); color: #fff; }
+  .pr-btn--primary { background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%); border-color: transparent; color: #fff; box-shadow: 0 2px 8px rgba(2,181,187,0.30); }
+  .pr-btn--primary:hover:not(:disabled) { filter: brightness(1.06); color: #fff; }
   .pr-btn--ghost { background: var(--pr-surface-2); }
   .pr-btn:disabled { opacity: .5; cursor: not-allowed; }
 

@@ -651,34 +651,38 @@
      ultra-cohesive with the rest of the CRM and re-themeable from :root.
      ────────────────────────────────────────────────────────────────────────── */
   .rfq {
-    --rfq-accent:        var(--irp-accent, #02b5bb);
-    --rfq-accent-hover:  var(--irp-accent-hover, #02999e);
-    --rfq-accent-glow:   var(--irp-accent-glow, rgba(2, 181, 187, 0.2));
-    --rfq-accent-subtle: var(--irp-accent-subtle, rgba(2, 181, 187, 0.1));
-    --rfq-surface:       var(--irp-surface, #ffffff);
-    --rfq-surface-2:     var(--irp-surface-2, #f8f9fa);
-    --rfq-surface-3:     var(--irp-surface-3, #f1f3f5);
-    --rfq-border:        var(--irp-border, rgba(0, 0, 0, 0.08));
-    --rfq-border-focus:  var(--irp-border-focus, rgba(2, 181, 187, 0.5));
-    --rfq-text:          var(--irp-text, #181818);
-    --rfq-text-2:        var(--irp-text-2, #343a40);
-    --rfq-text-muted:    var(--irp-text-muted, #495057);
-    --rfq-text-dim:      var(--irp-text-dim, #868e96);
-    --rfq-danger:        var(--irp-danger, #c62426);
-    --rfq-success:       var(--irp-success, #10b981);
-    --rfq-warning:       var(--irp-warning, #f59e0b);
-    --rfq-warn-bg:       #fff7ed;
-    --rfq-warn-border:   #fed7aa;
-    --rfq-warn-text:     #9a3412;
+    /* Bound to the global style-bible tokens (teal --color-highlight-2, Jost),
+       with the slate neutral scale the rest of the CRM dashboard uses. */
+    --rfq-accent:        var(--color-highlight-2, #02b5bb);
+    --rfq-accent-hover:  #02999e;
+    --rfq-accent-glow:   rgba(2, 181, 187, 0.22);
+    --rfq-accent-subtle: rgba(2, 181, 187, 0.10);
+    --rfq-surface:       #ffffff;
+    --rfq-surface-2:     #f8fafc;
+    --rfq-surface-3:     #f1f5f9;
+    --rfq-border:        #e2e8f0;
+    --rfq-border-focus:  rgba(2, 181, 187, 0.5);
+    --rfq-text:          #0f172a;
+    --rfq-text-2:        #334155;
+    --rfq-text-muted:    #64748b;
+    --rfq-text-dim:      #94a3b8;
+    --rfq-danger:        var(--color-highlight-1, #c62426);
+    --rfq-success:       #16a34a;
+    --rfq-warning:       #d97706;
+    --rfq-warn-bg:       #fffbeb;
+    --rfq-warn-border:   #fde68a;
+    --rfq-warn-text:     #b45309;
     --rfq-ok-bg:         #f0fdf4;
     --rfq-ok-border:     #bbf7d0;
-    --rfq-ok-text:       #166534;
+    --rfq-ok-text:       #16a34a;
     --rfq-t:             150ms cubic-bezier(0.16, 1, 0.3, 1);
-    --rfq-shadow-md:     var(--irp-shadow-md, 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04));
-    --rfq-shadow-lg:     var(--irp-shadow-lg, 0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06));
-    padding: var(--irp-sp-1, 4px) 2px var(--irp-sp-6, 24px);
-    font-family: var(--irp-font, inherit);
+    --rfq-shadow-md:     0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+    --rfq-shadow-lg:     0 12px 40px rgba(15,23,42,0.16), 0 4px 12px rgba(15,23,42,0.08);
+    padding: 2px 2px 24px;
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    color: var(--rfq-text);
   }
+
   .rfq-empty { color: var(--rfq-text-dim); font-size: 14px; padding: var(--irp-sp-5, 20px); }
 
   .rfq-head { margin-bottom: var(--irp-sp-4, 16px); }
@@ -773,8 +777,12 @@
 
   .rfq-cc-add { display: flex; gap: 6px; }
 
+  /* Section cards — cohesive with the AdminView / AutomationView surfaces */
+  .rfq-col { background: var(--rfq-surface); border: 1px solid var(--rfq-border); border-radius: 16px; padding: 16px; box-shadow: var(--rfq-shadow-md); }
+  .rfq-col .rfq-block:last-child { margin-bottom: 0; }
   /* Preview column */
   .rfq-col--preview { position: sticky; top: var(--irp-sp-2, 8px); }
+
   .rfq-preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--irp-sp-2, 8px); }
   .rfq-modes { display: inline-flex; gap: 2px; background: var(--rfq-surface-3); padding: 3px; border-radius: var(--irp-r-sm, 8px); }
   .rfq-modes button { border: none; background: none; padding: 5px 12px; border-radius: var(--irp-r-xs, 6px); font-size: 12px; font-weight: 700; color: var(--rfq-text-muted); cursor: pointer; transition: background var(--rfq-t), color var(--rfq-t); }
@@ -801,7 +809,7 @@
   .rfq-send__ok { font-size: 12px; color: var(--rfq-ok-text); font-weight: 600; }
 
   .rfq-btn { border: none; border-radius: var(--irp-r-full, 9999px); font-size: 13px; font-weight: 700; cursor: pointer; padding: var(--irp-sp-2, 8px) 18px; transition: box-shadow var(--rfq-t), transform var(--rfq-t), filter var(--rfq-t); }
-  .rfq-btn--primary { background: var(--rfq-accent); color: #fff; box-shadow: 0 2px 10px var(--rfq-accent-glow); }
+  .rfq-btn--primary { background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%); color: #fff; box-shadow: 0 2px 10px var(--rfq-accent-glow); }
   .rfq-btn--primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px var(--rfq-accent-glow); }
   .rfq-btn--primary:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
   .rfq-btn--ghost { background: var(--rfq-surface); border: 1px solid var(--rfq-border); color: var(--rfq-text-muted); padding: 6px 12px; font-size: 12px; }
