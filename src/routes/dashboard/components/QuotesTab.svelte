@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import { writable, get } from 'svelte/store';
   import {
     fetchQuotes,
@@ -23,6 +24,20 @@
   let error = '';
   let showEditor = false;
   let editingQuoteId: string | null = null;
+
+  // Remember whether the editor was open (and on which quote) per client so
+  // switching Detail-Panel tabs and coming back doesn't drop an in-progress
+  // quote. Pairs with QuoteEditor's own localStorage draft persistence.
+  $: tabStateKey = `irp:quotes-tab:${clientId}`;
+  let tabStateReady = false; // avoids persisting during the initial restore
+  function persistTabState() {
+    if (!browser || !tabStateReady) return;
+    try {
+      localStorage.setItem(tabStateKey, JSON.stringify({ showEditor, editingQuoteId }));
+    } catch { /* storage unavailable — non-fatal */ }
+  }
+  $: tabState = [showEditor, editingQuoteId];
+  $: if (tabStateReady && tabState) persistTabState();
 
   // ── Per-client proposal template selector ──────────────────────────────────
   let templates: QuoteTemplate[] = [];
@@ -128,6 +143,20 @@
   }
 
   onMount(() => {
+    // Restore whether the editor was open for THIS client (survives tab switch).
+    if (browser) {
+      try {
+        const raw = localStorage.getItem(tabStateKey);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s && typeof s.showEditor === 'boolean') {
+            showEditor = s.showEditor;
+            editingQuoteId = typeof s.editingQuoteId === 'string' ? s.editingQuoteId : null;
+          }
+        }
+      } catch { /* ignore malformed state */ }
+    }
+    tabStateReady = true;
     loadQuotes();
     loadTemplateSelection();
   });

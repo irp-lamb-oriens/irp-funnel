@@ -159,6 +159,12 @@ export interface Note {
   text: string;
   author: string;
   createdAt: string;
+  /**
+   * Optional staff emails this note is addressed to. Each recipient is emailed
+   * a notification when the note is created. Absent on legacy notes (backward
+   * compatible — an un-targeted note behaves exactly as before).
+   */
+  recipients?: string[];
 }
 
 export interface ActivityEntry {
@@ -1291,10 +1297,13 @@ export async function updateClientFields(id: string, customFields: Record<string
   selectedClient.update(c => c && c.id === id ? { ...c, customFields: { ...c.customFields, ...customFields } } : c);
 }
 
-export async function addNote(id: string, text: string): Promise<Note> {
+export async function addNote(id: string, text: string, recipients?: string[]): Promise<Note> {
+  const clean = Array.isArray(recipients)
+    ? [...new Set(recipients.filter((e) => typeof e === 'string' && e.includes('@')).map((e) => e.trim().toLowerCase()))]
+    : [];
   const data = await apiFetch(`/api/dashboard/clients/${id}/notes`, {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(clean.length > 0 ? { text, recipients: clean } : { text }),
   });
   const note = data.note;
   clients.update(list =>

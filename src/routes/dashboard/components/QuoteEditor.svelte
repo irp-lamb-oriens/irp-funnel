@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { get } from 'svelte/store';
   import {
     fetchQuote,
@@ -47,6 +47,7 @@
   import StarRating from './StarRating.svelte';
 
   import { aggregateByCurrency } from '$lib/money.ts';
+  import { browser } from '$app/environment';
 
   export let clientId: string;
   export let quoteId: string | null = null;
@@ -404,6 +405,85 @@
     }
   }
 
+  // ── Draft persistence (localStorage) — survives tab switches / reloads ───────
+  // Keyed per client + quote so drafts never cross-contaminate. We only persist
+  // once the editor state DIFFERS from the freshly-loaded baseline (so an
+  // untouched quote never leaves a stray draft), and clear it on save / cancel.
+  $: draftKey = `irp:quote-draft:${clientId}:${quoteId ?? 'new'}`;
+  let hydrating = true;        // suppresses autosave while we load + restore
+  let draftRestored = false;   // drives the "Unsaved draft restored" banner
+  let baseline = '';           // serialized clean state (post-load, pre-draft)
+  let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function draftCore(): string {
+    return JSON.stringify({ title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots });
+  }
+  function draftPayload() {
+    return { v: 1, savedAt: new Date().toISOString(), title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots, titleTouched };
+  }
+  function saveDraftNow() {
+    if (!browser || hydrating) return;
+    try {
+      // Untouched (matches the clean baseline) → never leave a stray draft.
+      if (draftCore() === baseline) { localStorage.removeItem(draftKey); return; }
+      localStorage.setItem(draftKey, JSON.stringify(draftPayload()));
+    } catch { /* storage full / unavailable — non-fatal */ }
+  }
+  function scheduleDraftSave() {
+    if (draftSaveTimer) clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveDraftNow, 400);
+  }
+  function clearDraft() {
+    try { if (browser) localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    draftRestored = false;
+  }
+  function hydrateFromDraft() {
+    if (!browser) return;
+    let d: any = null;
+    try { const raw = localStorage.getItem(draftKey); d = raw ? JSON.parse(raw) : null; } catch { d = null; }
+    if (!d || d.v !== 1) return;
+    // For an existing quote, only restore a draft NEWER than the server copy —
+    // never clobber a quote another session already saved.
+    if (quoteId) {
+      const serverUpdated = quote?.updatedAt ? new Date(quote.updatedAt).getTime() : 0;
+      const draftSaved = d.savedAt ? new Date(d.savedAt).getTime() : 0;
+      if (draftSaved <= serverUpdated) { clearDraft(); return; }
+    }
+    if (typeof d.title === 'string') title = d.title;
+    if (typeof d.notes === 'string') notes = d.notes;
+    if (typeof d.serviceType === 'string') serviceType = d.serviceType;
+    if (typeof d.defaultMarginPct === 'number') defaultMarginPct = d.defaultMarginPct;
+    if (typeof d.clientDescription === 'string') clientDescription = d.clientDescription;
+    if (Array.isArray(d.lineGroups) && d.lineGroups.length > 0) {
+      lineGroups = d.lineGroups.map((g: any) => ({
+        groupId: g.groupId || makeGroupId(),
+        title: g.title ?? '',
+        labelId: typeof g.labelId === 'string' ? g.labelId : null,
+        role: g.role === 'optional' ? 'optional' as const : 'required' as const,
+        lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
+      }));
+      ensureGroups();
+    }
+    if (Array.isArray(d.providerSnapshots)) providerSnapshots = d.providerSnapshots;
+    if (d.titleTouched) titleTouched = true;
+    draftRestored = true;
+  }
+  /** Throw away the restored draft and reload the clean server/new baseline. */
+  function discardDraft() {
+    clearDraft();
+    hydrating = true;
+    loadQuote().then(() => { baseline = draftCore(); hydrating = false; });
+  }
+
+  // Debounced autosave — fires on any edit once hydration is complete.
+  $: draftDeps = [title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots];
+  $: if (browser && !hydrating && draftDeps) scheduleDraftSave();
+
+  onDestroy(() => {
+    if (draftSaveTimer) clearTimeout(draftSaveTimer);
+    saveDraftNow(); // flush the latest state before unmount (e.g. tab switch)
+  });
+
 
 
   // ── Line-item templates (pricing presets) ───────────────────────────────────
@@ -709,6 +789,9 @@
 
   onMount(async () => {
     await loadQuote();
+    baseline = draftCore();   // capture the clean server/new state…
+    hydrateFromDraft();       // …then restore any newer unsaved draft on top
+    hydrating = false;        // enable autosave from here on
     resolveServiceType();
     loadLineTemplates(); // non-fatal; populates the template selector
     loadQuoteLabels();   // non-fatal; populates the group label chooser (Phase B)
@@ -843,6 +926,7 @@
       } else {
         await createQuote(clientId, payload);
       }
+      clearDraft(); // persisted draft is now saved server-side
       dispatch('saved');
     } catch (err: any) {
       errorMsg = 'Error saving: ' + (err?.message ?? err);
@@ -942,6 +1026,7 @@
   }
 
   function handleCancel() {
+    clearDraft();
     dispatch('cancelled');
   }
 
@@ -962,6 +1047,13 @@
     </div>
   {:else}
     <div class="quote-editor__body">
+
+      {#if draftRestored}
+        <div class="qe-draft-banner">
+          <span class="qe-draft-banner__txt">✎ Unsaved draft restored</span>
+          <button type="button" class="qe-draft-banner__discard" on:click={discardDraft}>Discard draft</button>
+        </div>
+      {/if}
 
       <!-- Title -->
       <!-- Smart default (new quotes): auto-composed from the client's move —
@@ -3145,6 +3237,22 @@
   }
   @keyframes qeAiSpin { to { transform: rotate(360deg); } }
   .qe-field-hint--err { color: #dc2626; font-weight: 600; }
+
+  /* ── Unsaved-draft restored banner ──────────────────────────────────────── */
+  .qe-draft-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 8px 14px; border-radius: 10px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+    border: 1px solid #fde68a; color: #92400e;
+    font-size: 12.5px; font-weight: 600;
+  }
+  .qe-draft-banner__discard {
+    background: #fff; border: 1px solid #fcd34d; color: #92400e;
+    border-radius: 999px; font-size: 11.5px; font-weight: 700;
+    padding: 4px 12px; cursor: pointer; white-space: nowrap;
+    transition: background .14s, border-color .14s;
+  }
+  .qe-draft-banner__discard:hover { background: #fef3c7; border-color: #f59e0b; }
   .qe-svc-del {
     background: var(--qe-surface);
     border: 1px solid var(--qe-border);

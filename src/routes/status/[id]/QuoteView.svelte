@@ -31,8 +31,9 @@
   let descLoading = false;
 
   // ── Phase 5 — line-item group selection (status-page packages + add-ons) ──
-  //   required groups → ONE is chosen via radio (first auto-selected)
-  //   optional groups → each toggled independently via checkbox (off by default)
+  //   required groups → ONE is chosen via radio (most expensive auto-selected)
+  //   optional groups → each toggled via checkbox (ALL pre-checked by default;
+  //                     the client can deselect any add-on they don't want)
   let selectedRequiredGroupId = '';
   let selectedOptionalGroupIds: Set<string> = new Set();
   let groupSelectionInit = false;
@@ -42,10 +43,12 @@
   $: requiredGroups = groups.filter((g) => g.role !== 'optional');
   $: optionalGroups = groups.filter((g) => g.role === 'optional');
 
-  // Auto-select the MOST EXPENSIVE required group exactly once, after the quote
-  // loads. Optional add-ons stay OFF by default (see selectedOptionalGroupIds).
+  // Auto-select the MOST EXPENSIVE required group + PRE-CHECK every optional
+  // add-on, exactly once after the quote loads. The client can still switch the
+  // required package and untick any add-on they don't want.
   $: if (hasGroups && !groupSelectionInit) {
     selectedRequiredGroupId = mostExpensiveRequiredGroupId();
+    selectedOptionalGroupIds = new Set(optionalGroups.map((g) => g.groupId));
     groupSelectionInit = true;
   }
 

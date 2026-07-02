@@ -19,6 +19,7 @@
     fetchPendingEmails,
     cancelPendingEmail,
     sendPendingEmailNow,
+    fetchCollaborators,
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
@@ -37,7 +38,19 @@
   // Seed the reactive emailTypes store from the server on first mount.
   // The store is already pre-seeded with the static EMAIL_TYPES fallback so
   // the UI renders immediately; this call enriches it with categorised data.
-  onMount(() => { fetchEmailTypes(); });
+  onMount(() => {
+    fetchEmailTypes();
+    // Load the Admin collaborators list so notes can be addressed to teammates.
+    fetchCollaborators()
+      .then((r) => {
+        if (r?.collaborators) {
+          noteTeammates = r.collaborators
+            .filter((c) => c && c.email)
+            .map((c) => ({ email: c.email, name: c.name || c.email.split('@')[0] }));
+        }
+      })
+      .catch(() => { /* non-fatal — the picker just shows empty */ });
+  });
 
   // ── Schedule / Reschedule modal state ────────────────────────────────────
   let showScheduleModal = false;
@@ -53,6 +66,10 @@
 
   let newNote = '';
   let noteLoading = false;
+  // ── Note recipients (teammates who get emailed the note) ───────────────────
+  let noteRecipients: string[] = [];
+  let noteTeammates: { email: string; name: string }[] = [];
+  let noteRecipientPickerOpen = false;
   let selectedEmailType = '';
   let emailSending = false;
   let emailSentMessage = '';
@@ -469,13 +486,34 @@
     if (!newNote.trim() || !$selectedClient) return;
     noteLoading = true;
     try {
-      await addNote($selectedClient.id, newNote.trim());
+      await addNote($selectedClient.id, newNote.trim(), noteRecipients);
       newNote = '';
+      noteRecipients = [];
+      noteRecipientPickerOpen = false;
     } catch (err: any) {
       alert('Failed to add note: ' + err.message);
     } finally {
       noteLoading = false;
     }
+  }
+
+  // ── Note-recipient helpers ──────────────────────────────────────────────────
+  function noteRecipientName(email: string): string {
+    const c = noteTeammates.find((x) => x.email === email);
+    return c?.name || (email?.split('@')[0] ?? email);
+  }
+  function noteInitials(name: string): string {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+  }
+  function toggleNoteRecipient(email: string) {
+    noteRecipients = noteRecipients.includes(email)
+      ? noteRecipients.filter((e) => e !== email)
+      : [...noteRecipients, email];
+  }
+  function removeNoteRecipient(email: string) {
+    noteRecipients = noteRecipients.filter((e) => e !== email);
   }
 
   async function handleTriggerEmail() {
@@ -1543,12 +1581,66 @@
           <form class="detail-notes__form" on:submit|preventDefault={handleAddNote}>
             <textarea
               bind:value={newNote}
-              placeholder="Add a note…"
+              placeholder="Write a note…"
               class="detail-notes__input"
               rows="3"
             ></textarea>
+
+            <!-- ── Recipient picker: address the note to teammates ── -->
+            <div class="dn-recipients">
+              <div class="dn-recipients__row">
+                <button
+                  type="button"
+                  class="dn-recipients__toggle"
+                  class:has={noteRecipients.length > 0}
+                  on:click={() => (noteRecipientPickerOpen = !noteRecipientPickerOpen)}
+                  aria-expanded={noteRecipientPickerOpen}
+                >
+                  <span class="dn-recipients__ic" aria-hidden="true">👥</span>
+                  <span>{noteRecipients.length ? `Notifying ${noteRecipients.length}` : 'Notify teammates'}</span>
+                  <span class="dn-recipients__chev" class:open={noteRecipientPickerOpen} aria-hidden="true">▾</span>
+                </button>
+              </div>
+
+              {#if noteRecipients.length}
+                <div class="dn-chips">
+                  {#each noteRecipients as email (email)}
+                    <span class="dn-chip" title={email}>
+                      <span class="dn-chip__avatar">{noteInitials(noteRecipientName(email))}</span>
+                      <span class="dn-chip__name">{noteRecipientName(email)}</span>
+                      <button type="button" class="dn-chip__x" on:click={() => removeNoteRecipient(email)} aria-label="Remove recipient">✕</button>
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+
+              {#if noteRecipientPickerOpen}
+                <div class="dn-menu">
+                  {#if noteTeammates.length === 0}
+                    <div class="dn-menu__empty">No teammates found in Admin.</div>
+                  {:else}
+                    {#each noteTeammates as c (c.email)}
+                      <button
+                        type="button"
+                        class="dn-opt"
+                        class:selected={noteRecipients.includes(c.email)}
+                        on:click={() => toggleNoteRecipient(c.email)}
+                      >
+                        <span class="dn-opt__avatar">{noteInitials(c.name)}</span>
+                        <span class="dn-opt__body">
+                          <span class="dn-opt__name">{c.name}</span>
+                          <span class="dn-opt__email">{c.email}</span>
+                        </span>
+                        <span class="dn-opt__check">{noteRecipients.includes(c.email) ? '✓' : ''}</span>
+                      </button>
+                    {/each}
+                  {/if}
+                </div>
+              {/if}
+            </div>
+
             <button type="submit" class="detail-notes__btn" disabled={noteLoading || !newNote.trim()}>
-              {noteLoading ? 'Adding…' : 'Add Note'}
+              {noteLoading ? 'Adding…' : (noteRecipients.length ? `Add & notify ${noteRecipients.length}` : 'Add Note')}
             </button>
           </form>
           <div class="detail-notes__list">
@@ -1570,10 +1662,21 @@
             {#each ($selectedClient.agentNotes || []).slice().reverse() as note}
               <div class="detail-note">
                 <div class="detail-note__meta">
-                  <span class="detail-note__author">👤 {note.author?.split('@')[0]}</span>
+                  <span class="detail-note__author">
+                    <span class="detail-note__avatar">{noteInitials(note.author?.split('@')[0] || '')}</span>
+                    {note.author?.split('@')[0]}
+                  </span>
                   <span class="detail-note__time">{timeAgo(note.createdAt)}</span>
                 </div>
                 <div class="detail-note__text">{note.text}</div>
+                {#if note.recipients && note.recipients.length}
+                  <div class="detail-note__to">
+                    <span class="detail-note__to-label">Sent to</span>
+                    {#each note.recipients as r (r)}
+                      <span class="detail-note__to-chip" title={r}>{noteRecipientName(r)}</span>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {/each}
             
