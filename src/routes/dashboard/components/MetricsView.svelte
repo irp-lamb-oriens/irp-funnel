@@ -383,7 +383,57 @@
     font-weight: 300;
     user-select: none;
   }
+
+  /* ── Stage Satisfaction ────────────────────────────────────────────── */
+  .metrics-subtle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 16px;
+    max-width: 680px;
+  }
+  .rating-star { color: #f59e0b; margin-left: 2px; }
+  .stage-ratings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .stage-rating-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) 1fr minmax(96px, 120px);
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .stage-rating-label {
+    font-weight: 500;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stage-rating-icon { margin-right: 6px; }
+  .stage-rating-bar-wrap {
+    background: #f1f5f9;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .stage-rating-bar {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+  }
+  .stage-rating-score {
+    text-align: right;
+    color: #1e293b;
+    white-space: nowrap;
+  }
+  .stage-rating-count { color: #94a3b8; font-size: 12px; margin-left: 2px; }
+  .stage-rating-empty { color: #cbd5e1; font-style: italic; font-size: 12px; }
 </style>
+
 
 <div class="metrics-view">
   {#if $metrics}
@@ -493,7 +543,71 @@
       <div class="metric-total">Total Clients: <strong>{$metrics.pipeline.total}</strong></div>
     </div>
 
+    <!-- Stage Satisfaction (client scoring per journey stage) -->
+    {#if $metrics.stageRatings}
+      <div class="metrics-section">
+        <h2>Stage Satisfaction</h2>
+        <p class="metrics-subtle">
+          Average client scoring per journey stage, updated incrementally as clients rate each step
+          on their status page (running sum ÷ count — no full recompute).
+        </p>
+
+        <div class="metrics-grid metrics-grid--small">
+          <div class="metric-card" style="border-left: 4px solid #f59e0b">
+            <div class="metric-card__value">
+              {$metrics.stageRatings.globalAverage ? $metrics.stageRatings.globalAverage.toFixed(2) : '—'}
+              <span class="rating-star">★</span>
+            </div>
+            <div class="metric-card__label">Overall Journey Avg</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #16a34a">
+            <div class="metric-card__value">
+              {$metrics.stageRatings.overall.average ? $metrics.stageRatings.overall.average.toFixed(2) : '—'}
+              <span class="rating-star">★</span>
+            </div>
+            <div class="metric-card__label">Final Review ({$metrics.stageRatings.overall.count})</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card__value">{$metrics.stageRatings.totalRatings}</div>
+            <div class="metric-card__label">Total Ratings</div>
+          </div>
+        </div>
+
+        <div class="stage-ratings">
+          {#each $metrics.stageRatings.perStage as row}
+            <div class="stage-rating-row">
+              <div class="stage-rating-label">
+                <span class="stage-rating-icon">{STAGE_ICONS[row.stage] ?? '•'}</span>
+                {row.label}
+              </div>
+              <div class="stage-rating-bar-wrap">
+                <div
+                  class="stage-rating-bar"
+                  style="width: {row.count > 0 ? (row.average / 5) * 100 : 0}%; background: {STAGE_COLORS[row.stage] ?? '#02b5bb'}"
+                ></div>
+              </div>
+              <div class="stage-rating-score">
+                {#if row.count > 0}
+                  <strong>{row.average.toFixed(2)}</strong><span class="rating-star">★</span>
+                  <span class="stage-rating-count">({row.count})</span>
+                {:else}
+                  <span class="stage-rating-empty">not yet rated</span>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        {#if $metrics.stageRatings.updatedAt}
+          <div class="metric-total">
+            Last rating: <strong>{new Date($metrics.stageRatings.updatedAt).toLocaleString()}</strong>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     <!-- Outcomes -->
+
     <div class="metrics-section">
       <h2>Call Outcomes</h2>
       <div class="metrics-grid metrics-grid--small">

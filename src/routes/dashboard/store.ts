@@ -224,7 +224,30 @@ export interface Metrics {
   sourceBreakdown: Record<string, number>;
   countryBreakdown: Record<string, number>;
   channelBreakdown: Record<string, number>;
+  // Average client satisfaction scoring per journey stage. Computed on the
+  // server from a single pre-aggregated counters doc (running sum/count/avg),
+  // so this never requires scanning every consultation.
+  stageRatings?: StageRatingsMetric;
 }
+
+/** One journey stage's running satisfaction score. */
+export interface StageRatingBucket {
+  stage: string;
+  label: string;
+  average: number; // sum / count, 0 when unrated
+  count: number;   // number of ratings received
+  sum: number;     // running sum of all ratings
+}
+
+/** Aggregate stage-satisfaction block returned by /api/dashboard/metrics. */
+export interface StageRatingsMetric {
+  perStage: StageRatingBucket[];
+  overall: { average: number; count: number };
+  globalAverage: number; // blended average across all per-stage ratings
+  totalRatings: number;
+  updatedAt: string | null;
+}
+
 
 export const STAGE_LABELS: Record<string, string> = {
   // Sales
