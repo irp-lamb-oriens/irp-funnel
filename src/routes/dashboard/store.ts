@@ -795,6 +795,48 @@ export const HIDDEN_STAGES = new Set<string>([
   'private_feedback_b',
   'private_feedback_c',
 ]);
+
+// ─── Centralized, DB-backed stage configuration ──────────────────────────────
+//
+// The maps above (STAGE_LABELS / ICONS / COLORS / DESCRIPTIONS / SLA_DAYS +
+// HIDDEN_STAGES) are now just the FIRST-PAINT fallback. Once `loadStageConfig()`
+// resolves from `GET /api/dashboard/stage-config`, `applyStageConfig()` rewrites
+// those exported objects in place (so every existing `STAGE_LABELS[stage]` reader
+// picks up operator edits with zero component changes) and publishes the ordered
+// board columns via `stageOrderStore` (which `clientsByStage` derives from).
+export interface StageConfigRow {
+  id: string;
+  label: string;
+  order: number;
+  description: string;
+  icon: string;
+  color: string;
+  slaDays: number | null;
+  phase: string;
+  notifyGroup: 'sales' | 'pricing' | 'ops';
+  /** When true the client status page hides this stage (team board unaffected). */
+  hiddenFromClient: boolean;
+  clientLabel?: string;
+  /** Inactive stages are kept for history but not shown on the team board. */
+  active: boolean;
+  isSeed?: boolean;
+  updatedBy?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+/** The full ordered stage config as last loaded from the server. */
+export const stageConfig = writable<StageConfigRow[]>([]);
+
+/**
+ * Ordered ids of the ACTIVE stages that make up the Kanban columns. Seeded from
+ * the hardcoded maps for first paint, then replaced by the DB config. Kept as a
+ * store so `clientsByStage` re-derives (and the board re-renders) the instant
+ * the config loads or is edited.
+ */
+export const stageOrderStore = writable<string[]>(
+  Object.keys(STAGE_LABELS).filter((s) => !HIDDEN_STAGES.has(s)),
+);
 export const detailPanelOpen = writable<boolean>(false);
 
 /**
@@ -941,8 +983,14 @@ export const filteredClients = derived([clients, searchQuery, filters], ([$clien
 });
 
 // ─── Derived: clients grouped by stage ──────────────────────────────────────
-export const clientsByStage = derived(filteredClients, ($filtered) => {
-  const stages = Object.keys(STAGE_LABELS).filter((s) => !HIDDEN_STAGES.has(s));
+// Derives from BOTH the filtered clients AND the reactive `stageOrderStore` so
+// the board re-renders (with the new column order/set) the instant the DB stage
+// config loads or an operator edits it. Falls back to the hardcoded map order
+// for first paint before the config resolves.
+export const clientsByStage = derived([filteredClients, stageOrderStore], ([$filtered, $order]) => {
+  const stages = ($order && $order.length)
+    ? $order
+    : Object.keys(STAGE_LABELS).filter((s) => !HIDDEN_STAGES.has(s));
   const grouped: Record<string, Client[]> = {};
   for (const s of stages) grouped[s] = [];
 
@@ -1111,6 +1159,134 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
 
 
 
+// ─── Centralized stage configuration (DB-backed) API ─────────────────────────
+
+/**
+ * Rewrite the in-place stage maps (STAGE_LABELS / ICONS / COLORS / DESCRIPTIONS
+ * / SLA_DAYS + HIDDEN_STAGES) from a fetched config so every existing consumer
+ * — `STAGE_LABELS[stage]`, the SLA helper, history labels — picks up operator
+ * edits with zero component changes. The TEAM board shows ALL active stages;
+ * inactive stages are recorded in HIDDEN_STAGES only so their label still
+ * resolves for historic data. Publishes the ordered active columns via
+ * `stageOrderStore` so `clientsByStage` re-derives and the board re-renders.
+ */
+function applyStageConfig(defs: StageConfigRow[]): void {
+  if (!Array.isArray(defs) || defs.length === 0) return;
+  const ordered = [...defs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  for (const k of Object.keys(STAGE_LABELS)) delete STAGE_LABELS[k];
+  for (const k of Object.keys(STAGE_ICONS)) delete STAGE_ICONS[k];
+  for (const k of Object.keys(STAGE_COLORS)) delete STAGE_COLORS[k];
+  for (const k of Object.keys(STAGE_DESCRIPTIONS)) delete STAGE_DESCRIPTIONS[k];
+  for (const k of Object.keys(STAGE_SLA_DAYS)) delete STAGE_SLA_DAYS[k];
+  HIDDEN_STAGES.clear();
+
+  for (const d of ordered) {
+    STAGE_LABELS[d.id] = d.label || d.id;
+    STAGE_ICONS[d.id] = d.icon || '📌';
+    STAGE_COLORS[d.id] = d.color || '#64748b';
+    STAGE_DESCRIPTIONS[d.id] = d.description || '';
+    if (typeof d.slaDays === 'number') STAGE_SLA_DAYS[d.id] = d.slaDays;
+    if (d.active === false) HIDDEN_STAGES.add(d.id);
+  }
+
+  stageConfig.set(ordered);
+  stageOrderStore.set(ordered.filter((d) => d.active !== false).map((d) => d.id));
+}
+
+/**
+ * Fetch the centralized stage config and hydrate the in-memory maps + stores.
+ * Non-blocking + non-fatal: on any error the hardcoded defaults stay in place
+ * so the board never blocks on first paint.
+ */
+export async function loadStageConfig(): Promise<StageConfigRow[]> {
+  try {
+    const data = await apiFetch('/api/dashboard/stage-config');
+    const stages = (data?.stages ?? []) as StageConfigRow[];
+    applyStageConfig(stages);
+    return stages;
+  } catch {
+    return [];
+  }
+}
+
+/** Raw fetch of the stage config (no side effects) — for the config editor UI. */
+export async function fetchStages(): Promise<StageConfigRow[]> {
+  const data = await apiFetch('/api/dashboard/stage-config');
+  return (data?.stages ?? []) as StageConfigRow[];
+}
+
+/** Create a new stage. Optionally position it right after `insertAfterId`. */
+export async function createStage(
+  payload: Partial<StageConfigRow> & { label: string; insertAfterId?: string },
+): Promise<{ stage: StageConfigRow | null; stages: StageConfigRow[] }> {
+  const data = await apiFetch('/api/dashboard/stage-config', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  applyStageConfig(data?.stages ?? []);
+  return { stage: (data?.stage ?? null) as StageConfigRow | null, stages: (data?.stages ?? []) as StageConfigRow[] };
+}
+
+/** Edit / rename a stage (any subset of fields). */
+export async function updateStage(id: string, updates: Partial<StageConfigRow>): Promise<StageConfigRow> {
+  const data = await apiFetch(`/api/dashboard/stage-config/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  await loadStageConfig();
+  return data?.stage as StageConfigRow;
+}
+
+/** Persist a new column order (full ordered list of stage ids). */
+export async function reorderStages(orderedIds: string[]): Promise<StageConfigRow[]> {
+  const data = await apiFetch('/api/dashboard/stage-config/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ orderedIds }),
+  });
+  applyStageConfig(data?.stages ?? []);
+  return (data?.stages ?? []) as StageConfigRow[];
+}
+
+/** Count clients currently in a stage + its previous/next neighbours. */
+export async function countStageClients(
+  id: string,
+): Promise<{ count: number; previousStageId: string | null; nextStageId: string | null }> {
+  const data = await apiFetch(`/api/dashboard/stage-config/${encodeURIComponent(id)}/clients/count`);
+  return {
+    count: data?.count ?? 0,
+    previousStageId: data?.previousStageId ?? null,
+    nextStageId: data?.nextStageId ?? null,
+  };
+}
+
+/** Migrate ALL clients in a column to another column (`toStage` may be an id). */
+export async function migrateStageClients(
+  id: string,
+  toStage: string,
+): Promise<{ migrated: number; failed: number; total: number }> {
+  const data = await apiFetch(`/api/dashboard/stage-config/${encodeURIComponent(id)}/migrate-clients`, {
+    method: 'POST',
+    body: JSON.stringify({ toStage }),
+  });
+  return { migrated: data?.migrated ?? 0, failed: data?.failed ?? 0, total: data?.total ?? 0 };
+}
+
+/**
+ * Delete a stage. When it still has clients, `migrateTo` MUST be supplied
+ * (a stage id, or the tokens "__previous__" / "__next__"); the server migrates
+ * every client first, then deletes. The caller should have already resolved the
+ * count via `countStageClients` and chosen a destination.
+ */
+export async function deleteStage(id: string, migrateTo?: string): Promise<any> {
+  const qs = migrateTo ? `?migrateTo=${encodeURIComponent(migrateTo)}` : '';
+  const data = await apiFetch(`/api/dashboard/stage-config/${encodeURIComponent(id)}${qs}`, {
+    method: 'DELETE',
+  });
+  await loadStageConfig();
+  return data;
+}
+
 // ─── Auth actions ───────────────────────────────────────────────────────────
 export async function requestOTP(email: string): Promise<string> {
   const data = await apiFetch('/api/dashboard/auth/request-otp', {
@@ -1272,6 +1448,11 @@ export async function fetchClients(): Promise<void> {
   loading.set(true);
   clientsLoading.set(true);
   error.set(null);
+
+  // Refresh the centralized stage config alongside clients so the board columns
+  // reflect any operator edits. Non-blocking: never delays or fails the client
+  // load (falls back to the hardcoded stage maps on error).
+  loadStageConfig().catch(() => {/* non-fatal */});
 
   // attempt 0 is immediate; subsequent attempts wait these many ms.
   const RETRY_DELAYS = [600, 1200, 2400];

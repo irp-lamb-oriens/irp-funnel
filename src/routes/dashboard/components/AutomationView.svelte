@@ -12,11 +12,19 @@
     saveAutomationTemplate,
     deleteAutomationTemplate,
     previewAutomationTemplate,
+    fetchStages,
+    createStage,
+    updateStage,
+    reorderStages,
+    deleteStage,
+    countStageClients,
+    migrateStageClients,
     type AutomationMeta,
     type StageEmailRule,
     type EmailTemplateRow,
     type RuleCondition,
     type RuleMode,
+    type StageConfigRow,
   } from '../store.ts';
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -25,8 +33,36 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'rules' | 'templates' = 'rules';
+  let tab: 'rules' | 'templates' | 'stages' = 'rules';
   let busyId = ''; // id of the row currently saving (disables its controls)
+
+  // ── Stage configuration state ───────────────────────────────────────────
+  let stages: StageConfigRow[] = [];
+  let stageBusyId = '';           // id of the stage row currently mutating
+  let stageError = '';
+  // Add-stage draft
+  let newStageLabel = '';
+  let newStageInsertAfter = '';   // '' = append at end
+  let addingStage = false;
+  // Delete-with-migration modal
+  let deleteModalStage: StageConfigRow | null = null;
+  let deleteClientCount = 0;
+  let deletePrevId: string | null = null;
+  let deleteNextId: string | null = null;
+  let deleteMigrateTo = '';       // '' until operator picks a destination
+  let deleteBusy = false;
+  let deleteError = '';
+  // Standalone "migrate all clients" modal
+  let migrateModalStage: StageConfigRow | null = null;
+  let migrateClientCount = 0;
+  let migrateTargetId = '';
+  let migrateBusy = false;
+  let migrateError = '';
+  let migrateResult = '';
+
+  /** Active stages only (the ones shown as board columns). */
+  $: activeStages = stages.filter((s) => s.active !== false).sort((a, b) => a.order - b.order);
+
 
   // New-rule draft
   let draft = {
@@ -61,11 +97,16 @@
     loading = true;
     error = '';
     try {
-      [meta, rules, templates] = await Promise.all([
+      const [m, r, t, s] = await Promise.all([
         fetchAutomationMeta(),
         fetchAutomationRules(),
         fetchAutomationTemplates(),
+        fetchStages().catch(() => [] as StageConfigRow[]),
       ]);
+      meta = m;
+      rules = r;
+      templates = t;
+      stages = s;
       if (meta.stages.length) draft.triggerStage = meta.stages[0];
       if (meta.emailTypes.length) draft.emailType = meta.emailTypes[0].value;
     } catch (e: any) {
@@ -76,6 +117,148 @@
   }
 
   onMount(loadAll);
+
+  // ── Stage configuration actions ──────────────────────────────────────────
+  async function reloadStages() {
+    try {
+      stages = await fetchStages();
+    } catch (e: any) {
+      stageError = e?.message ?? 'Failed to load stages.';
+    }
+  }
+
+  /** Move a stage one slot earlier/later among the ACTIVE columns, then persist. */
+  async function moveStage(stage: StageConfigRow, dir: -1 | 1) {
+    const ordered = activeStages.map((s) => s.id);
+    const idx = ordered.indexOf(stage.id);
+    const swap = idx + dir;
+    if (idx < 0 || swap < 0 || swap >= ordered.length) return;
+    [ordered[idx], ordered[swap]] = [ordered[swap], ordered[idx]];
+    stageBusyId = stage.id;
+    stageError = '';
+    try {
+      stages = await reorderStages(ordered);
+    } catch (e: any) {
+      stageError = e?.message ?? 'Failed to reorder stages.';
+    } finally {
+      stageBusyId = '';
+    }
+  }
+
+  /** Persist an inline edit to a single stage field. */
+  async function patchStage(stage: StageConfigRow, updates: Partial<StageConfigRow>) {
+    stageBusyId = stage.id;
+    stageError = '';
+    try {
+      await updateStage(stage.id, updates);
+      await reloadStages();
+    } catch (e: any) {
+      stageError = e?.message ?? 'Failed to update stage.';
+    } finally {
+      stageBusyId = '';
+    }
+  }
+
+  async function addStage() {
+    stageError = '';
+    const label = newStageLabel.trim();
+    if (!label) { stageError = 'Enter a name for the new stage.'; return; }
+    addingStage = true;
+    try {
+      const res = await createStage({
+        label,
+        ...(newStageInsertAfter ? { insertAfterId: newStageInsertAfter } : {}),
+      });
+      stages = res.stages;
+      newStageLabel = '';
+      newStageInsertAfter = '';
+    } catch (e: any) {
+      stageError = e?.message ?? 'Failed to add stage.';
+    } finally {
+      addingStage = false;
+    }
+  }
+
+  // ── Delete-with-migration ─────────────────────────────────────────────────
+  async function openDeleteModal(stage: StageConfigRow) {
+    deleteModalStage = stage;
+    deleteMigrateTo = '';
+    deleteError = '';
+    deleteClientCount = 0;
+    deletePrevId = null;
+    deleteNextId = null;
+    try {
+      const info = await countStageClients(stage.id);
+      deleteClientCount = info.count;
+      deletePrevId = info.previousStageId;
+      deleteNextId = info.nextStageId;
+    } catch (e: any) {
+      deleteError = e?.message ?? 'Could not count clients in this column.';
+    }
+  }
+
+  function closeDeleteModal() {
+    deleteModalStage = null;
+    deleteBusy = false;
+  }
+
+  async function confirmDelete() {
+    if (!deleteModalStage) return;
+    // When clients exist, a destination MUST be chosen first.
+    if (deleteClientCount > 0 && !deleteMigrateTo) {
+      deleteError = 'Choose where to move the clients before deleting.';
+      return;
+    }
+    deleteBusy = true;
+    deleteError = '';
+    try {
+      await deleteStage(deleteModalStage.id, deleteClientCount > 0 ? deleteMigrateTo : undefined);
+      await reloadStages();
+      closeDeleteModal();
+    } catch (e: any) {
+      deleteError = e?.message ?? 'Failed to delete stage.';
+      deleteBusy = false;
+    }
+  }
+
+  // ── Standalone "migrate all clients" ───────────────────────────────────────
+  async function openMigrateModal(stage: StageConfigRow) {
+    migrateModalStage = stage;
+    migrateTargetId = '';
+    migrateError = '';
+    migrateResult = '';
+    migrateClientCount = 0;
+    try {
+      const info = await countStageClients(stage.id);
+      migrateClientCount = info.count;
+    } catch (e: any) {
+      migrateError = e?.message ?? 'Could not count clients in this column.';
+    }
+  }
+
+  function closeMigrateModal() {
+    migrateModalStage = null;
+    migrateBusy = false;
+  }
+
+  async function confirmMigrate() {
+    if (!migrateModalStage || !migrateTargetId) {
+      migrateError = 'Pick a destination column.';
+      return;
+    }
+    migrateBusy = true;
+    migrateError = '';
+    try {
+      const res = await migrateStageClients(migrateModalStage.id, migrateTargetId);
+      migrateResult = `Moved ${res.migrated} of ${res.total} clients.` + (res.failed ? ` (${res.failed} failed)` : '');
+      await reloadStages();
+    } catch (e: any) {
+      migrateError = e?.message ?? 'Migration failed.';
+    } finally {
+      migrateBusy = false;
+    }
+  }
+
 
   // ── Rule actions ─────────────────────────────────────────────────────────
   async function toggleRule(rule: StageEmailRule) {
@@ -279,6 +462,9 @@
     <button class="av-tab" class:av-tab--active={tab === 'templates'} on:click={() => (tab = 'templates')}>
       ✉️ Email templates
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'stages'} on:click={() => (tab = 'stages')}>
+      🗂️ Stage configuration
+    </button>
   </div>
 
   {#if loading}
@@ -410,7 +596,7 @@
         </section>
       {/each}
     {/if}
-  {:else}
+  {:else if tab === 'templates'}
     <!-- ── Templates ─────────────────────────────────────────────────── -->
     {#if templates.length === 0}
       <div class="av-empty">No email templates found.</div>
@@ -465,8 +651,188 @@
         </div>
       </section>
     {/if}
+  {:else if tab === 'stages'}
+    <!-- ── Stage configuration ───────────────────────────────────────── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      Reorder, rename, add or delete pipeline columns. Everyone sees every active
+      column on the board — to remove one you must first move its clients to
+      another column. Toggle "Client-visible" to control whether a stage appears
+      on the client status page.
+    </p>
+
+    {#if stageError}<div class="av-msg av-msg--error">{stageError}</div>{/if}
+
+    <!-- Add a stage -->
+    <section class="av-card av-add">
+      <h3 class="av-card-title">Add a stage</h3>
+      <div class="av-add-grid av-add-grid--stage">
+        <label class="av-field">
+          <span>Name</span>
+          <input type="text" placeholder="e.g. Handover to Ops" bind:value={newStageLabel} />
+        </label>
+        <label class="av-field">
+          <span>Insert after</span>
+          <select bind:value={newStageInsertAfter}>
+            <option value="">— End of pipeline —</option>
+            {#each activeStages as s}
+              <option value={s.id}>{s.label}</option>
+            {/each}
+          </select>
+        </label>
+        <button class="save-btn" on:click={addStage} disabled={addingStage}>
+          {addingStage ? 'Adding…' : '+ Add stage'}
+        </button>
+      </div>
+    </section>
+
+    <section class="av-card">
+      <div class="av-table-wrap">
+        <table class="av-table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Stage</th>
+              <th>SLA (days)</th>
+              <th title="Shown on the client status page">Client-visible</th>
+              <th>Clients</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each activeStages as stage, i (stage.id)}
+              <tr>
+                <td class="av-order-cell">
+                  <button class="av-move" on:click={() => moveStage(stage, -1)} disabled={i === 0 || stageBusyId === stage.id} title="Move up">▲</button>
+                  <button class="av-move" on:click={() => moveStage(stage, 1)} disabled={i === activeStages.length - 1 || stageBusyId === stage.id} title="Move down">▼</button>
+                </td>
+                <td class="av-email-cell">
+                  <span class="av-stage-emoji">{stage.icon || '📌'}</span>
+                  <input
+                    class="av-stage-name"
+                    type="text"
+                    value={stage.label}
+                    on:change={(e) => patchStage(stage, { label: e.currentTarget.value })}
+                    disabled={stageBusyId === stage.id}
+                  />
+                  <div class="av-type">{stage.id}</div>
+                </td>
+                <td class="av-delay-cell">
+                  <input
+                    class="av-delay"
+                    type="number"
+                    min="0"
+                    value={stage.slaDays ?? ''}
+                    placeholder="—"
+                    on:change={(e) => patchStage(stage, { slaDays: e.currentTarget.value === '' ? null : Number(e.currentTarget.value) })}
+                    disabled={stageBusyId === stage.id}
+                  />
+                </td>
+                <td>
+                  <button
+                    class="av-switch"
+                    class:av-switch--on={!stage.hiddenFromClient}
+                    on:click={() => patchStage(stage, { hiddenFromClient: !stage.hiddenFromClient })}
+                    disabled={stageBusyId === stage.id}
+                    aria-label={stage.hiddenFromClient ? 'Hidden from client' : 'Visible to client'}
+                    title={stage.hiddenFromClient ? 'Hidden from the client status page' : 'Visible on the client status page'}
+                  >
+                    <span class="av-switch__knob"></span>
+                  </button>
+                </td>
+                <td class="av-actions">
+                  <button class="av-link" on:click={() => openMigrateModal(stage)}>Migrate clients…</button>
+                </td>
+                <td>
+                  <button class="remove-btn" on:click={() => openDeleteModal(stage)} disabled={stageBusyId === stage.id} title="Delete stage">✕</button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </section>
   {/if}
 </div>
+
+<!-- ── Delete-with-migration modal ─────────────────────────────────────── -->
+{#if deleteModalStage}
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="av-modal-backdrop" on:click={closeDeleteModal} role="presentation">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="av-modal" on:click|stopPropagation role="dialog" aria-modal="true" tabindex="-1">
+      <header class="av-drawer__head">
+        <h3>Delete “{deleteModalStage.label}”</h3>
+        <button class="av-close" on:click={closeDeleteModal} aria-label="Close">✕</button>
+      </header>
+      <div class="av-modal__body">
+        {#if deleteClientCount > 0}
+          <p class="av-modal-note">
+            <strong>{deleteClientCount}</strong> client{deleteClientCount === 1 ? '' : 's'} are currently in this column.
+            They will NOT be deleted — choose where to move them first:
+          </p>
+          <label class="av-field">
+            <span>Move clients to</span>
+            <select bind:value={deleteMigrateTo}>
+              <option value="">— Select a destination —</option>
+              {#if deletePrevId}<option value="__previous__">◀ Previous column ({stageLabel(deletePrevId)})</option>{/if}
+              {#if deleteNextId}<option value="__next__">Next column ▶ ({stageLabel(deleteNextId)})</option>{/if}
+              <option disabled>──────────</option>
+              {#each activeStages.filter((s) => s.id !== deleteModalStage?.id) as s}
+                <option value={s.id}>{s.label}</option>
+              {/each}
+            </select>
+          </label>
+        {:else}
+          <p class="av-modal-note">This column has no clients. It can be deleted safely.</p>
+        {/if}
+        {#if deleteError}<div class="av-msg av-msg--error av-msg--sm">{deleteError}</div>{/if}
+      </div>
+      <footer class="av-drawer__foot">
+        <button class="reload-btn" on:click={closeDeleteModal}>Cancel</button>
+        <button class="remove-btn-wide" on:click={confirmDelete} disabled={deleteBusy}>
+          {deleteBusy ? 'Deleting…' : (deleteClientCount > 0 ? 'Migrate & delete' : 'Delete stage')}
+        </button>
+      </footer>
+    </div>
+  </div>
+{/if}
+
+<!-- ── Migrate-all-clients modal ───────────────────────────────────────── -->
+{#if migrateModalStage}
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="av-modal-backdrop" on:click={closeMigrateModal} role="presentation">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="av-modal" on:click|stopPropagation role="dialog" aria-modal="true" tabindex="-1">
+      <header class="av-drawer__head">
+        <h3>Move clients out of “{migrateModalStage.label}”</h3>
+        <button class="av-close" on:click={closeMigrateModal} aria-label="Close">✕</button>
+      </header>
+      <div class="av-modal__body">
+        <p class="av-modal-note">
+          <strong>{migrateClientCount}</strong> client{migrateClientCount === 1 ? '' : 's'} in this column.
+          Pick where to move them all:
+        </p>
+        <label class="av-field">
+          <span>Destination column</span>
+          <select bind:value={migrateTargetId}>
+            <option value="">— Select a destination —</option>
+            {#each activeStages.filter((s) => s.id !== migrateModalStage?.id) as s}
+              <option value={s.id}>{s.label}</option>
+            {/each}
+          </select>
+        </label>
+        {#if migrateResult}<div class="av-msg av-msg--sm" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">{migrateResult}</div>{/if}
+        {#if migrateError}<div class="av-msg av-msg--error av-msg--sm">{migrateError}</div>{/if}
+      </div>
+      <footer class="av-drawer__foot">
+        <button class="reload-btn" on:click={closeMigrateModal}>Close</button>
+        <button class="save-btn" on:click={confirmMigrate} disabled={migrateBusy || migrateClientCount === 0}>
+          {migrateBusy ? 'Moving…' : 'Move all clients'}
+        </button>
+      </footer>
+    </div>
+  </div>
+{/if}
 
 <!-- ── Template editor drawer ──────────────────────────────────────────── -->
 {#if editingType}
@@ -962,6 +1328,57 @@
     background: #fff;
   }
   .av-spin { color: var(--color-highlight-2, #02b5bb); }
+
+  /* ── Stage configuration extras ─────────────────────────────────────── */
+  .av-add-grid--stage { grid-template-columns: 2fr 2fr auto; }
+  .av-order-cell { white-space: nowrap; display: flex; gap: 0.25rem; }
+  .av-move {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 1px solid #e2e8f0; background: #f8fafc; color: #475569;
+    font-size: 0.6rem; cursor: pointer; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .av-move:hover:not(:disabled) { background: #e2e8f0; border-color: #cbd5e1; }
+  .av-move:disabled { opacity: 0.3; cursor: default; }
+  .av-stage-emoji { margin-right: 0.4rem; }
+  .av-stage-name {
+    width: 200px; max-width: 100%;
+    padding: 0.35rem 0.45rem; border: 1px solid #e2e8f0; border-radius: 7px;
+    font-size: 0.84rem; font-family: inherit; color: #0f172a; background: #fff;
+  }
+  .av-stage-name:focus {
+    outline: none; border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 2px rgba(2, 181, 187, 0.12);
+  }
+
+  /* ── Modals (delete-with-migration + migrate-all) ───────────────────── */
+  .av-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1100;
+    display: flex; align-items: center; justify-content: center;
+    animation: av-fade 0.18s ease;
+  }
+  .av-modal {
+    width: min(460px, 94vw);
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+    display: flex; flex-direction: column;
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    animation: av-fade 0.18s ease;
+  }
+  .av-modal__body { padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .av-modal-note { margin: 0; font-size: 0.86rem; color: #334155; line-height: 1.5; }
+  .remove-btn-wide {
+    padding: 0.55rem 1.2rem; border-radius: 10px;
+    border: 1px solid rgba(198, 36, 38, 0.25);
+    background: #c62426; color: #fff;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: filter 0.14s, transform 0.14s;
+  }
+  .remove-btn-wide:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+  .remove-btn-wide:disabled { opacity: 0.55; cursor: wait; }
 
   /* ── Responsive ─────────────────────────────────────────────────────── */
   @media (max-width: 900px) {
