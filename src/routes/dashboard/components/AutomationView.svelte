@@ -589,6 +589,7 @@
     padding: 1.35rem 1.5rem;
     margin-bottom: 1.1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
+    overflow: auto;
   }
   .av-card-title {
     margin: 0 0 0.9rem;
