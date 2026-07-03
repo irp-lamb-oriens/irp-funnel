@@ -312,3 +312,116 @@
     font-weight: 400;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Priority ranking control (Overview tab)
+   ───────────────────────────────────────────────────────────────────────────
+   Mirrors the Kanban card's ▲ "float-to-top" rank badge, surfaced here so an
+   operator can (re)prioritise a client from the detail panel. Writes go through
+   setClientRank() (optimistic + persisted). Teal-accented to match the board.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.detail-priority {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $r-md;
+
+  &__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    border-radius: 999px;
+    box-shadow: 0 1px 6px rgba(2, 181, 187, 0.35);
+    font-variant-numeric: tabular-nums;
+
+    &--none {
+      color: $text-dim;
+      background: $surface-3;
+      box-shadow: none;
+    }
+  }
+
+  &__hint {
+    font-size: 11.5px;
+    color: $text-dim;
+
+    strong { color: $text; font-weight: 700; }
+  }
+
+  &__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__exact {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__input {
+    width: 62px;
+    padding: 5px 8px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: $text;
+    background: $surface-3;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+
+    &:focus { outline: none; border-color: $accent; }
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: $text;
+    background: $surface-3;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    cursor: pointer;
+    transition: background $t-fast, color $t-fast, border-color $t-fast, transform $t-fast;
+
+    &:hover:not(:disabled) {
+      background: $accent;
+      color: #fff;
+      border-color: $accent;
+      transform: translateY(-1px);
+    }
+    &:active:not(:disabled) { transform: translateY(0); }
+    &:disabled { opacity: 0.55; cursor: wait; }
+
+    &--top {
+      color: #fff;
+      background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+      border-color: rgba(2, 181, 187, 0.5);
+
+      &:hover:not(:disabled) { filter: brightness(1.06); background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%); }
+    }
+
+    &--clear:hover:not(:disabled) { background: #ef4444; border-color: #ef4444; }
+  }
+}
+

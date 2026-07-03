@@ -21,7 +21,10 @@
     sendPendingEmailNow,
     fetchCollaborators,
     fetchQuoteRequests,
+    setClientRank,
+    clients,
   } from '../store.ts';
+
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
   import MentionTextarea from './MentionTextarea.svelte';
@@ -132,6 +135,54 @@
   let insightsExtracting = false;
   let manualTranscriptText = '';
   let showAdvancedFields = false;
+
+  // ── Priority ranking (surface the Kanban "float-to-top" control here) ─────
+  // The same `rankIndex` that powers the ▲ badge on the board is editable from
+  // the Overview tab so an operator can (re)prioritise a client without hunting
+  // for its card. Higher rankIndex floats above un-ranked clients within the
+  // SAME stage; "Clear" returns it to natural recency order. All writes go
+  // through the shared `setClientRank` store helper (optimistic + persisted).
+  let rankSavingDetail = false;
+  let rankDraftDetail: number | null = null;
+
+  // Keep the "set exact" input in sync whenever a different client is opened.
+  $: rankDraftDetail = $selectedClient && typeof $selectedClient.rankIndex === 'number'
+    ? $selectedClient.rankIndex
+    : null;
+
+  /** Highest rank currently held by any client in the SAME stage (0 when none). */
+  function detailTopRankForStage(stage: string): number {
+    return $clients.reduce(
+      (m, c) => (c.stage === stage && typeof c.rankIndex === 'number' && c.rankIndex > m ? c.rankIndex : m),
+      0,
+    );
+  }
+
+  async function applyRankDetail(value: number | null) {
+    if (!$selectedClient || rankSavingDetail) return;
+    rankSavingDetail = true;
+    try {
+      await setClientRank($selectedClient.id, value);
+      toasts.success(value === null ? 'Priority cleared.' : `Priority set to #${value}.`);
+    } catch (err: any) {
+      toasts.error(`Couldn't update priority: ${err?.message ?? err}`);
+    } finally {
+      rankSavingDetail = false;
+    }
+  }
+
+  /** Float this client above every other in its stage (top rank + 1). */
+  function detailSendToTop() {
+    if (!$selectedClient) return;
+    applyRankDetail(detailTopRankForStage($selectedClient.stage) + 1);
+  }
+
+  /** Apply the exact number typed in the input (blank/invalid → clear). */
+  function detailSetExactRank() {
+    const v = rankDraftDetail;
+    applyRankDetail(typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : null);
+  }
+
 
   /**
    * Index of the **latest** consultations[] entry. The Overview fields edit
@@ -748,7 +799,65 @@
             {/if}
           {/if}
 
+          <!-- ── Priority ranking — the Kanban "float-to-top" control, here ──
+               Operators can (re)prioritise this client straight from Overview
+               instead of hunting for its card. A higher rank floats the card
+               above un-ranked clients in its column AND the list view; "Clear"
+               returns it to natural recency order. Backed by setClientRank(). -->
+          <div class="detail-field detail-field--full">
+            <span class="detail-field__label">Priority</span>
+            <div class="detail-priority">
+              <div class="detail-priority__status">
+                {#if typeof $selectedClient.rankIndex === "number"}
+                  <span class="detail-priority__badge">▲ Ranked #{$selectedClient.rankIndex}</span>
+                  <span class="detail-priority__hint">
+                    Floats above un-ranked clients in <strong>{STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}</strong>.
+                  </span>
+                {:else}
+                  <span class="detail-priority__badge detail-priority__badge--none">Normal</span>
+                  <span class="detail-priority__hint">Sorted by recency — rank it to float it to the top.</span>
+                {/if}
+              </div>
+              <div class="detail-priority__controls">
+                <button
+                  type="button"
+                  class="detail-priority__btn detail-priority__btn--top"
+                  disabled={rankSavingDetail}
+                  on:click={detailSendToTop}
+                  title="Float this client above every other in its column"
+                >⤒ Send to top</button>
+                <div class="detail-priority__exact">
+                  <input
+                    class="detail-priority__input"
+                    type="number"
+                    step="1"
+                    placeholder="#"
+                    bind:value={rankDraftDetail}
+                    disabled={rankSavingDetail}
+                    title="Set an exact rank (higher number = higher priority)"
+                  />
+                  <button
+                    type="button"
+                    class="detail-priority__btn"
+                    disabled={rankSavingDetail}
+                    on:click={detailSetExactRank}
+                  >Set</button>
+                </div>
+                {#if typeof $selectedClient.rankIndex === "number"}
+                  <button
+                    type="button"
+                    class="detail-priority__btn detail-priority__btn--clear"
+                    disabled={rankSavingDetail}
+                    on:click={() => applyRankDetail(null)}
+                    title="Remove the manual rank — back to natural order"
+                  >Clear</button>
+                {/if}
+              </div>
+            </div>
+          </div>
+
           <!-- Name + Surname — stored inside consultations[] like all other fields -->
+
           <div class="detail-field">
             <span class="detail-field__label">First Name</span>
             <EditableField
