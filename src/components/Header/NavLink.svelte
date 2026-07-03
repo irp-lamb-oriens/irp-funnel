@@ -109,8 +109,7 @@
     &:hover, &.active {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-      box-shadow: 
+            box-shadow: 
         0 10px 20px -5px rgba(0, 0, 0, 0.3),
         0 0 15px var(--glow-color);
 

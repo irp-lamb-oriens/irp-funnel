@@ -466,8 +466,7 @@
 	}
 
 	.portal-card__cta:hover {
-		transform: translateY(-2px);
-		filter: saturate(1.05);
+				filter: saturate(1.05);
 		box-shadow:
 			0 18px 34px -12px rgba(var(--color-highlight-2-rgb), 0.80),
 			0 0 0 1px rgba(var(--color-highlight-2-rgb), 0.55) inset;

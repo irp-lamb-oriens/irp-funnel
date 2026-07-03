@@ -974,8 +974,7 @@
           box-shadow:
             0 4px 16px rgba(0, 0, 0, 0.07),
             0 0 0 2px color-mix(in srgb, var(--k, #02b5bb) 12%, transparent);
-          transform: translateY(-2px);
-        }
+                  }
       }
 
       // ── PLAY STATE: ultra-smooth journey reveal when the section opens ──
@@ -1289,8 +1288,7 @@
 
     &:hover {
       filter: brightness(1.06);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(var(--cp-gold-rgb), 0.46);
+            box-shadow: 0 8px 28px rgba(var(--cp-gold-rgb), 0.46);
     }
 
     &:active {

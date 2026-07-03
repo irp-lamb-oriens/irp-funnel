@@ -1896,8 +1896,7 @@
   }
   :global(.cp-call-banner__join-btn:hover) {
     filter: brightness(1.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 24px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.5);
+        box-shadow: 0 4px 24px rgba(var(--color-highlight-2-rgb, 2, 182, 188), 0.5);
   }
   @media (max-width: 520px) {
     :global(.cp-call-banner__inner) {

@@ -891,8 +891,7 @@
   }
   .qv-accept-btn:hover:not(:disabled) {
     box-shadow: 0 8px 28px rgba(2,181,187,0.52);
-    transform: translateY(-2px);
-    filter: brightness(1.07);
+        filter: brightness(1.07);
   }
   .qv-accept-btn:active:not(:disabled) {
     transform: translateY(0);

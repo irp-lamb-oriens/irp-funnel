@@ -366,8 +366,7 @@ $break-md: 1024px;
 
     @media (hover: hover) and (pointer: fine) {
         &:hover {
-            transform: translateY(-2px);
-        }
+                    }
         &:hover::before {
             opacity: 1;
             transform: scale(1);

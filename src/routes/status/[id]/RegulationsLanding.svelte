@@ -271,8 +271,7 @@
         0 1px 3px rgba(0, 0, 0, 0.04),
         0 6px 20px rgba(0, 0, 0, 0.08),
         0 0 0 3px rgba(2, 181, 187, 0.06);
-      transform: translateY(-2px);
-
+      
       &::before {
         background: linear-gradient(180deg, #02b5bb 0%, rgba(2, 181, 187, 0.4) 100%);
       }

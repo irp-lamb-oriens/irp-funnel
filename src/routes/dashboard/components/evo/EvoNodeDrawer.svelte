@@ -313,8 +313,7 @@
 		transition: transform 0.2s ease;
 
 		&:hover {
-			transform: translateY(-2px);
-			background: rgba(2, 6, 23, 0.6);
+						background: rgba(2, 6, 23, 0.6);
 			border-color: rgba(255, 255, 255, 0.1);
 		}
 	}

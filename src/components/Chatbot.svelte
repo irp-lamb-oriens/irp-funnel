@@ -687,8 +687,7 @@
       box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 24px rgba(16, 185, 129, 0.45);
+                box-shadow: 0 6px 24px rgba(16, 185, 129, 0.45);
         filter: brightness(1.1);
       }
     }

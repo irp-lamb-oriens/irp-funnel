@@ -237,8 +237,7 @@
       box-shadow:
         0 4px 22px rgba(2,181,187,.38),
         0 2px 6px rgba(0,0,0,.1);
-      transform: translateY(-2px);
-      filter: brightness(1.06);
+            filter: brightness(1.06);
 
       &::before { transform: translateX(100%); }
     }
