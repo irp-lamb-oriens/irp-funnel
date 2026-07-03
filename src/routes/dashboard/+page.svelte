@@ -289,6 +289,7 @@
       case 'note_added': return '📝';
       case 'email_triggered': return '📧';
       case 'field_update': return '✏️';
+      case 'attendees_added': return '👥';
       default: return '•';
     }
   }
@@ -303,6 +304,10 @@
         return `Triggered email: ${entry.emailType}`;
       case 'field_update':
         return `Updated: ${(entry.fields || []).join(', ')}`;
+      case 'attendees_added': {
+        const list = Array.isArray(entry.addedAttendees) ? entry.addedAttendees : [];
+        return `Added attendee${list.length === 1 ? '' : 's'} to call${list.length ? `: ${list.join(', ')}` : ''}`;
+      }
       default:
         return entry.type;
     }

@@ -2157,6 +2157,35 @@ export async function rescheduleCall(
   });
 }
 
+/**
+ * Add attendee(s) to a client's EXISTING consultation call WITHOUT changing
+ * its time. The server PATCHes the live Google Calendar event so each new
+ * attendee receives an invite email, and records an `attendees_added`
+ * activityLog entry (actor/source/timestamp) that surfaces in the Journey,
+ * Activity and Admin feeds. Calls POST /api/dashboard/clients/:id/attendees.
+ *
+ * Returns the server response including which emails were genuinely added
+ * (`addedAttendees`) and `alreadyPresent` when everyone was already invited.
+ */
+export async function addAttendeesToCall(
+  clientId: string,
+  attendees: string[],
+): Promise<{
+  success: boolean;
+  addedAttendees: string[];
+  allAttendees?: string[];
+  alreadyPresent?: boolean;
+  hangoutLink?: string;
+  htmlLink?: string;
+  slot?: string | null;
+}> {
+  return apiFetch(`/api/dashboard/clients/${clientId}/attendees`, {
+    method: 'POST',
+    body: JSON.stringify({ attendees }),
+  });
+}
+
+
 export interface CreateClientPayload {
   /** Required. */
   email: string;

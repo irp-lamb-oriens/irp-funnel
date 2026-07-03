@@ -360,8 +360,10 @@
     action_executed:       '⚡',
     manual_intake:         '🆕',
     call_rescheduled:      '📅',
+    attendees_added:       '👥',
     client_created_by_staff: '👤',
     gemini_notes_received: '🤖',
+
     pending_action_resolved: '✅',
     email_suggested:       '💡',
   };
@@ -377,7 +379,7 @@
     if (type === 'email_triggered' || type === 'email_sent')  return 'email';
     if (type === 'note_added')                                 return 'note';
     if (type.startsWith('gemini') || type.startsWith('ai'))   return 'ai';
-    if (type === 'action_executed' || type === 'call_rescheduled' || type === 'pending_action_resolved') return 'action';
+    if (type === 'action_executed' || type === 'call_rescheduled' || type === 'attendees_added' || type === 'pending_action_resolved') return 'action';
     return 'default';
   }
 
@@ -404,6 +406,10 @@
         return 'Added client manually';
       case 'call_rescheduled':
         return `Rescheduled call → ${entry.newSlot ? new Date(entry.newSlot as string).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '?'}`;
+      case 'attendees_added': {
+        const list = Array.isArray((entry as any).addedAttendees) ? (entry as any).addedAttendees as string[] : [];
+        return `Added attendee${list.length === 1 ? '' : 's'} to call${list.length ? `: ${list.join(', ')}` : ''}`;
+      }
       case 'client_created_by_staff':
         return 'Created client record';
       case 'gemini_notes_received':

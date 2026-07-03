@@ -192,7 +192,24 @@ export function formatActivity(entry: ActivityEntry): FormattedActivity {
         undoable: false,
         raw: entry,
       };
+    case 'attendees_added': {
+      const list: string[] = Array.isArray(e.addedAttendees) ? e.addedAttendees : [];
+      const detail = list.length
+        ? (list.length <= 2 ? list.join(', ') : `${list.slice(0, 2).join(', ')} +${list.length - 2}`)
+        : '';
+      return {
+        who,
+        what: list.length === 1 ? 'added an attendee to the call' : 'added attendees to the call',
+        detail,
+        whenRelative,
+        whenExact,
+        icon: '👥',
+        undoable: false,
+        raw: entry,
+      };
+    }
     default:
+
       return {
         who,
         what: e.type ?? 'event',

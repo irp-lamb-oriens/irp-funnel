@@ -25,7 +25,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { rescheduleCall, createClientFromCrm } from '../store.ts';
+  import { rescheduleCall, createClientFromCrm, addAttendeesToCall } from '../store.ts';
   import { toasts } from '../toastStore.ts';
   import AvailabilityPicker from '../../../components/systems/inputs/AvailabilityPicker/AvailabilityPicker.svelte';
 
@@ -38,6 +38,10 @@
   let selectedSlot = '';
   let submitting = false;
   let successResult: any = null;
+  // True when a reschedule-mode submit only ADDED attendees (no time change).
+  // Drives the success copy so it reads "Invite Sent!" instead of "Rescheduled".
+  let attendeeOnly = false;
+
 
   // Create-mode form fields
   let email = '';
@@ -66,15 +70,7 @@
     extraAttendees = [...extraAttendees];
   }
 
-  // Validation
-  $: emailValid = email.includes('@') && email.includes('.');
-  $: canSubmit = !submitting && (
-    mode === 'reschedule'
-      ? !!selectedSlot
-      : emailValid
-  );
-
-  // Current slot label for reschedule mode
+  // Current slot for reschedule mode (source of truth for "did the time change?")
   $: currentSlot = client?.scheduling?.[0] ?? client?.lastCalendarEvent?.startTime ?? '';
   $: currentSlotLabel = currentSlot
     ? new Date(currentSlot).toLocaleString('en-US', {
@@ -83,18 +79,76 @@
       }) + ' (CR time)'
     : 'No call scheduled';
 
+  // ── Reschedule vs. add-attendee intent ─────────────────────────────────────
+  // The picker highlights the current slot on open but never fires onSelect for
+  // it, so we seed `selectedSlot = currentSlot` on mount. `slotChanged` is true
+  // only once the operator picks a genuinely different time (>60s away), which
+  // is what distinguishes a real reschedule from an attendee-only update.
+  $: slotChanged = (() => {
+    if (mode !== 'reschedule' || !selectedSlot) return false;
+    if (!currentSlot) return true; // no existing slot → any pick is a (re)schedule
+    const a = new Date(selectedSlot).getTime();
+    const b = new Date(currentSlot).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return selectedSlot !== currentSlot;
+    return Math.abs(a - b) > 60_000;
+  })();
+
+  // People already invited to this call (persisted extras on the latest
+  // consultation entry). Shown as read-only chips so staff don't re-add them.
+  $: alreadyInvited = (() => {
+    const cons = client?.rawDoc?.consultations;
+    if (!Array.isArray(cons) || cons.length === 0) return [] as string[];
+    const last = cons[cons.length - 1];
+    const extra = Array.isArray(last?.additionalAttendees) ? last.additionalAttendees : [];
+    return extra.filter((e: any) => typeof e === 'string' && e.includes('@')) as string[];
+  })();
+  $: alreadyInvitedSet = new Set(alreadyInvited.map((e) => e.toLowerCase()));
+  // Valid, de-duplicated new invitees the operator typed (excluding people
+  // already on the call).
+  $: newAttendeeEmails = extraAttendees
+    .map((e) => e.trim())
+    .filter((e) => e.includes('@'))
+    .filter((e) => !alreadyInvitedSet.has(e.toLowerCase()));
+  $: hasNewAttendees = newAttendeeEmails.length > 0;
+
+  // Validation — reschedule mode can submit EITHER a genuine time change OR an
+  // attendee-only addition; create mode still just needs a valid email.
+  $: emailValid = email.includes('@') && email.includes('.');
+  $: canSubmit = !submitting && (
+    mode === 'reschedule'
+      ? (slotChanged || hasNewAttendees)
+      : emailValid
+  );
+
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleSubmit() {
     if (!canSubmit) return;
     submitting = true;
     try {
       if (mode === 'reschedule' && client) {
-        const extras = extraAttendees.filter((e: string) => e.trim());
-        const result = await rescheduleCall(client.id, selectedSlot, extras.length ? extras : undefined);
-        successResult = result;
-        toasts.success('Call rescheduled! Google Meet link is ready.');
-        onSuccess(result);
+        if (slotChanged) {
+          // A genuine time change → full reschedule (also carries any new invitees).
+          attendeeOnly = false;
+          const extras = extraAttendees.map((e) => e.trim()).filter((e) => e.includes('@'));
+          const result = await rescheduleCall(client.id, selectedSlot, extras.length ? extras : undefined);
+          successResult = result;
+          toasts.success('Call rescheduled! Google Meet link is ready.');
+          onSuccess(result);
+        } else {
+          // Time unchanged → just add the new attendee(s) to the existing call.
+          attendeeOnly = true;
+          const result = await addAttendeesToCall(client.id, newAttendeeEmails);
+          successResult = result;
+          toasts.success(
+            result.alreadyPresent
+              ? 'Those attendees were already invited.'
+              : 'Invite sent to the new attendee(s)!',
+          );
+          onSuccess(result);
+        }
       } else {
+
         const extras = extraAttendees.filter((e: string) => e.trim()).map((e: string) => e.trim());
         const result = await createClientFromCrm({
           email: email.trim(),
@@ -127,6 +181,10 @@
   }
 
   onMount(() => {
+    // Seed the picker's selection with the existing slot so the operator can
+    // add an attendee (or just re-confirm) WITHOUT being forced to re-pick a
+    // time. `slotChanged` stays false until they choose a genuinely new slot.
+    if (mode === 'reschedule' && currentSlot) selectedSlot = currentSlot;
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
   });
@@ -145,7 +203,7 @@
         </h2>
         <p class="scm__subtitle">
           {#if mode === 'reschedule'}
-            {client?.displayName || client?.email || 'Client'} · pick a new time slot
+            {client?.displayName || client?.email || 'Client'} · change the time or add attendees
           {:else}
             Add a client manually from the CRM
           {/if}
@@ -159,7 +217,13 @@
       <div class="scm__success">
         <div class="scm__success-icon">✅</div>
         <h3 class="scm__success-title">
-          {mode === 'reschedule' ? 'Call Rescheduled!' : successResult.hangoutLink ? 'Client Created + Call Booked!' : 'Client Created!'}
+          {#if attendeeOnly}
+            {successResult.alreadyPresent ? 'Already Invited' : 'Invite Sent!'}
+          {:else if mode === 'reschedule'}
+            Call Rescheduled!
+          {:else}
+            {successResult.hangoutLink ? 'Client Created + Call Booked!' : 'Client Created!'}
+          {/if}
         </h3>
         {#if successResult.hangoutLink}
           <a class="scm__meet-link" href={successResult.hangoutLink} target="_blank" rel="noopener noreferrer">
@@ -241,9 +305,17 @@
             {#if mode === 'create'}
               <span class="scm__attendees-sub">— first is primary client lead</span>
             {:else}
-              <span class="scm__attendees-optional">(optional)</span>
+              <span class="scm__attendees-optional">— add someone to this call</span>
             {/if}
           </p>
+          <!-- Read-only chips: people already on the invite (reschedule mode) -->
+          {#if mode === 'reschedule' && alreadyInvited.length}
+            <div class="scm__invited">
+              {#each alreadyInvited as inv}
+                <span class="scm__invited-chip" title={inv}>✓ {inv}</span>
+              {/each}
+            </div>
+          {/if}
           {#if mode === 'create'}
             <div class="scm__attendee-row scm__attendee-row--primary">
               <span class="scm__attendee-star scm__attendee-star--fixed" title="Primary client lead">★</span>
@@ -275,7 +347,7 @@
         <!-- ── Availability picker ── -->
         <div class="scm__picker-wrap">
           <p class="scm__picker-label">
-            {mode === 'reschedule' ? 'New time slot' : 'Schedule a call (optional)'}
+            {mode === 'reschedule' ? 'Change time slot (optional)' : 'Schedule a call (optional)'}
           </p>
           <AvailabilityPicker
             theme="light"
@@ -298,9 +370,9 @@
           >
             {#if submitting}
               <span class="scm__spinner"></span>
-              {mode === 'reschedule' ? 'Rescheduling…' : 'Creating…'}
+              {mode === 'reschedule' ? (slotChanged ? 'Rescheduling…' : 'Sending invite…') : 'Creating…'}
             {:else if mode === 'reschedule'}
-              📅 Confirm Reschedule
+              {#if slotChanged}📅 Confirm Reschedule{:else}👥 Add Attendee & Send Invite{/if}
             {:else if selectedSlot}
               ➕ Create Client + Book Call
             {:else}
@@ -591,6 +663,25 @@
   }
   .scm__attendees-sub { font-weight: 400; color: #94a3b8; }
   .scm__attendees-optional { font-weight: 400; color: #94a3b8; font-style: italic; }
+  /* Read-only "already invited" chips */
+  .scm__invited { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 2px; }
+  .scm__invited-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    background: #f0fafa;
+    border: 1px solid rgba(2, 181, 187, 0.28);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #0f766e;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .scm__attendee-row {
     display: flex;
     align-items: center;

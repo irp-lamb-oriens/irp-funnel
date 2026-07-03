@@ -1340,6 +1340,35 @@
                   raw: e,
                 });
                 break;
+              case 'call_rescheduled':
+                out.push({
+                  ts,
+                  kind: 'call',
+                  icon: '📅',
+                  title: e.newSlot
+                    ? `Call rescheduled → ${new Date(e.newSlot).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+                    : 'Call rescheduled',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'ok',
+                  raw: e,
+                });
+                break;
+              case 'attendees_added': {
+                const added = Array.isArray(e.addedAttendees) ? e.addedAttendees : [];
+                out.push({
+                  ts,
+                  kind: 'attendees',
+                  icon: '👥',
+                  title: added.length > 1 ? 'Attendees added to call' : 'Attendee added to call',
+                  subtitle: added.length
+                    ? added.join(', ')
+                    : (e.actor ? `by ${e.actor}` : undefined),
+                  tone: 'ok',
+                  raw: e,
+                });
+                break;
+              }
+
               default:
                 out.push({
                   ts,
