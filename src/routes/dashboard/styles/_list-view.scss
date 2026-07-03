@@ -10,9 +10,19 @@
   align-items: flex-start;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  &::-webkit-scrollbar { height: 6px; }
-  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 3px; }
-  &::-webkit-scrollbar-track { background: transparent; }
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $surface-3;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 .board__column {
@@ -26,7 +36,10 @@
   max-height: calc(100dvh - 100px);
   scroll-snap-align: start;
   transition: border-color $t-fast;
-  &:hover { border-color: $border-hover; }
+
+  &:hover {
+    border-color: $border-hover;
+  }
 }
 
 .board__column-header {
@@ -42,7 +55,10 @@
   z-index: 1;
 }
 
-.board__column-icon { font-size: 16px; }
+.board__column-icon {
+  font-size: 16px;
+}
+
 .board__column-title {
   font-size: 12px;
   font-weight: 700;
@@ -51,6 +67,7 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
+
 .board__column-count {
   font-size: 11px;
   font-weight: 700;
@@ -69,12 +86,20 @@
   display: flex;
   flex-direction: column;
   gap: $sp-2;
-  &::-webkit-scrollbar { width: 3px; }
-  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 2px; }
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $surface-3;
+    border-radius: 2px;
+  }
 }
 
 .board__column-search {
   padding: $sp-2;
+
   input {
     width: 100%;
     padding: 6px 10px;
@@ -86,7 +111,11 @@
     outline: none;
     font-family: $font;
     transition: border-color $t-fast, box-shadow $t-fast;
-    &::placeholder { color: $text-dim; }
+
+    &::placeholder {
+      color: $text-dim;
+    }
+
     &:focus {
       border-color: $accent;
       box-shadow: 0 0 0 2px $accent-glow;
@@ -107,6 +136,7 @@
   cursor: pointer;
   font-family: $font;
   transition: background $t-fast, border-color $t-fast;
+
   &:hover {
     background: $accent-subtle;
     border-color: $accent;
@@ -130,12 +160,16 @@
   cursor: pointer;
   transition: all $t-fast;
   position: relative;
+
   &:hover {
     border-color: rgba($accent, 0.4);
     transform: translateY(-2px);
     box-shadow: $shadow-md, 0 0 0 1px rgba($accent, 0.1);
   }
-  &:active { transform: translateY(0); }
+
+  &:active {
+    transform: translateY(0);
+  }
 
   &__name {
     font-size: 13px;
@@ -243,30 +277,10 @@
     color: $text-muted;
     font-size: 10px;
     font-weight: 700;
-    font-style: normal; /* keep "?" upright even when parent is italic */
+    font-style: normal;
+    /* keep "?" upright even when parent is italic */
     line-height: 1;
     vertical-align: middle;
-    user-select: none;
-  }
-
-  /* ── Rank pill ────────────────────────────────────────────────────────
-     Mirrors the Kanban card's ▲ rank badge. Shown only when the client has
-     an explicit rankIndex; teal-accented so ranked rows stand out. */
-  &__rank {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    margin-right: 6px;
-    padding: 1px 6px;
-    border-radius: $r-full;
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
-    color: #fff;
-    font-size: 9px;
-    font-weight: 800;
-    font-style: normal;
-    line-height: 1.4;
-    vertical-align: middle;
-    font-variant-numeric: tabular-nums;
     user-select: none;
   }
 
@@ -280,13 +294,37 @@
   &--no-show {
     background: linear-gradient(to right, rgba(254, 226, 226, 0.4), transparent);
     border-left: 3px solid #ef4444;
-    
+
     &:hover {
       background: linear-gradient(to right, rgba(254, 226, 226, 0.7), rgba(254, 226, 226, 0.2));
     }
 
-    .list-row__name {
-      color: #7f1d1d;
+    .list-row {
+
+      /* ── Rank pill ────────────────────────────────────────────────────────
+      Mirrors the Kanban card's ▲ rank badge. Shown only when the client has
+      an explicit rankIndex; teal-accented so ranked rows stand out. */
+      &__rank {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        margin-right: 6px;
+        padding: 1px 6px;
+        border-radius: $r-full;
+        background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        font-style: normal;
+        line-height: 1.4;
+        vertical-align: middle;
+        font-variant-numeric: tabular-nums;
+        user-select: none;
+      }
+
+      &__name {
+        color: #7f1d1d;
+      }
     }
   }
 }
@@ -325,8 +363,16 @@
 .sk-line {
   height: 10px;
 
-  &--title { width: 70%; height: 12px; margin-bottom: 8px; }
-  &--route { width: 50%; margin-bottom: 12px; }
+  &--title {
+    width: 70%;
+    height: 12px;
+    margin-bottom: 8px;
+  }
+
+  &--route {
+    width: 50%;
+    margin-bottom: 12px;
+  }
 }
 
 .sk-meta {
@@ -338,12 +384,21 @@
   height: 16px;
   width: 46px;
 
-  &--sm { width: 30px; }
+  &--sm {
+    width: 30px;
+  }
 }
 
 @keyframes card-skeleton-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -351,12 +406,10 @@
     opacity: 1;
     animation: none;
   }
+
   .sk-line,
   .sk-pill {
     animation: none;
     background: $surface-3;
   }
 }
-
-
-

@@ -573,8 +573,6 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 .card__rank {
   position: absolute;
-  top: 6px;
-  left: 6px;
   z-index: 4;
   display: inline-flex;
   align-items: center;
@@ -593,7 +591,12 @@
   opacity: 0;                       // hidden until card hover (keeps cards clean)
   transition: opacity $t-fast, background $t-fast, color $t-fast, transform $t-fast;
 
-  .card:hover & { opacity: 0.55; }
+  top: -9px;
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin: auto;
+
   &:hover { opacity: 1; color: #fff; background: $accent; transform: scale(1.08); }
 
   // Always visible + accented once a card is actually ranked.
