@@ -23,9 +23,13 @@
     fetchQuoteRequests,
     setClientRank,
     clients,
+    activeFields,
+    fieldConfig,
+    loadOverviewFields,
   } from '../store.ts';
 
-  import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
+  import type { ClientActionsPayload, ActionArgSchema, FieldConfigRow } from '../store.ts';
+
   import { toasts } from '../toastStore.ts';
   import MentionTextarea from './MentionTextarea.svelte';
   import type { MentionPerson } from './MentionTextarea.svelte';
@@ -182,6 +186,61 @@
     const v = rankDraftDetail;
     applyRankDetail(typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : null);
   }
+
+  // ── Registry-driven Overview fields ───────────────────────────────────────
+  // The Overview tab renders from the DB-backed Overview Field Registry
+  // (Automations → Overview fields), so operator edits — rename / reorder /
+  // retype / add / hide — are reflected here AUTOMATICALLY. The editor mutates
+  // the SAME shared `fieldConfig` store, so an edit made in this session shows
+  // instantly; a cold open fetches the registry once. `FALLBACK_FIELDS` is only
+  // a first-paint safety net (used before the registry resolves, or if the
+  // fetch ever fails) so the panel is never blank — fully backward compatible.
+  onMount(() => {
+    if (!$fieldConfig.length) loadOverviewFields().catch(() => {/* non-fatal */});
+  });
+
+  const FALLBACK_FIELDS: FieldConfigRow[] = [
+    { id: 'name', label: 'First Name', section: 'identity', valueType: 'string', scope: 'consultation', required: true, showWhenEmpty: true, placeholder: '—', order: 0, active: true },
+    { id: 'surname', label: 'Surname', section: 'identity', valueType: 'string', scope: 'consultation', required: true, showWhenEmpty: true, placeholder: '—', order: 1, active: true },
+    { id: 'email', label: 'Email', section: 'identity', valueType: 'email', scope: 'root', required: true, showWhenEmpty: false, readOnly: true, order: 2, active: true },
+    { id: 'phone', label: 'Phone', section: 'identity', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 3, active: true },
+    { id: 'route', label: 'Route', section: 'route', valueType: 'route', scope: 'consultation', required: false, showWhenEmpty: true, order: 4, active: true },
+    { id: 'budget', label: 'Budget', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 5, active: true },
+    { id: 'size', label: 'Move Size', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 6, active: true },
+    { id: 'immigrationStatus', label: 'Immigration Status', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 7, active: true },
+    { id: 'property', label: 'Property', section: 'move', valueType: 'property', scope: 'consultation', required: false, showWhenEmpty: true, order: 8, active: true },
+    { id: 'vehicles', label: 'Vehicles', section: 'move', valueType: 'vehicles', scope: 'consultation', required: false, showWhenEmpty: false, order: 9, active: true },
+    { id: 'scheduling', label: 'Scheduled Call', section: 'logistics', valueType: 'datetime-list', scope: 'root', required: false, showWhenEmpty: true, order: 10, active: true },
+    { id: 'callOutcome', label: 'Call Outcome', section: 'logistics', valueType: 'text', scope: 'root', required: false, showWhenEmpty: false, placeholder: '—', order: 11, active: true },
+    { id: 'dripEnabled', label: 'Drip Active', section: 'logistics', valueType: 'boolean', scope: 'root', required: false, showWhenEmpty: true, order: 12, active: true },
+    { id: 'consultationCount', label: 'Consultations', section: 'meta', valueType: 'number', scope: 'root', required: false, showWhenEmpty: false, readOnly: true, order: 13, active: true },
+    { id: 'createdAt', label: 'Created', section: 'meta', valueType: 'date', scope: 'root', required: false, showWhenEmpty: false, readOnly: true, order: 14, active: true },
+  ];
+
+  // The list the Overview renders: the live registry when available, else the
+  // hardcoded fallback. `$activeFields` is already filtered to active + sorted.
+  $: overviewFields = ($activeFields && $activeFields.length) ? $activeFields : FALLBACK_FIELDS;
+
+  /** Dotted PATCH path for a registry field, honoring its scope. */
+  function ovPath(f: FieldConfigRow, idx: number): string {
+    return f.scope === 'root' ? f.id : `consultations.${idx}.${f.id}`;
+  }
+  /** Read a field's value: prefer the flattened summary key, else the raw-doc path. */
+  function ovValue(sc: any, f: FieldConfigRow, idx: number): unknown {
+    if (!sc) return undefined;
+    if (sc[f.id] !== undefined) return sc[f.id];
+    const src = sc.rawDoc ?? sc;
+    return ovPath(f, idx)
+      .split('.')
+      .reduce((a: any, k) => (a == null ? undefined : a[k]), src);
+  }
+  /** Whether a value counts as "present" (drives the showWhenEmpty rule). */
+  function ovHasValue(v: unknown): boolean {
+    if (v === undefined || v === null || v === '') return false;
+    if (Array.isArray(v) && v.length === 0) return false;
+    return true;
+  }
+
 
 
   /**
@@ -856,212 +915,135 @@
             </div>
           </div>
 
-          <!-- Name + Surname — stored inside consultations[] like all other fields -->
+          <!-- ── Registry-driven Overview fields ────────────────────────────
+               Rendered from the DB-backed Overview Field Registry so operator
+               edits (rename / reorder / retype / add / hide) made in
+               Automations → Overview fields are reflected here AUTOMATICALLY.
+               `overviewFields` falls back to the hardcoded defaults before the
+               registry resolves, so the panel is never blank. Composite types
+               (route / property / vehicles / datetime-list) keep their bespoke
+               widgets; scalars use the generic click-to-edit <EditableField>. -->
+          {#each overviewFields as f (f.id)}
+            {@const val = ovValue($selectedClient, f, latestIdx)}
+            {#if f.showWhenEmpty || ovHasValue(val)}
+              <div class="detail-field" class:detail-field--full={f.valueType === 'route' || f.valueType === 'text'}>
+                <span class="detail-field__label">{f.label}</span>
 
-          <div class="detail-field">
-            <span class="detail-field__label">First Name</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.name`}
-              value={$selectedClient.name}
-              label="First Name"
-              placeholder="—"
-            />
-          </div>
+                {#if f.valueType === 'route'}
+                  <!-- Composite: origin city/country → destination city/country -->
+                  <div class="detail-field__route">
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.originCity`}
+                      value={$selectedClient.originCity}
+                      label="Origin city"
+                      placeholder="—"
+                    />
+                    <span class="detail-field__route-sep">,</span>
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.originCountry`}
+                      value={$selectedClient.originCountry}
+                      label="Origin country"
+                      placeholder="—"
+                    />
+                    <span class="detail-field__route-arrow">→</span>
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.destinationCity`}
+                      value={$selectedClient.destinationCity}
+                      label="Destination city"
+                      placeholder="—"
+                    />
+                    <span class="detail-field__route-sep">,</span>
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.destinationCountry`}
+                      value={$selectedClient.destinationCountry}
+                      label="Destination country"
+                      placeholder="—"
+                    />
+                  </div>
 
-          <div class="detail-field">
-            <span class="detail-field__label">Surname</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.surname`}
-              value={$selectedClient.surname}
-              label="Surname"
-              placeholder="—"
-            />
-          </div>
+                {:else if f.valueType === 'property'}
+                  <!-- Composite: property type origin → destination -->
+                  <div class="detail-field__route">
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.propertyTypeFrom`}
+                      value={$selectedClient.propertyTypeFrom}
+                      label="From"
+                      placeholder="—"
+                    />
+                    <span class="detail-field__route-arrow">→</span>
+                    <EditableField
+                      clientId={$selectedClient.id}
+                      path={`consultations.${latestIdx}.propertyTypeTo`}
+                      value={$selectedClient.propertyTypeTo}
+                      label="To"
+                      placeholder="—"
+                    />
+                  </div>
 
-          <!-- Route is two values; render them as a pair of editable chips. -->
-          <div class="detail-field detail-field--full">
-            <span class="detail-field__label">Route</span>
-            <div class="detail-field__route">
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.originCity`}
-                value={$selectedClient.originCity}
-                label="Origin city"
-                placeholder="—"
-              />
-              <span class="detail-field__route-sep">,</span>
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.originCountry`}
-                value={$selectedClient.originCountry}
-                label="Origin country"
-                placeholder="—"
-              />
-              <span class="detail-field__route-arrow">→</span>
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.destinationCity`}
-                value={$selectedClient.destinationCity}
-                label="Destination city"
-                placeholder="—"
-              />
-              <span class="detail-field__route-sep">,</span>
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.destinationCountry`}
-                value={$selectedClient.destinationCountry}
-                label="Destination country"
-                placeholder="—"
-              />
-            </div>
-          </div>
+                {:else if f.valueType === 'vehicles'}
+                  <!-- Composite: vehicles[] chips (display) -->
+                  <div class="detail-field__value">
+                    {#each ($selectedClient.vehicles || []) as v}
+                      <span class="detail-field__tag">{v.year} {v.make} {v.model}</span>
+                    {/each}
+                  </div>
 
-          <div class="detail-field">
-            <span class="detail-field__label">Budget</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.budget`}
-              value={$selectedClient.budget}
-              label="Budget"
-              placeholder="—"
-            />
-          </div>
+                {:else if f.valueType === 'datetime-list'}
+                  <!-- Composite: scheduling[] with reschedule / schedule CTA -->
+                  {#if $selectedClient.scheduling?.length}
+                    <div class="detail-field__schedule-row">
+                      <span class="detail-field__value detail-field__value--readonly" title={$selectedClient.scheduling[0]}>
+                        {formatDateTime($selectedClient.scheduling[0])}
+                      </span>
+                      <button
+                        type="button"
+                        class="detail-field__reschedule-btn"
+                        title="Reschedule this consultation call"
+                        on:click={() => { showScheduleModal = true; }}
+                      >
+                        📅 Reschedule
+                      </button>
+                    </div>
+                  {:else}
+                    <div class="detail-field__schedule-row">
+                      <span class="detail-field__value detail-field__value--muted">No call scheduled</span>
+                      <button
+                        type="button"
+                        class="detail-field__reschedule-btn detail-field__reschedule-btn--schedule"
+                        title="Schedule a consultation call"
+                        on:click={() => { showScheduleModal = true; }}
+                      >
+                        📅 Schedule
+                      </button>
+                    </div>
+                  {/if}
 
-          <div class="detail-field">
-            <span class="detail-field__label">Move Size</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.size`}
-              value={$selectedClient.size}
-              label="Move size"
-              placeholder="—"
-            />
-          </div>
+                {:else if f.readOnly}
+                  <!-- Read-only computed/derived fields (createdAt, count, email…) -->
+                  <span class="detail-field__value detail-field__value--readonly">
+                    {#if f.valueType === 'date'}{formatDate((val as string) || '')}{:else}{(val as any) ?? '—'}{/if}
+                  </span>
 
-          <div class="detail-field">
-            <span class="detail-field__label">Immigration Status</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.immigrationStatus`}
-              value={$selectedClient.immigrationStatus}
-              label="Immigration status"
-              placeholder="—"
-            />
-          </div>
-
-          <div class="detail-field">
-            <span class="detail-field__label">Property</span>
-            <div class="detail-field__route">
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.propertyTypeFrom`}
-                value={$selectedClient.propertyTypeFrom}
-                label="From"
-                placeholder="—"
-              />
-              <span class="detail-field__route-arrow">→</span>
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`consultations.${latestIdx}.propertyTypeTo`}
-                value={$selectedClient.propertyTypeTo}
-                label="To"
-                placeholder="—"
-              />
-            </div>
-          </div>
-
-          {#if $selectedClient.vehicles?.length}
-            <div class="detail-field">
-              <span class="detail-field__label">Vehicles</span>
-              <div class="detail-field__value">
-                {#each $selectedClient.vehicles as v}
-                  <span class="detail-field__tag">{v.year} {v.make} {v.model}</span>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <div class="detail-field">
-            <span class="detail-field__label">Scheduled Call</span>
-            {#if $selectedClient.scheduling?.length}
-              <div class="detail-field__schedule-row">
-                <span class="detail-field__value detail-field__value--readonly" title={$selectedClient.scheduling[0]}>
-                  {formatDateTime($selectedClient.scheduling[0])}
-                </span>
-                <button
-                  type="button"
-                  class="detail-field__reschedule-btn"
-                  title="Reschedule this consultation call"
-                  on:click={() => { showScheduleModal = true; }}
-                >
-                  📅 Reschedule
-                </button>
-              </div>
-            {:else}
-              <div class="detail-field__schedule-row">
-                <span class="detail-field__value detail-field__value--muted">No call scheduled</span>
-                <button
-                  type="button"
-                  class="detail-field__reschedule-btn detail-field__reschedule-btn--schedule"
-                  title="Schedule a consultation call"
-                  on:click={() => { showScheduleModal = true; }}
-                >
-                  📅 Schedule
-                </button>
+                {:else}
+                  <!-- Generic scalar (string / text / number / date / enum / boolean / email) -->
+                  <EditableField
+                    clientId={$selectedClient.id}
+                    path={ovPath(f, latestIdx)}
+                    value={val}
+                    label={f.label}
+                    multiline={f.valueType === 'text'}
+                    placeholder={f.placeholder || '—'}
+                  />
+                {/if}
               </div>
             {/if}
-          </div>
+          {/each}
 
-          {#if $selectedClient.callOutcome}
-            <div class="detail-field">
-              <span class="detail-field__label">Call Outcome</span>
-              <EditableField
-                clientId={$selectedClient.id}
-                path={`callOutcome`}
-                value={$selectedClient.callOutcome}
-                label="Call outcome"
-                placeholder="—"
-              />
-            </div>
-          {/if}
-
-          <div class="detail-field">
-            <span class="detail-field__label">Phone</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`consultations.${latestIdx}.phone`}
-              value={$selectedClient.phone}
-              label="Phone"
-              placeholder="—"
-            />
-          </div>
-
-          <div class="detail-field">
-            <span class="detail-field__label">Drip Active</span>
-            <EditableField
-              clientId={$selectedClient.id}
-              path={`dripEnabled`}
-              value={$selectedClient.dripEnabled}
-              label="Drip enabled"
-              placeholder="—"
-            />
-          </div>
-
-          <div class="detail-field">
-            <span class="detail-field__label">Consultations</span>
-            <span class="detail-field__value detail-field__value--readonly" title="Computed from consultations[] length">
-              {$selectedClient.consultationCount}
-            </span>
-          </div>
-
-          <div class="detail-field">
-            <span class="detail-field__label">Created</span>
-            <span class="detail-field__value detail-field__value--readonly" title="First consultation timestamp — read-only">
-              {formatDate($selectedClient.createdAt)}
-            </span>
-          </div>
 
           <!-- ── Shipment & Logistics summary card ── -->
           <div class="detail-field detail-field--full">

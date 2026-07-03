@@ -18,12 +18,50 @@
    *   - ops_destination_arrival.confirm_eta
    */
 
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import type { Client } from '../store.ts';
+  import { fieldConfig, loadOverviewFields, type FieldConfigRow } from '../store.ts';
+  import EditableField from './EditableField.svelte';
 
   export let client: Client;
 
+  // Warm the shared Overview Field Registry once (cached across mounts) so we
+  // can surface any operator-added "Logistics" fields below. Non-fatal.
+  onMount(() => {
+    if (get(fieldConfig).length === 0) loadOverviewFields().catch(() => {/* non-fatal */});
+  });
+
   // ── Field readers (all optional) ─────────────────────────────────────────
   $: raw = (client as any)?.rawDoc ?? client ?? {};
+  $: clientId = (client as any)?.id ?? '';
+  // Index of the latest consultations[] entry — the write target for
+  // consultation-scoped registry fields (mirrors DetailPanel's latestIdx).
+  $: latestIdx = Math.max(
+    0,
+    (Array.isArray(raw?.consultations) ? raw.consultations.length : (client as any)?.consultationCount ?? 1) - 1,
+  );
+
+  // Operator-added Logistics fields from the Overview Field Registry — every
+  // active `section === "logistics"` row that ISN'T a built-in seed (scheduling
+  // / callOutcome / dripEnabled already render in the Overview tab). These show
+  // here ALWAYS, editable, even before a value exists — so a field like
+  // "Container Number (Bill of Lading)" appears the moment it's added.
+  $: logisticsFields = ($fieldConfig || []).filter(
+    (f) => f.section === 'logistics' && f.active !== false && !f.isSeed,
+  );
+
+  /** Dotted PATCH path for a registry field, from its scope. */
+  function fieldPath(f: FieldConfigRow): string {
+    return f.scope === 'root' ? f.id : `consultations.${latestIdx}.${f.id}`;
+  }
+  /** Read the current value for a registry field from the raw client doc. */
+  function fieldValue(f: FieldConfigRow): unknown {
+    return fieldPath(f)
+      .split('.')
+      .reduce((acc: any, k) => (acc == null ? undefined : acc[k]), raw);
+  }
+
 
   // Shipment method
   $: shippingMethod        = raw.shippingMethod        ?? raw.confirmedShippingMethod        ?? null;
@@ -111,17 +149,17 @@
   </div>
 
   {#if !hasAnyData}
-    <!-- Empty state -->
-    <div class="stc__empty">
-      <p>No shipment details have been set yet.</p>
-      <p class="stc__empty-hint">
-        Use the <strong>Actions tab → ops_loading · confirm_pickup_details</strong>
-        and <strong>ops_exporting · start_eta_loop</strong> to capture method,
-        volume, and key dates. Or edit fields directly in the <strong>Fields tab</strong>.
-      </p>
+    <!-- Not-yet-configured hint. The fields below STILL render (empty, "—") so
+         operators can always SEE the shipment + logistics fields regardless of
+         whether the ETA-loop actions have run yet. -->
+    <div class="stc__hint">
+      No shipment milestones recorded yet — fill the logistics fields below, or use
+      the <strong>Actions tab</strong> (confirm pickup details · start ETA loop).
     </div>
-  {:else}
+  {/if}
+
     <!-- Method + Scope row -->
+
     <div class="stc__row">
       <!-- Shipping method -->
       <div class="stc__cell">
@@ -226,8 +264,35 @@
         {/if}
       </div>
     {/if}
+
+  <!-- ── Custom Logistics fields (Overview Field Registry) ────────────────────
+       Operator-added fields with section "Logistics" render here as always-
+       visible editable slots — even before a value exists — so a field like
+       "Container Number (Bill of Lading)" is visible + fillable regardless of
+       whether any shipment action has run. -->
+  {#if logisticsFields.length > 0}
+    <div class="stc__custom">
+      <div class="stc__custom-title">Logistics details</div>
+      <div class="stc__custom-grid">
+        {#each logisticsFields as f (f.id)}
+          <div class="stc__custom-field">
+            <span class="stc__cell-label">{f.label}</span>
+            <EditableField
+              clientId={clientId}
+              path={fieldPath(f)}
+              value={fieldValue(f)}
+              label={f.label}
+              multiline={f.valueType === 'text'}
+              readonly={f.readOnly === true}
+              placeholder={f.placeholder || '—'}
+            />
+          </div>
+        {/each}
+      </div>
+    </div>
   {/if}
 </div>
+
 
 <style>
   .stc {
@@ -421,4 +486,44 @@
     white-space: nowrap;
   }
   .stc__agent-email:hover { text-decoration: underline; }
+
+  /* Not-yet-configured hint (shown above the always-rendered fields) */
+  .stc__hint {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #92700e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 7px;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+  }
+  .stc__hint strong { color: #78350f; font-weight: 700; }
+
+  /* Custom Logistics fields (Overview Field Registry) */
+  .stc__custom {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px dashed #e5e7eb;
+  }
+  .stc__custom-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 10px;
+  }
+  .stc__custom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 14px;
+  }
+  .stc__custom-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
 </style>
+

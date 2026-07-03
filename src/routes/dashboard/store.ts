@@ -1254,6 +1254,7 @@ export async function fetchStages(): Promise<StageConfigRow[]> {
 }
 
 /** Create a new stage. Optionally position it right after `insertAfterId`. */
+
 export async function createStage(
   payload: Partial<StageConfigRow> & { label: string; insertAfterId?: string },
 ): Promise<{ stage: StageConfigRow | null; stages: StageConfigRow[] }> {
@@ -1449,7 +1450,40 @@ export async function initDashboardSocket() {
           delete fetchTimeouts['evo'];
         }, 500);
       }
+      else if (collection === 'overview_fields') {
+        // 6. Live Overview field-registry update.
+        // A teammate edited the Overview field config in Automations (rename /
+        // reorder / retype / add / hide). Re-load the registry so the shared
+        // `fieldConfig` store updates — every already-open Detail Panel and any
+        // card reading the registry re-renders reactively, with zero manual
+        // refresh. Debounced to coalesce bursts (e.g. a drag-reorder save).
+        if (fetchTimeouts['overview_fields']) clearTimeout(fetchTimeouts['overview_fields']);
+        fetchTimeouts['overview_fields'] = setTimeout(async () => {
+          try {
+            await loadOverviewFields();
+          } catch (err) {
+            console.error('Failed to live-refresh overview fields', err);
+          }
+          delete fetchTimeouts['overview_fields'];
+        }, 400);
+      }
+      else if (collection === 'stage_config') {
+        // 7. Live pipeline-stage config update.
+        // A teammate reordered / renamed / added / removed a stage in
+        // Automations. Re-load so Kanban columns, SLA badges and the client
+        // status labels stay in sync across all open tabs.
+        if (fetchTimeouts['stage_config']) clearTimeout(fetchTimeouts['stage_config']);
+        fetchTimeouts['stage_config'] = setTimeout(async () => {
+          try {
+            await loadStageConfig();
+          } catch (err) {
+            console.error('Failed to live-refresh stage config', err);
+          }
+          delete fetchTimeouts['stage_config'];
+        }, 400);
+      }
     });
+
 
     dashboardSocket.on('disconnect', () => {
       console.log('[DASHBOARD SOCKET] Disconnected');
