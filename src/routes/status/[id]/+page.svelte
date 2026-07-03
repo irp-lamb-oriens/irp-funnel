@@ -1419,13 +1419,14 @@
 
       <!-- ══ COMMENTS — always rendered (single-landing). Visible to both
            clients and signed-in staff so either can leave notes on the move. -->
-      {#if $project}
+      <!-- {#if $project}
         <div id="cp-comments" class="cp-section-anchor">
           <div class="cp-dashboard__full-width-section">
             <CommentsThread {projectId} />
           </div>
         </div>
-      {/if}
+      {/if} --> 
+      <!-- We will comment it for now unless the business wants to resucitate it -->
 
 
       <!-- ══ PROPOSAL — template document. Rendered right after the overview/
