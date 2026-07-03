@@ -1030,7 +1030,9 @@
                   </span>
 
                 {:else}
-                  <!-- Generic scalar (string / text / number / date / enum / boolean / email) -->
+                  <!-- Generic scalar (string / text / number / date / datetime /
+                       enum / boolean / email). Date-typed fields open the shared
+                       calendar picker via EditableField's `valueType`. -->
                   <EditableField
                     clientId={$selectedClient.id}
                     path={ovPath(f, latestIdx)}
@@ -1038,6 +1040,7 @@
                     label={f.label}
                     multiline={f.valueType === 'text'}
                     placeholder={f.placeholder || '—'}
+                    valueType={f.valueType}
                   />
                 {/if}
               </div>
