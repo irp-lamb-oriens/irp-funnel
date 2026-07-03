@@ -3512,8 +3512,13 @@ export interface FieldConfigRow {
   required: boolean;
   showWhenEmpty: boolean;
   readOnly?: boolean;
+  /** Client-portal visibility (surfaced on /status "Your details"). Default false. */
+  clientVisible?: boolean;
+  /** Client-portal editability (client may edit on /status). Default false. */
+  clientEditable?: boolean;
   active: boolean;
   isSeed?: boolean;
+
   updatedBy?: string;
   updatedAt?: string;
   createdAt?: string;

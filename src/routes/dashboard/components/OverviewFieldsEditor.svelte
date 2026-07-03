@@ -322,6 +322,34 @@
               <td class="ofe-col-toggle">
                 <button
                   class="ofe-switch"
+                  class:ofe-switch--on={field.clientVisible === true}
+                  on:click={() => patchField(field, { clientVisible: !(field.clientVisible === true) })}
+                  disabled={busyId === field.id}
+                  title={field.clientVisible === true ? 'Visible to client — click to hide' : 'Hidden from client — click to show'}
+                  aria-label={field.clientVisible === true ? 'Client-visible' : 'Not client-visible'}
+                >
+                  <span class="ofe-switch__knob"></span>
+                </button>
+              </td>
+              <td class="ofe-col-toggle">
+                <button
+                  class="ofe-switch"
+                  class:ofe-switch--on={field.clientEditable === true}
+                  on:click={() => patchField(field, { clientEditable: !(field.clientEditable === true) })}
+                  disabled={busyId === field.id || field.clientVisible !== true || field.readOnly === true}
+                  title={field.readOnly === true
+                    ? 'Read-only fields can’t be client-editable'
+                    : field.clientVisible !== true
+                      ? 'Make the field client-visible first'
+                      : field.clientEditable === true ? 'Client can edit — click to lock' : 'Read-only for client — click to allow editing'}
+                  aria-label={field.clientEditable === true ? 'Client-editable' : 'Not client-editable'}
+                >
+                  <span class="ofe-switch__knob"></span>
+                </button>
+              </td>
+              <td class="ofe-col-toggle">
+                <button
+                  class="ofe-switch"
                   class:ofe-switch--on={field.active !== false}
                   on:click={() => patchField(field, { active: field.active === false })}
                   disabled={busyId === field.id}
@@ -331,6 +359,7 @@
                   <span class="ofe-switch__knob"></span>
                 </button>
               </td>
+
               <td class="ofe-col-actions">
                 <button
                   class="remove-btn"

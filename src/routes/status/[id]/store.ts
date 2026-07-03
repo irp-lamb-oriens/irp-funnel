@@ -29,6 +29,14 @@ export const error = writable('');
 export const stages = writable<string[]>([]);
 export const stageLabels = writable<Record<string, string>>({});
 
+/**
+ * Operator-configured client-visible Overview fields ("Your details" card).
+ * Each entry: { id, label, valueType, options?, placeholder?, editable, value }.
+ * Populated by fetchProject from the project payload's `clientFields`.
+ */
+export const clientFields = writable<any[]>([]);
+
+
 // ─── Lily Chat stores (declared early so fetchProject can reference them) ───
 export const lilyMessages = writable<any[]>([]);
 export const lilyLoading = writable(false);
@@ -306,6 +314,26 @@ export async function updateProjectDetails(
   // Optimistic local update so the UI reflects changes without re-fetching
   project.update((p) => (p ? { ...p, ...fields } : p));
 }
+
+/**
+ * Save operator-configured client-editable Overview fields ("Your details").
+ * PATCHes the same /details endpoint (server validates each key against the
+ * centralized registry: clientVisible + clientEditable + active + not read-only)
+ * and optimistically mirrors the new values into the `clientFields` store.
+ */
+export async function saveClientFields(
+  projectId: string,
+  values: Record<string, unknown>,
+): Promise<void> {
+  await apiFetch(`/api/client-status/project/${projectId}/details`, {
+    method: 'PATCH',
+    body: JSON.stringify(values),
+  });
+  clientFields.update((rows) =>
+    rows.map((f) => (f && f.id in values ? { ...f, value: values[f.id] } : f)),
+  );
+}
+
 
 export async function deleteComment(projectId: string, commentId: string): Promise<void> {
   // Server-side this is a SOFT delete (the row is retained, flagged `deleted`,

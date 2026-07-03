@@ -47,6 +47,8 @@
   import EmailPreviewDrawer from "../../dashboard/components/EmailPreviewDrawer.svelte";
   import { presendEmail, fetchEmailPreview } from "../../dashboard/store.ts";
   import RegulationsLanding from "./RegulationsLanding.svelte";
+  import ClientFieldsCard from "./ClientFieldsCard.svelte";
+
   import {
     irpStaffIsAuthenticated,
     irpStaffEmail,
@@ -1402,6 +1404,19 @@
 
       {/if}
 
+      <!-- ══ YOUR DETAILS — operator-configured, client-visible Overview fields.
+           Driven by the centralized Overview Field Registry (Automations →
+           Overview fields, "Client" switch). Renders nothing until an operator
+           opts a field in, and only lets the client edit fields flagged
+           "Editable". Fully backward compatible. -->
+      {#if $project}
+        <div id="cp-your-details" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <ClientFieldsCard />
+          </div>
+        </div>
+      {/if}
+
       <!-- ══ COMMENTS — always rendered (single-landing). Visible to both
            clients and signed-in staff so either can leave notes on the move. -->
       {#if $project}
@@ -1411,6 +1426,7 @@
           </div>
         </div>
       {/if}
+
 
       <!-- ══ PROPOSAL — template document. Rendered right after the overview/
            activity section and before the quote. Shows whenever the client has

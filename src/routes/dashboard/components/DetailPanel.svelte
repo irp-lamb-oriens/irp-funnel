@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import {
     selectedClient, detailPanelOpen,
-    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, emailTypes, fetchEmailTypes,
+    STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, stageConfig, EMAIL_TYPES, emailTypes, fetchEmailTypes,
+
     getStageJourney,
     SHIPPING_MODE_LABEL, PACKING_TIER_LABEL,
     selectedSentEmailId,
@@ -110,7 +111,26 @@
   let newFieldKey = '';
   let newFieldValue = '';
   let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' | 'providers' = 'overview';
-  let stageEntries = Object.entries(STAGE_LABELS);
+  // Stage options for the chip popover (searchable) + the Actions cross-stage
+  // selector. Reactive to the centralized DB stage config ($stageConfig,
+  // hydrated from GET /api/dashboard/stage-config) so stages created / renamed /
+  // reordered in Automations → Stage Configuration appear here immediately —
+  // NOT just the hardcoded first-paint fallback. We always include the client's
+  // CURRENT stage even if it's inactive/hidden or a legacy id, so it stays
+  // visible + re-selectable (never strands a client on an unlisted stage).
+  $: stageEntries = (() => {
+    const rows: [string, string][] = ($stageConfig && $stageConfig.length)
+      ? $stageConfig
+          .filter((s) => s.active !== false)
+          .map((s) => [s.id, s.label || s.id] as [string, string])
+      : Object.entries(STAGE_LABELS);
+    const cur = $selectedClient?.stage;
+    if (cur && !rows.some(([k]) => k === cur)) {
+      rows.push([cur, STAGE_LABELS[cur] || cur]);
+    }
+    return rows;
+  })();
+
 
   // ── Pipeline-stage chip + popover (replaces the giant emoji strip) ─────
   let stagePopoverOpen = false;
@@ -1041,78 +1061,9 @@
                       value={$selectedClient.propertyTypeTo}
                       label="To"
                       placeholder="—"
-                    />modificaciones_pipeline:
-  - de: "Pricing Quote"
-    a: "Pricing Quote (actualizado)"
-    donde: "Columna inicial (se deben agregar las notas de Steven para cotizar)"
-
-  - de: "[Nueva Columna]"
-    a: "Requote Request"
-    donde: "Después de 'Quoted' y antes de 'Quote Acceptance'"
-
-  - de: "[Nueva Columna]"
-    a: "Handover Ops"
-    donde: "Antes de 'Initial Payment', 'Sell Drop', 'Full Packing' y 'Self Packing'"
-
-  - de: "[Nueva Columna]"
-    a: "Insurance Status"
-    donde: "Después de 'Self packing' y 'Full packing'"
-
-  - de: 
-      - "Loading"
-      - "Container"
-    a: "Origin Service"
-    donde: "En la sección de servicios en origen (reemplaza a Loading y Container)"
-
-  - de: "Exporting"
-    a: "Shipping Details"
-    donde: "Después de 'Origin Service'"
-
-  - de: "[Columna siguiente a Shipping Details]"
-    a: "Arrival at Destination"
-    donde: "Inmediatamente después de 'Shipping Details'"
-
-  - de: "Destination (Redestino)"
-    a: "[Eliminada]"
-    donde: "Estaba después de la llegada a destino (uso interno)"
-
-  - de: "Container Fiscal Warehouse"
-    a: "Bonded Warehouse Entry"
-    donde: "Siguiente etapa física en destino"
-
-  - de: "Container Unloading"
-    a: "[Eliminada]"
-    donde: "Estaba después del ingreso a almacén fiscal"
-
-  - de: 
-      - "Tax Calculation"
-      - "Destination Cost"
-      - "Invoice"
-      - "Import"
-      - "Import Procedure"
-    a: "Import Customs Clearance"
-    donde: "Después de 'Bonded Warehouse Entry'"
-
-  - de: "Customs Inspection DUA"
-    a: "Customs Inspection"
-    donde: "Antes de 'Delivery Coordination'"
-
-  - de: "Delivery"
-    a: "Delivery Service"
-    donde: "Después de 'Delivery Coordination'"
-
-  - de: "Proof of Delivery"
-    a: "Delivery Documents"
-    donde: "Inmediatamente después de 'Delivery Service'"
-
-  - de: "Operations Done"
-    a: "[Eliminada]"
-    donde: "Estaba al final del proceso operativo"
-
-  - de: "Refunds (Rolf Fonks)"
-    a: "Goodwill"
-    donde: "En la sección de ajustes/finanzas (se mantiene como etapa interna y oculta al cliente)"
+                    />
                   </div>
+
 
                 {:else if f.valueType === 'vehicles'}
                   <!-- Composite: vehicles[] chips (display) -->
@@ -1688,7 +1639,8 @@
                   on:change={handleActionsStageChange}
                   disabled={actionsLoading}
                 >
-                  {#each Object.entries(STAGE_LABELS) as [stageKey, stageLabel]}
+                  {#each stageEntries as [stageKey, stageLabel]}
+
                     <option value={stageKey}>{stageLabel}</option>
                   {/each}
                 </select>

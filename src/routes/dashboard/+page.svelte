@@ -7,10 +7,12 @@
     clients, selectedClient, metrics, loading, error,
     clientsLoading, clientsLoadedOnce,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
+    stageOrderStore,
 
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, HIDDEN_STAGES,
     requestOTP, verifyOTP, checkAuth, logout,
-    fetchClients, fetchClientDetail, updateClientStage, setClientRank,
+    fetchClients, fetchClientDetail, updateClientStage, setClientRank, loadStageConfig,
+
     updateClientFields, addNote, triggerEmail, fetchMetrics,
 
     initDashboardSocket, disconnectDashboardSocket,
@@ -123,13 +125,19 @@
 
   async function loadData() {
     initDashboardSocket();
-    // Fetch live config in parallel — non-blocking, falls back to static if it fails
+    // Fetch live config in parallel — non-blocking, falls back to static if it fails.
+    // `loadStageConfig()` is (re)loaded HERE, with a valid auth token, so the
+    // centralized DB stage config (Automations → Stage Configuration) always
+    // hydrates the board columns + every stage selector. It self-warms once at
+    // module import too, but that can run before login (no token) or fail on a
+    // cold server — so we always refresh it right after auth. Non-fatal.
     const [, liveConfig] = await Promise.all([
-      Promise.all([fetchClients(), fetchMetrics()]),
+      Promise.all([fetchClients(), fetchMetrics(), loadStageConfig()]),
       fetchLiveAccessConfig(),
     ]);
     liveAccessConfig = liveConfig;
   }
+
 
   // ─── Login Handlers ─────────────────────────────────────────────────────
   async function handleRequestOTP() {
@@ -391,14 +399,32 @@
   }
 
 
-  // Board columns. The retired "private feedback" columns are hidden from the
-  // board (their emails are now sent automatically by the Automations engine),
-  // BUT they reappear automatically if a legacy client is still parked in one —
-  // so a client is never hidden/lost before being migrated off. Fully
-  // backward-compatible & non-destructive.
-  $: stageEntries = Object.entries(STAGE_LABELS).filter(
-    ([key]) => !HIDDEN_STAGES.has(key) || (($clientsByStage[key]?.length ?? 0) > 0),
-  );
+  // ─── Board columns ────────────────────────────────────────────────────────
+  // Columns are driven by the CENTRALIZED, DB-backed stage config
+  // (`$stageOrderStore`, published by applyStageConfig from
+  // GET /api/dashboard/stage-config), so stages created / renamed / reordered in
+  // Automations → Stage Configuration appear on the board automatically.
+  //
+  // CRITICAL SAFETY NET (fixes "moved a client to a new stage → it vanished"):
+  // after the ordered active columns, we ALSO append a column for ANY stage that
+  // currently holds clients but isn't in the active order — a brand-new, hidden,
+  // inactive, or legacy stage id. This GUARANTEES that a client can never
+  // disappear from the board: every stage that has at least one client always
+  // gets a rendered column (labelled via STAGE_LABELS, falling back to the id).
+  $: stageEntries = (() => {
+    const base = ($stageOrderStore && $stageOrderStore.length)
+      ? [...$stageOrderStore]
+      : Object.keys(STAGE_LABELS).filter((s) => !HIDDEN_STAGES.has(s));
+    const seen = new Set(base);
+    for (const key of Object.keys($clientsByStage)) {
+      if (!seen.has(key) && (($clientsByStage[key]?.length ?? 0) > 0)) {
+        seen.add(key);
+        base.push(key);
+      }
+    }
+    return base.map((key) => [key, STAGE_LABELS[key] || key] as [string, string]);
+  })();
+
 
   // ─── Board skeleton state ────────────────────────────────────────────────
   // Drives the Trello/Jira-style shimmering placeholder cards in every Kanban
@@ -740,7 +766,7 @@
                       ? `Ranked #${client.rankIndex} — click to change`
                       : 'Rank card (float to top)'}
                     on:click={(e) => toggleRankMenu(client, e)}
-                  >▲{#if typeof client.rankIndex === 'number'}&nbsp;{client.rankIndex}{/if}</button>
+                  >▲{#if typeof client.rankIndex === 'number'}&nbsp;{"🔥".repeat(+client.rankIndex)}{/if}</button>
                   {#if rankMenuFor === client.id}
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
