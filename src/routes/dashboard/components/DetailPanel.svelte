@@ -24,6 +24,8 @@
   } from '../store.ts';
   import type { ClientActionsPayload, ActionArgSchema } from '../store.ts';
   import { toasts } from '../toastStore.ts';
+  import MentionTextarea from './MentionTextarea.svelte';
+  import type { MentionPerson } from './MentionTextarea.svelte';
   import CardFieldsAccordion from './CardFieldsAccordion.svelte';
   import CardHistory from './CardHistory.svelte';
   import EditableField from './EditableField.svelte';
@@ -532,6 +534,31 @@
   function removeNoteRecipient(email: string) {
     noteRecipients = noteRecipients.filter((e) => e !== email);
   }
+
+  // ── @mention people ─────────────────────────────────────────────────────────
+  // Maps the Admin collaborators list into the shape MentionTextarea expects.
+  // The `id` (the token typed after `@`) is the email's local-part, so typing
+  // `@luisarmando` resolves to luisarmando@<org-suffix>. The org suffix is
+  // whatever domain the teammate's email already carries in the Admin config,
+  // so it stays configurable there with zero hard-coding here.
+  $: mentionPeople = noteTeammates.map((t): MentionPerson => ({
+    id: (t.email.split('@')[0] || t.email).toLowerCase(),
+    name: t.name || t.email.split('@')[0],
+    email: t.email,
+  }));
+
+  /**
+   * When a teammate is picked from the `@`-mention selector, add their email to
+   * the note recipients (dedup) so they get notified — exactly as if they had
+   * been chosen from the "Notify teammates" picker below.
+   */
+  function onNoteMention(e: CustomEvent<MentionPerson>) {
+    const email = e.detail?.email;
+    if (email && !noteRecipients.includes(email)) {
+      noteRecipients = [...noteRecipients, email];
+    }
+  }
+
 
   async function handleTriggerEmail() {
     if (!selectedEmailType || !$selectedClient) return;
@@ -1600,12 +1627,14 @@
       {:else if detailTab === 'notes'}
         <div class="detail-notes">
           <form class="detail-notes__form" on:submit|preventDefault={handleAddNote}>
-            <textarea
+            <MentionTextarea
               bind:value={newNote}
-              placeholder="Write a note…"
+              people={mentionPeople}
+              on:mention={onNoteMention}
+              placeholder="Write a note… (type @ to mention a teammate)"
               class="detail-notes__input"
-              rows="3"
-            ></textarea>
+              rows={3}
+            />
 
             <!-- ── Recipient picker: address the note to teammates ── -->
             <div class="dn-recipients">

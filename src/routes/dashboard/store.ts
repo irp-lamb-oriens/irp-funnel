@@ -3345,5 +3345,128 @@ export async function previewAutomationTemplate(
   return (data?.html ?? '') as string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Overview Field Registry (Automations → Overview fields)
+//
+// Centralized, DB-backed configuration of the fields shown on a client card's
+// Overview tab + used by the JSON import checker as advisory "expected fields".
+//
+// IMPORTANT — this registry is ADVISORY / ADDITIVE, never a whitelist:
+//   • Deleting a field never deletes client data and never hides a field a
+//     client doc already has (those still render under Advanced). It only stops
+//     offering the empty suggested slot going forward.
+//   • Imports carrying unknown fields are always accepted. Value types are
+//     advisory hints that drive editor widgets + import warnings.
+// Backed by API/dashboard/overviewFieldsRouter.ts. Mirrors the stage-config
+// helpers above.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type FieldValueType =
+  | 'string'
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'enum'
+  | 'email'
+  | 'route'
+  | 'property'
+  | 'vehicles'
+  | 'datetime-list';
+
+export type FieldScope = 'consultation' | 'root';
+export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';
+
+export interface FieldConfigRow {
+  id: string;
+  label: string;
+  order: number;
+  section: FieldSection;
+  valueType: FieldValueType;
+  scope: FieldScope;
+  options?: string[];
+  placeholder?: string;
+  required: boolean;
+  showWhenEmpty: boolean;
+  readOnly?: boolean;
+  active: boolean;
+  isSeed?: boolean;
+  updatedBy?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+/** The full ordered Overview-field registry as last loaded from the server. */
+export const fieldConfig = writable<FieldConfigRow[]>([]);
+
+/** Active fields (what the Overview tab surfaces), in order. */
+export const activeFields = derived(fieldConfig, ($fields) =>
+  $fields.filter((f) => f.active !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+);
+
+/** Raw fetch of the field registry (no side effects) — for the config editor UI. */
+export async function fetchOverviewFields(): Promise<FieldConfigRow[]> {
+  const data = await apiFetch('/api/dashboard/overview-fields');
+  return (data?.fields ?? []) as FieldConfigRow[];
+}
+
+/** Load the field registry into the `fieldConfig` store (used on dashboard boot). */
+export async function loadOverviewFields(): Promise<FieldConfigRow[]> {
+  const fields = await fetchOverviewFields();
+  const ordered = [...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  fieldConfig.set(ordered);
+  return ordered;
+}
+
+/** Create a new Overview field (optionally positioned right after `insertAfterId`). */
+export async function createOverviewField(
+  payload: Partial<FieldConfigRow> & { label: string; insertAfterId?: string },
+): Promise<{ field: FieldConfigRow | null; fields: FieldConfigRow[] }> {
+  const data = await apiFetch('/api/dashboard/overview-fields', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  const fields = (data?.fields ?? []) as FieldConfigRow[];
+  if (fields.length) fieldConfig.set([...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+  return { field: (data?.field ?? null) as FieldConfigRow | null, fields };
+}
+
+/** Partially update (rename / retype / toggle) an Overview field by id. */
+export async function updateOverviewField(
+  id: string,
+  updates: Partial<FieldConfigRow>,
+): Promise<FieldConfigRow> {
+  const data = await apiFetch(`/api/dashboard/overview-fields/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  const saved = data.field as FieldConfigRow;
+  fieldConfig.update(($f) => $f.map((f) => (f.id === id ? saved : f)));
+  return saved;
+}
+
+/** Persist a new field order (full ordered id list). */
+export async function reorderOverviewFields(orderedIds: string[]): Promise<FieldConfigRow[]> {
+  const data = await apiFetch('/api/dashboard/overview-fields/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ orderedIds }),
+  });
+  const fields = (data?.fields ?? []) as FieldConfigRow[];
+  if (fields.length) fieldConfig.set([...fields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+  return fields;
+}
+
+/**
+ * Delete an Overview field. NON-DESTRUCTIVE: client documents keep their data
+ * and keep rendering it — this only removes the suggested empty slot going
+ * forward. No migration guard needed (unlike stage deletion).
+ */
+export async function deleteOverviewField(id: string): Promise<void> {
+  await apiFetch(`/api/dashboard/overview-fields/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  fieldConfig.update(($f) => $f.filter((f) => f.id !== id));
+}
+
+
 
 

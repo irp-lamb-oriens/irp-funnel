@@ -26,6 +26,7 @@
     type RuleMode,
     type StageConfigRow,
   } from '../store.ts';
+  import OverviewFieldsEditor from './OverviewFieldsEditor.svelte';
 
   // ── State ──────────────────────────────────────────────────────────────
   let meta: AutomationMeta | null = null;
@@ -543,6 +544,11 @@
     </p>
 
     {#if stageError}<div class="av-msg av-msg--error">{stageError}</div>{/if}
+
+    <!-- Overview-field registry (centralized, DB-backed; advisory/additive) -->
+    <section class="av-card">
+      <OverviewFieldsEditor />
+    </section>
 
     <!-- Add a stage -->
     <section class="av-card av-add">
