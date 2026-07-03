@@ -33,7 +33,7 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'rules' | 'templates' | 'stages' = 'rules';
+  let tab: 'stages' | 'templates' = 'stages';
   let busyId = ''; // id of the row currently saving (disables its controls)
 
   // ── Stage configuration state ───────────────────────────────────────────
@@ -64,16 +64,9 @@
   $: activeStages = stages.filter((s) => s.active !== false).sort((a, b) => a.order - b.order);
 
 
-  // New-rule draft
-  let draft = {
-    triggerStage: '',
-    emailType: '',
-    condition: 'always' as RuleCondition,
-    mode: 'suggest' as RuleMode,
-    delayHours: 0,
-  };
-  let addingRule = false;
-  let addError = '';
+  // Per-stage inline "add rule" drafts (keyed by stage id)
+  type RuleDraft = { emailType: string; condition: RuleCondition; mode: RuleMode; delayHours: number };
+  let ruleDrafts: Record<string, RuleDraft> = {};
 
   // Template editor
   let editingType = '';
@@ -107,8 +100,6 @@
       rules = r;
       templates = t;
       stages = s;
-      if (meta.stages.length) draft.triggerStage = meta.stages[0];
-      if (meta.emailTypes.length) draft.emailType = meta.emailTypes[0].value;
     } catch (e: any) {
       error = e?.message ?? 'Failed to load automation config.';
     } finally {
@@ -322,20 +313,21 @@
     }
   }
 
-  async function addRule() {
-    addError = '';
-    if (!draft.triggerStage || !draft.emailType) {
-      addError = 'Pick both a stage and an email type.';
+  async function addRuleForStage(stageId: string) {
+    const d = ruleDrafts[stageId];
+    if (!d || !d.emailType) {
+      stageError = 'Pick an email type to add a rule.';
       return;
     }
-    addingRule = true;
+    busyId = `add:${stageId}`;
+    stageError = '';
     try {
       const saved = await saveAutomationRule({
-        triggerStage: draft.triggerStage,
-        emailType: draft.emailType,
-        condition: draft.condition,
-        mode: draft.mode,
-        delayHours: Number(draft.delayHours) || 0,
+        triggerStage: stageId,
+        emailType: d.emailType,
+        condition: d.condition,
+        mode: d.mode,
+        delayHours: Number(d.delayHours) || 0,
         enabled: true,
       });
       // upsert into local list (replace if the id already existed)
@@ -343,10 +335,11 @@
       if (idx >= 0) rules[idx] = saved;
       else rules = [...rules, saved];
       rules = [...rules];
+      d.delayHours = 0;
     } catch (e: any) {
-      addError = e?.message ?? 'Failed to add rule.';
+      stageError = e?.message ?? 'Failed to add rule.';
     } finally {
-      addingRule = false;
+      busyId = '';
     }
   }
 
@@ -430,12 +423,31 @@
     }
   }
 
-  // Group rules by trigger stage for a tidy display
+  // Group rules by trigger stage so each stage card can show its own automations.
   $: rulesByStage = rules.reduce<Record<string, StageEmailRule[]>>((acc, r) => {
     (acc[r.triggerStage] ||= []).push(r);
     return acc;
   }, {});
-  $: stageOrder = Object.keys(rulesByStage).sort((a, b) => stageLabel(a).localeCompare(stageLabel(b)));
+
+  // Rules whose trigger stage no longer exists in the centralized config.
+  $: activeStageIds = new Set(activeStages.map((s) => s.id));
+  $: orphanRuleStages = Object.keys(rulesByStage)
+    .filter((id) => !activeStageIds.has(id))
+    .sort((a, b) => stageLabel(a).localeCompare(stageLabel(b)));
+
+  // Ensure every stage has an inline "add rule" draft ready for binding.
+  $: if (meta) {
+    for (const s of stages) {
+      if (!ruleDrafts[s.id]) {
+        ruleDrafts[s.id] = {
+          emailType: meta.emailTypes[0]?.value ?? '',
+          condition: 'always',
+          mode: 'suggest',
+          delayHours: 0,
+        };
+      }
+    }
+  }
 </script>
 
 <div class="automation-view">
@@ -456,146 +468,16 @@
   {/if}
 
   <div class="av-tabs">
-    <button class="av-tab" class:av-tab--active={tab === 'rules'} on:click={() => (tab = 'rules')}>
-      ⚙️ Stage rules
+    <button class="av-tab" class:av-tab--active={tab === 'stages'} on:click={() => (tab = 'stages')}>
+      🗂️ Stages &amp; rules
     </button>
     <button class="av-tab" class:av-tab--active={tab === 'templates'} on:click={() => (tab = 'templates')}>
       ✉️ Email templates
-    </button>
-    <button class="av-tab" class:av-tab--active={tab === 'stages'} on:click={() => (tab = 'stages')}>
-      🗂️ Stage configuration
     </button>
   </div>
 
   {#if loading}
     <div class="av-loading">Loading automation config…</div>
-  {:else if tab === 'rules'}
-    <!-- ── Add rule ──────────────────────────────────────────────────── -->
-    <section class="av-card av-add">
-      <h3 class="av-card-title">Add a rule</h3>
-      <div class="av-add-grid">
-        <label class="av-field">
-          <span>Stage</span>
-          <select bind:value={draft.triggerStage}>
-            {#each (meta?.stages ?? []) as s}
-              <option value={s}>{stageLabel(s)}</option>
-            {/each}
-          </select>
-        </label>
-        <label class="av-field">
-          <span>Email</span>
-          <select bind:value={draft.emailType}>
-            {#each (meta?.emailTypes ?? []) as e}
-              <option value={e.value}>{e.label}</option>
-            {/each}
-          </select>
-        </label>
-        <label class="av-field">
-          <span>Condition</span>
-          <select bind:value={draft.condition}>
-            {#each (meta?.conditions ?? []) as c}
-              <option value={c}>{RULE_CONDITION_LABELS[c] ?? c}</option>
-            {/each}
-          </select>
-        </label>
-        <label class="av-field">
-          <span>Mode</span>
-          <select bind:value={draft.mode}>
-            <option value="suggest">Suggest (you confirm)</option>
-            <option value="auto">Auto-send</option>
-          </select>
-        </label>
-        <label class="av-field">
-          <span>Delay (h)</span>
-          <input type="number" min="0" bind:value={draft.delayHours} />
-        </label>
-        <button class="save-btn" on:click={addRule} disabled={addingRule}>
-          {addingRule ? 'Adding…' : '+ Add rule'}
-        </button>
-      </div>
-      {#if addError}<div class="av-msg av-msg--error av-msg--sm">{addError}</div>{/if}
-    </section>
-
-    <!-- ── Rules list ────────────────────────────────────────────────── -->
-    {#if rules.length === 0}
-      <div class="av-empty">No rules configured yet.</div>
-    {:else}
-      {#each stageOrder as stage}
-        <section class="av-card">
-          <h3 class="av-card-title av-stage-title">{stageLabel(stage)}</h3>
-          <div class="av-table-wrap">
-            <table class="av-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Condition</th>
-                  <th>Mode</th>
-                  <th>Delay</th>
-                  <th>On</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each rulesByStage[stage] as rule (rule.id)}
-                  <tr class:av-row--off={!rule.enabled}>
-                    <td class="av-email-cell">
-                      {emailTypeLabel(rule.emailType)}
-                      {#if rule.isSeed}<span class="av-badge" title="Seeded default">seed</span>{/if}
-                    </td>
-                    <td>
-                      <select
-                        value={rule.condition}
-                        on:change={(e) => changeRuleCondition(rule, e.currentTarget.value as RuleCondition)}
-                        disabled={busyId === rule.id}
-                      >
-                        {#each (meta?.conditions ?? []) as c}
-                          <option value={c}>{RULE_CONDITION_LABELS[c] ?? c}</option>
-                        {/each}
-                      </select>
-                    </td>
-                    <td>
-                      <select
-                        value={rule.mode}
-                        on:change={(e) => changeRuleMode(rule, e.currentTarget.value as RuleMode)}
-                        disabled={busyId === rule.id}
-                      >
-                        <option value="suggest">Suggest</option>
-                        <option value="auto">Auto</option>
-                      </select>
-                    </td>
-                    <td class="av-delay-cell">
-                      <input
-                        class="av-delay"
-                        type="number"
-                        min="0"
-                        value={rule.delayHours}
-                        on:change={(e) => changeRuleDelay(rule, Number(e.currentTarget.value) || 0)}
-                        disabled={busyId === rule.id}
-                      /><span class="av-unit">h</span>
-                    </td>
-                    <td>
-                      <button
-                        class="av-switch"
-                        class:av-switch--on={rule.enabled}
-                        on:click={() => toggleRule(rule)}
-                        disabled={busyId === rule.id}
-                        title={rule.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}
-                        aria-label={rule.enabled ? 'Enabled' : 'Disabled'}
-                      >
-                        <span class="av-switch__knob"></span>
-                      </button>
-                    </td>
-                    <td>
-                      <button class="remove-btn" on:click={() => removeRule(rule)} disabled={busyId === rule.id} title="Delete rule">✕</button>
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      {/each}
-    {/if}
   {:else if tab === 'templates'}
     <!-- ── Templates ─────────────────────────────────────────────────── -->
     {#if templates.length === 0}
@@ -652,12 +534,12 @@
       </section>
     {/if}
   {:else if tab === 'stages'}
-    <!-- ── Stage configuration ───────────────────────────────────────── -->
+    <!-- ── Unified: every centralized stage + its automation rules ─────── -->
     <p class="av-subtitle" style="margin-bottom:1.1rem">
-      Reorder, rename, add or delete pipeline columns. Everyone sees every active
-      column on the board — to remove one you must first move its clients to
-      another column. Toggle "Client-visible" to control whether a stage appears
-      on the client status page.
+      One place for the whole pipeline: reorder, rename, set each column’s SLA,
+      choose whether clients see it, and manage the automated emails that fire on
+      it. To remove a column you must first move its clients elsewhere — nobody
+      ever falls off the board.
     </p>
 
     {#if stageError}<div class="av-msg av-msg--error">{stageError}</div>{/if}
@@ -685,72 +567,182 @@
       </div>
     </section>
 
-    <section class="av-card">
-      <div class="av-table-wrap">
-        <table class="av-table">
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Stage</th>
-              <th>SLA (days)</th>
-              <th title="Shown on the client status page">Client-visible</th>
-              <th>Clients</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each activeStages as stage, i (stage.id)}
-              <tr>
-                <td class="av-order-cell">
-                  <button class="av-move" on:click={() => moveStage(stage, -1)} disabled={i === 0 || stageBusyId === stage.id} title="Move up">▲</button>
-                  <button class="av-move" on:click={() => moveStage(stage, 1)} disabled={i === activeStages.length - 1 || stageBusyId === stage.id} title="Move down">▼</button>
-                </td>
-                <td class="av-email-cell">
-                  <span class="av-stage-emoji">{stage.icon || '📌'}</span>
-                  <input
-                    class="av-stage-name"
-                    type="text"
-                    value={stage.label}
-                    on:change={(e) => patchStage(stage, { label: e.currentTarget.value })}
-                    disabled={stageBusyId === stage.id}
-                  />
-                  <div class="av-type">{stage.id}</div>
-                </td>
-                <td class="av-delay-cell">
-                  <input
-                    class="av-delay"
-                    type="number"
-                    min="0"
-                    value={stage.slaDays ?? ''}
-                    placeholder="—"
-                    on:change={(e) => patchStage(stage, { slaDays: e.currentTarget.value === '' ? null : Number(e.currentTarget.value) })}
-                    disabled={stageBusyId === stage.id}
-                  />
-                </td>
-                <td>
-                  <button
-                    class="av-switch"
-                    class:av-switch--on={!stage.hiddenFromClient}
-                    on:click={() => patchStage(stage, { hiddenFromClient: !stage.hiddenFromClient })}
-                    disabled={stageBusyId === stage.id}
-                    aria-label={stage.hiddenFromClient ? 'Hidden from client' : 'Visible to client'}
-                    title={stage.hiddenFromClient ? 'Hidden from the client status page' : 'Visible on the client status page'}
-                  >
-                    <span class="av-switch__knob"></span>
-                  </button>
-                </td>
-                <td class="av-actions">
-                  <button class="av-link" on:click={() => openMigrateModal(stage)}>Migrate clients…</button>
-                </td>
-                <td>
-                  <button class="remove-btn" on:click={() => openDeleteModal(stage)} disabled={stageBusyId === stage.id} title="Delete stage">✕</button>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    {#if activeStages.length === 0}
+      <div class="av-empty">No stages configured yet.</div>
+    {:else}
+      {#each activeStages as stage, i (stage.id)}
+        <section class="av-card av-stage-card">
+          <div class="av-stage-head">
+            <div class="av-order-cell">
+              <button class="av-move" on:click={() => moveStage(stage, -1)} disabled={i === 0 || stageBusyId === stage.id} title="Move up">▲</button>
+              <button class="av-move" on:click={() => moveStage(stage, 1)} disabled={i === activeStages.length - 1 || stageBusyId === stage.id} title="Move down">▼</button>
+            </div>
+            <span class="av-stage-emoji">{stage.icon || '📌'}</span>
+            <div class="av-stage-idwrap">
+              <input
+                class="av-stage-name"
+                type="text"
+                value={stage.label}
+                on:change={(e) => patchStage(stage, { label: e.currentTarget.value })}
+                disabled={stageBusyId === stage.id}
+              />
+              <code class="av-stage-id">{stage.id}</code>
+            </div>
+            <div class="av-stage-controls">
+              <label class="av-inline-field">
+                <span>SLA</span>
+                <input
+                  class="av-delay"
+                  type="number"
+                  min="0"
+                  value={stage.slaDays ?? ''}
+                  placeholder="—"
+                  on:change={(e) => patchStage(stage, { slaDays: e.currentTarget.value === '' ? null : Number(e.currentTarget.value) })}
+                  disabled={stageBusyId === stage.id}
+                /><span class="av-unit">d</span>
+              </label>
+              <label class="av-inline-field">
+                <span>Client-visible</span>
+                <button
+                  class="av-switch"
+                  class:av-switch--on={!stage.hiddenFromClient}
+                  on:click={() => patchStage(stage, { hiddenFromClient: !stage.hiddenFromClient })}
+                  disabled={stageBusyId === stage.id}
+                  aria-label={stage.hiddenFromClient ? 'Hidden from client' : 'Visible to client'}
+                  title={stage.hiddenFromClient ? 'Hidden from the client status page' : 'Visible on the client status page'}
+                >
+                  <span class="av-switch__knob"></span>
+                </button>
+              </label>
+              <button class="av-link" on:click={() => openMigrateModal(stage)}>Migrate…</button>
+              <button class="remove-btn" on:click={() => openDeleteModal(stage)} disabled={stageBusyId === stage.id} title="Delete stage">✕</button>
+            </div>
+          </div>
+
+          <div class="av-stage-rules">
+            {#if (rulesByStage[stage.id] ?? []).length}
+              <div class="av-table-wrap">
+                <table class="av-table">
+                  <thead>
+                    <tr>
+                      <th>Automated email</th>
+                      <th>Condition</th>
+                      <th>Mode</th>
+                      <th>Delay</th>
+                      <th>On</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each rulesByStage[stage.id] as rule (rule.id)}
+                      <tr class:av-row--off={!rule.enabled}>
+                        <td class="av-email-cell">
+                          {emailTypeLabel(rule.emailType)}
+                          {#if rule.isSeed}<span class="av-badge" title="Seeded default">seed</span>{/if}
+                        </td>
+                        <td>
+                          <select
+                            value={rule.condition}
+                            on:change={(e) => changeRuleCondition(rule, e.currentTarget.value as RuleCondition)}
+                            disabled={busyId === rule.id}
+                          >
+                            {#each (meta?.conditions ?? []) as c}
+                              <option value={c}>{RULE_CONDITION_LABELS[c] ?? c}</option>
+                            {/each}
+                          </select>
+                        </td>
+                        <td>
+                          <select
+                            value={rule.mode}
+                            on:change={(e) => changeRuleMode(rule, e.currentTarget.value as RuleMode)}
+                            disabled={busyId === rule.id}
+                          >
+                            <option value="suggest">Suggest</option>
+                            <option value="auto">Auto</option>
+                          </select>
+                        </td>
+                        <td class="av-delay-cell">
+                          <input
+                            class="av-delay"
+                            type="number"
+                            min="0"
+                            value={rule.delayHours}
+                            on:change={(e) => changeRuleDelay(rule, Number(e.currentTarget.value) || 0)}
+                            disabled={busyId === rule.id}
+                          /><span class="av-unit">h</span>
+                        </td>
+                        <td>
+                          <button
+                            class="av-switch"
+                            class:av-switch--on={rule.enabled}
+                            on:click={() => toggleRule(rule)}
+                            disabled={busyId === rule.id}
+                            title={rule.enabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}
+                            aria-label={rule.enabled ? 'Enabled' : 'Disabled'}
+                          >
+                            <span class="av-switch__knob"></span>
+                          </button>
+                        </td>
+                        <td>
+                          <button class="remove-btn" on:click={() => removeRule(rule)} disabled={busyId === rule.id} title="Delete rule">✕</button>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {:else}
+              <div class="av-stage-norules">No automated emails fire on this stage yet.</div>
+            {/if}
+
+            {#if ruleDrafts[stage.id]}
+              <div class="av-add-rule">
+                <span class="av-add-rule__label">＋ Email</span>
+                <select class="av-add-rule__field" bind:value={ruleDrafts[stage.id].emailType}>
+                  {#each (meta?.emailTypes ?? []) as e}
+                    <option value={e.value}>{e.label}</option>
+                  {/each}
+                </select>
+                <select class="av-add-rule__field" bind:value={ruleDrafts[stage.id].condition}>
+                  {#each (meta?.conditions ?? []) as c}
+                    <option value={c}>{RULE_CONDITION_LABELS[c] ?? c}</option>
+                  {/each}
+                </select>
+                <select class="av-add-rule__field" bind:value={ruleDrafts[stage.id].mode}>
+                  <option value="suggest">Suggest</option>
+                  <option value="auto">Auto</option>
+                </select>
+                <input class="av-add-rule__delay" type="number" min="0" bind:value={ruleDrafts[stage.id].delayHours} title="Delay (hours)" /><span class="av-unit">h</span>
+                <button class="av-add-rule__btn" on:click={() => addRuleForStage(stage.id)} disabled={busyId === `add:${stage.id}`}>
+                  {busyId === `add:${stage.id}` ? 'Adding…' : 'Add'}
+                </button>
+              </div>
+            {/if}
+          </div>
+        </section>
+      {/each}
+
+      {#if orphanRuleStages.length}
+        <section class="av-card av-stage-card av-stage-card--orphan">
+          <h3 class="av-card-title">⚠️ Rules on retired stages</h3>
+          <p class="av-subtitle" style="margin:0 0 0.7rem">
+            These automation rules point at stages that are no longer in the pipeline.
+            They stay dormant until you re-create the stage or delete the rule.
+          </p>
+          {#each orphanRuleStages as ostage (ostage)}
+            <div class="av-orphan-group">
+              <code class="av-stage-id">{ostage}</code>
+              {#each rulesByStage[ostage] as rule (rule.id)}
+                <div class="av-orphan-rule">
+                  <span>{emailTypeLabel(rule.emailType)}</span>
+                  <button class="remove-btn" on:click={() => removeRule(rule)} disabled={busyId === rule.id} title="Delete rule">✕</button>
+                </div>
+              {/each}
+            </div>
+          {/each}
+        </section>
+      {/if}
+    {/if}
   {/if}
 </div>
 
@@ -964,20 +956,6 @@
     color: #0f172a;
     letter-spacing: -0.01em;
   }
-  .av-stage-title {
-    color: #02999e;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .av-stage-title::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--color-highlight-2, #02b5bb);
-  }
-
   .av-loading,
   .av-empty {
     text-align: center;
@@ -1350,6 +1328,63 @@
   .av-stage-name:focus {
     outline: none; border-color: rgba(2, 181, 187, 0.48);
     box-shadow: 0 0 0 2px rgba(2, 181, 187, 0.12);
+  }
+
+  /* ── Unified stage card (config header + its automation rules) ───────── */
+  .av-stage-card { padding: 1.1rem 1.25rem; }
+  .av-stage-card--orphan { border-color: #fde68a; background: #fffdf5; }
+  .av-stage-head { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+  .av-stage-idwrap { display: flex; flex-direction: column; gap: 0.2rem; min-width: 180px; }
+  .av-stage-id {
+    font-size: 0.65rem; color: #94a3b8; background: #f1f5f9;
+    border-radius: 4px; padding: 0.05rem 0.4rem; width: fit-content;
+    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  }
+  .av-stage-controls { display: flex; align-items: center; gap: 0.9rem; margin-left: auto; flex-wrap: wrap; }
+  .av-inline-field { display: flex; align-items: center; gap: 0.35rem; }
+  .av-inline-field > span {
+    font-size: 0.62rem; font-weight: 800; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.07em;
+  }
+  .av-inline-field .av-delay {
+    padding: 0.3rem 0.4rem; border: 1px solid #e2e8f0; border-radius: 7px;
+    font-size: 0.8rem; font-family: inherit; color: #0f172a; background: #fff;
+  }
+  .av-stage-rules { margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 0.9rem; }
+  .av-stage-norules { color: #94a3b8; font-size: 0.8rem; padding: 0.3rem 0.1rem; font-style: italic; }
+  .av-add-rule {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-top: 0.8rem; padding: 0.6rem 0.7rem;
+    background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
+  }
+  .av-add-rule__label {
+    font-size: 0.72rem; font-weight: 800; color: #02999e;
+    text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.2rem;
+  }
+  .av-add-rule__field,
+  .av-add-rule__delay {
+    padding: 0.35rem 0.45rem; border: 1px solid #e2e8f0; border-radius: 7px;
+    font-size: 0.8rem; font-family: inherit; color: #0f172a; background: #fff;
+  }
+  .av-add-rule__delay { width: 3.2rem; }
+  .av-add-rule__field:focus,
+  .av-add-rule__delay:focus {
+    outline: none; border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 2px rgba(2, 181, 187, 0.12);
+  }
+  .av-add-rule__btn {
+    padding: 0.4rem 0.9rem; background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
+    border: none; border-radius: 8px; color: #fff; font-size: 0.8rem;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: filter 0.14s, transform 0.14s;
+  }
+  .av-add-rule__btn:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+  .av-add-rule__btn:disabled { opacity: 0.55; cursor: wait; }
+  .av-orphan-group { margin-bottom: 0.7rem; }
+  .av-orphan-rule {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.7rem; padding: 0.35rem 0.2rem; border-bottom: 1px solid #f1f5f9;
+    font-size: 0.83rem; color: #334155;
   }
 
   /* ── Modals (delete-with-migration + migrate-all) ───────────────────── */
