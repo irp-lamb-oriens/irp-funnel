@@ -35,6 +35,13 @@
   export let withTime: boolean = false;
   export let onClose: () => void = () => {};
   export let onCommit: (next: string) => void = () => {};
+  /**
+   * When false, the in-modal "Clear date" affordance (and its double-confirm)
+   * is hidden — used when the caller owns its own delete control (e.g. the
+   * ✕ on <DateFieldRow>), so date removal lives in exactly one place.
+   */
+  export let allowClear: boolean = true;
+
 
   const MONTHS = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -254,14 +261,17 @@
 
       <!-- Actions -->
       <div class="dfe__actions">
-        <button
-          class="dfe__clear-btn"
-          type="button"
-          on:click={() => (showClearConfirm = true)}
-          disabled={!value}
-          title={value ? 'Remove this date' : 'Nothing to clear'}
-        >Clear date</button>
+        {#if allowClear}
+          <button
+            class="dfe__clear-btn"
+            type="button"
+            on:click={() => (showClearConfirm = true)}
+            disabled={!value}
+            title={value ? 'Remove this date' : 'Nothing to clear'}
+          >Clear date</button>
+        {/if}
         <div class="dfe__actions-right">
+
           <button class="dfe__cancel-btn" type="button" on:click={onClose}>Cancel</button>
           <button class="dfe__confirm-btn" type="button" on:click={confirm} disabled={!hasSelection}>
             ✓ Confirm

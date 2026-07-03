@@ -36,7 +36,9 @@
   import CardFieldsAccordion from './CardFieldsAccordion.svelte';
   import CardHistory from './CardHistory.svelte';
   import EditableField from './EditableField.svelte';
+  import DateFieldRow from './DateFieldRow.svelte';
   import TranscriptPaster from './TranscriptPaster.svelte';
+
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
   import QuotesTab from './QuotesTab.svelte';
@@ -1029,10 +1031,25 @@
                     {#if f.valueType === 'date'}{formatDate((val as string) || '')}{:else}{(val as any) ?? '—'}{/if}
                   </span>
 
+                {:else if f.valueType === 'date' || f.valueType === 'datetime'}
+                  <!-- Editable date / datetime → a Scheduled-Call-style row: a
+                       "Set date" button when empty, or the formatted value with
+                       a "Change" button and an inline ✕ (delete-with-confirm)
+                       when set. Uses the shared calendar picker but WITHOUT the
+                       text-style value button, so there's no hover/backdrop
+                       collision with the popup. -->
+                  <DateFieldRow
+                    clientId={$selectedClient.id}
+                    path={ovPath(f, latestIdx)}
+                    value={val}
+                    label={f.label}
+                    withTime={f.valueType === 'datetime'}
+                  />
+
                 {:else}
-                  <!-- Generic scalar (string / text / number / date / datetime /
-                       enum / boolean / email). Date-typed fields open the shared
-                       calendar picker via EditableField's `valueType`. -->
+                  <!-- Generic scalar (string / text / number / enum / boolean /
+                       email) — classic inline click-to-edit text box. Date types
+                       are handled by the <DateFieldRow> branch above. -->
                   <EditableField
                     clientId={$selectedClient.id}
                     path={ovPath(f, latestIdx)}
@@ -1040,9 +1057,9 @@
                     label={f.label}
                     multiline={f.valueType === 'text'}
                     placeholder={f.placeholder || '—'}
-                    valueType={f.valueType}
                   />
                 {/if}
+
               </div>
             {/if}
           {/each}
