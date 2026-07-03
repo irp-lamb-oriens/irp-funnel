@@ -176,7 +176,18 @@ export interface Note {
    * compatible — an un-targeted note behaves exactly as before).
    */
   recipients?: string[];
+  /** Set when the note text was edited. ISO timestamp + editor email. */
+  editedAt?: string;
+  editedBy?: string;
+  /**
+   * Soft-deletion markers. Only ADMIN users ever receive notes carrying these
+   * fields — the server strips deleted notes for everyone else. Admins render
+   * them as a greyed-out "ghost". Absent on live notes.
+   */
+  deletedAt?: string;
+  deletedBy?: string;
 }
+
 
 export interface ActivityEntry {
   type: string;
@@ -1617,6 +1628,54 @@ export async function addNote(id: string, text: string, recipients?: string[]): 
     list.map(c => c.id === id ? { ...c, agentNotes: [...(c.agentNotes || []), note] } : c)
   );
   selectedClient.update(c => c && c.id === id ? { ...c, agentNotes: [...(c.agentNotes || []), note] } : c);
+  return note;
+}
+
+/**
+ * Edit an existing note's text. Notes are addressed by their `createdAt` ISO
+ * timestamp (they carry no explicit id). The server stamps `editedAt`/`editedBy`
+ * and records a `note_edited` entry in the activity log (surfaced in Journey).
+ */
+export async function editNote(id: string, noteCreatedAt: string, text: string): Promise<Note> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${id}/notes/${encodeURIComponent(noteCreatedAt)}`,
+    { method: 'PATCH', body: JSON.stringify({ text }) },
+  );
+  const note = data.note as Note;
+  const patch = (c: Client): Client => ({
+    ...c,
+    agentNotes: (c.agentNotes || []).map((n) =>
+      n.createdAt === noteCreatedAt ? { ...n, ...note } : n,
+    ),
+  });
+  clients.update(list => list.map(c => c.id === id ? patch(c) : c));
+  selectedClient.update(c => c && c.id === id ? patch(c) : c);
+  return note;
+}
+
+/**
+ * Soft-delete a note. The server never removes it from Firestore — it stamps
+ * `deletedAt`/`deletedBy` and logs a `note_deleted` entry (surfaced in Journey).
+ * ADMINS keep the greyed-out "ghost" in place locally; everyone else has it
+ * removed from view entirely (matching what the server sends on the next fetch).
+ */
+export async function deleteNote(id: string, noteCreatedAt: string): Promise<Note> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${id}/notes/${encodeURIComponent(noteCreatedAt)}`,
+    { method: 'DELETE' },
+  );
+  const note = data.note as Note;
+  const isAdmin = _ADMIN_SET.has(get(authEmail) || '');
+  const patch = (c: Client): Client => ({
+    ...c,
+    agentNotes: isAdmin
+      // Admins keep the ghost (marked deleted) in place.
+      ? (c.agentNotes || []).map((n) => n.createdAt === noteCreatedAt ? { ...n, ...note } : n)
+      // Non-admins: the deletion is invisible — drop it from view.
+      : (c.agentNotes || []).filter((n) => n.createdAt !== noteCreatedAt),
+  });
+  clients.update(list => list.map(c => c.id === id ? patch(c) : c));
+  selectedClient.update(c => c && c.id === id ? patch(c) : c);
   return note;
 }
 

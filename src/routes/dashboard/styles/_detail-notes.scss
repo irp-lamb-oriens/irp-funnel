@@ -271,6 +271,183 @@
   color: $accent-hover;
 }
 
+/* ── Note edit / delete controls (Instagram-style, token-driven) ────────────── */
+.detail-note__meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: $sp-2;
+}
+
+/* "· edited" marker after an edit */
+.detail-note__edited {
+  font-size: 11px;
+  color: $text-dim;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Tiny ✎ / ✕ action buttons — revealed on card hover (like Instagram). */
+.detail-note__act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: $r-xs;
+  background: transparent;
+  color: $text-dim;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity $t-fast, background $t-fast, color $t-fast;
+
+  &:hover  { background: $accent-subtle; color: $accent-hover; }
+  &:focus-visible { opacity: 1; outline: none; box-shadow: 0 0 0 3px $accent-glow; }
+
+  &--danger:hover { background: rgba($danger, 0.12); color: $danger; }
+}
+.detail-note:hover .detail-note__act,
+.detail-note:focus-within .detail-note__act {
+  opacity: 1;
+}
+
+/* Inline edit box */
+.detail-note__edit { margin-top: $sp-1; }
+.detail-note__edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: $sp-2 $sp-3;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+  background: $surface;
+  color: $text;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: $font;
+  transition: border-color $t-fast, box-shadow $t-fast;
+  &:focus { outline: none; border-color: $accent; box-shadow: 0 0 0 3px $accent-glow; }
+  &::placeholder { color: $text-dim; }
+}
+.detail-note__edit-actions {
+  display: flex;
+  gap: $sp-2;
+  margin-top: $sp-2;
+}
+.detail-note__edit-save,
+.detail-note__edit-cancel {
+  padding: 5px $sp-4;
+  border-radius: $r-full;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: $font;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all $t-fast;
+  &:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+}
+.detail-note__edit-save {
+  background: $accent;
+  color: $surface;
+  box-shadow: 0 2px 8px rgba($accent, 0.28);
+  &:hover:not(:disabled) { background: $accent-hover; transform: translateY(-1px); box-shadow: 0 4px 14px rgba($accent, 0.38); }
+}
+.detail-note__edit-cancel {
+  background: transparent;
+  border-color: $border;
+  color: $text-dim;
+  &:hover:not(:disabled) { background: $surface-3; color: $text-2; }
+}
+
+/* Inline delete confirmation */
+.detail-note__confirm {
+  display: flex;
+  align-items: center;
+  gap: $sp-2;
+  margin-top: $sp-2;
+  padding: 7px $sp-3;
+  border-radius: $r-sm;
+  background: rgba($danger, 0.07);
+  border: 1px solid rgba($danger, 0.22);
+}
+.detail-note__confirm-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-2;
+  margin-right: auto;
+}
+.detail-note__confirm-yes {
+  padding: 4px $sp-3;
+  border: none;
+  border-radius: $r-full;
+  background: $danger;
+  color: $surface;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: $font;
+  cursor: pointer;
+  transition: filter $t-fast, box-shadow $t-fast;
+  box-shadow: 0 2px 8px rgba($danger, 0.28);
+  &:hover:not(:disabled) { filter: brightness(0.93); box-shadow: 0 4px 14px rgba($danger, 0.38); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+}
+.detail-note__confirm-no {
+  padding: 4px $sp-2;
+  border: none;
+  border-radius: $r-full;
+  background: transparent;
+  color: $text-dim;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: $font;
+  cursor: pointer;
+  transition: color $t-fast;
+  &:hover:not(:disabled) { color: $text; }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+/* ── Admin-only "ghost" of a soft-deleted note ──────────────────────────────── */
+.detail-note--ghost {
+  opacity: 0.82;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba($danger, 0.045),
+    rgba($danger, 0.045) 8px,
+    rgba($danger, 0.08) 8px,
+    rgba($danger, 0.08) 16px
+  );
+  border: 1px dashed rgba($danger, 0.28);
+  border-radius: $r-sm;
+  padding: $sp-2 $sp-3;
+}
+.detail-note__ghost-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: $sp-2;
+  margin-bottom: $sp-1;
+  font-size: 11px;
+  font-weight: 700;
+  color: $danger;
+}
+.detail-note__ghost-tag {
+  padding: 1px 7px;
+  border-radius: $r-full;
+  background: rgba($danger, 0.12);
+  border: 1px solid rgba($danger, 0.28);
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.detail-note__text--struck {
+  text-decoration: line-through;
+  color: $text-dim;
+}
+
 /* ── Activity ──────────────────────────────────────────────────────────────── */
 .activity-entry {
   display: flex;

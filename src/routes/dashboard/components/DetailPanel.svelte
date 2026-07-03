@@ -8,7 +8,7 @@
     selectedSentEmailId,
     presendEmail,
     authEmail,
-    updateClientStage, addNote, triggerEmail, updateClientFields,
+    updateClientStage, addNote, editNote, deleteNote, triggerEmail, updateClientFields,
     fetchConversations, fetchClientActions, fetchClientActionsForStage,
     executeClientAction,
     fetchEmailPreview,
@@ -29,6 +29,12 @@
   } from '../store.ts';
 
   import type { ClientActionsPayload, ActionArgSchema, FieldConfigRow } from '../store.ts';
+  import { ADMIN_EMAILS } from '../access.ts';
+
+  // CRM admins can see the "ghost" of soft-deleted notes; everyone else never
+  // receives them (the server strips deleted notes for non-admins).
+  $: isNoteAdmin = ADMIN_EMAILS.includes($authEmail || '');
+
 
   import { toasts } from '../toastStore.ts';
   import MentionTextarea from './MentionTextarea.svelte';
@@ -628,6 +634,57 @@
     }
   }
 
+  // ── Note edit / soft-delete state ───────────────────────────────────────────
+  // Notes are addressed by their `createdAt` timestamp (unique per note).
+  let editingNoteId: string | null = null;   // createdAt of the note being edited
+  let editingNoteText = '';
+  let deletingNoteId: string | null = null;   // createdAt of the note pending delete-confirm
+  let noteActionLoading = false;
+
+  function startEditNote(note: { createdAt: string; text: string }) {
+    editingNoteId = note.createdAt;
+    editingNoteText = note.text;
+    deletingNoteId = null;
+  }
+  function cancelEditNote() {
+    editingNoteId = null;
+    editingNoteText = '';
+  }
+  async function saveEditNote(note: { createdAt: string }) {
+    if (!$selectedClient || !editingNoteText.trim() || noteActionLoading) return;
+    noteActionLoading = true;
+    try {
+      await editNote($selectedClient.id, note.createdAt, editingNoteText.trim());
+      toasts.success('Note updated.');
+      cancelEditNote();
+    } catch (err: any) {
+      toasts.error('Failed to edit note: ' + (err?.message ?? err));
+    } finally {
+      noteActionLoading = false;
+    }
+  }
+
+  function requestDeleteNote(note: { createdAt: string }) {
+    deletingNoteId = note.createdAt;
+    editingNoteId = null;
+  }
+  function cancelDeleteNote() {
+    deletingNoteId = null;
+  }
+  async function confirmDeleteNote(note: { createdAt: string }) {
+    if (!$selectedClient || noteActionLoading) return;
+    noteActionLoading = true;
+    try {
+      await deleteNote($selectedClient.id, note.createdAt);
+      toasts.success('Note deleted.');
+      deletingNoteId = null;
+    } catch (err: any) {
+      toasts.error('Failed to delete note: ' + (err?.message ?? err));
+    } finally {
+      noteActionLoading = false;
+    }
+  }
+
   // ── Note-recipient helpers ──────────────────────────────────────────────────
   function noteRecipientName(email: string): string {
     const c = noteTeammates.find((x) => x.email === email);
@@ -1214,6 +1271,28 @@
                   title: 'Note added',
                   subtitle: e.author ? `by ${e.author}` : (e.actor ? `by ${e.actor}` : undefined),
                   tone: 'info',
+                  raw: e,
+                });
+                break;
+              case 'note_edited':
+                out.push({
+                  ts,
+                  kind: 'note',
+                  icon: '✏️',
+                  title: 'Note edited',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'info',
+                  raw: e,
+                });
+                break;
+              case 'note_deleted':
+                out.push({
+                  ts,
+                  kind: 'note',
+                  icon: '🗑',
+                  title: 'Note deleted',
+                  subtitle: e.actor ? `by ${e.actor}` : undefined,
+                  tone: 'warn',
                   raw: e,
                 });
                 break;
@@ -1820,25 +1899,103 @@
               </div>
             {/if}
 
-            {#each ($selectedClient.agentNotes || []).slice().reverse() as note}
-              <div class="detail-note">
-                <div class="detail-note__meta">
-                  <span class="detail-note__author">
-                    <span class="detail-note__avatar">{noteInitials(note.author?.split('@')[0] || '')}</span>
-                    {note.author?.split('@')[0]}
-                  </span>
-                  <span class="detail-note__time">{timeAgo(note.createdAt)}</span>
-                </div>
-                <div class="detail-note__text">{note.text}</div>
-                {#if note.recipients && note.recipients.length}
-                  <div class="detail-note__to">
-                    <span class="detail-note__to-label">Sent to</span>
-                    {#each note.recipients as r (r)}
-                      <span class="detail-note__to-chip" title={r}>{noteRecipientName(r)}</span>
-                    {/each}
+            {#each ($selectedClient.agentNotes || []).slice().reverse() as note (note.createdAt)}
+              {#if !note.deletedAt || isNoteAdmin}
+                <div class="detail-note" class:detail-note--ghost={note.deletedAt}>
+                  <div class="detail-note__meta">
+                    <span class="detail-note__author">
+                      <span class="detail-note__avatar">{noteInitials(note.author?.split('@')[0] || '')}</span>
+                      {note.author?.split('@')[0]}
+                    </span>
+                    <span class="detail-note__meta-right">
+                      <span class="detail-note__time">{timeAgo(note.createdAt)}</span>
+                      {#if note.editedAt && !note.deletedAt}
+                        <span class="detail-note__edited" title={`Edited ${exactTime(note.editedAt)}`}>· edited</span>
+                      {/if}
+                      {#if !note.deletedAt && editingNoteId !== note.createdAt && (note.author === $authEmail || isNoteAdmin)}
+                        <!-- Instagram-style inline edit + tiny ✕ delete —
+                             only the note's author (or an admin) can edit/delete it. -->
+                        <button
+                          type="button"
+                          class="detail-note__act"
+                          title="Edit note"
+                          aria-label="Edit note"
+                          on:click={() => startEditNote(note)}
+                        >✎</button>
+                        <button
+                          type="button"
+                          class="detail-note__act detail-note__act--danger"
+                          title="Delete note"
+                          aria-label="Delete note"
+                          on:click={() => requestDeleteNote(note)}
+                        >✕</button>
+                      {/if}
+                    </span>
                   </div>
-                {/if}
-              </div>
+
+                  {#if note.deletedAt}
+                    <!-- Admin-only "ghost" of a soft-deleted note -->
+                    <div class="detail-note__ghost-banner">
+                      🗑 Deleted by {note.deletedBy?.split('@')[0] || 'someone'} · {timeAgo(note.deletedAt)}
+                      <span class="detail-note__ghost-tag">admin-only</span>
+                    </div>
+                    <div class="detail-note__text detail-note__text--struck">{note.text}</div>
+                  {:else if editingNoteId === note.createdAt}
+                    <!-- Inline edit box (pre-filled with the current text) -->
+                    <div class="detail-note__edit">
+                      <textarea
+                        class="detail-note__edit-input"
+                        bind:value={editingNoteText}
+                        rows="3"
+                      ></textarea>
+                      <div class="detail-note__edit-actions">
+                        <button
+                          type="button"
+                          class="detail-note__edit-save"
+                          disabled={noteActionLoading || !editingNoteText.trim()}
+                          on:click={() => saveEditNote(note)}
+                        >{noteActionLoading ? 'Saving…' : 'Save'}</button>
+                        <button
+                          type="button"
+                          class="detail-note__edit-cancel"
+                          disabled={noteActionLoading}
+                          on:click={cancelEditNote}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  {:else}
+                    <div class="detail-note__text">{note.text}</div>
+                  {/if}
+
+                  {#if note.recipients && note.recipients.length}
+                    <div class="detail-note__to">
+                      <span class="detail-note__to-label">Sent to</span>
+                      {#each note.recipients as r (r)}
+                        <span class="detail-note__to-chip" title={r}>{noteRecipientName(r)}</span>
+                      {/each}
+                    </div>
+                  {/if}
+
+                  {#if deletingNoteId === note.createdAt && !note.deletedAt}
+                    <!-- Inline delete confirmation (prevents accidental taps) -->
+                    <div class="detail-note__confirm">
+                      <span class="detail-note__confirm-text">Delete this note?</span>
+                      <button
+                        type="button"
+                        class="detail-note__confirm-yes"
+                        disabled={noteActionLoading}
+                        on:click={() => confirmDeleteNote(note)}
+                      >{noteActionLoading ? 'Deleting…' : 'Delete'}</button>
+                      <button
+                        type="button"
+                        class="detail-note__confirm-no"
+                        disabled={noteActionLoading}
+                        on:click={cancelDeleteNote}
+                      >Cancel</button>
+                    </div>
+                  {/if}
+                </div>
+              {/if}
             {/each}
             
             {#if !($selectedClient.agentNotes?.length) && !($selectedClient.chatbotNotes?.length)}
