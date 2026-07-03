@@ -564,4 +564,105 @@
   .board__column-overdue  { background: #ef4444; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD RANK CONTROL (operator "float to top" ordering)
+   ───────────────────────────────────────────────────────────────────────────
+   A small ▲ badge in the card's top-LEFT corner (PendingBadge owns top-right).
+   Clicking it opens a popover to send-to-top / set an exact rank / clear it.
+   Ranked cards sort above unranked ones within their column (see store.ts).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.card__rank {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  color: $text-dim;
+  background: $surface-3;
+  border: 1px solid $border;
+  border-radius: 9px;
+  cursor: pointer;
+  opacity: 0;                       // hidden until card hover (keeps cards clean)
+  transition: opacity $t-fast, background $t-fast, color $t-fast, transform $t-fast;
+
+  .card:hover & { opacity: 0.55; }
+  &:hover { opacity: 1; color: #fff; background: $accent; transform: scale(1.08); }
+
+  // Always visible + accented once a card is actually ranked.
+  &--set {
+    opacity: 1;
+    color: #fff;
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    border-color: rgba(2, 181, 187, 0.5);
+    box-shadow: 0 1px 6px rgba(2, 181, 187, 0.35);
+  }
+}
+
+.card__rank-menu {
+  position: absolute;
+  top: 28px;
+  left: 6px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 148px;
+  padding: 7px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-md;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.card__rank-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: $text;
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+  cursor: pointer;
+  transition: background $t-fast, color $t-fast;
+
+  &:hover:not(:disabled) { background: $accent; color: #fff; border-color: $accent; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &--clear:hover:not(:disabled) { background: #ef4444; border-color: #ef4444; }
+}
+
+.card__rank-setrow {
+  display: flex;
+  gap: 5px;
+
+  .card__rank-act { width: auto; flex-shrink: 0; }
+}
+
+.card__rank-input {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: $text;
+  background: $surface-3;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+
+  &:focus { outline: none; border-color: $accent; }
+}
+
+
 

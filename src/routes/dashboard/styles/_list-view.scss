@@ -249,7 +249,29 @@
     user-select: none;
   }
 
+  /* ── Rank pill ────────────────────────────────────────────────────────
+     Mirrors the Kanban card's ▲ rank badge. Shown only when the client has
+     an explicit rankIndex; teal-accented so ranked rows stand out. */
+  &__rank {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 6px;
+    padding: 1px 6px;
+    border-radius: $r-full;
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    font-style: normal;
+    line-height: 1.4;
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+
   &--missing-name &__name {
+
     font-style: italic;
     color: $text-muted;
     font-weight: 600;

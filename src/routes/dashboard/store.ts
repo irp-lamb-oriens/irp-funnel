@@ -93,6 +93,17 @@ export interface Client {
   vehicles: Array<{ year: string; make: string; model: string }>;
   scheduling: string[];
   stage: string;
+  /**
+   * Operator-set ordering weight. Higher floats the card to the top of its
+   * Kanban column and to the top of the list view. `null` (the default) means
+   * no manual rank — the card keeps its natural recency order.
+   */
+  // Optional so pre-existing Client fixtures/mocks stay valid; the backend's
+  // buildClientSummary always sends it (number | null), and all consumers guard
+  // with `typeof rankIndex === 'number'`.
+  rankIndex?: number | null;
+
+
   callOutcome: string | null;
   transcript: string;
   agentNotes: Note[];
@@ -952,11 +963,27 @@ export const presendEmail = writable<PresendEmailData | null>(null);
 // `$lib/auth/irpStaff` (the underlying source of truth). No duplicate
 // subscriptions needed here.
 
+/**
+ * Ordering comparator: higher `rankIndex` floats to the top; ranked cards
+ * always sit above un-ranked ones; ties (incl. two un-ranked cards) keep their
+ * incoming natural order because `Array.prototype.sort` is stable in every
+ * engine we target. Used by both the list view (via `filteredClients`) and each
+ * Kanban column (via `clientsByStage`).
+ */
+export function compareByRank(a: Client, b: Client): number {
+  const ra = typeof a.rankIndex === 'number' && Number.isFinite(a.rankIndex) ? a.rankIndex : null;
+  const rb = typeof b.rankIndex === 'number' && Number.isFinite(b.rankIndex) ? b.rankIndex : null;
+  if (ra === null && rb === null) return 0; // both unranked → keep natural order
+  if (ra === null) return 1;                // a unranked → after b
+  if (rb === null) return -1;               // b unranked → after a
+  return rb - ra;                           // higher rank first
+}
+
 // ─── Derived: filtered clients ──────────────────────────────────────────────
 export const filteredClients = derived([clients, searchQuery, filters], ([$clients, $search, $filters]) => {
   const q = $search.toLowerCase().trim();
 
-  return $clients.filter(c => {
+  const matched = $clients.filter(c => {
     // 1. Text search
     if (q) {
       const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity}`.toLowerCase();
@@ -980,7 +1007,13 @@ export const filteredClients = derived([clients, searchQuery, filters], ([$clien
 
     return true;
   });
+
+  // Operator-set rank floats cards to the top of the list view. `clientsByStage`
+  // inherits this ordering per column (and re-sorts defensively). Natural
+  // recency order is preserved for un-ranked cards.
+  return matched.sort(compareByRank);
 });
+
 
 // ─── Derived: clients grouped by stage ──────────────────────────────────────
 // Derives from BOTH the filtered clients AND the reactive `stageOrderStore` so
@@ -1001,8 +1034,12 @@ export const clientsByStage = derived([filteredClients, stageOrderStore], ([$fil
     if (!grouped[stage]) grouped[stage] = [];
     grouped[stage].push(c);
   }
+  // Defensive re-sort per column so an operator-set rank always floats a card
+  // to the top of its Kanban column even if the upstream order ever changes.
+  for (const s of Object.keys(grouped)) grouped[s].sort(compareByRank);
   return grouped;
 });
+
 
 // ─── Derived: pending-action aggregate maps ──────────────────────────────────
 //
@@ -1502,7 +1539,27 @@ export async function updateClientStage(id: string, stage: string): Promise<void
   selectedClient.update(c => c && c.id === id ? { ...c, stage } : c);
 }
 
+/**
+ * Set (or clear) a client's manual ordering rank. A higher `rankIndex` floats
+ * the card to the top of its Kanban column and the list view; pass `null` to
+ * clear it back to natural recency order. Persists via the generic client PATCH
+ * endpoint (which whitelists `rankIndex`) and optimistically updates local state
+ * so the card re-sorts immediately (both `filteredClients` and `clientsByStage`
+ * re-derive off `compareByRank`).
+ */
+export async function setClientRank(id: string, rankIndex: number | null): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ rankIndex }),
+  });
+  clients.update(list =>
+    list.map(c => c.id === id ? { ...c, rankIndex } : c)
+  );
+  selectedClient.update(c => c && c.id === id ? { ...c, rankIndex } : c);
+}
+
 export async function updateClientFields(id: string, customFields: Record<string, string>): Promise<void> {
+
   await apiFetch(`/api/dashboard/clients/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ customFields }),

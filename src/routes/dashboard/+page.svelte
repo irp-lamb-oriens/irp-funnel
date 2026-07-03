@@ -10,8 +10,9 @@
 
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, HIDDEN_STAGES,
     requestOTP, verifyOTP, checkAuth, logout,
-    fetchClients, fetchClientDetail, updateClientStage,
+    fetchClients, fetchClientDetail, updateClientStage, setClientRank,
     updateClientFields, addNote, triggerEmail, fetchMetrics,
+
     initDashboardSocket, disconnectDashboardSocket,
     pendingCountByClient, fetchLiveAccessConfig,
     getStageSlaStatus, STAGE_SLA_DAYS,
@@ -335,6 +336,56 @@
     draggedClient = null;
   }
 
+  // ─── Card rank control (float-to-top ordering) ───────────────────────────
+  // `rankMenuFor` holds the id of the client whose rank popover is open (null =
+  // none). `rankDraft` is the number typed into the "set exact" field. A window
+  // click closes the popover — the badge/popover stop propagation so their own
+  // clicks never trigger that close (nor open the detail panel).
+  let rankMenuFor: string | null = null;
+  let rankDraft: number | null = null;
+  let rankSaving = false;
+
+  function toggleRankMenu(client: Client, e: MouseEvent) {
+    e.stopPropagation();
+    if (rankMenuFor === client.id) { rankMenuFor = null; return; }
+    rankMenuFor = client.id;
+    rankDraft = typeof client.rankIndex === 'number' ? client.rankIndex : null;
+  }
+
+  function closeRankMenu() { rankMenuFor = null; rankDraft = null; }
+
+  /** Highest current rank among a column's cards (0 when none are ranked). */
+  function topRankOf(cards: Client[]): number {
+    return cards.reduce(
+      (m, c) => (typeof c.rankIndex === 'number' && c.rankIndex > m ? c.rankIndex : m),
+      0,
+    );
+  }
+
+  async function applyRank(client: Client, value: number | null) {
+    rankSaving = true;
+    try {
+      await setClientRank(client.id, value);
+      closeRankMenu();
+    } catch (err: any) {
+      alert('Failed to set rank: ' + err.message);
+    } finally {
+      rankSaving = false;
+    }
+  }
+
+  /** Float a card above every other in its column (top rank + 1). */
+  function sendToTop(client: Client, cards: Client[]) {
+    applyRank(client, topRankOf(cards) + 1);
+  }
+
+  /** Apply the exact number typed in the popover (blank/invalid → clear rank). */
+  function setExactRank(client: Client) {
+    const v = rankDraft;
+    applyRank(client, typeof v === 'number' && Number.isFinite(v) ? v : null);
+  }
+
+
   // Board columns. The retired "private feedback" columns are hidden from the
   // board (their emails are now sent automatically by the Automations engine),
   // BUT they reappear automatically if a legacy client is still parked in one —
@@ -396,6 +447,11 @@
   <title>IRP Dashboard — CRM</title>
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
+
+<!-- Any click outside an open rank popover (badge + popover stop propagation)
+     closes it. Harmless no-op when nothing is open. -->
+<svelte:window on:click={() => { if (rankMenuFor) closeRankMenu(); }} />
+
 
 {#if $isCheckingAuth}
   <!-- ═══════════════════════ INITIAL LOADING STATE ═══════════════════════ -->
@@ -668,8 +724,35 @@
                 >
                   <!-- Pending-actions badge — top-right corner, auto-hides when count=0 -->
                   <PendingBadge count={$pendingCountByClient.get(client.id) ?? 0} variant="card" />
+
+                  <!-- Operator rank control (float-to-top). Stops propagation so
+                       it never opens the detail panel; opens a small popover to
+                       send-to-top / set an exact rank / clear. -->
+                  <button
+                    class="card__rank"
+                    class:card__rank--set={typeof client.rankIndex === 'number'}
+                    title={typeof client.rankIndex === 'number'
+                      ? `Ranked #${client.rankIndex} — click to change`
+                      : 'Rank card (float to top)'}
+                    on:click={(e) => toggleRankMenu(client, e)}
+                  >▲{#if typeof client.rankIndex === 'number'}&nbsp;{client.rankIndex}{/if}</button>
+                  {#if rankMenuFor === client.id}
+                    <!-- svelte-ignore a11y-click-events-have-key-events -->
+                    <!-- svelte-ignore a11y-no-static-element-interactions -->
+                    <div class="card__rank-menu" role="menu" tabindex="-1" on:click|stopPropagation>
+                      <button class="card__rank-act" disabled={rankSaving} on:click={() => sendToTop(client, allCards)}>⤒ Send to top</button>
+                      <div class="card__rank-setrow">
+                        <input class="card__rank-input" type="number" placeholder="#" bind:value={rankDraft} />
+                        <button class="card__rank-act" disabled={rankSaving} on:click={() => setExactRank(client)}>Set</button>
+                      </div>
+                      {#if typeof client.rankIndex === 'number'}
+                        <button class="card__rank-act card__rank-act--clear" disabled={rankSaving} on:click={() => applyRank(client, null)}>✕ Clear rank</button>
+                      {/if}
+                    </div>
+                  {/if}
                   <div
                     class="card__name"
+
                     title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
                   >
                     {#if !client.nameKnown}<span class="card__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
@@ -766,8 +849,9 @@
                   class="list-row__name"
                   title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
                 >
-                  {#if !client.nameKnown}<span class="list-row__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
+                  {#if typeof client.rankIndex === 'number'}<span class="list-row__rank" title="Ranked #{client.rankIndex} — floats to the top">▲ {client.rankIndex}</span>{/if}{#if !client.nameKnown}<span class="list-row__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
                 </div>
+
                 <div class="list-row__email" title={client.email}>{client.email}</div>
               </div>
 
