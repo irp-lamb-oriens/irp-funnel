@@ -251,7 +251,10 @@
         {displayValue}
         {#if !readonly}<span class="editable-field__pencil" aria-hidden="true">{isDateType ? '📅' : '✎'}</span>{/if}
       </button>
-      {#if saving}
+      {#if saving && isDateType}
+        <!-- Date saves commit without entering the inline-edit branch, so the
+             spinner lives here. Gated to isDateType so non-date fields keep
+             their exact previous (spinner-free) value-button rendering. -->
         <span class="editable-field__spinner" aria-hidden="true"></span>
       {/if}
     {/if}
