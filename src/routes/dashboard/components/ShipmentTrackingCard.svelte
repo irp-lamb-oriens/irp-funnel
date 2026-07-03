@@ -140,7 +140,7 @@
 <div class="stc">
   <!-- Header -->
   <div class="stc__header">
-    <span class="stc__title">📦 Shipment & Logistics</span>
+    <span class="stc__title">📦 Shipping Details</span>
     {#if loopStatus}
       <span class="stc__loop-pill" style="--loop-color: {loopCfg.color}">
         {loopCfg.dot} {loopCfg.label}

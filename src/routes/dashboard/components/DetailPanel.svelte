@@ -1041,7 +1041,77 @@
                       value={$selectedClient.propertyTypeTo}
                       label="To"
                       placeholder="—"
-                    />
+                    />modificaciones_pipeline:
+  - de: "Pricing Quote"
+    a: "Pricing Quote (actualizado)"
+    donde: "Columna inicial (se deben agregar las notas de Steven para cotizar)"
+
+  - de: "[Nueva Columna]"
+    a: "Requote Request"
+    donde: "Después de 'Quoted' y antes de 'Quote Acceptance'"
+
+  - de: "[Nueva Columna]"
+    a: "Handover Ops"
+    donde: "Antes de 'Initial Payment', 'Sell Drop', 'Full Packing' y 'Self Packing'"
+
+  - de: "[Nueva Columna]"
+    a: "Insurance Status"
+    donde: "Después de 'Self packing' y 'Full packing'"
+
+  - de: 
+      - "Loading"
+      - "Container"
+    a: "Origin Service"
+    donde: "En la sección de servicios en origen (reemplaza a Loading y Container)"
+
+  - de: "Exporting"
+    a: "Shipping Details"
+    donde: "Después de 'Origin Service'"
+
+  - de: "[Columna siguiente a Shipping Details]"
+    a: "Arrival at Destination"
+    donde: "Inmediatamente después de 'Shipping Details'"
+
+  - de: "Destination (Redestino)"
+    a: "[Eliminada]"
+    donde: "Estaba después de la llegada a destino (uso interno)"
+
+  - de: "Container Fiscal Warehouse"
+    a: "Bonded Warehouse Entry"
+    donde: "Siguiente etapa física en destino"
+
+  - de: "Container Unloading"
+    a: "[Eliminada]"
+    donde: "Estaba después del ingreso a almacén fiscal"
+
+  - de: 
+      - "Tax Calculation"
+      - "Destination Cost"
+      - "Invoice"
+      - "Import"
+      - "Import Procedure"
+    a: "Import Customs Clearance"
+    donde: "Después de 'Bonded Warehouse Entry'"
+
+  - de: "Customs Inspection DUA"
+    a: "Customs Inspection"
+    donde: "Antes de 'Delivery Coordination'"
+
+  - de: "Delivery"
+    a: "Delivery Service"
+    donde: "Después de 'Delivery Coordination'"
+
+  - de: "Proof of Delivery"
+    a: "Delivery Documents"
+    donde: "Inmediatamente después de 'Delivery Service'"
+
+  - de: "Operations Done"
+    a: "[Eliminada]"
+    donde: "Estaba al final del proceso operativo"
+
+  - de: "Refunds (Rolf Fonks)"
+    a: "Goodwill"
+    donde: "En la sección de ajustes/finanzas (se mantiene como etapa interna y oculta al cliente)"
                   </div>
 
                 {:else if f.valueType === 'vehicles'}
