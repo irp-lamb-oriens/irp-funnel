@@ -44,6 +44,7 @@
   import CardHistory from './CardHistory.svelte';
   import EditableField from './EditableField.svelte';
   import DateFieldRow from './DateFieldRow.svelte';
+  import FieldControl from './FieldControl.svelte';
   import TranscriptPaster from './TranscriptPaster.svelte';
 
   import PendingBadge from './PendingBadge.svelte';
@@ -1103,40 +1104,29 @@
                     </div>
                   {/if}
 
-                {:else if f.readOnly}
-                  <!-- Read-only computed/derived fields (createdAt, count, email…) -->
-                  <span class="detail-field__value detail-field__value--readonly">
-                    {#if f.valueType === 'date'}{formatDate((val as string) || '')}{:else}{(val as any) ?? '—'}{/if}
-                  </span>
-
-                {:else if f.valueType === 'date' || f.valueType === 'datetime'}
-                  <!-- Editable date / datetime → a Scheduled-Call-style row: a
-                       "Set date" button when empty, or the formatted value with
-                       a "Change" button and an inline ✕ (delete-with-confirm)
-                       when set. Uses the shared calendar picker but WITHOUT the
-                       text-style value button, so there's no hover/backdrop
-                       collision with the popup. -->
-                  <DateFieldRow
-                    clientId={$selectedClient.id}
-                    path={ovPath(f, latestIdx)}
-                    value={val}
-                    label={f.label}
-                    withTime={f.valueType === 'datetime'}
-                  />
-
                 {:else}
-                  <!-- Generic scalar (string / text / number / enum / boolean /
-                       email) — classic inline click-to-edit text box. Date types
-                       are handled by the <DateFieldRow> branch above. -->
-                  <EditableField
+                  <!-- Type-aware scalar editor. <FieldControl> picks the right
+                       widget for the field's valueType:
+                         • enum     → a <select> dropdown of the operator's
+                                      comma-separated choices (f.options)
+                         • boolean  → an on/off toggle switch (Yes / No)
+                         • number   → an inline numeric input
+                         • date /   → the Scheduled-Call-style <DateFieldRow>
+                           datetime   calendar row
+                         • else     → the classic inline <EditableField> text box
+                       Read-only fields render a formatted, non-editable value. -->
+                  <FieldControl
                     clientId={$selectedClient.id}
                     path={ovPath(f, latestIdx)}
                     value={val}
+                    valueType={f.valueType}
                     label={f.label}
-                    multiline={f.valueType === 'text'}
+                    options={f.options || []}
                     placeholder={f.placeholder || '—'}
+                    readonly={f.readOnly === true}
                   />
                 {/if}
+
 
               </div>
             {/if}

@@ -7,7 +7,8 @@
     clients, selectedClient, metrics, loading, error,
     clientsLoading, clientsLoadedOnce,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
-    stageOrderStore,
+    stageOrderStore, stageConfig,
+
 
     STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, STAGE_DESCRIPTIONS, EMAIL_TYPES, HIDDEN_STAGES,
     requestOTP, verifyOTP, checkAuth, logout,
@@ -441,7 +442,14 @@
 
 
 
-  const stageKeys = Object.keys(STAGE_LABELS);
+  // Stage ORDER for the "missing transcript" heuristic — driven by the
+  // centralized, DB-backed stage config ($stageConfig, full ordered list incl.
+  // inactive) so it tracks operator edits instead of a stale one-time snapshot
+  // of the hardcoded STAGE_LABELS. Falls back to the hardcoded keys only for
+  // first paint before the config resolves.
+  $: stageKeys = ($stageConfig && $stageConfig.length)
+    ? $stageConfig.map((s) => s.id)
+    : Object.keys(STAGE_LABELS);
 
   /**
    * Whole days a client has been sitting in its current column — independent
@@ -455,7 +463,8 @@
     if (Number.isNaN(ms)) return 0;
     return Math.floor(Math.max(0, now - ms) / 86_400_000);
   }
-  const postTranscriptIdx = stageKeys.indexOf('sales_post_transcript');
+  $: postTranscriptIdx = stageKeys.indexOf('sales_post_transcript');
+
 
   function isMissingTranscript(client: Client): boolean {
     const idx = stageKeys.indexOf(client.stage);
@@ -880,7 +889,7 @@
                   class="list-row__name"
                   title={!client.nameKnown ? 'First name not provided — only surname/email known' : `${client.name} ${client.surname}`.trim()}
                 >
-                  {#if typeof client.rankIndex === 'number'}<span class="list-row__rank" title="Ranked #{client.rankIndex} — floats to the top">▲ {client.rankIndex}</span>{/if}{#if !client.nameKnown}<span class="list-row__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
+                  {#if typeof client.rankIndex === 'number'}<span class="list-row__rank" title="Ranked #{"🔥".repeat(+client.rankIndex)} — floats to the top">{"🔥".repeat(+client.rankIndex)}</span>{/if}{#if !client.nameKnown}<span class="list-row__name-badge" aria-label="First name unknown">?</span>{/if}{client.displayName}
                 </div>
 
                 <div class="list-row__email" title={client.email}>{client.email}</div>

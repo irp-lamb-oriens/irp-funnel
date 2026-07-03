@@ -22,7 +22,7 @@
   import { get } from 'svelte/store';
   import type { Client } from '../store.ts';
   import { fieldConfig, loadOverviewFields, type FieldConfigRow } from '../store.ts';
-  import EditableField from './EditableField.svelte';
+  import FieldControl from './FieldControl.svelte';
 
   export let client: Client;
 
@@ -277,14 +277,19 @@
         {#each logisticsFields as f (f.id)}
           <div class="stc__custom-field">
             <span class="stc__cell-label">{f.label}</span>
-            <EditableField
+            <!-- Type-aware editor: enum → dropdown, boolean → switch,
+                 number → numeric input, date/datetime → calendar row, else
+                 text box. Identical to how the field renders on the Overview
+                 tab, so a logistics field looks the same wherever it lives. -->
+            <FieldControl
               clientId={clientId}
               path={fieldPath(f)}
               value={fieldValue(f)}
+              valueType={f.valueType}
               label={f.label}
-              multiline={f.valueType === 'text'}
-              readonly={f.readOnly === true}
+              options={f.options || []}
               placeholder={f.placeholder || '—'}
+              readonly={f.readOnly === true}
             />
           </div>
         {/each}
