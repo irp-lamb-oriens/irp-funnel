@@ -174,7 +174,27 @@
       else onClose();
     }
   }
+
+  /**
+   * Move the overlay onto <body> so it can't be trapped/clipped by an ancestor
+   * that establishes a containing block for `position: fixed`. The Detail Panel
+   * (`.detail-panel`) has BOTH a `transform` (its slide-in animation) and
+   * `overflow-y: auto` — per spec a transformed ancestor becomes the containing
+   * block for fixed descendants, so without this portal the overlay is
+   * positioned + clipped relative to the panel and visibly "shakes" to the
+   * correct full-viewport position on the next repaint (e.g. on mouse-move).
+   * Mirrors the same portal pattern used by <Select> and <MentionTextarea>.
+   */
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return {
+      destroy() {
+        if (node.parentNode) node.parentNode.removeChild(node);
+      },
+    };
+  }
   onMount(() => {
+
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
   });
@@ -182,7 +202,8 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="dfe-overlay" on:click={handleOverlayClick} role="presentation">
+<div class="dfe-overlay" use:portal on:click={handleOverlayClick} role="presentation">
+
   <div class="dfe" role="dialog" aria-modal="true" aria-label={`Edit ${label}`}>
     <!-- Header -->
     <div class="dfe__header">

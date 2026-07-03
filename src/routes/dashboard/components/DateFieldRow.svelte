@@ -97,7 +97,24 @@
       saving = false;
     }
   }
+
+  /**
+   * Portal the delete-confirm overlay onto <body>. Like the calendar picker,
+   * this `position: fixed` overlay would otherwise be trapped/clipped by the
+   * Detail Panel's transform (slide-in animation) + overflow, causing it to be
+   * mis-centered and to "shake" into place on the next repaint. Mirrors the
+   * pattern used by <Select> / <MentionTextarea> / <DateFieldEditorModal>.
+   */
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return {
+      destroy() {
+        if (node.parentNode) node.parentNode.removeChild(node);
+      },
+    };
+  }
 </script>
+
 
 <div class="detail-field__schedule-row">
   {#if hasValue}
@@ -151,9 +168,11 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="dfr-confirm-overlay"
+    use:portal
     role="presentation"
     on:click={(e) => { if (e.target === e.currentTarget) showDeleteConfirm = false; }}
   >
+
     <div class="dfr-confirm-card" role="alertdialog" aria-modal="true" aria-label="Confirm remove date">
       <div class="dfr-confirm-icon">🗑️</div>
       <h3 class="dfr-confirm-title">Remove this date?</h3>
