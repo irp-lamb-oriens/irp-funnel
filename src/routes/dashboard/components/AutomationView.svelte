@@ -34,7 +34,7 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' = 'stages';
   let busyId = ''; // id of the row currently saving (disables its controls)
 
   // ── Stage configuration state ───────────────────────────────────────────
@@ -475,6 +475,9 @@
     <button class="av-tab" class:av-tab--active={tab === 'templates'} on:click={() => (tab = 'templates')}>
       ✉️ Email templates
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'fields'} on:click={() => (tab = 'fields')}>
+      🧩 Overview fields
+    </button>
   </div>
 
   {#if loading}
@@ -534,6 +537,11 @@
         </div>
       </section>
     {/if}
+  {:else if tab === 'fields'}
+    <!-- ── Overview-field registry (centralized, DB-backed; advisory/additive) ── -->
+    <section class="av-card">
+      <OverviewFieldsEditor />
+    </section>
   {:else if tab === 'stages'}
     <!-- ── Unified: every centralized stage + its automation rules ─────── -->
     <p class="av-subtitle" style="margin-bottom:1.1rem">
@@ -544,11 +552,6 @@
     </p>
 
     {#if stageError}<div class="av-msg av-msg--error">{stageError}</div>{/if}
-
-    <!-- Overview-field registry (centralized, DB-backed; advisory/additive) -->
-    <section class="av-card">
-      <OverviewFieldsEditor />
-    </section>
 
     <!-- Add a stage -->
     <section class="av-card av-add">
