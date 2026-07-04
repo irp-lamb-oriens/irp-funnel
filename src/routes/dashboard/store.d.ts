@@ -3,7 +3,7 @@
  * extracted facts. Mirrors `irp-funnel-server/helper/transcriptInsights.types.ts`.
  */
 export type ShippingMode = 'car_only_in_container' | 'car_roro_only' | 'car_via_rail' | '20ft_container' | '40ft_container' | '20ft_household' | '20ft_household_plus_car' | '40ft_household' | '40ft_household_plus_car' | 'lcl';
-export type PackingTier = 'self_pack_self_load' | 'self_pack_assisted_load' | 'full_pack_full_load' | 'lcl_full_service';
+export type PackingTier = 'self_pack_self_load' | 'self_pack_assisted_load' | 'full_pack_full_load' | 'lcl_full_service' | 'vehicle_only';
 export interface TranscriptInsights {
     shippingMode: ShippingMode | null;
     packingTier: PackingTier | null;
@@ -61,6 +61,12 @@ export interface Client {
     }>;
     scheduling: string[];
     stage: string;
+    /**
+     * Operator-set ordering weight. Higher floats the card to the top of its
+     * Kanban column and to the top of the list view. `null` (the default) means
+     * no manual rank — the card keeps its natural recency order.
+     */
+    rankIndex?: number | null;
     callOutcome: string | null;
     transcript: string;
     agentNotes: Note[];
@@ -127,6 +133,22 @@ export interface Note {
     text: string;
     author: string;
     createdAt: string;
+    /**
+     * Optional staff emails this note is addressed to. Each recipient is emailed
+     * a notification when the note is created. Absent on legacy notes (backward
+     * compatible — an un-targeted note behaves exactly as before).
+     */
+    recipients?: string[];
+    /** Set when the note text was edited. ISO timestamp + editor email. */
+    editedAt?: string;
+    editedBy?: string;
+    /**
+     * Soft-deletion markers. Only ADMIN users ever receive notes carrying these
+     * fields — the server strips deleted notes for everyone else. Admins render
+     * them as a greyed-out "ghost". Absent on live notes.
+     */
+    deletedAt?: string;
+    deletedBy?: string;
 }
 export interface ActivityEntry {
     type: string;
@@ -182,6 +204,26 @@ export interface Metrics {
     sourceBreakdown: Record<string, number>;
     countryBreakdown: Record<string, number>;
     channelBreakdown: Record<string, number>;
+    stageRatings?: StageRatingsMetric;
+}
+/** One journey stage's running satisfaction score. */
+export interface StageRatingBucket {
+    stage: string;
+    label: string;
+    average: number;
+    count: number;
+    sum: number;
+}
+/** Aggregate stage-satisfaction block returned by /api/dashboard/metrics. */
+export interface StageRatingsMetric {
+    perStage: StageRatingBucket[];
+    overall: {
+        average: number;
+        count: number;
+    };
+    globalAverage: number;
+    totalRatings: number;
+    updatedAt: string | null;
 }
 export declare const STAGE_LABELS: Record<string, string>;
 export declare const STAGE_ICONS: Record<string, string>;
@@ -299,7 +341,43 @@ export interface Filters {
     callOutcome: string;
 }
 export declare const filters: import("svelte/store").Writable<Filters>;
-export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates">;
+export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations">;
+/**
+ * Stages hidden from the board/list UI. The three "private feedback" columns
+ * were retired: their emails are now sent automatically by the Stage Email
+ * Automation engine (Automations tab), attached to the preceding real stage.
+ * Legacy docs are moved off these stages by scripts/migrate-off-feedback-stages.ts.
+ */
+export declare const HIDDEN_STAGES: Set<string>;
+export interface StageConfigRow {
+    id: string;
+    label: string;
+    order: number;
+    description: string;
+    icon: string;
+    color: string;
+    slaDays: number | null;
+    phase: string;
+    notifyGroup: 'sales' | 'pricing' | 'ops';
+    /** When true the client status page hides this stage (team board unaffected). */
+    hiddenFromClient: boolean;
+    clientLabel?: string;
+    /** Inactive stages are kept for history but not shown on the team board. */
+    active: boolean;
+    isSeed?: boolean;
+    updatedBy?: string;
+    updatedAt?: string;
+    createdAt?: string;
+}
+/** The full ordered stage config as last loaded from the server. */
+export declare const stageConfig: import("svelte/store").Writable<StageConfigRow[]>;
+/**
+ * Ordered ids of the ACTIVE stages that make up the Kanban columns. Seeded from
+ * the hardcoded maps for first paint, then replaced by the DB config. Kept as a
+ * store so `clientsByStage` re-derives (and the board re-renders) the instant
+ * the config loads or is edited.
+ */
+export declare const stageOrderStore: import("svelte/store").Writable<string[]>;
 export declare const detailPanelOpen: import("svelte/store").Writable<boolean>;
 /**
  * Incrementing this store signals `DetailPanel.svelte` to re-fetch
@@ -401,6 +479,14 @@ export interface PresendEmailData {
     suggestionId?: string;
 }
 export declare const presendEmail: import("svelte/store").Writable<PresendEmailData | null>;
+/**
+ * Ordering comparator: higher `rankIndex` floats to the top; ranked cards
+ * always sit above un-ranked ones; ties (incl. two un-ranked cards) keep their
+ * incoming natural order because `Array.prototype.sort` is stable in every
+ * engine we target. Used by both the list view (via `filteredClients`) and each
+ * Kanban column (via `clientsByStage`).
+ */
+export declare function compareByRank(a: Client, b: Client): number;
 export declare const filteredClients: import("svelte/store").Readable<Client[]>;
 export declare const clientsByStage: import("svelte/store").Readable<Record<string, Client[]>>;
 /**
@@ -431,6 +517,45 @@ export declare function addPendingAction(clientId: string, action: Omit<PendingA
  */
 export declare function resolvePendingAction(clientId: string, actionId: string, resolution: 'done' | 'dismissed'): Promise<void>;
 export declare function getApiUrl(): string;
+/**
+ * Fetch the centralized stage config and hydrate the in-memory maps + stores.
+ * Non-blocking + non-fatal: on any error the hardcoded defaults stay in place
+ * so the board never blocks on first paint.
+ */
+export declare function loadStageConfig(): Promise<StageConfigRow[]>;
+/** Raw fetch of the stage config (no side effects) — for the config editor UI. */
+export declare function fetchStages(): Promise<StageConfigRow[]>;
+/** Create a new stage. Optionally position it right after `insertAfterId`. */
+export declare function createStage(payload: Partial<StageConfigRow> & {
+    label: string;
+    insertAfterId?: string;
+}): Promise<{
+    stage: StageConfigRow | null;
+    stages: StageConfigRow[];
+}>;
+/** Edit / rename a stage (any subset of fields). */
+export declare function updateStage(id: string, updates: Partial<StageConfigRow>): Promise<StageConfigRow>;
+/** Persist a new column order (full ordered list of stage ids). */
+export declare function reorderStages(orderedIds: string[]): Promise<StageConfigRow[]>;
+/** Count clients currently in a stage + its previous/next neighbours. */
+export declare function countStageClients(id: string): Promise<{
+    count: number;
+    previousStageId: string | null;
+    nextStageId: string | null;
+}>;
+/** Migrate ALL clients in a column to another column (`toStage` may be an id). */
+export declare function migrateStageClients(id: string, toStage: string): Promise<{
+    migrated: number;
+    failed: number;
+    total: number;
+}>;
+/**
+ * Delete a stage. When it still has clients, `migrateTo` MUST be supplied
+ * (a stage id, or the tokens "__previous__" / "__next__"); the server migrates
+ * every client first, then deletes. The caller should have already resolved the
+ * count via `countStageClients` and chosen a destination.
+ */
+export declare function deleteStage(id: string, migrateTo?: string): Promise<any>;
 export declare function requestOTP(email: string): Promise<string>;
 export declare function verifyOTP(email: string, code: string): Promise<void>;
 export declare function checkAuth(): Promise<boolean>;
@@ -453,8 +578,30 @@ export declare function disconnectDashboardSocket(): void;
 export declare function fetchClients(): Promise<void>;
 export declare function fetchClientDetail(id: string): Promise<Client>;
 export declare function updateClientStage(id: string, stage: string): Promise<void>;
+/**
+ * Set (or clear) a client's manual ordering rank. A higher `rankIndex` floats
+ * the card to the top of its Kanban column and the list view; pass `null` to
+ * clear it back to natural recency order. Persists via the generic client PATCH
+ * endpoint (which whitelists `rankIndex`) and optimistically updates local state
+ * so the card re-sorts immediately (both `filteredClients` and `clientsByStage`
+ * re-derive off `compareByRank`).
+ */
+export declare function setClientRank(id: string, rankIndex: number | null): Promise<void>;
 export declare function updateClientFields(id: string, customFields: Record<string, string>): Promise<void>;
-export declare function addNote(id: string, text: string): Promise<Note>;
+export declare function addNote(id: string, text: string, recipients?: string[]): Promise<Note>;
+/**
+ * Edit an existing note's text. Notes are addressed by their `createdAt` ISO
+ * timestamp (they carry no explicit id). The server stamps `editedAt`/`editedBy`
+ * and records a `note_edited` entry in the activity log (surfaced in Journey).
+ */
+export declare function editNote(id: string, noteCreatedAt: string, text: string): Promise<Note>;
+/**
+ * Soft-delete a note. The server never removes it from Firestore — it stamps
+ * `deletedAt`/`deletedBy` and logs a `note_deleted` entry (surfaced in Journey).
+ * ADMINS keep the greyed-out "ghost" in place locally; everyone else has it
+ * removed from view entirely (matching what the server sends on the next fetch).
+ */
+export declare function deleteNote(id: string, noteCreatedAt: string): Promise<Note>;
 export declare function fetchConversations(id: string, email?: string): Promise<{
     conversations: any[];
     statusChatThread: any[];
@@ -663,6 +810,25 @@ export declare function rescheduleCall(clientId: string, startISO: string, addit
     oldSlot: string | null;
     alreadyExisted?: boolean;
 }>;
+/**
+ * Add attendee(s) to a client's EXISTING consultation call WITHOUT changing
+ * its time. The server PATCHes the live Google Calendar event so each new
+ * attendee receives an invite email, and records an `attendees_added`
+ * activityLog entry (actor/source/timestamp) that surfaces in the Journey,
+ * Activity and Admin feeds. Calls POST /api/dashboard/clients/:id/attendees.
+ *
+ * Returns the server response including which emails were genuinely added
+ * (`addedAttendees`) and `alreadyPresent` when everyone was already invited.
+ */
+export declare function addAttendeesToCall(clientId: string, attendees: string[]): Promise<{
+    success: boolean;
+    addedAttendees: string[];
+    allAttendees?: string[];
+    alreadyPresent?: boolean;
+    hangoutLink?: string;
+    htmlLink?: string;
+    slot?: string | null;
+}>;
 export interface CreateClientPayload {
     /** Required. */
     email: string;
@@ -852,6 +1018,12 @@ export interface QuoteBlock {
 export interface QuoteLineGroup {
     groupId: string;
     title: string;
+    /**
+     * Optional reference to a reusable, agnostic {@link QuoteLabel}. When set, the
+     * group's `title` mirrors the label's name so the client-facing status page
+     * (which reads `title`) keeps working unchanged. Absent/null ⇒ legacy free-text.
+     */
+    labelId?: string | null;
     role: 'required' | 'optional';
     lineItems: QuoteLineItem[];
 }
@@ -988,6 +1160,13 @@ export declare function sendQuoteToClient(clientId: string, quoteId: string): Pr
  */
 export declare function fetchQuoteByToken(consultationId: string, token: string): Promise<Quote | null>;
 /**
+ * Phase D — public, token-gated fetch of the client-facing AI description.
+ * Lazily generates + caches the description server-side on first view when the
+ * quote doesn't have one yet, and respects any staff-authored description.
+ * Non-fatal: returns '' on any error so the status page just omits the card.
+ */
+export declare function fetchClientQuoteDescription(consultationId: string, token: string): Promise<string>;
+/**
  * Accept a quote as the client (called from the public status page).
  * No auth required — validated by clientToken on the server.
  *
@@ -1096,6 +1275,59 @@ export declare function updateQuoteLineTemplate(templateId: string, updates: Par
 }>;
 /** Delete a quote line-item template permanently. */
 export declare function deleteQuoteLineTemplate(templateId: string): Promise<void>;
+export interface ServiceType {
+    serviceTypeId: string;
+    /** Human-readable label shown in the service-type selector. */
+    label: string;
+    /** Short emoji/icon shown beside the label. */
+    icon: string;
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string | null;
+}
+/** Fetch all custom (dashboard-managed) service types, newest first. */
+export declare function fetchServiceTypes(): Promise<ServiceType[]>;
+/** Create a new custom service type. Returns the created doc. */
+export declare function createServiceType(payload: Pick<ServiceType, 'label'> & Partial<Pick<ServiceType, 'icon'>>): Promise<ServiceType>;
+/** Partially update a custom service type. */
+export declare function updateServiceType(serviceTypeId: string, updates: Partial<Pick<ServiceType, 'label' | 'icon'>>): Promise<{
+    success: boolean;
+    updatedFields: string[];
+}>;
+/** Delete a custom service type permanently. */
+export declare function deleteServiceType(serviceTypeId: string): Promise<void>;
+export interface QuoteLabel {
+    labelId: string;
+    /** Human-readable label shown in the group label chooser. */
+    label: string;
+    /** Short emoji/icon shown beside the label. */
+    icon: string;
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string | null;
+}
+/** Fetch all custom quote-line group labels, newest first. */
+export declare function fetchQuoteLabels(): Promise<QuoteLabel[]>;
+/** Create a new custom quote label. Returns the created doc. */
+export declare function createQuoteLabel(payload: Pick<QuoteLabel, 'label'> & Partial<Pick<QuoteLabel, 'icon'>>): Promise<QuoteLabel>;
+/** Partially update a custom quote label. */
+export declare function updateQuoteLabel(labelId: string, updates: Partial<Pick<QuoteLabel, 'label' | 'icon'>>): Promise<{
+    success: boolean;
+    updatedFields: string[];
+}>;
+/** Delete a custom quote label permanently. */
+export declare function deleteQuoteLabel(labelId: string): Promise<void>;
+/**
+ * Trigger server-side AI (re)generation of a quote's client-facing description.
+ * The server composes a short, client-safe paragraph from the quote's line
+ * labels + group titles (never cost/margin/provider detail), caches it on the
+ * quote (`clientDescription` + a content hash), and returns the text. Only
+ * regenerates when the quote content changed since the last generation.
+ */
+export declare function generateQuoteClientDescription(clientId: string, quoteId: string): Promise<{
+    clientDescription: string;
+    cached: boolean;
+}>;
 /**
  * Apply a template to a quote: seeds the quote's blocks + templateId.
  * The quote's lineItems and all other existing fields are preserved.
@@ -1137,4 +1369,168 @@ export interface SendRfqResult {
  * Idempotent on the server: a provider with a live (pending/accepted/selected)
  * request is skipped, so re-sending never double-contacts anyone.
  */
-export declare function sendProviderRfq(clientId: string, providerIds?: string[]): Promise<SendRfqResult>;
+export interface SendRfqOptions {
+    /** Explicit CC recipients (e.g. the RFQ pricing inbox). */
+    cc?: string[];
+    /** Operator-edited subject (supports {{providerName}} personalization). */
+    subject?: string;
+    /**
+     * Operator-edited RFQ HTML body (an edited, pre-translated Sondeo preview).
+     * {{providerName}} / {{submitUrl}} are personalized per provider server-side.
+     */
+    bodyHtml?: string;
+}
+export declare function sendProviderRfq(clientId: string, providerIds?: string[], options?: SendRfqOptions): Promise<SendRfqResult>;
+/** A vendor's submitted rate for a quote request. */
+export interface QuoteRequestProviderResponse {
+    price: number | null;
+    currency: string | null;
+    notes: string;
+    respondedAt: string;
+}
+/** The operator's edited value (kept separate from the vendor-submitted one). */
+export interface QuoteRequestOperatorOverride {
+    price: number | null;
+    currency: string | null;
+    notes: string;
+    overriddenBy?: string;
+    overriddenAt?: string;
+}
+export interface QuoteRequestRow {
+    requestId: string;
+    providerId: string;
+    providerName: string;
+    providerEmail: string;
+    status: 'pending' | 'accepted' | 'declined' | 'expired' | 'selected' | 'confirmed';
+    sentAt: string | null;
+    expiresAt: string | null;
+    providerResponse: QuoteRequestProviderResponse | null;
+    operatorOverride: QuoteRequestOperatorOverride | null;
+    reviewedAt: string | null;
+    reviewedBy: string | null;
+    /** Provider quality score 0–5 (half-steps); null = unrated. */
+    providerScore: number | null;
+}
+export interface QuoteRequestsResult {
+    quoteRequests: QuoteRequestRow[];
+    expectedMarginPct: number;
+    pendingReviewCount: number;
+}
+/** Fetch all RFQ provider responses for a client (dashboard view). */
+export declare function fetchQuoteRequests(clientId: string): Promise<QuoteRequestsResult>;
+/**
+ * Set (or clear) the operator's rate override on one response, and/or mark it
+ * reviewed. The vendor-submitted value is preserved separately server-side.
+ */
+export declare function updateQuoteRequestOverride(clientId: string, requestId: string, payload: {
+    price?: number | null;
+    currency?: string | null;
+    notes?: string;
+    clearOverride?: boolean;
+    markReviewed?: boolean;
+}): Promise<void>;
+/** Set the per-client expected margin (%) used by the best-option calc. */
+export declare function setRfqExpectedMargin(clientId: string, expectedMarginPct: number): Promise<number>;
+export type RuleCondition = 'always' | 'has_transcript_insights' | 'ai_client_present';
+export type RuleMode = 'auto' | 'suggest';
+export interface StageEmailRule {
+    id: string;
+    triggerStage: string;
+    emailType: string;
+    condition: RuleCondition;
+    mode: RuleMode;
+    enabled: boolean;
+    delayHours: number;
+    label: string;
+    isSeed?: boolean;
+    updatedBy?: string;
+    updatedAt?: string;
+    createdAt?: string;
+}
+export interface EmailTemplateRow {
+    emailType: string;
+    label: string;
+    subject: string;
+    category: 'sales' | 'ops' | 'followup';
+    enabled: boolean;
+    hasOverride: boolean;
+    isCustom: boolean;
+    bodyHtml: string;
+}
+export interface AutomationMeta {
+    stages: string[];
+    emailTypes: EmailTypeDescriptor[];
+    conditions: RuleCondition[];
+    modes: RuleMode[];
+    feedbackMigration: Record<string, string>;
+}
+/** Human labels for rule conditions (UI only). */
+export declare const RULE_CONDITION_LABELS: Record<RuleCondition, string>;
+export declare function fetchAutomationMeta(): Promise<AutomationMeta>;
+export declare function fetchAutomationRules(): Promise<StageEmailRule[]>;
+/** Create or replace a rule (server keys it by triggerStage__emailType). */
+export declare function saveAutomationRule(rule: Partial<StageEmailRule>): Promise<StageEmailRule>;
+/** Partially update an existing rule by id. */
+export declare function patchAutomationRule(id: string, updates: Partial<StageEmailRule>): Promise<StageEmailRule>;
+export declare function deleteAutomationRule(id: string): Promise<void>;
+export declare function fetchAutomationTemplates(): Promise<EmailTemplateRow[]>;
+/** Upsert a template override (subject / body / enabled) for one email type. */
+export declare function saveAutomationTemplate(emailType: string, payload: Partial<Pick<EmailTemplateRow, 'subject' | 'bodyHtml' | 'label' | 'category' | 'enabled'>>): Promise<EmailTemplateRow>;
+/** Revert a template back to the hardcoded default (deletes the override). */
+export declare function deleteAutomationTemplate(emailType: string): Promise<void>;
+/** Render a live preview of a template (optionally a draft body being edited). */
+export declare function previewAutomationTemplate(emailType: string, opts?: {
+    bodyHtml?: string;
+    data?: Record<string, unknown>;
+}): Promise<string>;
+export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
+export type FieldScope = 'consultation' | 'root';
+export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';
+export interface FieldConfigRow {
+    id: string;
+    label: string;
+    order: number;
+    section: FieldSection;
+    valueType: FieldValueType;
+    scope: FieldScope;
+    options?: string[];
+    placeholder?: string;
+    required: boolean;
+    showWhenEmpty: boolean;
+    readOnly?: boolean;
+    /** Client-portal visibility (surfaced on /status "Your details"). Default false. */
+    clientVisible?: boolean;
+    /** Client-portal editability (client may edit on /status). Default false. */
+    clientEditable?: boolean;
+    active: boolean;
+    isSeed?: boolean;
+    updatedBy?: string;
+    updatedAt?: string;
+    createdAt?: string;
+}
+/** The full ordered Overview-field registry as last loaded from the server. */
+export declare const fieldConfig: import("svelte/store").Writable<FieldConfigRow[]>;
+/** Active fields (what the Overview tab surfaces), in order. */
+export declare const activeFields: import("svelte/store").Readable<FieldConfigRow[]>;
+/** Raw fetch of the field registry (no side effects) — for the config editor UI. */
+export declare function fetchOverviewFields(): Promise<FieldConfigRow[]>;
+/** Load the field registry into the `fieldConfig` store (used on dashboard boot). */
+export declare function loadOverviewFields(): Promise<FieldConfigRow[]>;
+/** Create a new Overview field (optionally positioned right after `insertAfterId`). */
+export declare function createOverviewField(payload: Partial<FieldConfigRow> & {
+    label: string;
+    insertAfterId?: string;
+}): Promise<{
+    field: FieldConfigRow | null;
+    fields: FieldConfigRow[];
+}>;
+/** Partially update (rename / retype / toggle) an Overview field by id. */
+export declare function updateOverviewField(id: string, updates: Partial<FieldConfigRow>): Promise<FieldConfigRow>;
+/** Persist a new field order (full ordered id list). */
+export declare function reorderOverviewFields(orderedIds: string[]): Promise<FieldConfigRow[]>;
+/**
+ * Delete an Overview field. NON-DESTRUCTIVE: client documents keep their data
+ * and keep rendering it — this only removes the suggested empty slot going
+ * forward. No migration guard needed (unlike stage deletion).
+ */
+export declare function deleteOverviewField(id: string): Promise<void>;
