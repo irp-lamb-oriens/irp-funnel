@@ -98,9 +98,13 @@
     <div class="cfc__grid">
       {#each $clientFields as f (f.id)}
         <div class="cfc__row" class:cfc__row--editable={f.editable}>
-          <span class="cfc__label">{f.label}</span>
+          <span class="cfc__label">
+            {f.label}
+            {#if f.editable}<span class="cfc__pill">Editable</span>{/if}
+          </span>
 
           {#if !f.editable}
+
             <span class="cfc__value">{display(f)}</span>
           {:else if f.valueType === 'boolean'}
             <select class="cfc__input" bind:value={drafts[f.id]} disabled={saving}>
@@ -159,10 +163,34 @@
 
   .cfc__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.9rem 1.2rem; }
   .cfc__row { display: flex; flex-direction: column; gap: 0.3rem; }
+  /* Editable rows get a subtle teal-tinted card so clients see what they can
+     change at a glance — mirrors the portal's .field--editable treatment. */
+  .cfc__row--editable {
+    background: linear-gradient(180deg, rgba(2, 181, 187, 0.05) 0%, rgba(2, 181, 187, 0.02) 100%);
+    border: 1px solid rgba(2, 181, 187, 0.18);
+    border-radius: 12px;
+    padding: 0.7rem 0.8rem;
+    margin: -0.1rem 0;
+  }
   .cfc__label {
+    display: inline-flex; align-items: center; gap: 0.4rem;
     font-size: 0.66rem; font-weight: 800; color: #94a3b8;
     text-transform: uppercase; letter-spacing: 0.07em;
   }
+  /* "Editable" affordance pill — teal, mirrors the dashboard seed/badge dialect. */
+  .cfc__pill {
+    text-transform: none;
+    letter-spacing: 0.01em;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #02999e;
+    background: rgba(2, 181, 187, 0.1);
+    border: 1px solid rgba(2, 181, 187, 0.25);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+    line-height: 1.4;
+  }
+
   .cfc__value { font-size: 0.95rem; color: #1e293b; font-weight: 600; padding: 0.15rem 0; }
   .cfc__input {
     padding: 0.55rem 0.7rem; border: 1.5px solid #e2e8f0; border-radius: 10px;
