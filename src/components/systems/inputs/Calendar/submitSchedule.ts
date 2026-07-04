@@ -2,7 +2,7 @@ import { get } from "svelte/store";
 import { formState, type FormState } from "./formStore.js";
 import store from "../../../store.js";
 
-export async function submitScheduling(evoConsultationPriceVariant?: string) {
+export async function submitScheduling() {
   const formData = get(formState);
   console.log("Form data from store:", formData);
 
@@ -10,11 +10,9 @@ export async function submitScheduling(evoConsultationPriceVariant?: string) {
     const startDate = new Date(dateTime);
     const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
 
-    const notesStr = Array.isArray(formData.notes) ? formData.notes.join('\n- ') : (formData.notes || 'None');
-
     return {
       summary: `Scheduled Consultation with ${formData.name} ${formData.surname}`,
-      description: `Consultation for ${formData.name} ${formData.surname} regarding moving from ${formData.originCity ? formData.originCity + ', ' : ''}${formData.originCountry} to ${formData.destinationCity ? formData.destinationCity + ', ' : ''}${formData.destinationCountry}. Budget: ${formData.budget}.\n\nNotes: ${notesStr}.`,
+      description: `Consultation for ${formData.name} ${formData.surname} regarding moving from ${formData.originCity ? formData.originCity + ', ' : ''}${formData.originCountry} to ${formData.destinationCity ? formData.destinationCity + ', ' : ''}${formData.destinationCountry}. Budget: ${formData.budget}.`,
       start: {
         dateTime: startDate.toISOString(),
         timeZone: "America/Costa_Rica",
@@ -29,8 +27,6 @@ export async function submitScheduling(evoConsultationPriceVariant?: string) {
   const submissionData = {
     ...formData,
     events: schedulingData,
-    evoVisitorId: (window as any).__EVO_SESSION__ || null,
-    evoConsultationPriceVariant
   };
 
   console.log("Form data to be sent to backend:", submissionData);
@@ -46,37 +42,6 @@ export async function submitScheduling(evoConsultationPriceVariant?: string) {
         body: JSON.stringify(submissionData),
       }
     );
-
-    // Handle scheduling policy violations gracefully
-    if (response.status === 422) {
-      const errorData = await response.json();
-      console.warn("[submitSchedule] Scheduling policy violation:", errorData);
-      
-      if (errorData.code === "too_soon") {
-        alert(
-          "This time slot requires at least 2 business days advance notice. Please go back and select a later date."
-        );
-      } else if (errorData.code === "outside_hours") {
-        alert(
-          "This time is outside our consultation hours (Mon–Fri, 9 AM – 4 PM Standard Central Time). Please go back and pick another slot."
-        );
-      } else {
-        alert(
-          "This time slot is no longer available. Please go back and select a different time."
-        );
-      }
-      return null;
-    }
-
-    // Handle duplicate bookings gracefully
-    if (response.status === 409) {
-      const errorData = await response.json();
-      console.warn("[submitSchedule] Duplicate booking detected:", errorData);
-      alert(
-        "You already have a consultation booked around this time! Check your email for the details, or pick a different time."
-      );
-      return null;
-    }
 
     if (!response.ok) {
       const errorDetails = await response.text();
