@@ -702,10 +702,10 @@
     transition: border-color var(--rfq-t), box-shadow var(--rfq-t); box-sizing: border-box;
   }
   .rfq-input:focus, .rfq-textarea:focus { border-color: var(--rfq-accent); box-shadow: 0 0 0 3px var(--rfq-accent-subtle); }
-  .rfq-input--sm { padding: 6px 9px; font-size: 12px; }
+  .rfq-input--sm { padding: 6px 10px; font-size: 12px; }
   .rfq-textarea { resize: vertical; line-height: 1.5; }
 
-  .rfq-field { display: block; margin-bottom: 9px; }
+  .rfq-field { display: block; margin-bottom: 10px; }
   .rfq-field > span { display: block; font-size: 11.5px; font-weight: 600; color: var(--rfq-text-muted); margin-bottom: 3px; }
   .rfq-field--missing .rfq-input { border-color: var(--rfq-warning); background: #fffbeb; }
 
@@ -723,7 +723,7 @@
   .rfq-chip__warn { font-size: 10px; font-weight: 700; text-transform: uppercase; }
   .rfq-chip__x {
     display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
-    border-radius: 50%; border: none; background: rgba(0,0,0,.06); color: inherit; cursor: pointer; font-size: 9px;
+    border-radius: 50%; border: none; background: rgba(0,0,0,.06); color: inherit; cursor: pointer; font-size: 10px;
     transition: background var(--rfq-t);
   }
   .rfq-chip__x:hover { background: rgba(0,0,0,.14); }
@@ -761,7 +761,7 @@
   }
   .rfq-lang__list { max-height: 240px; overflow-y: auto; margin-top: 6px; }
   .rfq-lang__opt {
-    display: flex; align-items: center; gap: var(--irp-sp-2, 8px); width: 100%; padding: 7px 9px; border: 1px solid transparent;
+    display: flex; align-items: center; gap: var(--irp-sp-2, 8px); width: 100%; padding: 7px 10px; border: 1px solid transparent;
     background: none; border-radius: var(--irp-r-xs, 6px); cursor: pointer; text-align: left; font-size: 13px; color: var(--rfq-text);
     transition: background var(--rfq-t);
   }
@@ -794,7 +794,7 @@
   .rfq-subject > span { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rfq-text-muted); margin-bottom: 3px; }
 
   .rfq-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 6px 8px; background: var(--rfq-surface-2); border: 1px solid var(--rfq-border); border-bottom: none; border-radius: var(--irp-r-sm, 8px) var(--irp-r-sm, 8px) 0 0; }
-  .rfq-toolbar button { border: 1px solid var(--rfq-border); background: var(--rfq-surface); border-radius: var(--irp-r-xs, 6px); padding: 3px 9px; font-size: 12px; cursor: pointer; color: var(--rfq-text-2); transition: background var(--rfq-t), border-color var(--rfq-t); }
+  .rfq-toolbar button { border: 1px solid var(--rfq-border); background: var(--rfq-surface); border-radius: var(--irp-r-xs, 6px); padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--rfq-text-2); transition: background var(--rfq-t), border-color var(--rfq-t); }
   .rfq-toolbar button:hover { background: var(--rfq-accent-subtle); border-color: var(--rfq-border-focus); }
   .rfq-toolbar__sep { width: 1px; height: 18px; background: var(--rfq-border); margin: 0 4px; }
   .rfq-toolbar__hint { font-size: 10.5px; color: var(--rfq-text-dim); margin-left: auto; }

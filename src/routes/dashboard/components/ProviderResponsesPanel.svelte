@@ -475,7 +475,7 @@
   .pr-flag--warn { background: var(--pr-warn-bg); border: 1px solid var(--pr-warn-border); color: var(--pr-warn-text); }
 
   .pr-cell--actions { flex-direction: row; gap: 4px; }
-  .pr-btn { border: 1px solid var(--pr-border); background: var(--pr-surface); border-radius: var(--irp-r-xs, 6px); padding: 4px 9px; font-size: 11.5px; font-weight: 700; color: var(--pr-text-muted); cursor: pointer; transition: border-color var(--pr-t), color var(--pr-t), filter var(--pr-t); }
+  .pr-btn { border: 1px solid var(--pr-border); background: var(--pr-surface); border-radius: var(--irp-r-xs, 6px); padding: 4px 10px; font-size: 11.5px; font-weight: 700; color: var(--pr-text-muted); cursor: pointer; transition: border-color var(--pr-t), color var(--pr-t), filter var(--pr-t); }
   .pr-btn:hover:not(:disabled) { border-color: var(--pr-border-focus); color: var(--pr-accent-hover); }
   .pr-btn--sm { padding: 3px 8px; }
   .pr-btn--primary { background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%); border-color: transparent; color: #fff; box-shadow: 0 2px 8px rgba(2,181,187,0.30); }

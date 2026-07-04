@@ -2017,7 +2017,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    padding: 9px 12px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 2px solid #f1f5f9;
   }
@@ -2162,7 +2162,7 @@
     color: #02b5bb;
     font-size: 13px;
     font-weight: 700;
-    padding: 9px 16px;
+    padding: 10px 16px;
     border-radius: 10px;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -2302,7 +2302,7 @@
   .qe-group__nums { display: flex; align-items: stretch; gap: 6px; margin-left: auto; flex-wrap: wrap; }
   .qe-gnum {
     display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
-    padding: 3px 9px; border-radius: 8px; line-height: 1.1;
+    padding: 3px 10px; border-radius: 8px; line-height: 1.1;
     background: #f8fafc; border: 1px solid #eef2f7;
   }
   .qe-gnum__lbl { font-size: 8px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
@@ -2499,7 +2499,7 @@
     background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
     color: #fff;
     border: none;
-    padding: 9px 18px;
+    padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 700;
@@ -2516,7 +2516,7 @@
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: #fff;
     border: none;
-    padding: 9px 18px;
+    padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 700;
@@ -2533,7 +2533,7 @@
     background: #f1f5f9;
     color: #475569;
     border: 1px solid #e2e8f0;
-    padding: 9px 18px;
+    padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
@@ -2585,7 +2585,7 @@
     border-radius: 8px;
     color: #0f172a;
     font-size: 13.5px;
-    padding: 9px 14px;
+    padding: 10px 14px;
     outline: none;
     width: 100%;
     box-sizing: border-box;
@@ -2609,7 +2609,7 @@
     background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
     color: #fff;
     border: none;
-    padding: 9px 18px;
+    padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 700;
@@ -2740,7 +2740,7 @@
     border-radius: 8px;
     color: #0f172a;
     font-size: 13.5px;
-    padding: 9px 14px;
+    padding: 10px 14px;
     outline: none;
     font-family: inherit;
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -2755,7 +2755,7 @@
     background: rgba(2,181,187,0.08);
     border: 1px solid rgba(2,181,187,0.22);
     color: #02b5bb;
-    padding: 9px 14px;
+    padding: 10px 14px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
@@ -2937,7 +2937,7 @@
   /* ── Client description badge ───────────────────────────────────────────── */
   .qe-label-badge {
     display: inline-block;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -3318,7 +3318,7 @@
     border-bottom: 1px solid var(--qe-border);
     background: linear-gradient(135deg, color-mix(in srgb, var(--qe-accent) 7%, transparent), transparent);
   }
-  .qe-tmpl-modal__titlewrap { display: flex; align-items: center; gap: 9px; }
+  .qe-tmpl-modal__titlewrap { display: flex; align-items: center; gap: 10px; }
   .qe-tmpl-modal__spark {
     font-size: 14px;
     color: var(--qe-accent);
@@ -3435,7 +3435,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 9px 10px;
+    padding: 10px 10px;
     text-align: left;
     min-width: 0;
   }
@@ -3467,7 +3467,7 @@
     color: var(--qe-text-faint);
     cursor: pointer;
     font-size: 13px;
-    padding: 6px 9px;
+    padding: 6px 10px;
     border-radius: var(--qe-r-sm);
     transition: background var(--qe-ease) 0.12s, color var(--qe-ease) 0.12s;
   }
@@ -3498,7 +3498,7 @@
     border-radius: var(--qe-r-xs);
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 9px;
+    padding: 4px 10px;
     cursor: pointer;
     transition: background var(--qe-ease) 0.13s, border-color var(--qe-ease) 0.13s;
   }

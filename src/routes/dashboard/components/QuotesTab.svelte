@@ -406,7 +406,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 9px;
+    margin-bottom: 10px;
   }
 
   .qt-template__title {
@@ -425,7 +425,7 @@
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.03em;
-    padding: 2px 9px;
+    padding: 2px 10px;
     border-radius: 999px;
     border: 1px solid transparent;
     white-space: nowrap;
@@ -483,7 +483,7 @@
     gap: 8px;
     color: #94a3b8;
     font-size: 12.5px;
-    padding: 9px 2px;
+    padding: 10px 2px;
   }
   .qt-template__dot {
     width: 14px;
@@ -676,7 +676,7 @@
   .quotes-tab__status-badge {
     font-size: 10.5px;
     font-weight: 700;
-    padding: 2px 9px;
+    padding: 2px 10px;
     border-radius: 999px;
     border: 1px solid;
     white-space: nowrap;

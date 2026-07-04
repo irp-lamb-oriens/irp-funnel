@@ -289,7 +289,7 @@
   .rl__icon-wrap {
     width: 34px;
     height: 34px;
-    border-radius: 9px;
+    border-radius: 10px;
     background: rgba(2, 181, 187, 0.07);
     border: 1px solid rgba(2, 181, 187, 0.15);
     display: flex;

@@ -513,7 +513,7 @@
 		padding: 0.6rem 0.8rem;
 		background: rgba(var(--color-highlight-1-rgb), 0.1);
 		border: 1px solid rgba(var(--color-highlight-1-rgb), 0.3);
-		border-radius: 9px;
+		border-radius: 10px;
 	}
 
 	.rv-privacy-note {

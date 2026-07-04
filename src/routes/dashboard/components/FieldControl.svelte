@@ -267,9 +267,9 @@
     // Chevron drawn via inline SVG so no icon font is needed.
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 9px center;
+    background-position: right 10px center;
     border: 1.5px solid #e2e8f0;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 0.4rem 1.9rem 0.4rem 0.7rem;
     cursor: pointer;
     max-width: 100%;
@@ -289,7 +289,7 @@
   .fc-bool {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
   }
   .fc-switch {
     position: relative;
@@ -343,7 +343,7 @@
     color: #1e293b;
     background: #fff;
     border: 1.5px solid #02b5bb;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 0.4rem 0.6rem;
     width: 8rem;
     max-width: 100%;
@@ -361,7 +361,7 @@
     color: #1e293b;
     background: transparent;
     border: 1.5px solid transparent;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 0.4rem 0.6rem;
     cursor: pointer;
     text-align: left;

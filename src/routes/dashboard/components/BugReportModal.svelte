@@ -481,7 +481,7 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    padding: 9px 0;
+    padding: 10px 0;
     font-size: 12px;
     font-weight: 700;
     background: rgba(255,255,255,0.035);
@@ -594,7 +594,7 @@
   .brm__btn-cancel {
     font-size: 13px;
     font-weight: 600;
-    padding: 9px 18px;
+    padding: 10px 18px;
     border-radius: 10px;
     cursor: pointer;
     border: 1px solid rgba(255,255,255,0.08);
@@ -615,7 +615,7 @@
     gap: 8px;
     font-size: 13px;
     font-weight: 700;
-    padding: 9px 22px;
+    padding: 10px 22px;
     border-radius: 10px;
     cursor: pointer;
     border: none;

@@ -297,8 +297,8 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #4ade80;
     border: 2px solid var(--chat-glass-header, rgba(8,10,18,0.99));

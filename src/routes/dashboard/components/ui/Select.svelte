@@ -301,7 +301,7 @@
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     font-size: 13.5px;
     font-weight: 600;
     color: #0f172a;
@@ -439,7 +439,7 @@
   :global(.cps__option) {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
     width: 100%;
     box-sizing: border-box;
     background: none;

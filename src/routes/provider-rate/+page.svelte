@@ -332,7 +332,7 @@
   .pr-summary__item {
     display: flex; flex-direction: column; gap: 2px;
     background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 9px; padding: 0.55rem 0.85rem; flex: 1; min-width: 100px;
+    border-radius: 10px; padding: 0.55rem 0.85rem; flex: 1; min-width: 100px;
   }
   .pr-summary__label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(241,245,249,0.38); }
   .pr-summary__value { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; }
@@ -360,7 +360,7 @@
   .pr-optional { font-weight: 400; color: rgba(241,245,249,0.32); }
   .pr-textarea {
     padding: 0.65rem 0.9rem; background: rgba(15,23,42,0.7);
-    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.2); border-radius: 9px;
+    border: 1.5px solid rgba(var(--color-highlight-2-rgb), 0.2); border-radius: 10px;
     color: #f1f5f9; font-size: 0.875rem; font-family: inherit; line-height: 1.55;
     outline: none; resize: vertical; min-height: 72px;
     transition: border-color 0.15s;
@@ -370,7 +370,7 @@
   .pr-form-error {
     padding: 0.6rem 0.85rem;
     background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-    border-radius: 9px; color: #fca5a5; font-size: 0.8rem; font-weight: 600;
+    border-radius: 10px; color: #fca5a5; font-size: 0.8rem; font-weight: 600;
     margin-bottom: 0.5rem;
   }
   /* ── Buttons ── */

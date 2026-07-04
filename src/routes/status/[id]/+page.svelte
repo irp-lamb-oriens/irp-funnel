@@ -1748,7 +1748,7 @@
     background: var(--color-highlight-2, #02b5bb);
     color: #020d10;
     border: none;
-    border-radius: 9px;
+    border-radius: 10px;
     font-weight: 800;
     font-size: 0.82rem;
     font-family: var(--font-paragraph, sans-serif);
@@ -2000,7 +2000,7 @@
     padding: 0.5rem 0.8rem;
     background: #ffffff;
     border: 1.5px solid rgba(2, 181, 187, 0.28);
-    border-radius: 9px;
+    border-radius: 10px;
     color: var(--cp-text-primary, #0f172a);
     font-size: 0.84rem;
     font-weight: 600;

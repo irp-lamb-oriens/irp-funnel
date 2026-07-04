@@ -796,7 +796,7 @@
   .qv-staff-notice {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
     font-size: 13px;
     font-weight: 600;
     color: #9a3412;
@@ -907,7 +907,7 @@
     margin: 0;
     background: #fef2f2;
     border: 1px solid #fecaca;
-    padding: 9px 14px;
+    padding: 10px 14px;
     border-radius: 8px;
     font-weight: 600;
   }

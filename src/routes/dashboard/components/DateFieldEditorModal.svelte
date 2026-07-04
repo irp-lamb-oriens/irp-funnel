@@ -430,7 +430,7 @@
   .dfe__cell {
     aspect-ratio: 1 / 1;
     border: 1.5px solid transparent;
-    border-radius: 9px;
+    border-radius: 10px;
     background: transparent;
     color: #334155;
     font-size: 0.82rem;

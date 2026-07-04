@@ -545,7 +545,7 @@
   .br-accept-intro { font-size: 13.5px; font-weight: 450; color: #475569; line-height: 1.7; margin: 0; }
   /* Staff notice — amber, matches the document's light theme */
   .br-staff-notice {
-    display: flex; align-items: center; gap: 9px;
+    display: flex; align-items: center; gap: 10px;
     font-size: 13px; font-weight: 600; color: #9a3412;
     background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
     border: 1px solid #fed7aa; border-radius: 12px;

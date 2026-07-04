@@ -669,7 +669,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 2px 9px;
+    padding: 2px 10px;
     background: #f0fafa;
     border: 1px solid rgba(2, 181, 187, 0.28);
     border-radius: 999px;

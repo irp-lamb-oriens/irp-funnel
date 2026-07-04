@@ -407,7 +407,7 @@
     border-radius: 50%;
     background: linear-gradient(135deg, $accent, $accent-hover);
     color: white;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     flex-shrink: 0;
   }
@@ -586,7 +586,7 @@
   color: $text-dim;
   background: $surface-3;
   border: 1px solid $border;
-  border-radius: 9px;
+  border-radius: 10px;
   cursor: pointer;
   opacity: 0;                       // hidden until card hover (keeps cards clean)
   transition: opacity $t-fast, background $t-fast, color $t-fast, transform $t-fast;

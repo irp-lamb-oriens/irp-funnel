@@ -907,7 +907,7 @@
     width: 100%;
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 3px;
     gap: 3px;
   }
@@ -1252,7 +1252,7 @@
     padding: 0.5rem 1rem;
     background: rgba(2,182,188,0.08);
     border: 1px dashed rgba(2,182,188,0.4);
-    border-radius: 9px;
+    border-radius: 10px;
     color: #0d9488;
     font-size: 0.8rem;
     font-weight: 700;

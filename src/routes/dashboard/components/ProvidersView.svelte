@@ -873,7 +873,7 @@
   .form-field textarea,
   .form-field select {
     width: 100%;
-    padding: 9px 12px;
+    padding: 10px 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
@@ -1008,7 +1008,7 @@
   .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
   .tag {
     display: inline-block;
-    padding: 3px 9px;
+    padding: 3px 10px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 600;
@@ -1071,10 +1071,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 9px 0 9px 4px;
+    padding: 10px 0 10px 4px;
   }
   .custom-field-input {
-    padding: 9px 12px !important;
+    padding: 10px 12px !important;
     border: 1px solid #d1d5db !important;
     border-radius: 8px !important;
     font-size: 14px !important;
@@ -1093,7 +1093,7 @@
   .custom-field-name-input {
     flex: 1;
     min-width: 180px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     border: 1px dashed #02b5bb;
     border-radius: 8px;
     font-size: 13px;
@@ -1110,7 +1110,7 @@
     background: rgba(2,181,187,0.08);
     color: #0b3b3d;
     border: 1px solid #9fe3e6;
-    padding: 9px 16px;
+    padding: 10px 16px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
