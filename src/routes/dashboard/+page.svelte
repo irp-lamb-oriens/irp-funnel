@@ -775,7 +775,7 @@
                       ? `Ranked #${client.rankIndex} — click to change`
                       : 'Rank card (float to top)'}
                     on:click={(e) => toggleRankMenu(client, e)}
-                  >▲{#if typeof client.rankIndex === 'number'}&nbsp;{"🔥".repeat(+client.rankIndex)}{/if}</button>
+                  >▲{#if typeof client.rankIndex === 'number'}{"🔥".repeat(+client.rankIndex)}{/if}</button>
                   {#if rankMenuFor === client.id}
                     <!-- svelte-ignore a11y-click-events-have-key-events -->
                     <!-- svelte-ignore a11y-no-static-element-interactions -->
