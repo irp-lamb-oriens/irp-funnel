@@ -116,7 +116,7 @@
       transition: all $t-fast;
       &:hover { color: $text-2; background: $surface-2; }
       &.active {
-        color: $text;
+        color: white;
         background: $accent;
         box-shadow: $shadow-sm;
       }
