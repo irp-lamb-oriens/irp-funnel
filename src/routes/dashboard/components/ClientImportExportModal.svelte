@@ -33,6 +33,7 @@
     type Client,
   } from '../store.ts';
   import { toasts } from '../toastStore.ts';
+  import Select, { type SelectOption } from './ui/Select.svelte';
 
   /** 'import' or 'export' — set by the List-view button that opened us. */
   export let mode: 'import' | 'export' = 'export';
@@ -85,12 +86,11 @@
   /** Per-docId strategy overrides for duplicates. */
   let strategies: Record<string, ImportStrategy> = {};
 
-  const STRATEGIES: ImportStrategy[] = ['skip', 'merge', 'overwrite'];
-  const STRATEGY_LABEL: Record<ImportStrategy, string> = {
-    skip: 'Skip (keep existing)',
-    merge: 'Merge (fill + update)',
-    overwrite: 'Overwrite fields',
-  };
+  const STRATEGY_OPTIONS: SelectOption[] = [
+    { value: 'skip', label: 'Skip (keep existing)' },
+    { value: 'merge', label: 'Merge (fill + update)' },
+    { value: 'overwrite', label: 'Overwrite fields' },
+  ];
 
   async function onFile(e: Event) {
     const input = e.target as HTMLInputElement;
@@ -348,11 +348,15 @@
           {#if duplicateRecords.length > 0}
             <div class="iem-dupbar">
               <span>{duplicateRecords.length} record{duplicateRecords.length === 1 ? '' : 's'} already exist. For all duplicates:</span>
-              <select bind:value={defaultStrategy} on:change={applyDefaultToAll}>
-                {#each STRATEGIES as s}
-                  <option value={s}>{STRATEGY_LABEL[s]}</option>
-                {/each}
-              </select>
+              <div class="iem-dupbar-select">
+                <Select
+                  options={STRATEGY_OPTIONS}
+                  bind:value={defaultStrategy}
+                  on:change={applyDefaultToAll}
+                  size="sm"
+                  ariaLabel="Default strategy for all duplicates"
+                />
+              </div>
             </div>
           {/if}
 
@@ -402,11 +406,14 @@
                     </td>
                     <td>
                       {#if r.valid && r.exists && r.docId}
-                        <select bind:value={strategies[r.docId]}>
-                          {#each STRATEGIES as s}
-                            <option value={s}>{STRATEGY_LABEL[s]}</option>
-                          {/each}
-                        </select>
+                        <div class="iem-row-select">
+                          <Select
+                            options={STRATEGY_OPTIONS}
+                            bind:value={strategies[r.docId]}
+                            size="sm"
+                            ariaLabel="Strategy for this duplicate"
+                          />
+                        </div>
                       {:else}
                         <span class="iem-dash">—</span>
                       {/if}
@@ -615,10 +622,11 @@
     padding: 0.55rem 0.8rem; margin-bottom: 0.8rem;
     font-size: 0.82rem; color: #1e40af;
   }
-  .iem-dupbar select, .iem-table select {
-    padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 7px;
-    font-size: 0.78rem; background: #fff; color: #0f172a;
-  }
+  /* Constrain the custom <Select> so its trigger/menu can never be stretched
+     by option content (same "fits content, no viewport collision" contract
+     as the filters-bar — see +page.svelte). */
+  .iem-dupbar-select { width: 190px; flex-shrink: 0; }
+  .iem-row-select { width: 180px; }
 
   .iem-table-wrap { max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
   .iem-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }

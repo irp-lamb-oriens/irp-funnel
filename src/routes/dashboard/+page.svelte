@@ -679,43 +679,54 @@
             ⬆ Import
           </button>
         </div>
-        <select bind:value={$filters.stage} class="filter-select">
-          <option value="">All Stages</option>
-          {#each Object.entries(STAGE_LABELS) as [key, label]}
-            <option value={key}>{label}</option>
-          {/each}
-        </select>
-        <select bind:value={$filters.callOutcome} class="filter-select">
-          <option value="">All Outcomes</option>
-          <option value="none">No Outcome Yet</option>
-          <option value="qualified">Qualified</option>
-          <option value="nurture">Nurture</option>
-          <option value="no_show">No Show</option>
-        </select>
-        <select bind:value={$filters.originCountry} class="filter-select">
-          <option value="">Any Origin</option>
-          {#each [...new Set($clients.map(c => c.originCountry).filter(Boolean))].sort() as country}
-            <option value={country}>{country}</option>
-          {/each}
-        </select>
-        <select bind:value={$filters.destinationCountry} class="filter-select">
-          <option value="">Any Destination</option>
-          {#each [...new Set($clients.map(c => c.destinationCountry).filter(Boolean))].sort() as country}
-            <option value={country}>{country}</option>
-          {/each}
-        </select>
-        <select bind:value={$filters.budget} class="filter-select">
-          <option value="">Any Budget</option>
-          {#each [...new Set($clients.map(c => c.budget).filter(Boolean))].sort() as budget}
-            <option value={budget}>{budget}</option>
-          {/each}
-        </select>
-        <select bind:value={$filters.size} class="filter-select">
-          <option value="">Any Move Size</option>
-          {#each [...new Set($clients.map(c => c.size).filter(Boolean))].sort() as size}
-            <option value={size}>{size}</option>
-          {/each}
-        </select>
+        <div class="filter-select-wrap">
+          <Select
+            options={stageFilterOptions()}
+            bind:value={$filters.stage}
+            size="sm"
+            ariaLabel="Filter by stage"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
+            options={OUTCOME_OPTIONS}
+            bind:value={$filters.callOutcome}
+            size="sm"
+            ariaLabel="Filter by call outcome"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
+            options={toFilterOptions([...new Set($clients.map(c => c.originCountry).filter(Boolean))].sort(), 'Any Origin')}
+            bind:value={$filters.originCountry}
+            size="sm"
+            ariaLabel="Filter by origin country"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
+            options={toFilterOptions([...new Set($clients.map(c => c.destinationCountry).filter(Boolean))].sort(), 'Any Destination')}
+            bind:value={$filters.destinationCountry}
+            size="sm"
+            ariaLabel="Filter by destination country"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
+            options={toFilterOptions([...new Set($clients.map(c => c.budget).filter(Boolean))].sort(), 'Any Budget')}
+            bind:value={$filters.budget}
+            size="sm"
+            ariaLabel="Filter by budget"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
+            options={toFilterOptions([...new Set($clients.map(c => c.size).filter(Boolean))].sort(), 'Any Move Size')}
+            bind:value={$filters.size}
+            size="sm"
+            ariaLabel="Filter by move size"
+          />
+        </div>
         <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: ''}}>Clear</button>
       </div>
     {/if}
@@ -1082,6 +1093,17 @@
   }
   .dashboard__retry:active {
     transform: translateY(0);
+  }
+
+  /* ══ Filters-bar <Select> wrappers ══════════════════════════════════════
+     Constrains the custom <Select> trigger to a fixed width so it can never
+     be stretched by the width of its option content (the native <select>
+     bug this replaces). The component's own trigger/menu labels already
+     ellipsis-truncate long text; the menu itself is portaled + position:fixed
+     so it can never collide with the viewport edge either. */
+  .filter-select-wrap {
+    width: 168px;
+    flex: 0 0 auto;
   }
 
   /* ══ List-section Import/Export buttons ════════════════════════════════ */
