@@ -263,7 +263,9 @@
             <th>Label</th>
             <th>Type</th>
             <th>Section</th>
-            <th class="ofe-col-toggle">Active</th>
+            <th class="ofe-col-toggle" title="Shown to the client on their status page (“Your details”)">Client Visible</th>
+            <th class="ofe-col-toggle" title="Client can edit this field from their status page (requires Client Visible)">Client Editable</th>
+            <th class="ofe-col-toggle" title="Shown on the internal Overview tab">Active</th>
             <th class="ofe-col-actions"></th>
           </tr>
         </thead>

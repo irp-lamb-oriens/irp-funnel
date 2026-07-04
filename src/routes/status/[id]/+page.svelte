@@ -55,7 +55,8 @@
     checkIrpStaff,
     clearIrpStaff,
   } from "../../../lib/auth/irpStaff.ts";
-  import { sendLilyMessage, updateProjectDetails } from "./store.ts";
+  import { sendLilyMessage, updateProjectDetails, projectFieldFlags } from "./store.ts";
+
   import "./status.scss";
 
   $: projectId = $page.params.id;
@@ -319,6 +320,27 @@
       detailsEditError = err?.message ?? 'Failed to save changes.';
     } finally { detailsSaving = false; }
   }
+
+  // ── Project Details field flags (from the centralized Overview Field Registry)
+  // Each built-in tile's visibility + editability is now operator-configurable
+  // via Automations → Overview fields. `$projectFieldFlags` is `{}` on older
+  // servers / cold start, so every flag falls back to its LEGACY default
+  // (visible: true; route/size/immigration/property editable, budget/vehicles
+  // read-only) — the exact pre-registry behavior. Fully backward compatible.
+  $: pff = $projectFieldFlags || {};
+  $: routeVisible        = pff.route?.visible ?? true;
+  $: routeEditable       = pff.route?.editable ?? true;
+  $: budgetVisible       = pff.budget?.visible ?? true;
+  $: sizeVisible         = pff.size?.visible ?? true;
+  $: sizeEditable        = pff.size?.editable ?? true;
+  $: immigrationVisible  = pff.immigrationStatus?.visible ?? true;
+  $: immigrationEditable = pff.immigrationStatus?.editable ?? true;
+  $: propertyVisible     = pff.property?.visible ?? true;
+  $: propertyEditable    = pff.property?.editable ?? true;
+  $: vehiclesVisible     = pff.vehicles?.visible ?? true;
+  // The "Edit" affordance only appears when at least one tile is client-editable.
+  $: anyDetailEditable   = routeEditable || sizeEditable || immigrationEditable || propertyEditable;
+
 
   let overallComment = "";
   let overallSubmitting = false;
@@ -1141,8 +1163,9 @@
                 Project Details
               </span>
               <span class="cp-collapsible__trigger-right">
-                {#if $project?.viewerIsPrincipal && !editingDetails}
+                {#if $project?.viewerIsPrincipal && !editingDetails && anyDetailEditable}
                   <button class="cp-collapsible__trigger-edit" type="button" on:click|stopPropagation={startEditDetails}>
+
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Edit
                   </button>
@@ -1163,12 +1186,13 @@
                     </h3>
                     <div class="field-grid">
 
-                      <!-- ── Origin ── (editable) -->
-                      <div class="field field--card" class:field--editable={editingDetails}>
+                      <!-- ── Origin ── (registry: route) -->
+                      {#if routeVisible}
+                      <div class="field field--card" class:field--editable={editingDetails && routeEditable}>
                         <span class="field__icon">🌍</span>
                         <div class="field__content">
                           <span class="field__label">Origin</span>
-                          {#if editingDetails}
+                          {#if editingDetails && routeEditable}
                             <div class="field__inline-row">
                               <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.originCity} />
                               <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.originCountry} />
@@ -1180,13 +1204,15 @@
                           {/if}
                         </div>
                       </div>
+                      {/if}
 
-                      <!-- ── Destination ── (editable) -->
-                      <div class="field field--card" class:field--editable={editingDetails}>
+                      <!-- ── Destination ── (registry: route) -->
+                      {#if routeVisible}
+                      <div class="field field--card" class:field--editable={editingDetails && routeEditable}>
                         <span class="field__icon">📍</span>
                         <div class="field__content">
                           <span class="field__label">Destination</span>
-                          {#if editingDetails}
+                          {#if editingDetails && routeEditable}
                             <div class="field__inline-row">
                               <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.destinationCity} />
                               <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.destinationCountry} />
@@ -1198,9 +1224,10 @@
                           {/if}
                         </div>
                       </div>
+                      {/if}
 
-                      <!-- ── Budget ── (read-only) -->
-                      {#if $project.budget}
+                      <!-- ── Budget ── (registry: budget, read-only display) -->
+                      {#if budgetVisible && $project.budget}
                         <div class="field field--card">
                           <span class="field__icon">💰</span>
                           <div class="field__content">
@@ -1210,13 +1237,13 @@
                         </div>
                       {/if}
 
-                      <!-- ── Move Size ── (editable) -->
-                      {#if $project.size || editingDetails}
-                        <div class="field field--card" class:field--editable={editingDetails}>
+                      <!-- ── Move Size ── (registry: size) -->
+                      {#if sizeVisible && ($project.size || (editingDetails && sizeEditable))}
+                        <div class="field field--card" class:field--editable={editingDetails && sizeEditable}>
                           <span class="field__icon">📦</span>
                           <div class="field__content">
                             <span class="field__label">Move Size</span>
-                            {#if editingDetails}
+                            {#if editingDetails && sizeEditable}
                               <input class="field__inline-input" type="text" placeholder="e.g. 40ft container" bind:value={detailsEditForm.size} />
                             {:else}
                               <span class="field__value">{$project.size}</span>
@@ -1225,13 +1252,13 @@
                         </div>
                       {/if}
 
-                      <!-- ── Immigration Status ── (editable) -->
-                      {#if $project.immigrationStatus || editingDetails}
-                        <div class="field field--card" class:field--editable={editingDetails}>
+                      <!-- ── Immigration Status ── (registry: immigrationStatus) -->
+                      {#if immigrationVisible && ($project.immigrationStatus || (editingDetails && immigrationEditable))}
+                        <div class="field field--card" class:field--editable={editingDetails && immigrationEditable}>
                           <span class="field__icon">🛂</span>
                           <div class="field__content">
                             <span class="field__label">Immigration Status</span>
-                            {#if editingDetails}
+                            {#if editingDetails && immigrationEditable}
                               <input class="field__inline-input" type="text" placeholder="e.g. Residency, Visa, Citizen" bind:value={detailsEditForm.immigrationStatus} />
                             {:else}
                               <span class="field__value field__value--badge">{$project.immigrationStatus}</span>
@@ -1240,13 +1267,13 @@
                         </div>
                       {/if}
 
-                      <!-- ── Property Requirements ── (editable) -->
-                      {#if $project.propertyTypeFrom || $project.propertyTypeTo || editingDetails}
-                        <div class="field field--card field--full" class:field--editable={editingDetails}>
+                      <!-- ── Property Requirements ── (registry: property) -->
+                      {#if propertyVisible && ($project.propertyTypeFrom || $project.propertyTypeTo || (editingDetails && propertyEditable))}
+                        <div class="field field--card field--full" class:field--editable={editingDetails && propertyEditable}>
                           <span class="field__icon">🏠</span>
                           <div class="field__content">
                             <span class="field__label">Property Requirements</span>
-                            {#if editingDetails}
+                            {#if editingDetails && propertyEditable}
                               <div class="field__inline-row">
                                 <span class="field__inline-sub">Moving from</span>
                                 <input class="field__inline-input" type="text" placeholder="house / apartment…" bind:value={detailsEditForm.propertyTypeFrom} />
@@ -1263,8 +1290,8 @@
                         </div>
                       {/if}
 
-                      <!-- ── Vehicles ── (read-only) -->
-                      {#if $project.vehicles && $project.vehicles.length > 0}
+                      <!-- ── Vehicles ── (registry: vehicles, read-only display) -->
+                      {#if vehiclesVisible && $project.vehicles && $project.vehicles.length > 0}
                         <div class="field field--card field--full">
                           <span class="field__icon">🚗</span>
                           <div class="field__content">
@@ -1277,6 +1304,7 @@
                           </div>
                         </div>
                       {/if}
+
 
                       <!-- ── Next Consultation ── (read-only) -->
                       {#if upcomingConsultation}

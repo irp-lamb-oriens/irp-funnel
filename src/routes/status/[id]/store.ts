@@ -36,6 +36,18 @@ export const stageLabels = writable<Record<string, string>>({});
  */
 export const clientFields = writable<any[]>([]);
 
+/**
+ * Per-field client visibility/editability for the built-in "Project Details"
+ * card (route/budget/size/immigrationStatus/property/vehicles). Resolved from
+ * the centralized Overview Field Registry and populated by fetchProject from the
+ * project payload's `projectFieldFlags`. Shape: { [id]: { visible, editable } }.
+ * Empty `{}` when the server hasn't sent it (older server / cold start) — the
+ * status page then falls back to its legacy always-on defaults, so this is fully
+ * backward compatible.
+ */
+export const projectFieldFlags = writable<Record<string, { visible: boolean; editable: boolean }>>({});
+
+
 
 // ─── Lily Chat stores (declared early so fetchProject can reference them) ───
 export const lilyMessages = writable<any[]>([]);
@@ -134,6 +146,12 @@ export async function fetchProject(projectId: string) {
     project.set(data.project);
     stages.set(data.stages || []);
     stageLabels.set(data.stageLabels || {});
+    // Operator-configured "Your details" fields + per-field Project Details flags.
+    // Both default to empty when absent (older server), so the status page keeps
+    // its legacy always-on rendering — fully backward compatible.
+    clientFields.set(Array.isArray(data.clientFields) ? data.clientFields : []);
+    projectFieldFlags.set(data.projectFieldFlags && typeof data.projectFieldFlags === 'object' ? data.projectFieldFlags : {});
+
 
     // Pre-seed Lily chat from the HeroForm conversation so the client sees
     // their initial consultation immediately when they open the drawer —
