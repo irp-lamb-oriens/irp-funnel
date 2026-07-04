@@ -41,7 +41,37 @@
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
   import ClientImportExportModal from './components/ClientImportExportModal.svelte';
+  import Select, { type SelectOption } from './components/ui/Select.svelte';
   import './dashboard.scss';
+
+  // ─── Filter <Select> option builders ─────────────────────────────────────
+  // Native <select> boxes size their CLOSED state to their WIDEST <option>
+  // text in most browsers — the "stretched by content" bug. The shared
+  // <Select> component (components/ui/Select.svelte) avoids this entirely:
+  // its trigger only ever renders the *selected* label (ellipsis-truncated),
+  // and its options menu is portaled to <body> + position:fixed, sized off
+  // the trigger's own rect — so neither the trigger nor the menu can ever
+  // stretch the filters-bar or overflow the viewport.
+  const OUTCOME_OPTIONS: SelectOption[] = [
+    { value: '', label: 'All Outcomes' },
+    { value: 'none', label: 'No Outcome Yet' },
+    { value: 'qualified', label: 'Qualified' },
+    { value: 'nurture', label: 'Nurture' },
+    { value: 'no_show', label: 'No Show' },
+  ];
+  /** Build a SelectOption[] from a flat list of distinct values + an "any" label. */
+  function toFilterOptions(values: string[], anyLabel: string): SelectOption[] {
+    return [{ value: '', label: anyLabel }, ...values.map((v) => ({ value: v, label: v }))];
+  }
+  /** Stage options are computed inline (not memoized) so operator edits to
+   *  STAGE_LABELS via Automations → Stage Configuration show up immediately,
+   *  mirroring the original inline `Object.entries(STAGE_LABELS)` template loop. */
+  function stageFilterOptions(): SelectOption[] {
+    return [
+      { value: '', label: 'All Stages' },
+      ...Object.entries(STAGE_LABELS).map(([key, label]) => ({ value: key, label })),
+    ];
+  }
 
   // ─── Login State ────────────────────────────────────────────────────────
   const DOMAIN = '@internationalrelocationpartner.com';
