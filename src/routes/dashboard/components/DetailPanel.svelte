@@ -170,7 +170,7 @@
   let showAdvancedFields = false;
 
   // ── Priority ranking (surface the Kanban "float-to-top" control here) ─────
-  // The same `rankIndex` that powers the ▲ badge on the board is editable from
+  // The same `rankIndex` that powers the 🔥 badge on the board is editable from
   // the Overview tab so an operator can (re)prioritise a client without hunting
   // for its card. Higher rankIndex floats above un-ranked clients within the
   // SAME stage; "Clear" returns it to natural recency order. All writes go
@@ -948,7 +948,7 @@
             <div class="detail-priority">
               <div class="detail-priority__status">
                 {#if typeof $selectedClient.rankIndex === "number"}
-                  <span class="detail-priority__badge">▲ Ranked #{$selectedClient.rankIndex}</span>
+                  <span class="detail-priority__badge">🔥 Ranked #{$selectedClient.rankIndex}</span>
                   <span class="detail-priority__hint">
                     Floats above un-ranked clients in <strong>{STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}</strong>.
                   </span>

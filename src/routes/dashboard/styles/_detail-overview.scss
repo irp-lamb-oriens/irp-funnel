@@ -316,7 +316,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Priority ranking control (Overview tab)
    ───────────────────────────────────────────────────────────────────────────
-   Mirrors the Kanban card's ▲ "float-to-top" rank badge, surfaced here so an
+   Mirrors the Kanban card's 🔥 "float-to-top" rank badge, surfaced here so an
    operator can (re)prioritise a client from the detail panel. Writes go through
    setClientRank() (optimistic + persisted). Teal-accented to match the board.
    ═══════════════════════════════════════════════════════════════════════════ */

@@ -278,7 +278,7 @@
                     class="ofe-move"
                     title="Move up"
                     disabled={i === 0 || busyId === field.id}
-                    on:click={() => moveField(field, -1)}>▲</button
+                    on:click={() => moveField(field, -1)}>🔥</button
                   >
                   <button
                     class="ofe-move"

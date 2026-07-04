@@ -583,7 +583,7 @@
         <section class="av-card av-stage-card">
           <div class="av-stage-head">
             <div class="av-order-cell">
-              <button class="av-move" on:click={() => moveStage(stage, -1)} disabled={i === 0 || stageBusyId === stage.id} title="Move up">▲</button>
+              <button class="av-move" on:click={() => moveStage(stage, -1)} disabled={i === 0 || stageBusyId === stage.id} title="Move up">🔥</button>
               <button class="av-move" on:click={() => moveStage(stage, 1)} disabled={i === activeStages.length - 1 || stageBusyId === stage.id} title="Move down">▼</button>
             </div>
             <span class="av-stage-emoji">{stage.icon || '📌'}</span>
