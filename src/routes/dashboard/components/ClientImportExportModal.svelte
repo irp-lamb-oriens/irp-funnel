@@ -1157,6 +1157,7 @@
     box-shadow: 0 4px 16px rgba(2, 181, 187, 0.36);
   }
   .iem-btn--primary:hover:not(:disabled) {
+    color: black;
     transform: translateY(-1px);
     box-shadow: 0 8px 22px rgba(2, 181, 187, 0.48);
     filter: brightness(1.05);
