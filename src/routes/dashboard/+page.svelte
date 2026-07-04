@@ -1088,6 +1088,7 @@
   }
   .ie-btn--primary:hover {
     filter: brightness(1.08);
+    color: #000;
     box-shadow: 0 5px 16px rgba(2, 181, 187, 0.42);
   }
 
