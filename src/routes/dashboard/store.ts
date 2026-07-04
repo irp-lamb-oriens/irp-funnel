@@ -3594,6 +3594,127 @@ export async function deleteOverviewField(id: string): Promise<void> {
   fieldConfig.update(($f) => $f.filter((f) => f.id !== id));
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Client bulk Import / Export (List view → Import / Export)
+//
+// Export is 100% client-side: each client's `rawDoc` IS the round-trippable
+// Firestore consultation document, so we serialize `{ docId, ...rawDoc,
+// transcriptInsights? }` — re-importing that exact JSON reconstructs the doc.
+//
+// Import is a two-phase server flow (dry-run → commit) backed by
+// API/dashboard/clientsBulkImportRouter.ts. The dry-run validates each record
+// against the Overview Field Registry (advisory: missing-required + type
+// mismatches are WARNINGS, never blockers) and flags duplicates by docId.
+// Nothing is ever rejected for carrying extra/unknown fields — field-agnostic.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A single exported client record — the round-trippable Firestore doc shape. */
+export type ClientExportRecord = Record<string, any> & { docId: string };
+
+/** The JSON envelope produced by `serializeClientExport`. */
+export interface ClientExportEnvelope {
+  exportedAt: string;
+  version: number;
+  count: number;
+  clients: ClientExportRecord[];
+}
+
+export type ImportStrategy = 'skip' | 'merge' | 'overwrite';
+
+/** One annotated record returned by the import dry-run. */
+export interface ImportDryRunRecord {
+  index: number;
+  docId: string | null;
+  email: string;
+  valid: boolean;
+  exists: boolean;
+  missingRequired: string[];
+  warnings: string[];
+}
+
+export interface ImportExpectedField {
+  id: string;
+  label: string;
+  valueType: string;
+  required: boolean;
+  scope: string;
+}
+
+export interface ImportDryRunResult {
+  total: number;
+  valid: number;
+  invalid: number;
+  newCount: number;
+  duplicateCount: number;
+  records: ImportDryRunRecord[];
+  expectedFields: ImportExpectedField[];
+}
+
+export interface ImportCommitResult {
+  success: boolean;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: Array<{ index: number; docId?: string; error: string }>;
+}
+
+/** Build the raw export records (round-trippable Firestore docs) from clients. */
+export function buildClientExportRecords(list: Client[]): ClientExportRecord[] {
+  return (list || []).map((c) => {
+    const raw = c.rawDoc && typeof c.rawDoc === 'object' ? { ...c.rawDoc } : {};
+    const rec: ClientExportRecord = { docId: c.id, ...raw };
+    if (c.transcriptInsights) rec.transcriptInsights = c.transcriptInsights;
+    return rec;
+  });
+}
+
+/** Serialize clients to a pretty JSON string wrapped in a versioned envelope. */
+export function serializeClientExport(list: Client[]): string {
+  const envelope: ClientExportEnvelope = {
+    exportedAt: new Date().toISOString(),
+    version: 1,
+    count: (list || []).length,
+    clients: buildClientExportRecords(list),
+  };
+  return JSON.stringify(envelope, null, 2);
+}
+
+/**
+ * Normalize parsed JSON into a flat records array. Accepts either a bare array
+ * of records or the `{ clients: [...] }` export envelope — so an exported file
+ * re-imports without any hand-editing.
+ */
+export function normalizeImportRecords(parsed: unknown): any[] {
+  if (Array.isArray(parsed)) return parsed;
+  if (parsed && typeof parsed === 'object') {
+    const asAny = parsed as Record<string, any>;
+    if (Array.isArray(asAny.clients)) return asAny.clients;
+    if (Array.isArray(asAny.records)) return asAny.records;
+  }
+  return [];
+}
+
+/** Validate + annotate an import without writing anything. */
+export async function importClientsDryRun(records: any[]): Promise<ImportDryRunResult> {
+  return await apiFetch('/api/dashboard/import/clients/dry-run', {
+    method: 'POST',
+    body: JSON.stringify({ records }),
+  });
+}
+
+/** Commit an import. `strategies` maps docId → per-record strategy override. */
+export async function importClientsCommit(
+  records: any[],
+  defaultStrategy: ImportStrategy = 'skip',
+  strategies: Record<string, ImportStrategy> = {},
+): Promise<ImportCommitResult> {
+  return await apiFetch('/api/dashboard/import/clients/commit', {
+    method: 'POST',
+    body: JSON.stringify({ records, defaultStrategy, strategies }),
+  });
+}
+
+
 
 
 

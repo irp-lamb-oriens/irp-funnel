@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
-import { clients, filters, searchQuery, filteredClients, clientsByStage } from './store.ts';
+import {
+  clients, filters, searchQuery, filteredClients, clientsByStage,
+  buildClientExportRecords, serializeClientExport, normalizeImportRecords,
+} from './store.ts';
 import type { Client } from './store.ts';
+
 
 const mockClients: Client[] = [
   {
@@ -248,3 +252,63 @@ describe('Dashboard Filtering & Searching', () => {
     });
   });
 });
+
+describe('Client Export / Import serialization', () => {
+  it('buildClientExportRecords maps id → docId and spreads rawDoc', () => {
+    const c: Client = {
+      ...mockClients[0],
+      rawDoc: { dripEmail: 'john@example.com', pipelineStage: 'sales_opt_in_email', extraField: 42 },
+    };
+    const recs = buildClientExportRecords([c]);
+    expect(recs.length).toBe(1);
+    expect(recs[0].docId).toBe('1');
+    // rawDoc keys are preserved verbatim (field-agnostic round-trip)
+    expect(recs[0].dripEmail).toBe('john@example.com');
+    expect(recs[0].pipelineStage).toBe('sales_opt_in_email');
+    expect(recs[0].extraField).toBe(42);
+  });
+
+  it('serializeClientExport produces a versioned envelope that round-trips', () => {
+    const withRaw: Client = { ...mockClients[1], rawDoc: { dripEmail: 'jane@example.com' } };
+    const json = serializeClientExport([withRaw]);
+    const parsed = JSON.parse(json);
+    expect(parsed.version).toBe(1);
+    expect(parsed.count).toBe(1);
+    expect(Array.isArray(parsed.clients)).toBe(true);
+    // Re-importing the exported envelope yields back the records with docId intact.
+    const back = normalizeImportRecords(parsed);
+    expect(back.length).toBe(1);
+    expect(back[0].docId).toBe('2');
+    expect(back[0].dripEmail).toBe('jane@example.com');
+  });
+
+  it('normalizeImportRecords accepts a bare array, an envelope, or neither', () => {
+    expect(normalizeImportRecords([{ docId: 'a' }]).length).toBe(1);
+    expect(normalizeImportRecords({ clients: [{ docId: 'b' }, { docId: 'c' }] }).length).toBe(2);
+    expect(normalizeImportRecords({ records: [{ docId: 'd' }] }).length).toBe(1);
+    expect(normalizeImportRecords({ nope: true }).length).toBe(0);
+    expect(normalizeImportRecords('garbage').length).toBe(0);
+  });
+
+  it('export omits transcriptInsights when absent and includes it when present', () => {
+    const noInsights = buildClientExportRecords([mockClients[0]]);
+    expect('transcriptInsights' in noInsights[0]).toBe(false);
+
+    const withInsights: Client = {
+      ...mockClients[0],
+      transcriptInsights: {
+        shippingMode: '40ft_container',
+        packingTier: 'full_pack_full_load',
+        confidence: 0.9,
+        reasoning: 'test',
+        extractedFields: {},
+        generatedAt: '2023-01-01',
+        source: 'transcript',
+        model: 'test',
+      },
+    };
+    const recs = buildClientExportRecords([withInsights]);
+    expect(recs[0].transcriptInsights?.shippingMode).toBe('40ft_container');
+  });
+});
+

@@ -40,6 +40,7 @@
   import AutomationView from './components/AutomationView.svelte';
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
+  import ClientImportExportModal from './components/ClientImportExportModal.svelte';
   import './dashboard.scss';
 
   // ─── Login State ────────────────────────────────────────────────────────
@@ -57,6 +58,18 @@
 
   // ─── Add Client modal ────────────────────────────────────────────────────
   let addClientOpen = false;
+
+  // ─── Import / Export modal (List section) ────────────────────────────────
+  let importExportOpen = false;
+  let importExportMode: 'import' | 'export' = 'export';
+  function openImportExport(m: 'import' | 'export') {
+    importExportMode = m;
+    importExportOpen = true;
+  }
+  async function handleImported() {
+    // Refresh the board/list so newly-created / updated clients appear at once.
+    await fetchClients();
+  }
 
   // Pre-flight the microphone permission BEFORE opening the modal. Browsers
   // only prompt once per origin, so granting here means the modal's
@@ -663,6 +676,20 @@
           {/each}
         </select>
         <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: ''}}>Clear</button>
+
+        {#if $activeView === 'list'}
+          <!-- List-section Import/Export of clients as JSON. Kept to the List
+               view per the CRM workflow; validated against the Overview fields
+               registry and non-destructive on the server. -->
+          <div class="ie-actions">
+            <button class="ie-btn" on:click={() => openImportExport('export')} title="Export clients to JSON">
+              ⬇ Export
+            </button>
+            <button class="ie-btn ie-btn--primary" on:click={() => openImportExport('import')} title="Import clients from JSON">
+              ⬆ Import
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -995,6 +1022,14 @@
   />
 {/if}
 
+{#if importExportOpen}
+  <ClientImportExportModal
+    mode={importExportMode}
+    on:imported={handleImported}
+    on:close={() => (importExportOpen = false)}
+  />
+{/if}
+
 <EmailPreviewDrawer />
 
 <ToastContainer />
@@ -1020,6 +1055,43 @@
   }
   .dashboard__retry:active {
     transform: translateY(0);
+  }
+
+  /* ══ List-section Import/Export buttons ════════════════════════════════ */
+  .ie-actions {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-left: auto; /* push to the right edge of the filters bar */
+  }
+  .ie-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.32rem 0.8rem;
+    background: #fff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+  }
+  .ie-btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+  }
+  .ie-btn--primary {
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 10px rgba(2, 181, 187, 0.3);
+  }
+  .ie-btn--primary:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 5px 16px rgba(2, 181, 187, 0.42);
   }
 
   /* ══ Add Client button — ultra-modern ══════════════════════════════════ */
