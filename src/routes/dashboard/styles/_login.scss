@@ -40,6 +40,14 @@
     margin-bottom: $sp-3;
     filter: drop-shadow(0 4px 12px rgba(2,181,187,0.2));
   }
+
+  &__container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: $sp-3;
+  }
+
   h1 {
     font-size: 26px;
     font-weight: 800;

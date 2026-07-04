@@ -505,7 +505,9 @@
   <div class="login-gate">
     <div class="login-card">
       <div class="login-logo">
-        <span class="login-logo__icon">🌍</span>
+        <div class="login-logo__container">
+          <img src="/IRP-LOGO.jpg" alt="logo" height="60">
+        </div>
         <h1>IRP Dashboard</h1>
         <p>Client Relationship Management</p>
       </div>
@@ -572,8 +574,7 @@
     <!-- ── Top Bar ───────────────────────────────────────────── -->
     <header class="topbar">
       <div class="topbar__left">
-        <span class="topbar__logo">🌍</span>
-        <h1 class="topbar__title">IRP CRM</h1>
+        <img src="/IRP-LOGO.jpg" alt="logo" height="40">
         <nav class="topbar__nav">
           {#if allowedViews.includes('board')}
             <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>

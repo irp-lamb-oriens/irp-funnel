@@ -114,7 +114,7 @@
       cursor: pointer;
       font-family: $font;
       transition: all $t-fast;
-      &:hover { color: $text-2; background: $surface-2; }
+      &:hover { color: white; background: $surface-2; }
       &.active {
         color: $text;
         background: $accent;
