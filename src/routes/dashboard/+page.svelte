@@ -638,6 +638,17 @@
     <!-- ── Filters ───────────────────────────────────────────── -->
     {#if $activeView === 'board' || $activeView === 'list'}
       <div class="filters-bar">
+        <!-- List-section Import/Export of clients as JSON. Kept to the List
+              view per the CRM workflow; validated against the Overview fields
+              registry and non-destructive on the server. -->
+        <div class="ie-actions">
+          <button class="ie-btn" on:click={() => openImportExport('export')} title="Export clients to JSON">
+            ⬇ Export
+          </button>
+          <button class="ie-btn ie-btn--primary" on:click={() => openImportExport('import')} title="Import clients from JSON">
+            ⬆ Import
+          </button>
+        </div>
         <select bind:value={$filters.stage} class="filter-select">
           <option value="">All Stages</option>
           {#each Object.entries(STAGE_LABELS) as [key, label]}
@@ -676,20 +687,6 @@
           {/each}
         </select>
         <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: ''}}>Clear</button>
-
-        {#if $activeView === 'list'}
-          <!-- List-section Import/Export of clients as JSON. Kept to the List
-               view per the CRM workflow; validated against the Overview fields
-               registry and non-destructive on the server. -->
-          <div class="ie-actions">
-            <button class="ie-btn" on:click={() => openImportExport('export')} title="Export clients to JSON">
-              ⬇ Export
-            </button>
-            <button class="ie-btn ie-btn--primary" on:click={() => openImportExport('import')} title="Import clients from JSON">
-              ⬆ Import
-            </button>
-          </div>
-        {/if}
       </div>
     {/if}
 
