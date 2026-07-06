@@ -224,16 +224,9 @@
 </script>
 
 <div class="quotes-tab">
-  {#if showEditor}
-    <QuoteEditor
-      {clientId}
-      quoteId={editingQuoteId}
-      on:saved={handleEditorSaved}
-      on:cancelled={handleEditorCancelled}
-    />
-  {:else}
     <!-- ── Pricing Requests — authored here, precede quote creation ─────── -->
     <PricingRequestsPanel {clientId} />
+
 
     <!-- ── Per-client proposal template selector (outside the quote list, ──
          inside the quoting step). Decides which proposal document this
@@ -303,8 +296,21 @@
       </button>
     </div>
 
+    <!-- ── Inline quote editor — opens in place (above the list), instead of
+         replacing the whole tab. Cancel/Save collapse it back to the list. ── -->
+    {#if showEditor}
+      <div class="quotes-tab__editor-inline">
+        <QuoteEditor
+          {clientId}
+          quoteId={editingQuoteId}
+          on:saved={handleEditorSaved}
+          on:cancelled={handleEditorCancelled}
+        />
+      </div>
+    {/if}
 
     {#if loading}
+
       <div class="quotes-tab__loading">
         <div class="quotes-tab__spinner"></div>
         <span>Loading quotes…</span>
@@ -314,12 +320,13 @@
         ⚠️ {error}
         <button class="quotes-tab__retry" on:click={loadQuotes}>Retry</button>
       </div>
-    {:else if $quotes.length === 0}
+    {:else if $quotes.length === 0 && !showEditor}
       <div class="quotes-tab__empty">
         <span class="quotes-tab__empty-icon">💰</span>
         <p class="quotes-tab__empty-title">No quotes yet</p>
         <p class="quotes-tab__empty-desc">Create the first quote for this client.</p>
       </div>
+
     {:else}
       <ul class="quotes-tab__list">
         {#each $quotes as quote (quote.quoteId)}
@@ -382,8 +389,8 @@
         {/each}
       </ul>
     {/if}
-  {/if}
 </div>
+
 
 <style>
   /* ── QuotesTab — Premium Light Theme ──────────────────────────────────── */
@@ -547,7 +554,16 @@
   }
   .quotes-tab__new-btn:active { transform: translateY(0); filter: brightness(0.97); }
 
+  /* ── Inline quote editor wrapper ──────────────────────────────────────────
+     The editor now opens in place (above the quotes list) rather than
+     replacing the whole tab. This wrapper just gives it breathing room from
+     the list below. */
+  .quotes-tab__editor-inline {
+    margin-bottom: 16px;
+  }
+
   /* ── Loading ──────────────────────────────────────────────────────────── */
+
   .quotes-tab__loading {
     display: flex;
     align-items: center;
