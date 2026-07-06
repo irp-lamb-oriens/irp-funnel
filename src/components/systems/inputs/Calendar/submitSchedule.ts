@@ -24,10 +24,28 @@ export async function submitScheduling() {
     };
   });
 
+  // Normalise `notes` into the array-of-note-objects shape the backend and every
+  // downstream email template expect. The HeroForm's notes step binds a
+  // <textarea> straight to formState.notes, so it arrives here as a RAW STRING.
+  // Sending it as a string used to persist it verbatim in Firestore, which later
+  // crashed the email queue with "agentNotes.map is not a function" (a string has
+  // .length but no .map). The backend now normalises too (defense-in-depth), but
+  // we shape it correctly at the source so the whole stack stays consistent.
+  const normalisedNotes = (() => {
+    const raw = (formData as any).notes;
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string" && raw.trim()) {
+      return [{ text: raw.trim(), createdAt: new Date().toISOString() }];
+    }
+    return [];
+  })();
+
   const submissionData = {
     ...formData,
+    notes: normalisedNotes,
     events: schedulingData,
   };
+
 
   console.log("Form data to be sent to backend:", submissionData);
 
