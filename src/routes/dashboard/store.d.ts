@@ -1597,3 +1597,111 @@ export declare function normalizeImportRecords(parsed: unknown): any[];
 export declare function importClientsDryRun(records: any[]): Promise<ImportDryRunResult>;
 /** Commit an import. `strategies` maps docId → per-record strategy override. */
 export declare function importClientsCommit(records: any[], defaultStrategy?: ImportStrategy, strategies?: Record<string, ImportStrategy>): Promise<ImportCommitResult>;
+export interface PricingRequestOption {
+    optionId: string;
+    index: number;
+    /** Opaque service-type key (built-in PackingTier OR custom serviceTypeId). */
+    serviceType: string | null;
+    /** AI-drafted placeholder header line; fully operator-editable. */
+    serviceLine: string;
+    /** Freeform, agnostic bullet list of line items after "including:". */
+    items: string[];
+}
+export interface PricingRequest {
+    requestId: string;
+    consultationId: string;
+    index: number;
+    originLabel: string;
+    destinationLabel: string;
+    originNotes: string;
+    destinationNotes: string;
+    options: PricingRequestOption[];
+    status: 'draft' | 'sent';
+    createdAt: string;
+    createdBy: string;
+    sentAt: string | null;
+    sentBy: string | null;
+    updatedAt: string | null;
+}
+/** Fetch all pricing requests for a client (ascending by index). */
+export declare function fetchPricingRequests(clientId: string): Promise<PricingRequest[]>;
+/** Create a new draft pricing request (auto-numbered, header auto-filled). */
+export declare function createPricingRequest(clientId: string, payload?: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'options'>>): Promise<PricingRequest>;
+/** Patch a draft pricing request's header and/or options. */
+export declare function updatePricingRequest(clientId: string, requestId: string, updates: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'originLabel' | 'destinationLabel' | 'options'>>): Promise<PricingRequest>;
+/** Add an option (server AI-drafts its placeholder service line). */
+export declare function addPricingRequestOption(clientId: string, requestId: string): Promise<{
+    options: PricingRequestOption[];
+    newOption: PricingRequestOption;
+}>;
+/** Ask the AI to (re)draft a single placeholder service line (not persisted). */
+export declare function suggestPricingRequestLine(clientId: string, requestId: string, serviceType?: string): Promise<string>;
+/** Finalize + send the pricing request to the pricing desk. */
+export declare function sendPricingRequest(clientId: string, requestId: string, finalEdits?: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'options'>>): Promise<PricingRequest>;
+/** Delete a draft pricing request. */
+export declare function deletePricingRequest(clientId: string, requestId: string): Promise<void>;
+export type GateOperator = 'exists' | 'not_exists' | 'is_empty' | 'is_not_empty' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'not_contains';
+export type GateLogic = 'all' | 'any';
+export interface GateCondition {
+    fact: string;
+    operator: GateOperator;
+    value?: string | number | null;
+}
+export interface StageGateRule {
+    id: string;
+    targetStage: string;
+    logic: GateLogic;
+    conditions: GateCondition[];
+    message: string;
+    enabled: boolean;
+    label: string;
+    updatedBy?: string;
+    updatedAt?: string;
+    createdAt?: string;
+}
+export interface GateFact {
+    key: string;
+    label: string;
+    numeric: boolean;
+    hint?: string;
+}
+export interface StageGateMeta {
+    facts: GateFact[];
+    operators: GateOperator[];
+    valuelessOperators: GateOperator[];
+    logics: GateLogic[];
+}
+/** One blocking gate returned in a 409 stage-move response. */
+export interface StageGateBlock {
+    ruleId: string;
+    label: string;
+    message: string;
+    unmet: string[];
+}
+/** Human labels for gate operators (editor UI). */
+export declare const GATE_OPERATOR_LABELS: Record<GateOperator, string>;
+export declare function fetchStageGateMeta(): Promise<StageGateMeta>;
+export declare function fetchStageGates(): Promise<StageGateRule[]>;
+/** Create (or replace) a stage-gate rule. */
+export declare function saveStageGate(rule: Partial<StageGateRule>): Promise<StageGateRule>;
+/** Partially update a stage-gate rule by id. */
+export declare function patchStageGate(id: string, updates: Partial<StageGateRule>): Promise<StageGateRule>;
+/** Delete a stage-gate rule. */
+export declare function deleteStageGate(id: string): Promise<void>;
+/**
+ * The most-recent BLOCKED stage move, surfaced two ways per the product spec:
+ *   • the Kanban page shows a dismissible notification → click opens a modal
+ *     detailing the unmet requirements, then the notification goes away;
+ *   • the client's Quotes tab shows an inline error banner (same payload).
+ * `null` when there is no active block. Set by the Kanban drop handler when the
+ * stage-move endpoint returns 409; cleared when the operator dismisses it.
+ */
+export interface StageBlockNotice {
+    clientId: string;
+    clientName: string;
+    targetStage: string;
+    targetStageLabel: string;
+    blockedBy: StageGateBlock[];
+    at: number;
+}
+export declare const stageBlockNotice: import("svelte/store").Writable<StageBlockNotice | null>;

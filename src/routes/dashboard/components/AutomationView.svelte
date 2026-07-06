@@ -27,6 +27,8 @@
     type StageConfigRow,
   } from '../store.ts';
   import OverviewFieldsEditor from './OverviewFieldsEditor.svelte';
+  import StageGatesEditor from './StageGatesEditor.svelte';
+
 
   // ── State ──────────────────────────────────────────────────────────────
   let meta: AutomationMeta | null = null;
@@ -751,9 +753,13 @@
           {/each}
         </section>
       {/if}
+
+      <!-- ── Generic stage-GATE rules (block moves until conditions met) ── -->
+      <StageGatesEditor stageIds={activeStages.map((s) => s.id)} />
     {/if}
   {/if}
 </div>
+
 
 <!-- ── Delete-with-migration modal ─────────────────────────────────────── -->
 {#if deleteModalStage}

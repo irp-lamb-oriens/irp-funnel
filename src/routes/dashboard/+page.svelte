@@ -19,9 +19,13 @@
     initDashboardSocket, disconnectDashboardSocket,
     pendingCountByClient, fetchLiveAccessConfig,
     getStageSlaStatus, STAGE_SLA_DAYS,
-    type Client
+    stageBlockNotice,
+    type Client,
+    type StageGateBlock
 
   } from './store.ts';
+  import { toasts } from './toastStore.ts';
+
 
   import {
     STATIC_SECTION_ACCESS, DEFAULT_ACCESS, ALL_VIEWS, ADMIN_EMAILS,
@@ -235,16 +239,63 @@
     emailSentMessage = '';
   }
 
+  // ─── Stage-gate block state ──────────────────────────────────────────────
+  // When a Kanban move is refused by a stage gate (HTTP 409), the card stays
+  // put and we surface a dismissible NOTIFICATION pill; clicking it opens a
+  // MODAL detailing the unmet requirements (then the pill disappears). The same
+  // payload is mirrored into `stageBlockNotice` so the client's Quotes tab shows
+  // an inline error banner too.
+  let blockNotifOpen = false;   // the small pill is visible
+  let blockModalOpen = false;   // the details modal is open
+  let blockClientName = '';
+  let blockStageLabel = '';
+  let blockList: StageGateBlock[] = [];
+
+  function openBlockModal() {
+    blockModalOpen = true;
+    blockNotifOpen = false; // notification goes away once read
+  }
+  function closeBlockModal() {
+    blockModalOpen = false;
+    blockList = [];
+  }
+
   async function handleStageChange(clientId: string, newStage: string) {
     stageChanging = true;
     try {
       await updateClientStage(clientId, newStage);
     } catch (err: any) {
-      alert('Failed to update stage: ' + err.message);
+      // A stage GATE refused the move (409). The card stays where it is; we show
+      // a readable notification + modal instead of a blunt alert.
+      const data = err?.data;
+      if (err?.status === 409 && data?.blocked) {
+        const client = $clients.find((c) => c.id === clientId);
+        const clientName = client?.displayName || client?.email || clientId;
+        const stageLabel = STAGE_LABELS[newStage] || newStage;
+        const blockedBy: StageGateBlock[] = Array.isArray(data.blockedBy) ? data.blockedBy : [];
+        blockClientName = clientName;
+        blockStageLabel = stageLabel;
+        blockList = blockedBy;
+        blockNotifOpen = true;
+        blockModalOpen = false;
+        // Mirror to the shared store so the Quotes tab shows its inline banner.
+        stageBlockNotice.set({
+          clientId,
+          clientName,
+          targetStage: newStage,
+          targetStageLabel: stageLabel,
+          blockedBy,
+          at: Date.now(),
+        });
+        toasts.error(`Move blocked — “${stageLabel}” has unmet requirements. Click the alert to see why.`);
+      } else {
+        alert('Failed to update stage: ' + (err?.message ?? err));
+      }
     } finally {
       stageChanging = false;
     }
   }
+
 
   async function handleAddNote() {
     if (!newNote.trim() || !$selectedClient) return;
@@ -1070,12 +1121,133 @@
 
 <EmailPreviewDrawer />
 
+<!-- ── Stage-gate BLOCK notification pill (click → modal) ─────────────────── -->
+{#if blockNotifOpen}
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="sgblock-pill" role="alert" on:click={openBlockModal} title="Click to see why the move was blocked">
+    <span class="sgblock-pill__icon">🚫</span>
+    <span class="sgblock-pill__text">Move to “{blockStageLabel}” blocked — click to see why</span>
+    <button class="sgblock-pill__close" title="Dismiss" on:click|stopPropagation={() => (blockNotifOpen = false)}>✕</button>
+  </div>
+{/if}
+
+<!-- ── Stage-gate BLOCK modal ─────────────────────────────────────────────── -->
+{#if blockModalOpen}
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="sgblock-backdrop" on:click={closeBlockModal} role="presentation">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="sgblock-modal" on:click|stopPropagation role="dialog" aria-modal="true" tabindex="-1">
+      <header class="sgblock-modal__head">
+        <span class="sgblock-modal__icon">🚫</span>
+        <h3 class="sgblock-modal__title">Can't move {blockClientName} to “{blockStageLabel}” yet</h3>
+        <button class="sgblock-modal__close" on:click={closeBlockModal} aria-label="Close">✕</button>
+      </header>
+      <div class="sgblock-modal__body">
+        <p class="sgblock-modal__lead">The following requirements must be met before this move is allowed:</p>
+        {#each blockList as b (b.ruleId)}
+          <div class="sgblock-rule">
+            <p class="sgblock-rule__msg">{b.message}</p>
+            {#if b.unmet?.length}
+              <ul class="sgblock-rule__unmet">
+                {#each b.unmet as u}<li>{u}</li>{/each}
+              </ul>
+            {/if}
+          </div>
+        {/each}
+      </div>
+      <footer class="sgblock-modal__foot">
+        <button class="sgblock-modal__ok" on:click={closeBlockModal}>Got it</button>
+      </footer>
+    </div>
+  </div>
+{/if}
+
 <ToastContainer />
 <Footer />
 
+
 <style>
+  /* ══ Stage-gate BLOCK notification pill + modal ════════════════════════ */
+  .sgblock-pill {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: 560px;
+    padding: 0.7rem 1rem;
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    color: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(185, 28, 28, 0.4);
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 9500;
+    animation: sgblock-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes sgblock-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .sgblock-pill__icon { font-size: 1rem; }
+  .sgblock-pill__text { flex: 1; }
+  .sgblock-pill__close {
+    background: rgba(255, 255, 255, 0.18); border: none; color: #fff; cursor: pointer;
+    width: 22px; height: 22px; border-radius: 50%; font-size: 0.8rem; flex-shrink: 0;
+  }
+  .sgblock-pill__close:hover { background: rgba(255, 255, 255, 0.3); }
+
+  .sgblock-backdrop {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center;
+    z-index: 9600; padding: 1rem;
+  }
+  .sgblock-modal {
+    background: #fff; border-radius: 18px; max-width: 480px; width: 100%;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+    overflow: hidden;
+    animation: sgblock-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes sgblock-pop {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .sgblock-modal__head {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 1.1rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+  }
+  .sgblock-modal__icon { font-size: 1.15rem; }
+  .sgblock-modal__title { margin: 0; flex: 1; font-size: 1.02rem; font-weight: 800; color: #0f172a; }
+  .sgblock-modal__close {
+    background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem;
+    padding: 4px 8px; border-radius: 8px;
+  }
+  .sgblock-modal__close:hover { background: #f1f5f9; color: #475569; }
+  .sgblock-modal__body { padding: 1.1rem 1.25rem; max-height: 60vh; overflow-y: auto; }
+  .sgblock-modal__lead { margin: 0 0 0.85rem; color: #475569; font-size: 0.88rem; line-height: 1.5; }
+  .sgblock-rule {
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+    padding: 0.75rem 0.9rem; margin-bottom: 0.7rem;
+  }
+  .sgblock-rule__msg { margin: 0; color: #7f1d1d; font-size: 0.88rem; font-weight: 600; line-height: 1.45; }
+  .sgblock-rule__unmet { margin: 0.4rem 0 0; padding-left: 1.15rem; color: #b91c1c; font-size: 0.82rem; }
+  .sgblock-rule__unmet li { margin: 0.12rem 0; }
+  .sgblock-modal__foot { padding: 0.9rem 1.25rem 1.15rem; display: flex; justify-content: flex-end; }
+  .sgblock-modal__ok {
+    background: linear-gradient(135deg, #02b5bb, #0d9488); color: #fff; border: none;
+    border-radius: 10px; padding: 0.55rem 1.4rem; font-weight: 800; font-size: 0.88rem;
+    cursor: pointer; font-family: inherit;
+  }
+  .sgblock-modal__ok:hover { filter: brightness(1.07); }
+
   /* ══ Board load-error retry button ═════════════════════════════════════ */
   .dashboard__retry {
+
     margin-left: 0.75rem;
     padding: 0.3rem 0.9rem;
     background: #ef4444;
