@@ -10,32 +10,18 @@
 <script lang="ts">
   import CTAButton from "./CTAButton.svelte";
   import MenuToggle from "./MenuToggle.svelte";
-  import AnimatedUnderline from "./AnimatedUnderline.svelte";
+  import NavLink from "./NavLink.svelte";
   import { goto, afterNavigate } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { get } from "svelte/store";
 
   export let menuItems: MenuItem[] = [];
   export let cta: { label: string; href: string } | null = null;
 
   let mobileMenuOpen = false;
-  let hoveredIndex = -1;
-  let menuItemsRefs: HTMLElement[] = [];
-  let pillStyle = { left: 0, width: 0, opacity: 0 };
-
-  $: if (hoveredIndex !== -1 && menuItemsRefs[hoveredIndex]) {
-    const el = menuItemsRefs[hoveredIndex];
-    pillStyle = {
-      left: el.offsetLeft,
-      width: el.offsetWidth,
-      opacity: 1
-    };
-  } else {
-    pillStyle = { ...pillStyle, opacity: 0 };
-  }
 
   // Cierra el menú cuando cambie de ruta
-  afterNavigate(() => { mobileMenuOpen = false; });
+  afterNavigate(() => {
+    mobileMenuOpen = false;
+  });
 
   const isExternal = (href: string) =>
     /^https?:\/\//i.test(href) &&
@@ -56,44 +42,27 @@
   on:mousedown|stopPropagation|capture
   on:click|stopPropagation
 >
-  <ul class="main-menu" role="menubar" on:mouseleave={() => (hoveredIndex = -1)}>
-    <div
-      class="hover-pill"
-      style="left: {pillStyle.left}px; width: {pillStyle.width}px; opacity: {pillStyle.opacity};"
-    ></div>
-    {#each menuItems as item, i (item.href)}
-      <li role="none" bind:this={menuItemsRefs[i]} on:mouseenter={() => (hoveredIndex = i)}>
-        <a
+  <ul class="main-menu" role="menubar">
+    {#each menuItems as item (item.href)}
+      <li role="none">
+        <NavLink
           href={item.href}
-          role="menuitem"
-          tabindex="0"
-          class:item-cta={item.isCTA}
-          on:click={(e) => handleClick(e, item.href)}
-          rel={isExternal(item.href) ? "noopener noreferrer" : undefined}
-          target={isExternal(item.href) ? "_blank" : undefined}
-          style="position:relative;"
-        >
-          <AnimatedUnderline
-            selected={$page.url.pathname === item.href}
-            hovered={hoveredIndex === i}
-          >
-            {#if item.icon}
-              <img
-                src={item.icon}
-                alt={item.label + " icon"}
-                width="30"
-                height="30"
-              />
-            {/if}
-            {item.label}
-          </AnimatedUnderline>
-        </a>
+          label={item.label}
+          icon={item.icon}
+          isExternal={isExternal(item.href)}
+          callback={(e) => handleClick(e, item.href)}
+        />
       </li>
     {/each}
 
     {#if cta}
-      <li role="none" on:mouseenter={() => (hoveredIndex = -1)}>
-        <CTAButton trigger={true} label={cta.label} href={cta.href} variant="primary" />
+      <li role="none">
+        <CTAButton
+          trigger={true}
+          label={cta.label}
+          href={cta.href}
+          variant="primary"
+        />
       </li>
     {/if}
   </ul>
@@ -107,30 +76,30 @@
 </nav>
 
 <style lang="scss">
-.main-menu-col {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  position: relative;
-  justify-content: flex-end;
-  padding-right: 5rem;
+  .main-menu-col {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    position: relative;
+    justify-content: flex-end;
+    padding-right: 5rem;
 
-  @media (max-width: 1024px) {
-    padding-right: 2.5rem;
+    @media (max-width: 1024px) {
+      padding-right: 2.5rem;
+    }
   }
-}
-.main-menu {
-  display: flex;
-  gap: 1.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-  position: relative;
+  .main-menu {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    position: relative;
 
-  @media (max-width: 1140px) {
-    gap: .5rem;
-  }
+    @media (max-width: 1140px) {
+      gap: 0.5rem;
+    }
 
   @media (max-width: 1050px) {
     gap: .25rem;

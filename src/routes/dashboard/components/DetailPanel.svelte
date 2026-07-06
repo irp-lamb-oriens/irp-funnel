@@ -27,7 +27,9 @@
     activeFields,
     fieldConfig,
     loadOverviewFields,
+    resolvePendingAction,
   } from '../store.ts';
+
 
   import type { ClientActionsPayload, ActionArgSchema, FieldConfigRow } from '../store.ts';
   import { ADMIN_EMAILS } from '../access.ts';
@@ -493,6 +495,40 @@
     }
     return counts;
   })();
+
+  // ── Notes-tab notifications ("Needs attention") ───────────────────────────
+  // The unified pending-action stream carries the two in-app notification types
+  // that replaced email: `client_comment` (a customer posted on their /status
+  // page) and `note_mention` (a teammate @mentioned you on a CRM note). We
+  // surface the PENDING ones as an actionable list at the top of the Notes tab
+  // so the badge count on the Notes tab is directly resolvable. Newest first.
+  $: noteNotifications = ($selectedClient?.pendingActions || [])
+    .filter((a) => a.status === 'pending' && (a.type === 'client_comment' || a.type === 'note_mention'))
+    .slice()
+    .sort((a, b) => new Date(b.triggeredAt).getTime() - new Date(a.triggeredAt).getTime());
+
+  /** actionId currently being marked read (drives the button spinner/disable). */
+  let resolvingNotifId = '';
+
+  /** Emoji + accent per notification type — cohesive with the portal dialect. */
+  function notifIcon(type: string): string {
+    return type === 'client_comment' ? '💬' : '📝';
+  }
+
+  /** Mark a notification read → resolves the pending action (badge drops instantly). */
+  async function handleResolveNotification(actionId: string) {
+    if (!$selectedClient || resolvingNotifId) return;
+    resolvingNotifId = actionId;
+    try {
+      await resolvePendingAction($selectedClient.id, actionId, 'done');
+      toasts.success('Marked as read.');
+    } catch (err: any) {
+      toasts.error(`Couldn't update: ${err?.message ?? err}`);
+    } finally {
+      resolvingNotifId = '';
+    }
+  }
+
 
   $: {
     if ($selectedClient) {
@@ -1857,7 +1893,47 @@
       <!-- ── Notes Tab ────────────────────────────── -->
       {:else if detailTab === 'notes'}
         <div class="detail-notes">
+          <!-- ── Needs attention — in-app notifications (replaces email) ──────
+               Client status-page comments + CRM note @mentions now arrive here
+               as resolvable pending actions instead of emails. They drive the
+               SAME unified badge counter on the card + the Notes tab. -->
+          {#if noteNotifications.length > 0}
+            <div class="dn-notif">
+              <div class="dn-notif__head">
+                <span class="dn-notif__title">🔔 Needs attention</span>
+                <span class="dn-notif__count">{noteNotifications.length}</span>
+              </div>
+              <div class="dn-notif__list">
+                {#each noteNotifications as n (n.actionId)}
+                  <div class="dn-notif__item dn-notif__item--{n.type}">
+                    <span class="dn-notif__ic" aria-hidden="true">{notifIcon(n.type)}</span>
+                    <div class="dn-notif__body">
+                      <div class="dn-notif__label">{n.title}</div>
+                      {#if n.meta && (n.meta.body || n.meta.fullBody)}
+                        <div class="dn-notif__preview">“{n.meta.body || n.meta.fullBody}”</div>
+                      {/if}
+                      <div class="dn-notif__meta">
+                        <span title={n.triggeredAt}>{relativeTime(n.triggeredAt)}</span>
+                        {#if n.triggeredBy}· {String(n.triggeredBy).split('@')[0]}{/if}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      class="dn-notif__read"
+                      disabled={resolvingNotifId === n.actionId}
+                      on:click={() => handleResolveNotification(n.actionId)}
+                      title="Mark as read"
+                    >
+                      {resolvingNotifId === n.actionId ? '…' : '✓ Mark read'}
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
           <form class="detail-notes__form" on:submit|preventDefault={handleAddNote}>
+
             <MentionTextarea
               bind:value={newNote}
               people={mentionPeople}
@@ -2296,3 +2372,93 @@
     {/if}
   </aside>
 {/if}
+
+<style>
+  /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────
+     Cohesive with the dashboard admin dialect: teal accent (#02b5bb), slate
+     neutrals, 12px cards. Two subtle type accents (client comment = teal,
+     note mention = indigo) so the operator reads the source at a glance. */
+  .dn-notif {
+    background: linear-gradient(180deg, rgba(2, 181, 187, 0.05) 0%, rgba(2, 181, 187, 0.015) 100%);
+    border: 1px solid rgba(2, 181, 187, 0.2);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.9rem;
+  }
+  .dn-notif__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .dn-notif__title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+  .dn-notif__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #02b5bb;
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 800;
+  }
+  .dn-notif__list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .dn-notif__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #02b5bb;
+    border-radius: 10px;
+    padding: 0.6rem 0.7rem;
+  }
+  .dn-notif__item--note_mention { border-left-color: #6366f1; }
+  .dn-notif__ic { font-size: 1rem; line-height: 1.3; flex-shrink: 0; }
+  .dn-notif__body { flex: 1; min-width: 0; }
+  .dn-notif__label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.3;
+  }
+  .dn-notif__preview {
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    color: #475569;
+    font-style: italic;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .dn-notif__meta {
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+  .dn-notif__read {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid rgba(2, 181, 187, 0.3);
+    border-radius: 8px;
+    background: rgba(2, 181, 187, 0.08);
+    color: #02999e;
+    font-size: 0.72rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.14s, transform 0.12s, opacity 0.14s;
+  }
+  .dn-notif__read:hover:not(:disabled) { background: rgba(2, 181, 187, 0.16); transform: translateY(-1px); }
+  .dn-notif__read:disabled { opacity: 0.5; cursor: wait; }
+</style>
+

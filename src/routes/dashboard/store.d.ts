@@ -424,7 +424,7 @@ export interface PendingAction {
      * template is used when routing to `assignedTo` actors.
      * Extensible: add new literals here as new workflows emerge.
      */
-    type: 'email_suggestion' | 'action_suggestion' | 'follow_up' | 'manual';
+    type: 'email_suggestion' | 'action_suggestion' | 'follow_up' | 'client_comment' | 'note_mention' | 'manual';
     /**
      * Detail Panel tab that "owns" this action.
      * Drives which tab receives a badge count and which section is highlighted
@@ -1534,3 +1534,66 @@ export declare function reorderOverviewFields(orderedIds: string[]): Promise<Fie
  * forward. No migration guard needed (unlike stage deletion).
  */
 export declare function deleteOverviewField(id: string): Promise<void>;
+/** A single exported client record — the round-trippable Firestore doc shape. */
+export type ClientExportRecord = Record<string, any> & {
+    docId: string;
+};
+/** The JSON envelope produced by `serializeClientExport`. */
+export interface ClientExportEnvelope {
+    exportedAt: string;
+    version: number;
+    count: number;
+    clients: ClientExportRecord[];
+}
+export type ImportStrategy = 'skip' | 'merge' | 'overwrite';
+/** One annotated record returned by the import dry-run. */
+export interface ImportDryRunRecord {
+    index: number;
+    docId: string | null;
+    email: string;
+    valid: boolean;
+    exists: boolean;
+    missingRequired: string[];
+    warnings: string[];
+}
+export interface ImportExpectedField {
+    id: string;
+    label: string;
+    valueType: string;
+    required: boolean;
+    scope: string;
+}
+export interface ImportDryRunResult {
+    total: number;
+    valid: number;
+    invalid: number;
+    newCount: number;
+    duplicateCount: number;
+    records: ImportDryRunRecord[];
+    expectedFields: ImportExpectedField[];
+}
+export interface ImportCommitResult {
+    success: boolean;
+    created: number;
+    updated: number;
+    skipped: number;
+    errors: Array<{
+        index: number;
+        docId?: string;
+        error: string;
+    }>;
+}
+/** Build the raw export records (round-trippable Firestore docs) from clients. */
+export declare function buildClientExportRecords(list: Client[]): ClientExportRecord[];
+/** Serialize clients to a pretty JSON string wrapped in a versioned envelope. */
+export declare function serializeClientExport(list: Client[]): string;
+/**
+ * Normalize parsed JSON into a flat records array. Accepts either a bare array
+ * of records or the `{ clients: [...] }` export envelope — so an exported file
+ * re-imports without any hand-editing.
+ */
+export declare function normalizeImportRecords(parsed: unknown): any[];
+/** Validate + annotate an import without writing anything. */
+export declare function importClientsDryRun(records: any[]): Promise<ImportDryRunResult>;
+/** Commit an import. `strategies` maps docId → per-record strategy override. */
+export declare function importClientsCommit(records: any[], defaultStrategy?: ImportStrategy, strategies?: Record<string, ImportStrategy>): Promise<ImportCommitResult>;
