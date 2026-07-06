@@ -913,7 +913,10 @@ export interface PendingAction {
     | 'email_suggestion'   // stage-change triggered email to preview + send
     | 'action_suggestion'  // recommended pipeline action to execute
     | 'follow_up'          // scheduled / overdue manual follow-up
+    | 'client_comment'     // client left a comment on their /status page
+    | 'note_mention'       // a teammate was @mentioned on a CRM note
     | 'manual';            // ad-hoc task created by an operator
+
   /**
    * Detail Panel tab that "owns" this action.
    * Drives which tab receives a badge count and which section is highlighted
