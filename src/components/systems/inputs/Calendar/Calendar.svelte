@@ -104,9 +104,19 @@
           { name: "Evening", children: [] },
         ];
 
-        for (let hour = 9; hour <= 16; hour += 1) {
+        // Valid consultation START hours in CST, aligned 1:1 with the backend
+        // scheduling-policy.ts (Operating Hours 9 AM–4 PM GMT-6, 12–1 PM lunch
+        // break, 30-min slots). Because we only offer on-the-hour starts:
+        //   • 12 PM is excluded — it falls inside the lunch break.
+        //   • 4 PM is excluded — a 4 PM start + 30 min runs past the 4 PM close,
+        //     so isSlotWithinWorkingHours() rejects it (endMins > afternoonEnd).
+        // Previously this loop ran 9→16, so it surfaced 12 PM and 4 PM slots the
+        // backend then 422-rejected with "outside_hours", confusing users.
+        const VALID_START_HOURS_CST = [9, 10, 11, 13, 14, 15];
+        for (const hour of VALID_START_HOURS_CST) {
           const availableTime = new Date(d);
           availableTime.setUTCHours(hour + 6, 0, 0, 0);
+
 
           const slotTime = availableTime.getTime();
           // Check for conflicts: 60 minutes buffer (30 min call + 30 min notes)
