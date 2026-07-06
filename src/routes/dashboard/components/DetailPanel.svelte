@@ -752,6 +752,20 @@
     if (parts.length === 0) return '?';
     return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
   }
+  // Chatbot notes can arrive as plain strings OR as objects ({ text, note, message, content, … }).
+  // Coerce whatever shape we get into a human-readable line so we never render "[object Object]".
+  function aiNoteText(n: unknown): string {
+    if (n == null) return '';
+    if (typeof n === 'string') return n;
+    if (typeof n === 'object') {
+      const o = n as Record<string, unknown>;
+      const cand = o.text ?? o.note ?? o.message ?? o.content ?? o.value ?? o.body;
+      if (typeof cand === 'string') return cand;
+      try { return JSON.stringify(n); } catch { return String(n); }
+    }
+    return String(n);
+  }
+
   function toggleNoteRecipient(email: string) {
     noteRecipients = noteRecipients.includes(email)
       ? noteRecipients.filter((e) => e !== email)
@@ -2010,9 +2024,13 @@
                 </div>
                 <ul class="detail-note__ai-list">
                   {#each $selectedClient.chatbotNotes as aiNote}
-                    <li>{aiNote}</li>
+                    {@const aiNoteStr = aiNoteText(aiNote)}
+                    {#if aiNoteStr.trim()}
+                      <li>{aiNoteStr}</li>
+                    {/if}
                   {/each}
                 </ul>
+
               </div>
             {/if}
 
