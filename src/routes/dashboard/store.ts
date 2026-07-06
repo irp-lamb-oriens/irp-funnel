@@ -1197,8 +1197,15 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
       authEmail.set(null);
       isAuthenticated.set(false);
     }
-    throw new Error((data && data.error) || `Request failed: ${res.status}`);
+    const apiErr = new Error((data && data.error) || `Request failed: ${res.status}`);
+    // Attach the parsed body + status so callers can act on structured errors
+    // (e.g. a 409 stage-gate block carries `blockedBy`). Backward compatible:
+    // existing callers that only read `.message` are unaffected.
+    (apiErr as any).status = res.status;
+    (apiErr as any).data = data;
+    throw apiErr;
   }
+
 
   // 2xx but the body wasn't valid JSON (e.g. a cold-start gateway HTML page) →
   // surface a clean, retryable error rather than handing back garbage.
@@ -3716,6 +3723,258 @@ export async function importClientsCommit(
     body: JSON.stringify({ records, defaultStrategy, strategies }),
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pricing Requests (internal, authored in the Quotes tab → emailed to pricing)
+//
+// A Pricing Request is the INTERNAL client-shipment request an operator writes
+// in the quoting step and sends to the pricing desk (pricing@ + support2@). It
+// is auto-numbered (Request 1, 2, 3…) and carries an origin/destination header
+// + one or more numbered Options, each with an AI-drafted (but freely editable)
+// service line + an agnostic bullet list. DISTINCT from the provider-facing RFQ
+// (`quoteRequests`) — this never contacts external vendors.
+// Backed by API/dashboard/pricingRequestsRouter.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PricingRequestOption {
+  optionId: string;
+  index: number;
+  /** Opaque service-type key (built-in PackingTier OR custom serviceTypeId). */
+  serviceType: string | null;
+  /** AI-drafted placeholder header line; fully operator-editable. */
+  serviceLine: string;
+  /** Freeform, agnostic bullet list of line items after "including:". */
+  items: string[];
+}
+
+export interface PricingRequest {
+  requestId: string;
+  consultationId: string;
+  index: number;
+  originLabel: string;
+  destinationLabel: string;
+  originNotes: string;
+  destinationNotes: string;
+  options: PricingRequestOption[];
+  status: 'draft' | 'sent';
+  createdAt: string;
+  createdBy: string;
+  sentAt: string | null;
+  sentBy: string | null;
+  updatedAt: string | null;
+}
+
+/** Fetch all pricing requests for a client (ascending by index). */
+export async function fetchPricingRequests(clientId: string): Promise<PricingRequest[]> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/pricing-requests`);
+  return (data.requests ?? []) as PricingRequest[];
+}
+
+/** Create a new draft pricing request (auto-numbered, header auto-filled). */
+export async function createPricingRequest(
+  clientId: string,
+  payload: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'options'>> = {},
+): Promise<PricingRequest> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/pricing-requests`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return data.request as PricingRequest;
+}
+
+/** Patch a draft pricing request's header and/or options. */
+export async function updatePricingRequest(
+  clientId: string,
+  requestId: string,
+  updates: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'originLabel' | 'destinationLabel' | 'options'>>,
+): Promise<PricingRequest> {
+  const data = await apiFetch(`/api/dashboard/clients/${clientId}/pricing-requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  return data.request as PricingRequest;
+}
+
+/** Add an option (server AI-drafts its placeholder service line). */
+export async function addPricingRequestOption(
+  clientId: string,
+  requestId: string,
+): Promise<{ options: PricingRequestOption[]; newOption: PricingRequestOption }> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${clientId}/pricing-requests/${requestId}/options`,
+    { method: 'POST', body: JSON.stringify({}) },
+  );
+  return { options: data.options as PricingRequestOption[], newOption: data.newOption as PricingRequestOption };
+}
+
+/** Ask the AI to (re)draft a single placeholder service line (not persisted). */
+export async function suggestPricingRequestLine(
+  clientId: string,
+  requestId: string,
+  serviceType?: string,
+): Promise<string> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${clientId}/pricing-requests/${requestId}/suggest-line`,
+    { method: 'POST', body: JSON.stringify(serviceType ? { serviceType } : {}) },
+  );
+  return (data.serviceLine ?? '') as string;
+}
+
+/** Finalize + send the pricing request to the pricing desk. */
+export async function sendPricingRequest(
+  clientId: string,
+  requestId: string,
+  finalEdits?: Partial<Pick<PricingRequest, 'originNotes' | 'destinationNotes' | 'options'>>,
+): Promise<PricingRequest> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${clientId}/pricing-requests/${requestId}/send`,
+    { method: 'POST', body: JSON.stringify(finalEdits ?? {}) },
+  );
+  return data.request as PricingRequest;
+}
+
+/** Delete a draft pricing request. */
+export async function deletePricingRequest(clientId: string, requestId: string): Promise<void> {
+  await apiFetch(`/api/dashboard/clients/${clientId}/pricing-requests/${requestId}`, {
+    method: 'DELETE',
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stage Gates (generic, chainable rules that BLOCK Kanban moves)
+//
+// A Stage Gate blocks moving a client INTO a target stage until a chain of
+// conditions is met. Configured in Automations → Stages, ALONGSIDE (never
+// replacing) the email-automation rules. When a blocked move is attempted, the
+// stage-move endpoint returns HTTP 409 with `{ blocked: true, blockedBy: [...] }`
+// which `apiFetch` attaches to the thrown error's `.data`.
+// Backed by API/dashboard/stageGatesRouter.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type GateOperator =
+  | 'exists' | 'not_exists' | 'is_empty' | 'is_not_empty'
+  | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte'
+  | 'contains' | 'not_contains';
+
+export type GateLogic = 'all' | 'any';
+
+export interface GateCondition {
+  fact: string;
+  operator: GateOperator;
+  value?: string | number | null;
+}
+
+export interface StageGateRule {
+  id: string;
+  targetStage: string;
+  logic: GateLogic;
+  conditions: GateCondition[];
+  message: string;
+  enabled: boolean;
+  label: string;
+  updatedBy?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export interface GateFact {
+  key: string;
+  label: string;
+  numeric: boolean;
+  hint?: string;
+}
+
+export interface StageGateMeta {
+  facts: GateFact[];
+  operators: GateOperator[];
+  valuelessOperators: GateOperator[];
+  logics: GateLogic[];
+}
+
+/** One blocking gate returned in a 409 stage-move response. */
+export interface StageGateBlock {
+  ruleId: string;
+  label: string;
+  message: string;
+  unmet: string[];
+}
+
+/** Human labels for gate operators (editor UI). */
+export const GATE_OPERATOR_LABELS: Record<GateOperator, string> = {
+  exists: 'exists',
+  not_exists: 'does not exist',
+  is_empty: 'is empty',
+  is_not_empty: 'is not empty',
+  eq: '= equals',
+  neq: '≠ not equal',
+  gt: '> greater than',
+  gte: '≥ at least',
+  lt: '< less than',
+  lte: '≤ at most',
+  contains: 'contains',
+  not_contains: 'does not contain',
+};
+
+export async function fetchStageGateMeta(): Promise<StageGateMeta> {
+  const data = await apiFetch('/api/dashboard/stage-gates/meta');
+  return {
+    facts: Array.isArray(data?.facts) ? data.facts : [],
+    operators: Array.isArray(data?.operators) ? data.operators : [],
+    valuelessOperators: Array.isArray(data?.valuelessOperators) ? data.valuelessOperators : [],
+    logics: Array.isArray(data?.logics) ? data.logics : ['all', 'any'],
+  };
+}
+
+export async function fetchStageGates(): Promise<StageGateRule[]> {
+  const data = await apiFetch('/api/dashboard/stage-gates');
+  return (data?.rules ?? []) as StageGateRule[];
+}
+
+/** Create (or replace) a stage-gate rule. */
+export async function saveStageGate(rule: Partial<StageGateRule>): Promise<StageGateRule> {
+  const data = await apiFetch('/api/dashboard/stage-gates', {
+    method: 'POST',
+    body: JSON.stringify(rule),
+  });
+  return data.rule as StageGateRule;
+}
+
+/** Partially update a stage-gate rule by id. */
+export async function patchStageGate(
+  id: string,
+  updates: Partial<StageGateRule>,
+): Promise<StageGateRule> {
+  const data = await apiFetch(`/api/dashboard/stage-gates/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  return data.rule as StageGateRule;
+}
+
+/** Delete a stage-gate rule. */
+export async function deleteStageGate(id: string): Promise<void> {
+  await apiFetch(`/api/dashboard/stage-gates/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/**
+ * The most-recent BLOCKED stage move, surfaced two ways per the product spec:
+ *   • the Kanban page shows a dismissible notification → click opens a modal
+ *     detailing the unmet requirements, then the notification goes away;
+ *   • the client's Quotes tab shows an inline error banner (same payload).
+ * `null` when there is no active block. Set by the Kanban drop handler when the
+ * stage-move endpoint returns 409; cleared when the operator dismisses it.
+ */
+export interface StageBlockNotice {
+  clientId: string;
+  clientName: string;
+  targetStage: string;
+  targetStageLabel: string;
+  blockedBy: StageGateBlock[];
+  at: number;
+}
+export const stageBlockNotice = writable<StageBlockNotice | null>(null);
+
+
 
 
 

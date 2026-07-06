@@ -14,7 +14,9 @@
   } from '../store.ts';
   import type { Quote } from '../store.ts';
   import QuoteEditor from './QuoteEditor.svelte';
+  import PricingRequestsPanel from './PricingRequestsPanel.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
+
 
   export let clientId: string;
 
@@ -230,10 +232,14 @@
       on:cancelled={handleEditorCancelled}
     />
   {:else}
+    <!-- ── Pricing Requests — authored here, precede quote creation ─────── -->
+    <PricingRequestsPanel {clientId} />
+
     <!-- ── Per-client proposal template selector (outside the quote list, ──
          inside the quoting step). Decides which proposal document this
          specific client is shown; defaults from the destination mapping. -->
     <div class="qt-template">
+
       <div class="qt-template__head">
         <div class="qt-template__title">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
