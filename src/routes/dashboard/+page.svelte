@@ -1319,6 +1319,10 @@
   /* ══ Add Client button — ultra-modern ══════════════════════════════════ */
   .topbar__add-client {
 
+    svg, path {
+      fill: var(--color-background);
+    }
+
     display: inline-flex;
     align-items: center;
     gap: 0.42rem;
