@@ -2623,11 +2623,19 @@ export async function submitQuoteForApproval(
   });
 }
 
-/** Approve a quote. Caller must be a QUOTE_APPROVER (enforced server-side). */
-export async function approveQuote(clientId: string, quoteId: string): Promise<void> {
+/**
+ * Approve a quote. Caller must be a QUOTE_APPROVER (enforced server-side).
+ * Pass `withEdits: true` when the approver saved their own edits to the quote
+ * immediately before approving — it records "Approved with edits" in the audit.
+ */
+export async function approveQuote(
+  clientId: string,
+  quoteId: string,
+  opts: { withEdits?: boolean } = {},
+): Promise<void> {
   await apiFetch(`/api/dashboard/clients/${clientId}/quotes/${quoteId}/approve`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: JSON.stringify({ editsApplied: opts.withEdits === true }),
   });
 }
 

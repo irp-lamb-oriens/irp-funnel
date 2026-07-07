@@ -187,6 +187,14 @@
   // Alias error to errorMsg for approval handlers
   $: error = errorMsg;
 
+  // ── Approve-with-edits guard ────────────────────────────────────────────────
+  // True when the in-editor form differs from the clean server `baseline` (the
+  // last-fetched/saved quote). Drives the "Approve without your edits?" modal so
+  // an approver never silently loses edits by clicking the plain Approve button.
+  $: hasUnsavedEdits = !hydrating && draftCore() !== baseline;
+  let showApproveEditsModal = false; // confirm dialog for approving with pending edits
+
+
   // ── Margin math ────────────────────────────────────────────────────────────
   function lineClientPrice(li: QuoteLineItem): number {
     const cost = Number(li.amount) || 0;
@@ -713,6 +721,37 @@
     };
   }
 
+  /**
+   * Populate every editable field from a server quote object. Extracted from
+   * loadQuote() so it can be reused to DISCARD an approver's in-memory edits
+   * (Approve without edits) by re-hydrating from the freshly-fetched quote.
+   */
+  function hydrateEditableFromQuote(q: Quote) {
+    title = q.title ?? '';
+    notes = q.notes ?? '';
+    serviceType = q.serviceType ?? '';
+    defaultMarginPct = typeof q.defaultMarginPct === 'number' ? q.defaultMarginPct : 20;
+    clientDescription = q.clientDescription ?? '';
+    const savedGroups = Array.isArray((q as any).lineGroups) ? (q as any).lineGroups : null;
+    if (savedGroups && savedGroups.length > 0) {
+      // Grouped quote — hydrate the groups directly.
+      lineGroups = savedGroups.map((g: any) => ({
+        groupId: g.groupId || makeGroupId(),
+        title: g.title ?? '',
+        labelId: typeof g.labelId === 'string' ? g.labelId : null,
+        role: g.role === 'optional' ? 'optional' as const : 'required' as const,
+        lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
+      }));
+    } else {
+      // Legacy flat quote — wrap its line items in a single required group.
+      const flat = (q.lineItems ?? []).map(normalizeLine);
+      lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
+    }
+    providerIds = [...(q.providerIds ?? [])];
+    providerSnapshots = [...(q.providerSnapshots ?? [])];
+    ensureGroups();
+  }
+
   async function loadQuote() {
     if (!quoteId) {
       // New quote — start with one empty required group
@@ -725,29 +764,7 @@
     try {
       const q = await fetchQuote(clientId, quoteId);
       quote = q;
-      title = q.title ?? '';
-      notes = q.notes ?? '';
-      serviceType = q.serviceType ?? '';
-      defaultMarginPct = typeof q.defaultMarginPct === 'number' ? q.defaultMarginPct : 20;
-      clientDescription = q.clientDescription ?? '';
-      const savedGroups = Array.isArray((q as any).lineGroups) ? (q as any).lineGroups : null;
-      if (savedGroups && savedGroups.length > 0) {
-        // Grouped quote — hydrate the groups directly.
-        lineGroups = savedGroups.map((g: any) => ({
-          groupId: g.groupId || makeGroupId(),
-          title: g.title ?? '',
-          labelId: typeof g.labelId === 'string' ? g.labelId : null,
-          role: g.role === 'optional' ? 'optional' as const : 'required' as const,
-          lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
-        }));
-      } else {
-        // Legacy flat quote — wrap its line items in a single required group.
-        const flat = (q.lineItems ?? []).map(normalizeLine);
-        lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
-      }
-      providerIds = [...(q.providerIds ?? [])];
-      providerSnapshots = [...(q.providerSnapshots ?? [])];
-      ensureGroups();
+      hydrateEditableFromQuote(q);
     } catch (err: any) {
 
       errorMsg = 'Error loading quote: ' + (err?.message ?? err);
@@ -755,6 +772,19 @@
       loadingQuote = false;
     }
   }
+
+  /**
+   * Re-fetch the quote from the server AND resync the clean `baseline` snapshot
+   * so `hasUnsavedEdits` reflects "changed since this server state". Used after
+   * every approval-workflow action that mutates the quote server-side.
+   */
+  async function refreshQuoteFromServer() {
+    if (!quoteId) return;
+    quote = await fetchQuote(clientId, quoteId);
+    hydrateEditableFromQuote(quote);
+    baseline = draftCore();
+  }
+
 
   // ── Service-type: auto-populate from transcriptInsights ─────────────────
   async function resolveServiceType() {
@@ -883,44 +913,58 @@
 
 
   // ── Save ───────────────────────────────────────────────────────────────────
-  async function handleSave() {
-    if (!title.trim()) { errorMsg = 'Title is required.'; return; }
+  /** Validate title + service type; sets errorMsg/serviceTypeError on failure. */
+  function validateForSave(): boolean {
+    if (!title.trim()) { errorMsg = 'Title is required.'; return false; }
     if (!serviceType) {
       serviceTypeError = true;
       errorMsg = 'Service type is required before saving this quote.';
       serviceTypeEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
+      return false;
     }
+    return true;
+  }
+
+  /**
+   * Build the shared field payload from the current editor state. `status` is
+   * intentionally OMITTED so callers control it: handleSave adds status:'draft',
+   * while the approve-with-edits flow saves fields WITHOUT touching status.
+   */
+  function buildFieldsPayload(): Partial<Quote> {
+    return {
+      title: title.trim(),
+      notes: notes.trim() || null,
+      lineItems,
+      // Phase 5 — grouped line items. The server derives the flat lineItems +
+      // totals from these when present, so the two stay consistent.
+      lineGroups: lineGroups.map(g => ({
+        groupId: g.groupId,
+        title: (g.title ?? '').trim(),
+        labelId: g.labelId ?? null,
+        role: g.role,
+        lineItems: g.lineItems,
+      })) as any,
+      // Provider union derived from per-line providerIds; legacy fallback keeps
+      // any quote-level providers when no line has one attached (zero regression).
+      providerIds: usedProviderIds.length ? usedProviderIds : providerIds,
+      providerSnapshots: usedProviderIds.length ? usedProviderSnapshots : providerSnapshots,
+
+      total: clientTotal,
+      costSubtotal,
+      earnings,
+      serviceType,
+      defaultMarginPct,
+      clientDescription: clientDescription.trim() || null,
+      currency: totalBuckets.length === 1 ? totalBuckets[0].currency : (totalBuckets[0]?.currency ?? 'USD'),
+    };
+  }
+
+  async function handleSave() {
+    if (!validateForSave()) return;
     saving = true;
     errorMsg = '';
     try {
-      const payload: Partial<Quote> = {
-        title: title.trim(),
-        notes: notes.trim() || null,
-        lineItems,
-        // Phase 5 — grouped line items. The server derives the flat lineItems +
-        // totals from these when present, so the two stay consistent.
-        lineGroups: lineGroups.map(g => ({
-          groupId: g.groupId,
-          title: (g.title ?? '').trim(),
-          labelId: g.labelId ?? null,
-          role: g.role,
-          lineItems: g.lineItems,
-        })) as any,
-        // Provider union derived from per-line providerIds; legacy fallback keeps
-        // any quote-level providers when no line has one attached (zero regression).
-        providerIds: usedProviderIds.length ? usedProviderIds : providerIds,
-        providerSnapshots: usedProviderIds.length ? usedProviderSnapshots : providerSnapshots,
-
-        total: clientTotal,
-        costSubtotal,
-        earnings,
-        serviceType,
-        defaultMarginPct,
-        clientDescription: clientDescription.trim() || null,
-        currency: totalBuckets.length === 1 ? totalBuckets[0].currency : (totalBuckets[0]?.currency ?? 'USD'),
-        status: 'draft',
-      };
+      const payload: Partial<Quote> = { ...buildFieldsPayload(), status: 'draft' };
       if (quoteId) {
         await updateQuote(clientId, quoteId, payload);
       } else {
@@ -934,6 +978,39 @@
       saving = false;
     }
   }
+
+  /**
+   * "Save & submit for approval" — one click from a fresh/draft quote straight
+   * to pending_approval. Creates or updates the draft, then submits it, then
+   * refreshes local state so the panel shows the pending-approval workflow
+   * (instead of closing + forcing a reopen). Available for new/draft/
+   * changes_requested quotes.
+   */
+  async function handleSaveAndSubmit() {
+    if (!validateForSave()) return;
+    saving = true;
+    errorMsg = '';
+    try {
+      const payload: Partial<Quote> = { ...buildFieldsPayload(), status: 'draft' };
+      let targetId = quoteId;
+      if (targetId) {
+        await updateQuote(clientId, targetId, payload);
+      } else {
+        const created = await createQuote(clientId, payload);
+        targetId = created.quoteId;
+        quoteId = created.quoteId; // reactive → editor now behaves as "existing"
+      }
+      await submitQuoteForApproval(clientId, targetId!, noteToApprovers);
+      noteToApprovers = '';
+      clearDraft();
+      await refreshQuoteFromServer(); // reflect pending_approval + resync baseline
+    } catch (err: any) {
+      errorMsg = 'Error submitting for approval: ' + (err?.message ?? err);
+    } finally {
+      saving = false;
+    }
+  }
+
 
   async function handleSubmitForApproval() {
     if (!quote) return;
@@ -951,19 +1028,66 @@
     }
   }
 
+  /**
+   * Plain "Approve quote". If the approver has typed unsaved edits into the
+   * form, DON'T silently discard them — open the confirm modal instead. With no
+   * pending edits, approve immediately (unchanged legacy behaviour).
+   */
   async function handleApprove() {
+    if (!quote) return;
+    if (hasUnsavedEdits) { showApproveEditsModal = true; return; }
+    await doApprove(false);
+  }
+
+  /**
+   * Approve as-submitted, DISCARDING the approver's in-memory edits. Re-hydrates
+   * the form from the freshly-approved server quote so the UI reflects what was
+   * actually approved (not the abandoned edits).
+   */
+  async function approveWithoutEdits() {
+    showApproveEditsModal = false;
+    await doApprove(false);
+  }
+
+  /**
+   * Save the approver's edits FIRST (fields only — status untouched), then
+   * approve with `withEdits: true` so the audit reads "Approved with edits".
+   */
+  async function handleApproveWithEdits() {
+    if (!quote) return;
+    if (!validateForSave()) { showApproveEditsModal = false; return; }
+    showApproveEditsModal = false;
+    saving = true;
+    errorMsg = '';
+    try {
+      // Persist the edited fields WITHOUT touching status (still pending_approval).
+      await updateQuote(clientId, quote.quoteId, buildFieldsPayload());
+      await approveQuote(clientId, quote.quoteId, { withEdits: true });
+      clearDraft();
+      await refreshQuoteFromServer();
+    } catch (e: any) {
+      errorMsg = e?.message ?? 'Error approving quote with edits';
+    } finally {
+      saving = false;
+    }
+  }
+
+  /** Shared approve call. `withEdits` records "Approved with edits" server-side. */
+  async function doApprove(withEdits: boolean) {
     if (!quote) return;
     saving = true;
     errorMsg = '';
     try {
-      await approveQuote(clientId, quote.quoteId);
-      if (quoteId) quote = await fetchQuote(clientId, quoteId);
+      await approveQuote(clientId, quote.quoteId, { withEdits });
+      // Re-hydrate from server (resets baseline → drops any discarded edits).
+      await refreshQuoteFromServer();
     } catch (e: any) {
       errorMsg = e.message ?? 'Error approving quote';
     } finally {
       saving = false;
     }
   }
+
 
   async function handleRequestChanges() {
     if (!quote || !changesComment.trim()) return;
@@ -1487,10 +1611,22 @@
                 <button class="btn-approve" on:click={handleApprove} disabled={saving}>
                   ✅ Approve quote
                 </button>
+                {#if hasUnsavedEdits}
+                  <button class="btn-approve-edits" on:click={handleApproveWithEdits} disabled={saving} title="Save your edits, then approve — recorded as “Approved with edits”">
+                    ✍️ Approve with edits
+                  </button>
+                {/if}
                 <button class="btn-changes" on:click={() => showChangesRequest = true} disabled={saving}>
                   ✏️ Request changes
                 </button>
               </div>
+              {#if hasUnsavedEdits}
+                <p class="approver-editnote">
+                  ✎ You have unsaved edits. Use <strong>Approve with edits</strong> to save + approve them, or
+                  <strong>Approve quote</strong> to approve the version as submitted (your edits will be dropped).
+                </p>
+              {/if}
+
               {#if showChangesRequest}
                 <div class="changes-request-box">
                   <textarea bind:value={changesComment} placeholder="Describe what changes are needed..." rows="3"></textarea>
@@ -1816,6 +1952,26 @@
             💾 Save draft
           {/if}
         </button>
+
+        <!-- One-click Save + Submit for approval. Shown for new quotes and for
+             quotes still in draft / changes_requested (nothing to submit once
+             already pending/approved). -->
+        {#if !quote || quote.status === 'draft' || quote.status === 'changes_requested'}
+          <button
+            type="button"
+            class="qe-btn qe-btn--submit"
+            disabled={saving}
+            on:click={handleSaveAndSubmit}
+            title="Save this quote and immediately send it for approval"
+          >
+            {#if saving}
+              <span class="qe-btn-spinner"></span> Working…
+            {:else}
+              💾📨 Save &amp; submit for approval
+            {/if}
+          </button>
+        {/if}
+
         <button
           type="button"
           class="qe-btn qe-btn--cancel"
@@ -1824,6 +1980,34 @@
         >
           Cancel
         </button>
+      </div>
+    </div>
+  {/if}
+
+  <!-- ── Approve-with-edits confirm modal ─────────────────────────────────────
+       Shown when an approver clicks the plain "Approve quote" while they have
+       unsaved edits in the form. Mirrors the codebase's backdrop+card pattern. -->
+  {#if showApproveEditsModal}
+    <div class="qe-tmpl-backdrop" on:click|self={() => (showApproveEditsModal = false)} role="presentation">
+      <div class="qe-confirm-card" role="alertdialog" aria-modal="true" aria-label="Approve with unsaved edits">
+        <div class="qe-confirm-icon">✍️</div>
+        <h4 class="qe-confirm-title">This quote has unsaved edits</h4>
+        <p class="qe-confirm-body">
+          You've edited this quote but haven't saved those changes. Approving now will
+          approve it <strong>as it was submitted</strong> — your edits will <strong>not</strong> be
+          included. Choose how you'd like to proceed:
+        </p>
+        <div class="qe-confirm-actions">
+          <button class="btn-approve-edits" on:click={handleApproveWithEdits} disabled={saving}>
+            ✍️ Approve with edits
+          </button>
+          <button class="btn-approve" on:click={approveWithoutEdits} disabled={saving}>
+            ✅ Approve without edits
+          </button>
+          <button class="btn-cancel-small" on:click={() => (showApproveEditsModal = false)} disabled={saving}>
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   {/if}
@@ -3532,5 +3716,85 @@
     .qe-tmpl-modal__body { grid-template-columns: 1fr; }
     .qe-tmpl-listcol { border-right: none; border-bottom: 1px solid var(--qe-border); max-height: 180px; }
   }
+
+  /* ── Save & submit for approval (combined action button) ─────────────────── */
+  .qe-btn--submit {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.28);
+  }
+  .qe-btn--submit:not(:disabled):hover {
+    filter: brightness(1.07);
+    box-shadow: 0 4px 16px rgba(124,58,237,0.38);
+    transform: translateY(-1px);
+  }
+
+  /* ── Approve with edits (approver action + confirm modal) ────────────────── */
+  .btn-approve-edits {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: filter 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(13,148,136,0.22);
+  }
+  .btn-approve-edits:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 14px rgba(13,148,136,0.30);
+  }
+
+  /* Inline warning when an approver has unsaved edits. */
+  .approver-editnote {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #92400e;
+    background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .approver-editnote strong { color: #78350f; font-weight: 800; }
+
+  /* ── Approve-with-edits confirm modal card ───────────────────────────────── */
+  .qe-confirm-card {
+    width: min(440px, 100%);
+    background: var(--irp-surface, #fff);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    padding: 24px 24px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
+    text-align: center;
+    animation: qe-tmpl-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .qe-confirm-icon {
+    font-size: 30px;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .qe-confirm-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+  .qe-confirm-body {
+    margin: 0 0 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #475569;
+  }
+  .qe-confirm-body strong { color: #0f172a; font-weight: 700; }
+  .qe-confirm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .qe-confirm-actions > button { width: 100%; justify-content: center; }
 </style>
 
