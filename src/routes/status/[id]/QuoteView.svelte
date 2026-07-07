@@ -265,7 +265,7 @@
                     <span class="qv-group__title">{g.title}</span>
                     <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
-                  {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
+                  <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
                     <span class="qv-group__items">
                       {#each g.lineItems as li (li.lineId)}
                         <span class="qv-group__item">
@@ -274,7 +274,7 @@
                         </span>
                       {/each}
                     </span>
-                  {/if}
+                  {/if} -->
                 </span>
               </label>
             {/each}
@@ -299,7 +299,7 @@
                     <span class="qv-group__title">{g.title}</span>
                     <span class="qv-group__price">+{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
-                  {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
+                  <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
                     <span class="qv-group__items">
                       {#each g.lineItems as li (li.lineId)}
                         <span class="qv-group__item">
@@ -308,7 +308,7 @@
                         </span>
                       {/each}
                     </span>
-                  {/if}
+                  {/if} -->
                 </span>
               </label>
             {/each}
@@ -329,7 +329,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each quote.lineItems as item (item.lineId)}
+          <!-- {#each quote.lineItems as item (item.lineId)}
             <tr>
               <td>
                 <span class="qv-label">{item.label}</span>
@@ -339,7 +339,7 @@
               </td>
               <td class="qv-amount">{formatCurrency(lineDisplayPrice(item), item.currency)}</td>
             </tr>
-          {/each}
+          {/each} -->
         </tbody>
         <tfoot>
           <tr class="qv-total-row">
