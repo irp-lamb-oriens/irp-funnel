@@ -530,10 +530,6 @@ export function renderRfqEmail(lang: RfqLang, fields: RfqFields): RenderedRfq {
     ${specifyBlock}
 
     <p style="margin:24px 0 8px;color:#333;">${esc(t.replyPrompt)}</p>
-    <p style="margin:8px 0 4px;color:#333;">${esc(t.submitPrompt)}</p>
-    <p style="margin:4px 0 20px;">
-      <a href="{{submitUrl}}" style="display:inline-block;background:${TEAL};color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;">${esc(t.submitCta)}</a>
-    </p>
 
     <p style="margin:24px 0 4px;color:#333;">${esc(t.closing)}</p>
     <p style="margin:16px 0 0;color:#333;">${esc(t.signoff)}</p>
