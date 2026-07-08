@@ -26,6 +26,7 @@
     PACKING_TIER_LABEL,
     // ── Line-item templates (pricing presets) ──
     fetchQuoteLineTemplates,
+    parseQuoteLineTemplateLine,
     createQuoteLineTemplate,
     updateQuoteLineTemplate,
     deleteQuoteLineTemplate,
@@ -557,17 +558,23 @@
       groupId: makeGroupId(),
       title: tmpl.name || 'Services',
       role: (lineGroups.length === 0 || onlyBlankStarter) ? 'required' : 'optional',
-      lineItems: (tmpl.lines.length ? tmpl.lines : ['']).map(label => ({
+      lineItems: (tmpl.lines.length ? tmpl.lines : ['']).map(raw => {
+        // A template line MAY carry an optional default price after the last
+        // colon (e.g. "Origin Services:324234"). Parse it so seeded lines
+        // pre-fill their amount; plain labels still come in at 0.
+        const { label, amount } = parseQuoteLineTemplateLine(raw);
+        return {
         lineId: makeLineId(),
         label,
-        amount: 0,
+        amount: amount ?? 0,
         marginPct: defaultMarginPct,
         marginMode: 'pct' as const,
         marginFlat: null,
         currency: cur,
         providerId: null,
         notes: null,
-      })),
+        };
+      }),
     };
     lineGroups = onlyBlankStarter ? [newGroup] : [...lineGroups, newGroup];
     selectedLineTemplateId = ''; // reset so the same template can be re-applied
@@ -598,7 +605,17 @@
     tmplEditingId = null;
     tmplName = '';
     tmplCurrency = lineItems[0]?.currency || 'USD';
-    tmplLinesText = lineItems.map(li => li.label).filter(l => String(l ?? '').trim()).join('\n');
+    // Snapshot the current quote's lines. When a line already has a non-zero
+    // amount, emit "Label:amount" so the template captures its default price;
+    // otherwise just the label (kept backward-compatible with plain templates).
+    tmplLinesText = lineItems
+      .filter(li => String(li.label ?? '').trim())
+      .map(li => {
+        const label = String(li.label).trim();
+        const amount = Number(li.amount);
+        return Number.isFinite(amount) && amount > 0 ? `${label}:${amount}` : label;
+      })
+      .join('\n');
     tmplError = '';
     manageOpen = true;
   }
@@ -1945,12 +1962,12 @@
                   </div>
                 </div>
                 <div class="qe-tmpl-form__field">
-                  <label class="qe-label" for="qe-tmpl-lines">Lines <span class="qe-tmpl-form__hint">one per line</span></label>
+                  <label class="qe-label" for="qe-tmpl-lines">Lines <span class="qe-tmpl-form__hint">one per line — add <code>:price</code> for a default cost</span></label>
                   <textarea
                     id="qe-tmpl-lines"
                     class="qe-textarea qe-tmpl-textarea"
                     rows="12"
-                    placeholder={"Fondo Compensacion\nOrigin Services\nFlete Internacional\n…"}
+                    placeholder={"Fondo Compensacion:250\nOrigin Services:1200\nFlete Internacional\n…"}
                     bind:value={tmplLinesText}
                   ></textarea>
                 </div>

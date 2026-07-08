@@ -3034,6 +3034,46 @@ export interface QuoteLineTemplate {
   updatedAt?: string | null;
 }
 
+/**
+ * Parse a single raw template line into a `{ label, amount }` pair.
+ *
+ * Templates store each line as verbatim text (e.g. `"Origin Services:324234"`),
+ * so a line MAY carry an optional default price after the LAST colon:
+ *
+ *   "Origin Services:324234"  → { label: "Origin Services", amount: 324234 }
+ *   "Flete Internacional"     → { label: "Flete Internacional", amount: null }
+ *   "Note: ship before June"  → { label: "Note: ship before June", amount: null }
+ *
+ * Rules (intentionally forgiving + backward compatible):
+ *   • We split on the LAST ":" so labels can freely contain colons.
+ *   • The suffix only counts as a price when it parses as a number — we tolerate
+ *     a leading "$", thousands commas and surrounding spaces (e.g. "$1,250.50").
+ *   • If there's no colon, or the suffix isn't numeric, the WHOLE line is the
+ *     label and `amount` is null (no default price). Existing plain-label
+ *     templates therefore behave exactly as before.
+ */
+export function parseQuoteLineTemplateLine(raw: string): { label: string; amount: number | null } {
+  const text = String(raw ?? '').trim();
+  const idx = text.lastIndexOf(':');
+  if (idx === -1) return { label: text, amount: null };
+
+  const label = text.slice(0, idx).trim();
+  const priceRaw = text.slice(idx + 1).trim();
+
+  // Strip a leading currency symbol + thousands separators before parsing.
+  const cleaned = priceRaw.replace(/^\$/, '').replace(/,/g, '').trim();
+  // Must be a pure number (optionally decimal) — reject anything else.
+  if (cleaned === '' || !/^\d+(\.\d+)?$/.test(cleaned)) {
+    return { label: text, amount: null };
+  }
+
+  const amount = Number(cleaned);
+  if (!Number.isFinite(amount)) return { label: text, amount: null };
+
+  // A colon with a valid price but an empty label is treated as label-less price.
+  return { label, amount };
+}
+
 /** Fetch all quote line-item templates (defaults first, then newest). */
 export async function fetchQuoteLineTemplates(): Promise<QuoteLineTemplate[]> {
   const data = await apiFetch('/api/dashboard/quote-line-templates');
