@@ -318,7 +318,10 @@
           {#if expanded[req.requestId]}
             <div class="pr-hist-body">
               {#if req.originLabel || req.destinationLabel}
-                <p class="pr-hist-route">{req.originLabel || '—'} → {req.destinationLabel || '—'}</p>
+                <p class="pr-hist-route">
+                  {req.originLabel || '—'}{req.originNotes ? ` (${req.originNotes})` : ''}
+                  → {req.destinationLabel || '—'}{req.destinationNotes ? ` (${req.destinationNotes})` : ''}
+                </p>
               {/if}
               {#each req.options as opt (opt.optionId)}
                 <div class="pr-hist-option">
