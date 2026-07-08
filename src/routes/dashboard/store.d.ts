@@ -1024,8 +1024,9 @@ export interface QuoteLineGroup {
      * (which reads `title`) keeps working unchanged. Absent/null ⇒ legacy free-text.
      */
     labelId?: string | null;
-    role: 'required' | 'optional';
+    role: 'required' | 'optional' | 'fixed';
     lineItems: QuoteLineItem[];
+
 }
 export interface Quote {
     quoteId: string;

@@ -40,8 +40,13 @@
 
   $: groups = (Array.isArray((quote as any)?.lineGroups) ? (quote as any).lineGroups : []) as any[];
   $: hasGroups = groups.length > 0;
-  $: requiredGroups = groups.filter((g) => g.role !== 'optional');
+  // A 'fixed' group is always billed and NEVER shown as a choice — it renders
+  // as a plain "included in every quote" line. Required groups are the radio
+  // packages; optional groups are the checkbox add-ons.
+  $: requiredGroups = groups.filter((g) => g.role === 'required');
   $: optionalGroups = groups.filter((g) => g.role === 'optional');
+  $: fixedGroups = groups.filter((g) => g.role === 'fixed');
+
 
   // Auto-select the MOST EXPENSIVE required group + PRE-CHECK every optional
   // add-on, exactly once after the quote loads. The client can still switch the
@@ -74,13 +79,16 @@
     selectedOptionalGroupIds = next; // reassign so Svelte reacts
   }
 
-  // The set of groups the client has chosen (selected required + checked add-ons).
+  // The set of groups the client is billed for = the always-included FIXED
+  // groups + the chosen required package + any checked optional add-ons.
   $: selectedGroups = hasGroups
     ? [
+        ...fixedGroups,
         ...requiredGroups.filter((g) => g.groupId === selectedRequiredGroupId),
         ...optionalGroups.filter((g) => selectedOptionalGroupIds.has(g.groupId)),
       ]
     : [];
+
   $: selectedGroupIds = selectedGroups.map((g) => g.groupId);
   // Expand the chosen groups to their line-item ids — the server bills off these.
   $: groupSelectedLineItemIds = selectedGroups.flatMap((g) =>
@@ -125,7 +133,8 @@
       if (Array.isArray(acc?.selectedGroupIds) && acc.selectedGroupIds.length > 0) {
         const selIds: string[] = acc.selectedGroupIds;
         const gs: any[] = Array.isArray(acc.lineGroups) ? acc.lineGroups : [];
-        const reqSel = gs.find((g) => g.role !== 'optional' && selIds.includes(g.groupId));
+        const reqSel = gs.find((g) => g.role === 'required' && selIds.includes(g.groupId));
+
         if (reqSel) selectedRequiredGroupId = reqSel.groupId;
         selectedOptionalGroupIds = new Set(
           gs.filter((g) => g.role === 'optional' && selIds.includes(g.groupId)).map((g) => g.groupId),
@@ -243,7 +252,27 @@
     {#if hasGroups}
       <!-- ── Phase 5 — package (required radio) + add-on (optional checkbox) picker ── -->
       <div class="qv-groups">
+        {#if fixedGroups.length > 0}
+          <!-- Fixed groups: always billed, never a choice. Plain, non-interactive
+               "included in every quote" rows. -->
+          <p class="qv-groups-heading">Included in every quote</p>
+          <div class="qv-groups-list">
+            {#each fixedGroups as g (g.groupId)}
+              <div class="qv-group qv-group--fixed">
+                <span class="qv-group__marker qv-group__marker--fixed" aria-hidden="true">🔒</span>
+                <span class="qv-group__body">
+                  <span class="qv-group__top">
+                    <span class="qv-group__title">{g.title}</span>
+                    <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
+                  </span>
+                </span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
         {#if requiredGroups.length > 0}
+
           <p class="qv-groups-heading">
             {requiredGroups.length > 1 ? 'Choose your package' : 'Your package'}
           </p>
@@ -614,6 +643,27 @@
     transform: none;
     box-shadow: none;
   }
+
+  /* ── Fixed group — always billed, never a client choice (no interaction). ── */
+  .qv-group--fixed {
+    cursor: default;
+    background: #f8fafc;
+    border-style: dashed;
+    border-color: #e2e8f0;
+  }
+  .qv-group--fixed:hover { transform: none; box-shadow: none; border-color: #e2e8f0; }
+  .qv-group__marker--fixed {
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    filter: grayscale(0.2);
+    opacity: 0.75;
+  }
+
 
   /* Visually-hidden native input — the custom marker mirrors its state. */
   .qv-group__input {

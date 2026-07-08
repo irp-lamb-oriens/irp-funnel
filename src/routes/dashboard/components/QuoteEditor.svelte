@@ -69,9 +69,16 @@
     title: string;
     /** Phase B — optional reference to a reusable QuoteLabel (title mirrors it). */
     labelId?: string | null;
-    role: 'required' | 'optional';
+    /**
+     *   'required' → a package the client picks between (radio on status page)
+     *   'optional' → an add-on the client can tick/untick (checkbox)
+     *   'fixed'    → always billed, never shown as a choice (a base price the
+     *                client always pays regardless of what they select)
+     */
+    role: 'required' | 'optional' | 'fixed';
     lineItems: QuoteLineItem[];
   };
+
   let lineGroups: EditGroup[] = [];
   let lineItems: QuoteLineItem[] = [];
   $: lineItems = lineGroups.flatMap(g => g.lineItems);
@@ -249,9 +256,10 @@
     lineGroups = lineGroups.filter(g => g.groupId !== groupId);
     ensureGroups();
   }
-  function setGroupRole(groupId: string, role: 'required' | 'optional') {
+  function setGroupRole(groupId: string, role: 'required' | 'optional' | 'fixed') {
     lineGroups = lineGroups.map(g => g.groupId === groupId ? { ...g, role } : g);
   }
+
   function updateGroupTitle(groupId: string, value: string) {
     lineGroups = lineGroups.map(g => g.groupId === groupId ? { ...g, title: value } : g);
   }
@@ -478,10 +486,11 @@
         groupId: g.groupId || makeGroupId(),
         title: g.title ?? '',
         labelId: typeof g.labelId === 'string' ? g.labelId : null,
-        role: g.role === 'optional' ? 'optional' as const : 'required' as const,
+        role: g.role === 'optional' ? 'optional' as const : g.role === 'fixed' ? 'fixed' as const : 'required' as const,
         lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
       }));
       ensureGroups();
+
     }
     if (Array.isArray(d.providerSnapshots)) providerSnapshots = d.providerSnapshots;
     if (d.titleTouched) titleTouched = true;
@@ -766,10 +775,11 @@
         groupId: g.groupId || makeGroupId(),
         title: g.title ?? '',
         labelId: typeof g.labelId === 'string' ? g.labelId : null,
-        role: g.role === 'optional' ? 'optional' as const : 'required' as const,
+        role: g.role === 'optional' ? 'optional' as const : g.role === 'fixed' ? 'fixed' as const : 'required' as const,
         lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
       }));
     } else {
+
       // Legacy flat quote — wrap its line items in a single required group.
       const flat = (q.lineItems ?? []).map(normalizeLine);
       lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
@@ -1363,9 +1373,11 @@
                 on:input={(e) => updateGroupTitle(g.groupId, (e.target as HTMLInputElement).value)}
               />
               <div class="qe-role-toggle" role="group" aria-label="Group role">
-                <button type="button" class="qe-role-btn" class:is-active={g.role === 'required'} on:click={() => setGroupRole(g.groupId, 'required')}>Required</button>
-                <button type="button" class="qe-role-btn qe-role-btn--opt" class:is-active={g.role === 'optional'} on:click={() => setGroupRole(g.groupId, 'optional')}>Optional</button>
+                <button type="button" class="qe-role-btn" class:is-active={g.role === 'required'} on:click={() => setGroupRole(g.groupId, 'required')} title="Client picks one of these packages (radio)">Required</button>
+                <button type="button" class="qe-role-btn qe-role-btn--opt" class:is-active={g.role === 'optional'} on:click={() => setGroupRole(g.groupId, 'optional')} title="An add-on the client can tick/untick (checkbox)">Optional</button>
+                <button type="button" class="qe-role-btn qe-role-btn--fixed" class:is-active={g.role === 'fixed'} on:click={() => setGroupRole(g.groupId, 'fixed')} title="Always billed — never shown as a choice. Included in every quote regardless of what the client selects.">🔒 Fixed</button>
               </div>
+
               <div class="qe-group__nums" title="Cost · Client · Margin for this group">
                 <span class="qe-gnum">
                   <span class="qe-gnum__lbl">Cost</span>
@@ -2387,6 +2399,8 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.10);
   }
   .qe-role-btn--opt.is-active { color: #b45309; }
+  .qe-role-btn--fixed.is-active { color: #475569; }
+
 
   .qe-add-group-btn {
     background: none;

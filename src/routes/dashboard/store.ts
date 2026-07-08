@@ -2497,6 +2497,10 @@ export interface QuoteBlock {
  *   role: 'required'  → mutually-exclusive choice rendered as a radio. A single
  *                       required group is auto-included (no radio shown).
  *   role: 'optional'  → an add-on rendered as a checkbox (unchecked by default).
+ *   role: 'fixed'     → always billed, NEVER shown as a choice. Rendered on the
+ *                       status page as a plain, non-interactive "always included"
+ *                       line. Its price is part of every quote regardless of what
+ *                       the client selects.
  */
 export interface QuoteLineGroup {
   groupId: string;
@@ -2507,9 +2511,10 @@ export interface QuoteLineGroup {
    * (which reads `title`) keeps working unchanged. Absent/null ⇒ legacy free-text.
    */
   labelId?: string | null;
-  role: 'required' | 'optional';
+  role: 'required' | 'optional' | 'fixed';
   lineItems: QuoteLineItem[];
 }
+
 
 
 export interface Quote {
