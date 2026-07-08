@@ -83,15 +83,27 @@ export interface Client {
   phone: string;
   originCountry: string;
   originCity: string;
+  originZip: string;
   destinationCountry: string;
   destinationCity: string;
+  destinationZip: string;
   budget: string;
   size: string;
   immigrationStatus: string;
   propertyTypeFrom: string;
   propertyTypeTo: string;
+  /** Approximate move date/timeline (AI-extracted by Lily, or set manually). */
+  moveTimeline: string;
+  /** Estimated insurance/declared value for the shipment. */
+  insuranceValue: string;
+  /** High-value items (>$1,000) — art, piano, etc. Empty array when none. */
+  highValueItems: Array<{ description?: string; estimatedValue?: string }>;
+  /** How the client heard about IRP + the specific YouTube video, if any. */
+  referredBy: string;
+  youtubeVideo: string;
   vehicles: Array<{ year: string; make: string; model: string }>;
   scheduling: string[];
+
   stage: string;
   /**
    * Operator-set ordering weight. Higher floats the card to the top of its

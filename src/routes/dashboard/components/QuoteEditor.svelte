@@ -122,11 +122,12 @@
 
   // ── Smart default title (NEW quotes only) ──────────────────────────────────
   // Compose a human-readable default title from what the CRM/AI already knows
-  // about the move: "{Client} · {Origin} → {Destination} · {Service}". Only the
-  // pieces that are actually known are included — nothing is invented, so if a
-  // piece can't be inferred it's simply omitted (an empty suggestion falls back
-  // to the "Initial Quote" placeholder). The service type is the AI-detected
-  // packingTier, so the suggestion sharpens once insights resolve.
+  // about the move: "{Client} · {Service}". Only the pieces that are actually
+  // known are included — nothing is invented, so if a piece can't be inferred
+  // it's simply omitted (an empty suggestion falls back to the "Initial Quote"
+  // placeholder). The service type is the AI-detected packingTier, so the
+  // suggestion sharpens once insights resolve.
+
   let titleTouched = false; // flips true the moment the agent edits the field
 
   function buildSuggestedTitle(
@@ -137,13 +138,11 @@
     if (!client) return '';
     const clean = (v: unknown) => String(v ?? '').trim();
     const name = [client.name, client.surname].map(clean).filter(Boolean).join(' ');
-    const origin = [client.originCity, client.originCountry].map(clean).filter(Boolean).join(', ');
-    const destination = [client.destinationCity, client.destinationCountry].map(clean).filter(Boolean).join(', ');
-    const route = origin && destination ? `${origin} → ${destination}` : (origin || destination);
     const service = svcKey ? clean(labelMap[svcKey]?.label) : '';
 
-    return [name, route, service].map(clean).filter(Boolean).join(' · ');
+    return [name, service].map(clean).filter(Boolean).join(' · ');
   }
+
 
   // ── Merged service-type option list ────────────────────────────────────────
   // Built-in packing tiers (always available) + dashboard-managed custom types.
@@ -1181,9 +1180,10 @@
 
       <!-- Title -->
       <!-- Smart default (new quotes): auto-composed from the client's move —
-           "{Client} · {Origin} → {Destination} · {Service}" — using only the
-           pieces we actually know. Shown as the prefilled value AND mirrored in
-           the placeholder; freezes the instant the agent edits it. -->
+           "{Client} · {Service}" — using only the pieces we actually know.
+           Shown as the prefilled value AND mirrored in the placeholder;
+           freezes the instant the agent edits it. -->
+
       <div class="qe-field">
         <label class="qe-label" for="qe-title">Title <span class="qe-required">*</span></label>
         <input

@@ -241,7 +241,16 @@
     { id: 'immigrationStatus', label: 'Immigration Status', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 7, active: true },
     { id: 'property', label: 'Property', section: 'move', valueType: 'property', scope: 'consultation', required: false, showWhenEmpty: true, order: 8, active: true },
     { id: 'vehicles', label: 'Vehicles', section: 'move', valueType: 'vehicles', scope: 'consultation', required: false, showWhenEmpty: false, order: 9, active: true },
+    // Postal codes + rich move details + attribution — persisted by every flow,
+    // now surfaced as Overview slots (previously only in Advanced/raw).
+    { id: 'originZip', label: 'Origin Zip / Postal', section: 'route', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 15, active: true },
+    { id: 'destinationZip', label: 'Destination Zip / Postal', section: 'route', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 16, active: true },
+    { id: 'moveTimeline', label: 'Move Timeline', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 17, active: true },
+    { id: 'insuranceValue', label: 'Insurance Value', section: 'move', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 19, active: true },
+    { id: 'referredBy', label: 'Referred By', section: 'meta', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: true, placeholder: '—', order: 20, active: true },
+    { id: 'youtubeVideo', label: 'YouTube Video', section: 'meta', valueType: 'string', scope: 'consultation', required: false, showWhenEmpty: false, placeholder: '—', order: 21, active: true },
     { id: 'scheduling', label: 'Scheduled Call', section: 'logistics', valueType: 'datetime-list', scope: 'root', required: false, showWhenEmpty: true, order: 10, active: true },
+
     { id: 'callOutcome', label: 'Call Outcome', section: 'logistics', valueType: 'text', scope: 'root', required: false, showWhenEmpty: false, placeholder: '—', order: 11, active: true },
     { id: 'dripEnabled', label: 'Drip Active', section: 'logistics', valueType: 'boolean', scope: 'root', required: false, showWhenEmpty: true, order: 12, active: true },
     { id: 'consultationCount', label: 'Consultations', section: 'meta', valueType: 'number', scope: 'root', required: false, showWhenEmpty: false, readOnly: true, order: 13, active: true },
