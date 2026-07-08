@@ -190,8 +190,19 @@
   // True when the in-editor form differs from the clean server `baseline` (the
   // last-fetched/saved quote). Drives the "Approve without your edits?" modal so
   // an approver never silently loses edits by clicking the plain Approve button.
-  $: hasUnsavedEdits = !hydrating && draftCore() !== baseline;
+  // IMPORTANT: inline the field references here (rather than calling draftCore())
+  // so Svelte's reactivity actually tracks title/lineGroups/notes/etc. A `$:` that
+  // only *calls* a function never re-runs when the values inside that function
+  // change — which previously left `hasUnsavedEdits` stuck at false, so editing
+  // the line-item table never surfaced the "Approve with edits" button/modal.
+  $: draftSnapshot = JSON.stringify({ title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots });
+  $: hasUnsavedEdits = !hydrating && draftSnapshot !== baseline;
   let showApproveEditsModal = false; // confirm dialog for approving with pending edits
+  // Transient hint shown when an approver clicks "Approve with edits" but hasn't
+  // actually changed anything. Cleared automatically the moment a real edit lands.
+  let editNotice = '';
+  $: if (hasUnsavedEdits) editNotice = '';
+
 
 
   // ── Margin math ────────────────────────────────────────────────────────────
@@ -1054,8 +1065,16 @@
    */
   async function handleApproveWithEdits() {
     if (!quote) return;
+    // No changes yet → don't record a misleading "approved with edits" audit
+    // entry. Tell the approver what to do instead of silently no-op'ing.
+    if (!hasUnsavedEdits) {
+      showApproveEditsModal = false;
+      editNotice = 'No edits have been made yet — change a field first, or use “Approve quote” to approve it exactly as submitted.';
+      return;
+    }
     if (!validateForSave()) { showApproveEditsModal = false; return; }
     showApproveEditsModal = false;
+
     saving = true;
     errorMsg = '';
     try {
@@ -1611,11 +1630,18 @@
                 <button class="btn-approve" on:click={handleApprove} disabled={saving}>
                   ✅ Approve quote
                 </button>
-                {#if hasUnsavedEdits}
-                  <button class="btn-approve-edits" on:click={handleApproveWithEdits} disabled={saving} title="Save your edits, then approve — recorded as “Approved with edits”">
-                    ✍️ Approve with edits
-                  </button>
-                {/if}
+                <!-- Always visible so approvers can find it. When there are no
+                     edits yet, clicking it surfaces a friendly notice instead of
+                     silently doing nothing (see handleApproveWithEdits). -->
+                <button
+                  class="btn-approve-edits"
+                  class:is-dim={!hasUnsavedEdits}
+                  on:click={handleApproveWithEdits}
+                  disabled={saving}
+                  title={hasUnsavedEdits ? 'Save your edits, then approve — recorded as “Approved with edits”' : 'Edit a field first — then this saves your edits and approves in one step'}
+                >
+                  ✍️ Approve with edits
+                </button>
                 <button class="btn-changes" on:click={() => showChangesRequest = true} disabled={saving}>
                   ✏️ Request changes
                 </button>
@@ -1625,7 +1651,12 @@
                   ✎ You have unsaved edits. Use <strong>Approve with edits</strong> to save + approve them, or
                   <strong>Approve quote</strong> to approve the version as submitted (your edits will be dropped).
                 </p>
+              {:else if editNotice}
+                <p class="approver-editnote approver-editnote--info">
+                  ℹ️ {editNotice}
+                </p>
               {/if}
+
 
               {#if showChangesRequest}
                 <div class="changes-request-box">
@@ -3746,8 +3777,23 @@
     filter: brightness(1.08);
     box-shadow: 0 4px 14px rgba(13,148,136,0.30);
   }
+  /* Dimmed (but still clickable) when there are no edits yet — clicking it
+     surfaces the "no edits" notice rather than silently doing nothing. */
+  .btn-approve-edits.is-dim {
+    background: #f1f5f9;
+    color: #94a3b8;
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+  }
+  .btn-approve-edits.is-dim:hover:not(:disabled) {
+    filter: none;
+    background: #e9eef4;
+    color: #64748b;
+    box-shadow: none;
+  }
 
   /* Inline warning when an approver has unsaved edits. */
+
   .approver-editnote {
     margin: 0;
     font-size: 12px;
@@ -3759,6 +3805,14 @@
     padding: 8px 12px;
   }
   .approver-editnote strong { color: #78350f; font-weight: 800; }
+  /* Neutral/info variant — shown when the approver clicks "Approve with edits"
+     but hasn't actually changed anything yet. */
+  .approver-editnote--info {
+    color: #475569;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
 
   /* ── Approve-with-edits confirm modal card ───────────────────────────────── */
   .qe-confirm-card {
