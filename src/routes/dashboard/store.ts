@@ -3351,6 +3351,38 @@ export async function translateRfqEdit(
   }) as Promise<TranslateRfqEditResult>;
 }
 
+/** The operator-facing RFQ template fields translated per selected language. */
+export interface RfqTranslatableFields {
+  serviceType: string;
+  commodity: string;
+  volume: string;
+  serviceOptions: string[];
+  notes: string;
+}
+
+export interface TranslateRfqFieldsResult {
+  /** False when the LLM failed/guardrail-missed — fields are returned unchanged. */
+  translated: boolean;
+  fields: RfqTranslatableFields;
+}
+
+/**
+ * Translate the RFQ template FIELDS (type of service, commodity, volume, service
+ * options, notes) into another language before they're injected into the
+ * pre-translated Sondeo template — so the whole email reads in one language.
+ * Technical codes (e.g. "40ft-container-hc", "HHG") are preserved. Fails safe:
+ * on any error the server returns the original fields with `translated: false`.
+ */
+export async function translateRfqFields(
+  fields: RfqTranslatableFields,
+  targetLangName: string,
+): Promise<TranslateRfqFieldsResult> {
+  return apiFetch('/api/dashboard/rfq/translate-fields', {
+    method: 'POST',
+    body: JSON.stringify({ fields, targetLangName }),
+  }) as Promise<TranslateRfqFieldsResult>;
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RFQ provider RESPONSES (dashboard side — Providers tab: P2 field-map + P3 calc)

@@ -24,8 +24,9 @@
    */
 
   import { onMount, onDestroy, tick } from 'svelte';
-  import { authToken, fetchQuotes, sendProviderRfq, translateRfqEdit } from '../store.ts';
-  import type { SendRfqResult } from '../store.ts';
+  import { authToken, fetchQuotes, sendProviderRfq, translateRfqEdit, translateRfqFields } from '../store.ts';
+  import type { SendRfqResult, RfqTranslatableFields } from '../store.ts';
+
 
   import { toasts } from '../toastStore.ts';
   import StarRating from './StarRating.svelte';
@@ -120,8 +121,22 @@
   let pendingLang: RfqLang | null = null;
   let translating = false;
 
+  // ── Per-language field translation cache ──────────────────────────────────
+  // The five human-language template fields (serviceType, commodity, volume,
+  // serviceOptions, notes) can be captured in any language. Before they're
+  // injected into the pre-translated Sondeo template, they're LLM-translated
+  // into the selected language so the whole email reads in one language. To
+  // avoid re-translating a field-set we already have for a language, the
+  // translated values are cached per language code in localStorage (keyed by
+  // this client). The cache is CLEARED once the RFQ is sent — a fresh compose
+  // starts clean. `translatingFields` gates the field UI while a call is inflight.
+  let translatingFields = false;
+  type FieldCache = Record<string, RfqTranslatableFields>;
+  let fieldLangCache: FieldCache = {};
+
   let sending = false;
   let lastResult: SendRfqResult | null = null;
+
 
   /** Origin/destination postal codes surfaced for the RFQ (origin is required). */
   $: originPostal = String(client?.originZip ?? '').trim();
@@ -170,7 +185,8 @@
 
   $: missing = detectMissingRfqFields(fields);
   $: canSend =
-    emailableSelected.length > 0 && missing.length === 0 && !sending;
+    emailableSelected.length > 0 && missing.length === 0 && !sending && !translatingFields;
+
 
   $: langMenuOptions = (() => {
     const q = langSearch.trim().toLowerCase();
@@ -269,6 +285,87 @@
     fields = { ...fields, serviceOptions: opts, notes: dc === 'CR' && (isBlank || fields.notes === mscNote(lang)) ? mscNote(code) : fields.notes };
   }
 
+  // ── Per-language field translation (localStorage-cached) ───────────────────
+  /** localStorage key for this client's per-language field cache. */
+  function fieldCacheKey(): string {
+    return `irp_rfq_field_lang:${client?.id ?? ''}`;
+  }
+  /** Load the cache from localStorage (best-effort; empty on any error). */
+  function loadFieldCache() {
+    fieldLangCache = {};
+    if (!client?.id || typeof localStorage === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(fieldCacheKey());
+      if (raw) fieldLangCache = JSON.parse(raw) || {};
+    } catch { fieldLangCache = {}; }
+  }
+  /** Persist the cache to localStorage (best-effort). */
+  function persistFieldCache() {
+    if (!client?.id || typeof localStorage === 'undefined') return;
+    try { localStorage.setItem(fieldCacheKey(), JSON.stringify(fieldLangCache)); } catch { /* ignore */ }
+  }
+  /** Wipe the cache (memory + storage) — called after a successful send. */
+  function clearFieldCache() {
+    fieldLangCache = {};
+    if (!client?.id || typeof localStorage === 'undefined') return;
+    try { localStorage.removeItem(fieldCacheKey()); } catch { /* ignore */ }
+  }
+
+  /** The five translatable field values currently in the form. */
+  function currentTranslatableFields(): RfqTranslatableFields {
+    return {
+      serviceType: fields.serviceType,
+      commodity: fields.commodity,
+      volume: fields.volume,
+      serviceOptions: serviceOptionsText.split('\n').map((s) => s.trim()).filter(Boolean),
+      notes: fields.notes,
+    };
+  }
+  /** Write a translated field-set back into the form. */
+  function applyTranslatableFields(f: RfqTranslatableFields) {
+    serviceOptionsText = (f.serviceOptions ?? []).join('\n');
+    fields = {
+      ...fields,
+      serviceType: f.serviceType,
+      commodity: f.commodity,
+      volume: f.volume,
+      notes: f.notes,
+      serviceOptions: f.serviceOptions ?? [],
+    };
+  }
+  /** Snapshot the ACTIVE language's field values into the cache (mirror edits). */
+  function snapshotActiveLang() {
+    fieldLangCache[lang] = currentTranslatableFields();
+    persistFieldCache();
+  }
+
+  /**
+   * Ensure the five translatable fields read in `code`. If a cached translation
+   * exists for that language it's applied instantly (no LLM); otherwise `src` is
+   * LLM-translated into `code`, cached, and applied. Fails safe — on any error
+   * the current text is kept as-is.
+   */
+  async function ensureFieldsInLang(code: RfqLang, src: RfqTranslatableFields) {
+    if (fieldLangCache[code]) {
+      applyTranslatableFields(fieldLangCache[code]);
+      return;
+    }
+    translatingFields = true;
+    try {
+      const res = await translateRfqFields(src, langName(code));
+      applyTranslatableFields(res.fields);
+      fieldLangCache[code] = res.fields;
+      persistFieldCache();
+      if (!res.translated) {
+        toasts.error(`Couldn't auto-translate the fields to ${langName(code)} — kept them as-is.`);
+      }
+    } catch (err: any) {
+      toasts.error(`Field translation failed: ${err?.message ?? err}`);
+    } finally {
+      translatingFields = false;
+    }
+  }
+
   function chooseLanguage(code: RfqLang) {
     langMenuOpen = false;
     langSearch = '';
@@ -279,8 +376,14 @@
       pendingLang = code;
       return;
     }
+    // Snapshot the current language's (possibly hand-edited) field values, then
+    // adopt the new language's template + translate the fields into it.
+    snapshotActiveLang();
+    const src = currentTranslatableFields();
     applyLanguageSeed(code);
+    void ensureFieldsInLang(code, src);
   }
+
 
   /** Flush the visual editor's latest HTML into `editedHtml` before we act on it. */
   function flushVisualEdits() {
@@ -435,10 +538,13 @@
         bodyHtml: effectiveHtml,
       });
       lastResult = result;
+      // Reset the per-language field cache — a fresh compose starts clean.
+      clearFieldCache();
       const c = result.counts;
       toasts.success(
         `RFQ sent — ${c.created} sent, ${c.skipped} skipped${c.failed ? `, ${c.failed} failed` : ''}.`,
       );
+
     } catch (err: any) {
       toasts.error(`Send failed: ${err?.message ?? err}`);
     } finally {
@@ -479,9 +585,15 @@
     lang = recommendedLang;
     fields = buildFieldsFromClient(lang);
     serviceOptionsText = (fields.serviceOptions ?? []).join('\n');
+    // The client's project data can be in any language; ensure the seeded
+    // fields read in the selected (recommended) language before send. Cached
+    // per client+language in localStorage, so this only calls the LLM once.
+    loadFieldCache();
+    void ensureFieldsInLang(lang, currentTranslatableFields());
     if (client?.id) await loadDefaults();
     mounted = true;
   });
+
 
   onDestroy(() => teardownEditor());
 </script>
@@ -640,12 +752,15 @@
         <div class="rfq-block">
           <div class="rfq-block__label">
             Template fields
-            {#if missing.length}
+            {#if translatingFields}
+              <span class="rfq-translating-badge">🌐 translating…</span>
+            {:else if missing.length}
               <span class="rfq-missing-badge">{missing.length} missing</span>
             {:else}
               <span class="rfq-ok-badge">complete ✓</span>
             {/if}
           </div>
+
 
           <label class="rfq-field" class:rfq-field--missing={missing.includes('origin')}>
             <span>Origin</span>
@@ -937,6 +1052,8 @@
 
   .rfq-missing-badge { font-size: 10px; font-weight: 800; color: var(--rfq-warn-text); background: var(--rfq-warn-bg); border: 1px solid var(--rfq-warn-border); padding: 2px 7px; border-radius: var(--irp-r-full, 9999px); text-transform: none; letter-spacing: 0; }
   .rfq-ok-badge { font-size: 10px; font-weight: 800; color: var(--rfq-ok-text); background: var(--rfq-ok-bg); border: 1px solid var(--rfq-ok-border); padding: 2px 7px; border-radius: var(--irp-r-full, 9999px); text-transform: none; letter-spacing: 0; }
+  .rfq-translating-badge { font-size: 10px; font-weight: 800; color: var(--rfq-accent-hover); background: var(--rfq-accent-subtle); border: 1px solid var(--rfq-accent-glow); padding: 2px 7px; border-radius: var(--irp-r-full, 9999px); text-transform: none; letter-spacing: 0; }
+
   .rfq-missing-list { font-size: 11.5px; color: var(--rfq-warn-text); margin: var(--irp-sp-2, 8px) 0 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
   .rfq-missing-chip { background: var(--rfq-warn-bg); border: 1px solid var(--rfq-warn-border); color: var(--rfq-warn-text); padding: 1px 8px; border-radius: var(--irp-r-full, 9999px); font-weight: 700; }
 
