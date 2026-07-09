@@ -203,8 +203,8 @@
       .replace(/\b\w/g, (c) => c.toUpperCase())
       .trim();
   }
-  function joinLoc(city?: string, country?: string): string {
-    return [city, country].map((x) => String(x ?? '').trim()).filter(Boolean).join(', ');
+  function joinLoc(city?: string, country?: string, zip?: string): string {
+    return [city, country, zip].map((x) => String(x ?? '').trim()).filter(Boolean).join(', ');
   }
   function destinationCountry(): string {
     return String(client?.destinationCountry ?? '').trim();
@@ -214,8 +214,8 @@
     const f = emptyRfqFields(forLang);
     if (!client) return f;
     const insights = client.transcriptInsights ?? {};
-    f.origin = joinLoc(client.originCity, client.originCountry);
-    f.destination = joinLoc(client.destinationCity, client.destinationCountry);
+    f.origin = joinLoc(client.originCity, client.originCountry, client.originZip);
+    f.destination = joinLoc(client.destinationCity, client.destinationCountry, client.destinationZip);
     const svc = insights.packingTier || insights.shippingMode || '';
     f.serviceType = svc ? humanize(svc) : '';
     f.commodity = String(client.itemsSummary ?? client.specialItems ?? '').trim();
