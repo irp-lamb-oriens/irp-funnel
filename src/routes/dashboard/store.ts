@@ -3324,6 +3324,34 @@ export async function sendProviderRfq(
   }) as Promise<SendRfqResult>;
 }
 
+export interface TranslateRfqEditResult {
+  /** False when the LLM failed or dropped a placeholder — text is unchanged. */
+  translated: boolean;
+  subject: string;
+  bodyHtml: string;
+}
+
+/**
+ * Translate an OPERATOR-EDITED RFQ (subject + HTML body) into another language.
+ *
+ * Used when the language is switched AFTER the body was hand-edited: the edited
+ * blob can't be re-derived from the pre-translated template set, so the backend
+ * LLM-translates it while preserving the HTML and the {{providerName}} /
+ * {{submitUrl}} placeholders. Fails safe — on any error/guardrail miss the
+ * server returns the original text with `translated: false`.
+ */
+export async function translateRfqEdit(
+  subject: string,
+  bodyHtml: string,
+  targetLangName: string,
+): Promise<TranslateRfqEditResult> {
+  return apiFetch('/api/dashboard/rfq/translate-edit', {
+    method: 'POST',
+    body: JSON.stringify({ subject, bodyHtml, targetLangName }),
+  }) as Promise<TranslateRfqEditResult>;
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // RFQ provider RESPONSES (dashboard side — Providers tab: P2 field-map + P3 calc)
 // Backed by providerRfqDashboardRouter.ts.

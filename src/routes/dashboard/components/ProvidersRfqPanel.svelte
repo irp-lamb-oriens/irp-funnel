@@ -24,8 +24,9 @@
    */
 
   import { onMount, onDestroy, tick } from 'svelte';
-  import { authToken, fetchQuotes, sendProviderRfq } from '../store.ts';
+  import { authToken, fetchQuotes, sendProviderRfq, translateRfqEdit } from '../store.ts';
   import type { SendRfqResult } from '../store.ts';
+
   import { toasts } from '../toastStore.ts';
   import StarRating from './StarRating.svelte';
 
@@ -110,8 +111,22 @@
   let bodyEdited = false;
   let subjectEdited = false;
 
+  // ── Language-switch-after-edit ────────────────────────────────────────────
+  // Switching language once the body/subject were hand-edited can't be served
+  // by the pre-translated template set (the edit is a flat HTML blob). Rather
+  // than silently strand the edits in the old language, we stash the requested
+  // language here and let the operator choose: translate the edits, keep them
+  // as-is, or discard them for the new language's template.
+  let pendingLang: RfqLang | null = null;
+  let translating = false;
+
   let sending = false;
   let lastResult: SendRfqResult | null = null;
+
+  /** Origin/destination postal codes surfaced for the RFQ (origin is required). */
+  $: originPostal = String(client?.originZip ?? '').trim();
+  $: destinationPostal = String(client?.destinationZip ?? '').trim();
+
 
   // ── API helper (mirrors ProvidersView.svelte) ────────────────────────────────
   function getApiUrl(): string {
@@ -235,22 +250,102 @@
   $: previewHtml = fillPlaceholders(effectiveHtml, { providerName: sampleName, submitUrl: '#' });
 
   // ── Language switch ───────────────────────────────────────────────────────────
-  function chooseLanguage(code: RfqLang) {
+  /** English name of a language code — used for the translate prompt + labels. */
+  function langName(code: RfqLang): string {
+    return RFQ_LANG_OPTIONS.find((o) => o.code === code)?.englishName ?? 'English';
+  }
+
+  /**
+   * Adopt a language and re-seed the default service options + MSC note for it.
+   * Field text (origin, destination, etc.) is preserved across languages.
+   */
+  function applyLanguageSeed(code: RfqLang) {
     lang = code;
+    const dc = normalizeCountryCode(destinationCountry());
+    const opts = defaultServiceOptions(code);
+    serviceOptionsText = opts.join('\n');
+    // Only overwrite notes if it still equals a prior MSC note or is empty.
+    const isBlank = !fields.notes.trim();
+    fields = { ...fields, serviceOptions: opts, notes: dc === 'CR' && (isBlank || fields.notes === mscNote(lang)) ? mscNote(code) : fields.notes };
+  }
+
+  function chooseLanguage(code: RfqLang) {
     langMenuOpen = false;
     langSearch = '';
-    // Re-seed the default service options + MSC note for the new language ONLY
-    // when the operator hasn't manually edited the body. Field text (origin,
-    // destination, etc.) is preserved across languages.
-    if (!bodyEdited) {
-      const dc = normalizeCountryCode(destinationCountry());
-      const opts = defaultServiceOptions(code);
-      serviceOptionsText = opts.join('\n');
-      // Only overwrite notes if it still equals a prior MSC note or is empty.
-      const isBlank = !fields.notes.trim();
-      fields = { ...fields, serviceOptions: opts, notes: dc === 'CR' && (isBlank || fields.notes === mscNote(lang)) ? mscNote(code) : fields.notes };
+    if (code === lang) return;
+    // With hand-edits present, switching language can't be re-derived from the
+    // pre-translated templates — ask instead of silently stranding the edits.
+    if (bodyEdited || subjectEdited) {
+      pendingLang = code;
+      return;
+    }
+    applyLanguageSeed(code);
+  }
+
+  /** Flush the visual editor's latest HTML into `editedHtml` before we act on it. */
+  function flushVisualEdits() {
+    if (editMode === 'visual' && iframeEl) {
+      const latest = readIframeHtml(iframeEl);
+      if (latest) { editedHtml = latest; bodyEdited = true; }
     }
   }
+
+  /** Translate the operator's edits into the pending language, then adopt it. */
+  async function applyPendingWithTranslation() {
+    const code = pendingLang;
+    if (!code || translating) return;
+    flushVisualEdits();
+    translating = true;
+    try {
+      // Only translate the parts the operator actually edited; untouched parts
+      // follow the new language's pre-translated template automatically.
+      const srcSubject = subjectEdited ? editedSubject : '';
+      const srcBody = bodyEdited ? editedHtml : '';
+      const res = await translateRfqEdit(srcSubject, srcBody, langName(code));
+      lang = code;
+      if (subjectEdited) editedSubject = res.subject;
+      if (bodyEdited) editedHtml = res.bodyHtml;
+      if (res.translated) {
+        toasts.success(`Translated your edits to ${langName(code)}.`);
+      } else {
+        toasts.error(`Couldn't auto-translate — kept your ${langName(lang)} text as-is.`);
+      }
+      if (editMode === 'visual') mountVisualEditor();
+    } catch (err: any) {
+      toasts.error(`Translation failed: ${err?.message ?? err}`);
+    } finally {
+      translating = false;
+      pendingLang = null;
+    }
+  }
+
+  /** Switch language but keep the operator's edited text verbatim (no translation). */
+  function applyPendingKeepEdits() {
+    const code = pendingLang;
+    if (!code) return;
+    flushVisualEdits();
+    lang = code;
+    pendingLang = null;
+    if (editMode === 'visual') mountVisualEditor();
+  }
+
+  /** Discard the edits and adopt the new language's fresh pre-translated template. */
+  function applyPendingResetTemplate() {
+    const code = pendingLang;
+    if (!code) return;
+    bodyEdited = false;
+    subjectEdited = false;
+    editedHtml = '';
+    editedSubject = '';
+    applyLanguageSeed(code);
+    pendingLang = null;
+    if (editMode === 'visual') mountVisualEditor();
+  }
+
+  function cancelPendingLanguage() {
+    pendingLang = null;
+  }
+
 
   // ── Provider selection ────────────────────────────────────────────────────────
   function addProvider(id: string) {
@@ -405,9 +500,28 @@
           <strong>pricing2@</strong> are CC'd automatically.
         </p>
       </div>
+      <!-- Origin postal is required for accurate provider rates; destination is
+           nice-to-have. Warn loudly only when the origin postal code is absent. -->
+      <div class="rfq-postal" aria-label="Route postal codes">
+        {#if originPostal}
+          <span class="rfq-postal__chip" title="Origin postal / zip code">
+            📍 Origin&nbsp;<strong>{originPostal}</strong>
+          </span>
+        {:else}
+          <span class="rfq-postal__chip rfq-postal__chip--warn" title="No origin postal code on file — providers may quote inaccurately">
+            ⚠ Origin postal code missing
+          </span>
+        {/if}
+        {#if destinationPostal}
+          <span class="rfq-postal__chip" title="Destination postal / zip code">
+            🎯 Destination&nbsp;<strong>{destinationPostal}</strong>
+          </span>
+        {/if}
+      </div>
     </header>
 
     <div class="rfq-grid">
+
       <!-- ── LEFT: recipients + fields ─────────────────────────────────────── -->
       <section class="rfq-col rfq-col--form">
         <!-- Providers -->
@@ -491,9 +605,38 @@
               </div>
             {/if}
           </div>
+
+          {#if pendingLang}
+            <div class="rfq-langswitch" role="group" aria-label="Language switch with edits">
+              <p class="rfq-langswitch__msg">
+                You've edited this email. Switching to <strong>{langName(pendingLang)}</strong> —
+                what should happen to your edits?
+              </p>
+              <div class="rfq-langswitch__actions">
+                <button
+                  type="button"
+                  class="rfq-btn rfq-btn--primary rfq-btn--xs"
+                  disabled={translating}
+                  on:click={applyPendingWithTranslation}
+                >
+                  {translating ? 'Translating…' : `🌐 Translate my edits`}
+                </button>
+                <button type="button" class="rfq-btn rfq-btn--ghost rfq-btn--xs" disabled={translating} on:click={applyPendingKeepEdits}>
+                  Keep text as-is
+                </button>
+                <button type="button" class="rfq-btn rfq-btn--ghost rfq-btn--xs" disabled={translating} on:click={applyPendingResetTemplate}>
+                  Reset to template
+                </button>
+                <button type="button" class="rfq-langswitch__cancel" disabled={translating} on:click={cancelPendingLanguage}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          {/if}
         </div>
 
         <!-- Fields -->
+
         <div class="rfq-block">
           <div class="rfq-block__label">
             Template fields
@@ -685,10 +828,21 @@
 
   .rfq-empty { color: var(--rfq-text-dim); font-size: 14px; padding: var(--irp-sp-5, 20px); }
 
-  .rfq-head { margin-bottom: var(--irp-sp-4, 16px); }
+  .rfq-head { margin-bottom: var(--irp-sp-4, 16px); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .rfq-title { margin: 0 0 var(--irp-sp-1, 4px); font-size: 16px; font-weight: 800; color: var(--rfq-text); }
   .rfq-sub { margin: 0; font-size: 12.5px; color: var(--rfq-text-muted); line-height: 1.5; max-width: 640px; }
   .rfq-sub strong { color: var(--rfq-accent-hover); }
+
+  /* Route postal codes (origin required, destination optional) */
+  .rfq-postal { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .rfq-postal__chip {
+    display: inline-flex; align-items: center; gap: 2px; padding: 4px 10px;
+    background: var(--rfq-surface-2); border: 1px solid var(--rfq-border); border-radius: var(--irp-r-full, 9999px);
+    font-size: 11.5px; font-weight: 600; color: var(--rfq-text-2); white-space: nowrap;
+  }
+  .rfq-postal__chip strong { color: var(--rfq-text); font-weight: 800; }
+  .rfq-postal__chip--warn { background: var(--rfq-warn-bg); border-color: var(--rfq-warn-border); color: var(--rfq-warn-text); font-weight: 700; }
+
 
   .rfq-grid { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(340px, 1.15fr); gap: 18px; align-items: start; }
   @media (max-width: 900px) { .rfq-grid { grid-template-columns: 1fr; } }
@@ -769,6 +923,17 @@
   .rfq-lang__opt.sel { background: var(--rfq-accent-subtle); border-color: var(--rfq-accent-glow); }
   .rfq-lang__en { color: var(--rfq-text-dim); font-size: 11px; margin-left: auto; }
   .rfq-lang__recdot { color: var(--rfq-warning); font-size: 12px; }
+
+  /* Language-switch-after-edit prompt */
+  .rfq-langswitch { margin-top: var(--irp-sp-2, 8px); padding: 10px 12px; background: var(--rfq-warn-bg); border: 1px solid var(--rfq-warn-border); border-radius: var(--irp-r-md, 12px); }
+  .rfq-langswitch__msg { margin: 0 0 8px; font-size: 12px; line-height: 1.45; color: var(--rfq-warn-text); }
+  .rfq-langswitch__msg strong { color: var(--rfq-warn-text); }
+  .rfq-langswitch__actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .rfq-langswitch__cancel { border: none; background: none; color: var(--rfq-text-muted); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 4px 6px; }
+  .rfq-langswitch__cancel:hover:not(:disabled) { color: var(--rfq-text-2); text-decoration: underline; }
+  .rfq-langswitch__cancel:disabled { opacity: .5; cursor: not-allowed; }
+  .rfq-btn--xs { padding: 5px 12px; font-size: 11.5px; }
+
 
   .rfq-missing-badge { font-size: 10px; font-weight: 800; color: var(--rfq-warn-text); background: var(--rfq-warn-bg); border: 1px solid var(--rfq-warn-border); padding: 2px 7px; border-radius: var(--irp-r-full, 9999px); text-transform: none; letter-spacing: 0; }
   .rfq-ok-badge { font-size: 10px; font-weight: 800; color: var(--rfq-ok-text); background: var(--rfq-ok-bg); border: 1px solid var(--rfq-ok-border); padding: 2px 7px; border-radius: var(--irp-r-full, 9999px); text-transform: none; letter-spacing: 0; }

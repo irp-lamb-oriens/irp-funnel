@@ -47,13 +47,27 @@ export interface Client {
     phone: string;
     originCountry: string;
     originCity: string;
+    originZip: string;
     destinationCountry: string;
     destinationCity: string;
+    destinationZip: string;
     budget: string;
     size: string;
     immigrationStatus: string;
     propertyTypeFrom: string;
     propertyTypeTo: string;
+    /** Approximate move date/timeline (AI-extracted by Lily, or set manually). */
+    moveTimeline: string;
+    /** Estimated insurance/declared value for the shipment. */
+    insuranceValue: string;
+    /** High-value items (>$1,000) — art, piano, etc. Empty array when none. */
+    highValueItems: Array<{
+        description?: string;
+        estimatedValue?: string;
+    }>;
+    /** How the client heard about IRP + the specific YouTube video, if any. */
+    referredBy: string;
+    youtubeVideo: string;
     vehicles: Array<{
         year: string;
         make: string;
@@ -1014,6 +1028,10 @@ export interface QuoteBlock {
  *   role: 'required'  → mutually-exclusive choice rendered as a radio. A single
  *                       required group is auto-included (no radio shown).
  *   role: 'optional'  → an add-on rendered as a checkbox (unchecked by default).
+ *   role: 'fixed'     → always billed, NEVER shown as a choice. Rendered on the
+ *                       status page as a plain, non-interactive "always included"
+ *                       line. Its price is part of every quote regardless of what
+ *                       the client selects.
  */
 export interface QuoteLineGroup {
     groupId: string;
@@ -1026,7 +1044,6 @@ export interface QuoteLineGroup {
     labelId?: string | null;
     role: 'required' | 'optional' | 'fixed';
     lineItems: QuoteLineItem[];
-
 }
 export interface Quote {
     quoteId: string;
@@ -1113,8 +1130,14 @@ export declare function updateQuote(clientId: string, quoteId: string, updates: 
 export declare function deleteQuote(clientId: string, quoteId: string): Promise<void>;
 /** Submit a quote for approval. Sends email to approvers and creates PendingAction badge. */
 export declare function submitQuoteForApproval(clientId: string, quoteId: string, noteToApprovers?: string): Promise<void>;
-/** Approve a quote. Caller must be a QUOTE_APPROVER (enforced server-side). */
-export declare function approveQuote(clientId: string, quoteId: string): Promise<void>;
+/**
+ * Approve a quote. Caller must be a QUOTE_APPROVER (enforced server-side).
+ * Pass `withEdits: true` when the approver saved their own edits to the quote
+ * immediately before approving — it records "Approved with edits" in the audit.
+ */
+export declare function approveQuote(clientId: string, quoteId: string, opts?: {
+    withEdits?: boolean;
+}): Promise<void>;
 /** Request changes on a pending-approval quote. Caller must be a QUOTE_APPROVER. */
 export declare function requestQuoteChanges(clientId: string, quoteId: string, comment: string): Promise<void>;
 /** Add a comment to a quote's comment thread. */
@@ -1265,6 +1288,28 @@ export interface QuoteLineTemplate {
     createdAt?: string;
     updatedAt?: string | null;
 }
+/**
+ * Parse a single raw template line into a `{ label, amount }` pair.
+ *
+ * Templates store each line as verbatim text (e.g. `"Origin Services:324234"`),
+ * so a line MAY carry an optional default price after the LAST colon:
+ *
+ *   "Origin Services:324234"  → { label: "Origin Services", amount: 324234 }
+ *   "Flete Internacional"     → { label: "Flete Internacional", amount: null }
+ *   "Note: ship before June"  → { label: "Note: ship before June", amount: null }
+ *
+ * Rules (intentionally forgiving + backward compatible):
+ *   • We split on the LAST ":" so labels can freely contain colons.
+ *   • The suffix only counts as a price when it parses as a number — we tolerate
+ *     a leading "$", thousands commas and surrounding spaces (e.g. "$1,250.50").
+ *   • If there's no colon, or the suffix isn't numeric, the WHOLE line is the
+ *     label and `amount` is null (no default price). Existing plain-label
+ *     templates therefore behave exactly as before.
+ */
+export declare function parseQuoteLineTemplateLine(raw: string): {
+    label: string;
+    amount: number | null;
+};
 /** Fetch all quote line-item templates (defaults first, then newest). */
 export declare function fetchQuoteLineTemplates(): Promise<QuoteLineTemplate[]>;
 /** Create a new quote line-item template. Returns the created doc. */
@@ -1382,6 +1427,22 @@ export interface SendRfqOptions {
     bodyHtml?: string;
 }
 export declare function sendProviderRfq(clientId: string, providerIds?: string[], options?: SendRfqOptions): Promise<SendRfqResult>;
+export interface TranslateRfqEditResult {
+    /** False when the LLM failed or dropped a placeholder — text is unchanged. */
+    translated: boolean;
+    subject: string;
+    bodyHtml: string;
+}
+/**
+ * Translate an OPERATOR-EDITED RFQ (subject + HTML body) into another language.
+ *
+ * Used when the language is switched AFTER the body was hand-edited: the edited
+ * blob can't be re-derived from the pre-translated template set, so the backend
+ * LLM-translates it while preserving the HTML and the {{providerName}} /
+ * {{submitUrl}} placeholders. Fails safe — on any error/guardrail miss the
+ * server returns the original text with `translated: false`.
+ */
+export declare function translateRfqEdit(subject: string, bodyHtml: string, targetLangName: string): Promise<TranslateRfqEditResult>;
 /** A vendor's submitted rate for a quote request. */
 export interface QuoteRequestProviderResponse {
     price: number | null;
