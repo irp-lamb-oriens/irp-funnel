@@ -87,6 +87,8 @@
 
   // ── State ─────────────────────────────────────────────────────────────────
 
+  type Contact = { name: string; email: string; phone?: string };
+
   type Provider = {
     id: string;
     name: string;
@@ -94,7 +96,10 @@
     phone?: string;
     website?: string;
     contactPerson?: string;
+    /** Full list of contacts; backend synthesizes one from legacy fields. */
+    contacts?: Contact[];
     serviceCategories: string[];
+
     shippingModalities: string[];
     /** Free-form custom fields; keys are globally tracked via field-schema. */
     customFields?: Record<string, string>;
@@ -147,10 +152,9 @@
   function emptyForm() {
     return {
       name: '',
-      email: '',
-      phone: '',
       website: '',
-      contactPerson: '',
+      /** One or more points of contact. First entry is the primary contact. */
+      contacts: [{ name: '', email: '', phone: '' }] as Contact[],
       serviceCategories: [] as string[],
       shippingModalities: [] as string[],
       originRegions: '',
@@ -159,6 +163,16 @@
       score: null as number | null,
     };
   }
+
+  function addContactRow() {
+    form.contacts = [...form.contacts, { name: '', email: '', phone: '' }];
+  }
+
+  function removeContactRow(index: number) {
+    if (form.contacts.length <= 1) return; // always keep at least one
+    form.contacts = form.contacts.filter((_, i) => i !== index);
+  }
+
 
 
   // ── Computed ──────────────────────────────────────────────────────────────
@@ -223,7 +237,22 @@
     success = '';
 
     if (!form.name.trim()) { error = 'Name is required.'; return; }
-    if (!form.email.trim() || !form.email.includes('@')) { error = 'Valid email is required.'; return; }
+
+    // Contacts: drop fully-empty rows, then require a valid name + email on each.
+    const cleanContacts = form.contacts
+      .map(c => ({ name: c.name.trim(), email: c.email.trim(), phone: (c.phone || '').trim() }))
+      .filter(c => c.name || c.email || c.phone);
+    if (cleanContacts.length === 0) { error = 'Add at least one contact.'; return; }
+    for (const c of cleanContacts) {
+      if (!c.name) { error = 'Each contact needs a name.'; return; }
+      if (!c.email.includes('@')) { error = `Contact "${c.name}" needs a valid email.`; return; }
+    }
+    const contactsPayload = cleanContacts.map(c => ({
+      name: c.name,
+      email: c.email,
+      ...(c.phone ? { phone: c.phone } : {}),
+    }));
+
     if (form.serviceCategories.length === 0) { error = 'Select at least one service category.'; return; }
     if (form.shippingModalities.length === 0) { error = 'Select at least one shipping modality.'; return; }
 
@@ -235,11 +264,10 @@
 
     const payload: Record<string, any> = {
       name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || undefined,
+      contacts: contactsPayload,
       website: form.website.trim() || undefined,
-      contactPerson: form.contactPerson.trim() || undefined,
       serviceCategories: form.serviceCategories,
+
       shippingModalities: form.shippingModalities,
       notes: form.notes.trim() || undefined,
       originRegions: form.originRegions
@@ -279,13 +307,16 @@
 
   function startEdit(p: Provider) {
     editingId = p.id;
+    // Prefer the full contacts list; fall back to legacy root fields.
+    const contacts: Contact[] = (p.contacts && p.contacts.length > 0)
+      ? p.contacts.map(c => ({ name: c.name || '', email: c.email || '', phone: c.phone || '' }))
+      : [{ name: p.contactPerson || '', email: p.email || '', phone: p.phone || '' }];
     form = {
       name: p.name || '',
-      email: p.email || '',
-      phone: p.phone || '',
       website: p.website || '',
-      contactPerson: p.contactPerson || '',
+      contacts,
       serviceCategories: [...(p.serviceCategories || [])],
+
       shippingModalities: [...(p.shippingModalities || [])],
       originRegions: (p.originRegions || []).join(', '),
       destinationRegions: (p.destinationRegions || []).join(', '),
@@ -399,9 +430,14 @@
 
   <!-- Create / Edit Form -->
   {#if showForm}
-    <div class="providers-form-card">
-      <h3>{editingId ? '✏️ Edit Provider' : '➕ New Provider'}</h3>
+    <div class="provider-modal-overlay" role="presentation" on:click|self={cancelForm}>
+      <div class="provider-modal" role="dialog" aria-modal="true">
+        <div class="provider-modal-head">
+          <h3>{editingId ? '✏️ Edit Provider' : '➕ New Provider'}</h3>
+          <button class="provider-modal-close" type="button" on:click={cancelForm} aria-label="Close">✕</button>
+        </div>
 
+        <div class="provider-modal-body">
       <div class="form-grid">
         <!-- Basic Info -->
         <div class="form-field">
@@ -409,20 +445,8 @@
           <input bind:value={form.name} placeholder="Shipping Co. Name" />
         </div>
         <div class="form-field">
-          <label>Contact Email *</label>
-          <input bind:value={form.email} type="email" placeholder="contact@shippingco.com" />
-        </div>
-        <div class="form-field">
-          <label>Phone</label>
-          <input bind:value={form.phone} placeholder="+1 (555) 000-0000" />
-        </div>
-        <div class="form-field">
           <label>Website</label>
           <input bind:value={form.website} placeholder="https://shippingco.com" />
-        </div>
-        <div class="form-field">
-          <label>Contact Person</label>
-          <input bind:value={form.contactPerson} placeholder="e.g. Juan Arias" />
         </div>
         <div class="form-field">
           <label>Quality Score <span class="hint">(drag the stars)</span></label>
@@ -434,6 +458,31 @@
             />
           </div>
         </div>
+
+        <!-- Contacts (one or more) -->
+        <div class="form-field form-field--full">
+          <label>Contacts * <span class="hint">(the first entry is the primary contact)</span></label>
+          <div class="contacts-list">
+            {#each form.contacts as contact, i (i)}
+              <div class="contact-row">
+                <span class="contact-index">{i + 1}</span>
+                <input class="contact-input" bind:value={contact.name} placeholder="Name (e.g. Juan Arias)" />
+                <input class="contact-input" type="email" bind:value={contact.email} placeholder="email@company.com" />
+                <input class="contact-input" bind:value={contact.phone} placeholder="Phone (optional)" />
+                <button
+                  type="button"
+                  class="contact-remove"
+                  title="Remove contact"
+                  aria-label="Remove contact"
+                  on:click={() => removeContactRow(i)}
+                  disabled={form.contacts.length <= 1}
+                >✕</button>
+              </div>
+            {/each}
+          </div>
+          <button type="button" class="btn-add-contact" on:click={addContactRow}>+ Add contact</button>
+        </div>
+
 
 
         <!-- Service Categories -->
@@ -520,14 +569,18 @@
         </div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn-primary" on:click={saveProvider} disabled={loading}>
-          {loading ? 'Saving…' : editingId ? '💾 Update Provider' : '➕ Create Provider'}
-        </button>
-        <button class="btn-ghost" on:click={cancelForm}>Cancel</button>
-      </div>
-    </div>
+        </div><!-- /provider-modal-body -->
+
+        <div class="provider-modal-foot">
+          <button class="btn-ghost" type="button" on:click={cancelForm}>Cancel</button>
+          <button class="btn-primary" on:click={saveProvider} disabled={loading}>
+            {loading ? 'Saving…' : editingId ? '💾 Update Provider' : '➕ Create Provider'}
+          </button>
+        </div>
+      </div><!-- /provider-modal -->
+    </div><!-- /provider-modal-overlay -->
   {/if}
+
 
   <!-- Search bar -->
   <div class="providers-search-wrap">
@@ -614,14 +667,29 @@
             <tr class:inactive={!p.active}>
               <td>
                 <div class="provider-name">{p.name}</div>
-                <div class="provider-meta">{p.email}</div>
-                {#if p.contactPerson}
-                  <div class="provider-meta">👤 {p.contactPerson}</div>
-                {/if}
-                {#if p.phone}
-                  <div class="provider-meta">📞 {p.phone}</div>
+                {#if (p.contacts && p.contacts.length > 0)}
+                  {@const primary = p.contacts[0]}
+                  {#if primary.name}
+                    <div class="provider-meta">👤 {primary.name}</div>
+                  {/if}
+                  <div class="provider-meta">✉️ {primary.email}</div>
+                  {#if primary.phone}
+                    <div class="provider-meta">📞 {primary.phone}</div>
+                  {/if}
+                  {#if p.contacts.length > 1}
+                    <div class="provider-meta provider-meta--more">＋{p.contacts.length - 1} more contact{p.contacts.length - 1 !== 1 ? 's' : ''}</div>
+                  {/if}
+                {:else}
+                  <div class="provider-meta">✉️ {p.email}</div>
+                  {#if p.contactPerson}
+                    <div class="provider-meta">👤 {p.contactPerson}</div>
+                  {/if}
+                  {#if p.phone}
+                    <div class="provider-meta">📞 {p.phone}</div>
+                  {/if}
                 {/if}
               </td>
+
               <td>
                 <StarRating
                   value={p.score}
@@ -836,21 +904,142 @@
     color: #111;
   }
 
-  /* ── Form card ───────────────────────────────────────────── */
-  .providers-form-card {
+  /* ── Modal (create / edit provider) ──────────────────────── */
+  .provider-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(6, 13, 13, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+  }
+  .provider-modal {
     background: #fff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    margin: auto;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
   }
-  .providers-form-card h3 {
-    margin: 0 0 20px;
+  .provider-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eef0f2;
+    flex-shrink: 0;
+  }
+  .provider-modal-head h3 {
+    margin: 0;
     font-size: 17px;
     font-weight: 700;
     color: #111;
   }
+  .provider-modal-close {
+    background: #f3f4f6;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #6b7280;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+  }
+  .provider-modal-close:hover { background: #e5e7eb; color: #111; }
+  .provider-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .provider-modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #eef0f2;
+    background: #fafbfc;
+    flex-shrink: 0;
+  }
+
+  /* ── Contacts (repeatable) ───────────────────────────────── */
+  .contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .contact-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 1fr 0.8fr 32px;
+    align-items: center;
+    gap: 8px;
+  }
+  .contact-index {
+    font-size: 12px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-align: center;
+  }
+  .contact-input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13.5px;
+    color: #111;
+    background: #fafafa;
+    box-sizing: border-box;
+  }
+  .contact-input:focus {
+    outline: none;
+    border-color: #02b5bb;
+    background: #fff;
+  }
+  .contact-remove {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #f3d0d0;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.12s;
+  }
+  .contact-remove:hover:not(:disabled) { background: #fee2e2; }
+  .contact-remove:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-add-contact {
+    background: rgba(2, 181, 187, 0.08);
+    color: #0b3b3d;
+    border: 1px solid #9fe3e6;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-add-contact:hover { background: rgba(2, 181, 187, 0.16); }
+
+  .provider-meta--more {
+    font-weight: 600;
+    color: #02b5bb;
+  }
+
   .form-grid {
+
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
@@ -919,13 +1108,8 @@
     padding: 0;
   }
 
-  .form-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
   /* ── Filters ──────────────────────────────────────────────── */
+
   .providers-filters {
     display: flex;
     align-items: center;
