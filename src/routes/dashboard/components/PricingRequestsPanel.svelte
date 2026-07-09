@@ -138,10 +138,6 @@
 
   async function requestQuote() {
     if (!draft) return;
-    if (!draft.options.length) {
-      toasts.error('Add at least one option before requesting a quote.');
-      return;
-    }
     busy = true;
     try {
       // Flush any pending edits first so the email carries the latest content.
@@ -296,7 +292,7 @@
 
       <div class="pr-draft__foot">
         <button class="pr-discard" on:click={discardDraft} disabled={busy}>Discard</button>
-        <button class="pr-request-btn" on:click={requestQuote} disabled={busy || draft.options.length === 0}>
+        <button class="pr-request-btn" on:click={requestQuote} disabled={busy}>
           {busy ? 'Sending…' : 'Request Quote →'}
         </button>
       </div>
