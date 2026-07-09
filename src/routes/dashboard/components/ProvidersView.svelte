@@ -305,8 +305,28 @@
     }
   }
 
-  function startEdit(p: Provider) {
+  async function startEdit(p: Provider) {
     editingId = p.id;
+    showForm = true;
+    error = '';
+    success = '';
+
+    // Hydrate immediately from the list row so the modal opens instantly…
+    hydrateForm(p);
+
+    // …then refresh from the authoritative single-provider record, which always
+    // runs ensureContacts server-side. This guarantees EVERY saved contact shows
+    // up independently on edit, even when the list payload is partial or legacy.
+    try {
+      const data = await apiFetch(`/api/dashboard/providers/${p.id}`);
+      if (data?.provider && editingId === p.id) hydrateForm(data.provider);
+    } catch {
+      // Non-fatal — keep the list-row hydration already in place.
+    }
+  }
+
+  /** Populate the working form from a provider record (list row or canonical doc). */
+  function hydrateForm(p: Provider) {
     // Prefer the full contacts list; fall back to legacy root fields.
     const contacts: Contact[] = (p.contacts && p.contacts.length > 0)
       ? p.contacts.map(c => ({ name: c.name || '', email: c.email || '', phone: c.phone || '' }))
@@ -324,15 +344,11 @@
       score: p.score ?? null,
     };
     // Merge: start with blanks for all known fields, then fill in provider's actual values
-
     formCustomFields = {};
     for (const name of knownCustomFieldNames) formCustomFields[name] = '';
     for (const [k, v] of Object.entries(p.customFields ?? {})) {
       formCustomFields[k] = String(v);
     }
-    showForm = true;
-    error = '';
-    success = '';
   }
 
   function cancelForm() {
