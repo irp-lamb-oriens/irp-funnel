@@ -76,8 +76,12 @@
      *                client always pays regardless of what they select)
      */
     role: 'required' | 'optional' | 'fixed';
+    /** Client-visible description for this group (shown under its title on the
+     *  status page). Prefilled from the applied template's `description`. */
+    description: string;
     lineItems: QuoteLineItem[];
   };
+
 
   let lineGroups: EditGroup[] = [];
   let lineItems: QuoteLineItem[] = [];
@@ -242,8 +246,13 @@
     return { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency, providerId: null, notes: null };
   }
   function makeBlankGroup(role: 'required' | 'optional' = 'required', title = ''): EditGroup {
-    return { groupId: makeGroupId(), title, labelId: null, role, lineItems: [makeBlankLine()] };
+    return { groupId: makeGroupId(), title, labelId: null, role, description: '', lineItems: [makeBlankLine()] };
   }
+
+  function updateGroupDescription(groupId: string, value: string) {
+    lineGroups = lineGroups.map(g => g.groupId === groupId ? { ...g, description: value } : g);
+  }
+
   /** Guarantee at least one group (with one line) always exists. */
   function ensureGroups() {
     if (lineGroups.length === 0) lineGroups = [makeBlankGroup('required')];
@@ -487,11 +496,13 @@
         title: g.title ?? '',
         labelId: typeof g.labelId === 'string' ? g.labelId : null,
         role: g.role === 'optional' ? 'optional' as const : g.role === 'fixed' ? 'fixed' as const : 'required' as const,
+        description: typeof g.description === 'string' ? g.description : '',
         lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
       }));
       ensureGroups();
 
     }
+
     if (Array.isArray(d.providerSnapshots)) providerSnapshots = d.providerSnapshots;
     if (d.titleTouched) titleTouched = true;
     draftRestored = true;
@@ -525,8 +536,12 @@
   let tmplName = '';
   let tmplCurrency = 'USD';
   let tmplLinesText = '';
+  // Client-visible service description saved with the template; prefills a
+  // group's description when the template is applied as a group.
+  let tmplDescription = '';
   let tmplSaving = false;
   let tmplError = '';
+
 
   // ── Service-type manager state (custom extras) ──────────────────────────────
   let svcManageOpen = false;
@@ -566,8 +581,13 @@
     const newGroup: EditGroup = {
       groupId: makeGroupId(),
       title: tmpl.name || 'Services',
+      labelId: null,
       role: (lineGroups.length === 0 || onlyBlankStarter) ? 'required' : 'optional',
+      // Prefill the client-visible description from the template so staff can
+      // apply a group with its scope blurb already filled in (editable after).
+      description: tmpl.description ?? '',
       lineItems: (tmpl.lines.length ? tmpl.lines : ['']).map(raw => {
+
         // A template line MAY carry an optional default price after the last
         // colon (e.g. "Origin Services:324234"). Parse it so seeded lines
         // pre-fill their amount; plain labels still come in at 0.
@@ -596,6 +616,7 @@
     tmplName = '';
     tmplCurrency = 'USD';
     tmplLinesText = '';
+    tmplDescription = '';
     tmplError = '';
     manageOpen = true;
   }
@@ -605,6 +626,7 @@
     tmplName = t.name;
     tmplCurrency = t.currency || 'USD';
     tmplLinesText = (t.lines ?? []).join('\n');
+    tmplDescription = t.description ?? '';
     tmplError = '';
     manageOpen = true;
   }
@@ -614,6 +636,8 @@
     tmplEditingId = null;
     tmplName = '';
     tmplCurrency = lineItems[0]?.currency || 'USD';
+    tmplDescription = '';
+
     // Snapshot the current quote's lines. When a line already has a non-zero
     // amount, emit "Label:amount" so the template captures its default price;
     // otherwise just the label (kept backward-compatible with plain templates).
@@ -637,11 +661,13 @@
     tmplSaving = true;
     tmplError = '';
     try {
+      const description = tmplDescription.trim() || null;
       if (tmplEditingId) {
-        await updateQuoteLineTemplate(tmplEditingId, { name, currency: tmplCurrency, lines });
+        await updateQuoteLineTemplate(tmplEditingId, { name, currency: tmplCurrency, lines, description });
       } else {
-        await createQuoteLineTemplate({ name, currency: tmplCurrency, lines });
+        await createQuoteLineTemplate({ name, currency: tmplCurrency, lines, description });
       }
+
       await loadLineTemplates();
       manageOpen = false;
     } catch (err: any) {
@@ -776,14 +802,16 @@
         title: g.title ?? '',
         labelId: typeof g.labelId === 'string' ? g.labelId : null,
         role: g.role === 'optional' ? 'optional' as const : g.role === 'fixed' ? 'fixed' as const : 'required' as const,
+        description: typeof g.description === 'string' ? g.description : '',
         lineItems: (Array.isArray(g.lineItems) ? g.lineItems : []).map(normalizeLine),
       }));
     } else {
 
       // Legacy flat quote — wrap its line items in a single required group.
       const flat = (q.lineItems ?? []).map(normalizeLine);
-      lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', lineItems: flat.length ? flat : [makeBlankLine()] }];
+      lineGroups = [{ groupId: makeGroupId(), title: '', labelId: null, role: 'required', description: '', lineItems: flat.length ? flat : [makeBlankLine()] }];
     }
+
     providerIds = [...(q.providerIds ?? [])];
     providerSnapshots = [...(q.providerSnapshots ?? [])];
     ensureGroups();
@@ -979,8 +1007,10 @@
         title: (g.title ?? '').trim(),
         labelId: g.labelId ?? null,
         role: g.role,
+        description: (g.description ?? '').trim() || null,
         lineItems: g.lineItems,
       })) as any,
+
       // Provider union derived from per-line providerIds; legacy fallback keeps
       // any quote-level providers when no line has one attached (zero regression).
       providerIds: usedProviderIds.length ? usedProviderIds : providerIds,
@@ -1398,7 +1428,26 @@
               {/if}
             </div>
 
+            <!-- Client-visible service description for this group. Prefilled from
+                 the applied template's description; shown under the option on the
+                 status page. -->
+            <div class="qe-group__desc">
+              <label class="qe-group__desc-label" for={`qe-gdesc-${g.groupId}`}>
+                Service description
+                <span class="qe-label-badge">client-visible</span>
+              </label>
+              <textarea
+                id={`qe-gdesc-${g.groupId}`}
+                class="qe-textarea qe-group__desc-input"
+                rows="2"
+                placeholder="What this option includes — shown to the client under this option on the status page."
+                value={g.description}
+                on:input={(e) => updateGroupDescription(g.groupId, (e.target as HTMLTextAreaElement).value)}
+              ></textarea>
+            </div>
+
             {#if g.lineItems.length > 0}
+
               <div class="qe-lines-wrap">
                 <table class="qe-lines-table">
                   <thead>
@@ -1983,7 +2032,21 @@
                     bind:value={tmplLinesText}
                   ></textarea>
                 </div>
+                <div class="qe-tmpl-form__field">
+                  <label class="qe-label" for="qe-tmpl-desc">
+                    Service description
+                    <span class="qe-tmpl-form__hint">client-visible — prefills each group applied from this template</span>
+                  </label>
+                  <textarea
+                    id="qe-tmpl-desc"
+                    class="qe-textarea"
+                    rows="3"
+                    placeholder="E.g. Full origin packing with export-grade materials, loading, and inventory."
+                    bind:value={tmplDescription}
+                  ></textarea>
+                </div>
                 {#if tmplError}<p class="qe-field-error">⚠ {tmplError}</p>{/if}
+
               </div>
             </div>
 
@@ -3466,6 +3529,16 @@
     background: linear-gradient(135deg, rgba(2,181,187,.08) 0%, #ecfeff 100%);
   }
   .qe-group__empty-icon { font-size: 15px; }
+
+  /* ── Per-group client-visible service description ────────────────────────── */
+  .qe-group__desc { display: flex; flex-direction: column; gap: 5px; }
+  .qe-group__desc-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .qe-group__desc-input { min-height: 46px; }
+
 
   .qe-ai-desc-btn {
     margin-left: auto; display: inline-flex; align-items: center; gap: 6px;

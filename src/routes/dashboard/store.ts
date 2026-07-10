@@ -2512,8 +2512,15 @@ export interface QuoteLineGroup {
    */
   labelId?: string | null;
   role: 'required' | 'optional' | 'fixed';
+  /**
+   * Optional client-visible description for this group (shown under the group's
+   * title on the status page). May be prefilled from the applied line-template's
+   * `description` and freely edited per-quote. Absent/null ⇒ no description.
+   */
+  description?: string | null;
   lineItems: QuoteLineItem[];
 }
+
 
 
 

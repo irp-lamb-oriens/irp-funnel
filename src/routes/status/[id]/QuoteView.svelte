@@ -265,11 +265,15 @@
                     <span class="qv-group__title">{g.title}</span>
                     <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
+                  {#if g.description}
+                    <span class="qv-group__desc">{g.description}</span>
+                  {/if}
                 </span>
               </div>
             {/each}
           </div>
         {/if}
+
 
         {#if requiredGroups.length > 0}
 
@@ -294,7 +298,11 @@
                     <span class="qv-group__title">{g.title}</span>
                     <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
+                  {#if g.description}
+                    <span class="qv-group__desc">{g.description}</span>
+                  {/if}
                   <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
+
                     <span class="qv-group__items">
                       {#each g.lineItems as li (li.lineId)}
                         <span class="qv-group__item">
@@ -328,7 +336,11 @@
                     <span class="qv-group__title">{g.title}</span>
                     <span class="qv-group__price">+{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
+                  {#if g.description}
+                    <span class="qv-group__desc">{g.description}</span>
+                  {/if}
                   <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
+
                     <span class="qv-group__items">
                       {#each g.lineItems as li (li.lineId)}
                         <span class="qv-group__item">
@@ -730,12 +742,21 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+  /* Staff-authored, client-visible per-group description (below the title). */
+  .qv-group__desc {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.5;
+  }
   .qv-group__items {
     display: flex;
     flex-direction: column;
     gap: 3px;
     margin-top: 8px;
   }
+
   .qv-group__item {
     display: flex;
     align-items: baseline;

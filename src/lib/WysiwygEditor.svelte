@@ -1200,7 +1200,7 @@
      the reserved zone simply reads as a little breathing room when idle. */
   .we-frame__overlay {
     position: sticky;
-    top: 0;
+    top: -30px;
     height: 30px;
     background: #0f172a;
     border-radius: 7px 7px 0 0;
@@ -1325,7 +1325,7 @@
     border-radius: 6px 6px 0 0;
     flex-wrap: wrap;
     position: sticky;
-    top: 30px; /* stack directly beneath the sticky control strip (30px tall) */
+    top: 0; /* stack directly beneath the sticky control strip (30px tall) */
     z-index: 11;
   }
   .we-bar__btn {
