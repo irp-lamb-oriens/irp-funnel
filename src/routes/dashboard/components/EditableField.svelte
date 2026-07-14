@@ -200,10 +200,10 @@
       cancelEdit();
     } else if (e.key === 'Enter' && !multiline) {
       e.preventDefault();
-      commitEdit();
+      // commitEdit();
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      commitEdit();
+      // commitEdit();
     }
   }
 </script>
