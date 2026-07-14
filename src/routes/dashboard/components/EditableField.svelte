@@ -194,16 +194,23 @@
     }
   }
 
+  function unblur(e: KeyboardEvent) {
+    e.currentTarget?.dispatchEvent(new CustomEvent('unblur', {
+      detail: { timeTriggered: Date.now() },
+      bubbles: true // Allows the event to bubble up the DOM tree
+    }))
+  }
+
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
       cancelEdit();
     } else if (e.key === 'Enter' && !multiline) {
       e.preventDefault();
-      // commitEdit();
+      unblur(e);
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      // commitEdit();
+      unblur(e);
     }
   }
 </script>
