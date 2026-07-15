@@ -29,8 +29,15 @@
     allTemplatesLoading,
     setSelectedTemplate,
     selectedTemplateId,
+    // ── Per-client proposal override (staff WYSIWYG edit on /status) ──────
+    effectiveTemplateBlocks,
+    hasProposalOverride,
+    proposalOverrides,
+    saveProposalOverride,
+    resetProposalOverride,
     // ── Quotes (loaded early so hasQuotes drives tab/section visibility) ──
     quotes,
+
     quotesLoading,
     loadQuotes,
     // ── Stage ratings (reused for the overall "move complete" review) ──────
@@ -44,7 +51,10 @@
   import QuoteAcceptance from "./QuoteAcceptance.svelte";
   import QuoteView from "./QuoteView.svelte";
   import BlockRenderer from "./BlockRenderer.svelte";
+  import WysiwygEditor from "../../../lib/WysiwygEditor.svelte";
+  import type { QuoteBlock } from "../../dashboard/store.ts";
   import EmailPreviewDrawer from "../../dashboard/components/EmailPreviewDrawer.svelte";
+
   import { presendEmail, fetchEmailPreview } from "../../dashboard/store.ts";
   import RegulationsLanding from "./RegulationsLanding.svelte";
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
@@ -479,8 +489,9 @@
   // overview/activity section even BEFORE any quote exists. Staff always see it
   // (preview), since their session auto-infers a template when none is mapped.
   $: hasAssignedProposal =
-    $templateBlocks.length > 0 &&
+    $effectiveTemplateBlocks.length > 0 &&
     (!!($project as any)?.selectedQuoteTemplateId || $irpStaffIsAuthenticated);
+
 
   // showQuoteSection — gates the Quote tab and all quote-related sections.
   // True when either the subcollection has displayable quotes OR a quoteToken
@@ -611,7 +622,72 @@
       sendLilyMessage(projectId, prompt);
     }, 400);
   }
+
+  // ─── Staff proposal WYSIWYG edit (per-client override) ───────────────────────
+  // Staff can rewrite the proposal document for THIS client only, right here on
+  // the status page, using the SAME WysiwygEditor as the dashboard Templates tab.
+  // Saving stores the edited blocks under the client's consultation doc (keyed by
+  // the currently-selected templateId) — the shared quote_templates document is
+  // never touched. Clients then see the personalized `effectiveTemplateBlocks`.
+  let editingProposal = false;
+  let editableProposalBlocks: QuoteBlock[] = [];
+  let proposalSaving = false;
+  let proposalSaveMsg = "";
+  let proposalSaveError = "";
+
+  function startEditProposal() {
+    // Deep-copy the current EFFECTIVE blocks so Cancel can discard cleanly.
+    editableProposalBlocks = ($effectiveTemplateBlocks ?? []).map((b) => ({ ...b }));
+    editingProposal = true;
+    proposalSaveMsg = "";
+    proposalSaveError = "";
+  }
+
+  function cancelEditProposal() {
+    editingProposal = false;
+    editableProposalBlocks = [];
+    proposalSaveMsg = "";
+    proposalSaveError = "";
+  }
+
+  async function handleSaveProposal() {
+    const tid = $selectedTemplateId;
+    if (!tid || !projectId) return;
+    proposalSaving = true;
+    proposalSaveMsg = "";
+    proposalSaveError = "";
+    try {
+      await saveProposalOverride(projectId, tid, editableProposalBlocks);
+      editingProposal = false;
+      proposalSaveMsg = "✓ Saved — this client now sees your customized proposal.";
+    } catch (err: any) {
+      proposalSaveError = "✗ " + (err?.message ?? "Save failed");
+    } finally {
+      proposalSaving = false;
+    }
+  }
+
+  async function handleResetProposal() {
+    const tid = $selectedTemplateId;
+    if (!tid || !projectId) return;
+    if (!confirm("Reset this client's proposal back to the shared template? Your custom edits for this template will be lost.")) return;
+    proposalSaving = true;
+    proposalSaveError = "";
+    try {
+      await resetProposalOverride(projectId, tid);
+      proposalSaveMsg = "✓ Reset to the shared template.";
+      if (editingProposal) {
+        // Re-seed the editor from the freshly-reverted (shared) blocks.
+        editableProposalBlocks = ($templateBlocks ?? []).map((b) => ({ ...b }));
+      }
+    } catch (err: any) {
+      proposalSaveError = "✗ " + (err?.message ?? "Reset failed");
+    } finally {
+      proposalSaving = false;
+    }
+  }
 </script>
+
 
 <svelte:head>
   <title>Client Portal | IRP</title>
@@ -1497,16 +1573,58 @@
                       below</span
                     >
                   </div>
+
+                  <!-- Staff edit / reset bar (per-client WYSIWYG override) -->
+                  <div class="cp-proposal-editbar">
+                    {#if $hasProposalOverride}
+                      <span class="cp-proposal-editbar__badge">✦ Customized for this client</span>
+                    {/if}
+                    {#if editingProposal}
+                      <button
+                        type="button"
+                        class="cp-proposal-editbar__btn cp-proposal-editbar__btn--ghost"
+                        on:click={cancelEditProposal}
+                        disabled={proposalSaving}
+                      >Cancel</button>
+                      <button
+                        type="button"
+                        class="cp-proposal-editbar__btn cp-proposal-editbar__btn--primary"
+                        on:click={handleSaveProposal}
+                        disabled={proposalSaving}
+                      >{proposalSaving ? "Saving…" : "💾 Save for this client"}</button>
+                    {:else}
+                      <button
+                        type="button"
+                        class="cp-proposal-editbar__btn cp-proposal-editbar__btn--primary"
+                        on:click={startEditProposal}
+                        disabled={!$selectedTemplateId || $effectiveTemplateBlocks.length === 0}
+                      >✏️ Edit this proposal</button>
+                      {#if $hasProposalOverride}
+                        <button
+                          type="button"
+                          class="cp-proposal-editbar__btn cp-proposal-editbar__btn--ghost"
+                          on:click={handleResetProposal}
+                          disabled={proposalSaving}
+                        >↺ Reset to shared template</button>
+                      {/if}
+                    {/if}
+                  </div>
+                  {#if proposalSaveMsg}<div class="cp-proposal-editbar__msg cp-proposal-editbar__msg--ok">{proposalSaveMsg}</div>{/if}
+                  {#if proposalSaveError}<div class="cp-proposal-editbar__msg cp-proposal-editbar__msg--err">{proposalSaveError}</div>{/if}
                 </div>
               </div>
             </div>
           {/if}
 
-          <!-- Proposal document: BlockRenderer -->
-          {#if $templateBlocks.length > 0}
+          <!-- Proposal document: WYSIWYG (staff editing) or BlockRenderer (read) -->
+          {#if editingProposal && $irpStaffIsAuthenticated}
+            <div class="cp-dashboard__full-width-section cp-proposal-section cp-proposal-section--editing">
+              <WysiwygEditor bind:blocks={editableProposalBlocks} clientSummary={$project ?? {}} />
+            </div>
+          {:else if $effectiveTemplateBlocks.length > 0}
             <div class="cp-dashboard__full-width-section cp-proposal-section">
               <BlockRenderer
-                blocks={$templateBlocks}
+                blocks={$effectiveTemplateBlocks}
                 quote={templateStubQuote}
                 accepted={false}
                 accepting={false}
@@ -1521,6 +1639,7 @@
         </div>
         <!-- /#cp-proposal -->
       {/if}
+
 
       <!-- ══ QUOTES — shown whenever showQuoteSection is true and Quote tab is active.
            Renders QuotePanel for subcollection quotes (old flow, hasQuotes) and/or
@@ -2019,6 +2138,70 @@
     font-style: italic;
   }
 
+  /* ── Staff proposal edit bar (per-client WYSIWYG override) ───────────── */
+  :global(.cp-proposal-editbar) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(2, 181, 187, 0.15);
+  }
+  :global(.cp-proposal-editbar__badge) {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0a7e82;
+    background: rgba(2, 181, 187, 0.1);
+    border: 1px solid rgba(2, 181, 187, 0.28);
+    border-radius: 999px;
+    padding: 0.22rem 0.65rem;
+    margin-right: auto;
+  }
+  :global(.cp-proposal-editbar__btn) {
+    font-family: var(--font-paragraph, sans-serif);
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 0.45rem 0.95rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.14s ease, transform 0.12s ease, background 0.14s ease, box-shadow 0.14s ease;
+  }
+  :global(.cp-proposal-editbar__btn:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  :global(.cp-proposal-editbar__btn--primary) {
+    background: linear-gradient(135deg, #02b5bb 0%, #0284c7 100%);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(2, 181, 187, 0.28);
+  }
+  :global(.cp-proposal-editbar__btn--primary:hover:not(:disabled)) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px rgba(2, 181, 187, 0.4);
+  }
+  :global(.cp-proposal-editbar__btn--ghost) {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #e2e8f0;
+  }
+  :global(.cp-proposal-editbar__btn--ghost:hover:not(:disabled)) {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+  :global(.cp-proposal-editbar__msg) {
+    width: 100%;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-top: 0.35rem;
+  }
+  :global(.cp-proposal-editbar__msg--ok) { color: #0a7e82; }
+  :global(.cp-proposal-editbar__msg--err) { color: #dc2626; }
+
 
   /* ── Proposal document section ───────────────────────────────────────── */
   :global(.cp-proposal-section) {
@@ -2029,6 +2212,14 @@
       0 2px 16px rgba(0, 0, 0, 0.08),
       0 1px 0 rgba(0, 0, 0, 0.04);
   }
+  /* Editing mode: teal-ringed canvas so staff clearly see they're in edit mode. */
+  :global(.cp-proposal-section--editing) {
+    border: 1.5px solid rgba(2, 181, 187, 0.35);
+    box-shadow:
+      0 0 0 3px rgba(2, 181, 187, 0.08),
+      0 2px 16px rgba(0, 0, 0, 0.08);
+  }
+
 
   /* ── Lily FAB — hyper-modern floating action button ───────────────────── */
   .lily-fab {

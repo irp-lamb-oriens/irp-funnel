@@ -152,6 +152,14 @@ export async function fetchProject(projectId: string) {
     clientFields.set(Array.isArray(data.clientFields) ? data.clientFields : []);
     projectFieldFlags.set(data.projectFieldFlags && typeof data.projectFieldFlags === 'object' ? data.projectFieldFlags : {});
 
+    // Per-client, per-template proposal overrides (staff-edited WYSIWYG). Keyed
+    // by templateId. Absent → {} so the status page shows the shared template.
+    const overrides = data.project?.proposalOverrides;
+    proposalOverrides.set(
+      overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {},
+    );
+
+
 
     // Pre-seed Lily chat from the HeroForm conversation so the client sees
     // their initial consultation immediately when they open the drawer —
@@ -522,8 +530,23 @@ export interface TemplateSummary {
 }
 export const allTemplates = writable<TemplateSummary[]>([]);
 
+// ─── Per-client proposal overrides (staff-edited WYSIWYG) ──────────────────────
+//
+// A staff member can rewrite the proposal document for THIS client only, right
+// on the /status page. The edited blocks are stored per-templateId on the
+// consultation doc (never on the shared quote_templates document). So:
+//   • edit template A → override saved under proposalOverrides["A"]
+//   • switch to template B → shows B raw (no override yet)
+//   • edit B → override saved under proposalOverrides["B"], A untouched
+//   • switch back to A → A's override reappears
+//
+// Shape: { [templateId]: { blocks: QuoteBlock[], updatedAt?, updatedBy? } }
+export const proposalOverrides = writable<
+  Record<string, { blocks: QuoteBlock[]; updatedAt?: string; updatedBy?: string }>
+>({});
+
 /** Unique ordered section labels extracted from the current template blocks. */
-export const templateSections = derived(templateBlocks, ($blocks): string[] => {
+const rawTemplateSections = derived(templateBlocks, ($blocks): string[] => {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const b of $blocks) {
@@ -534,6 +557,95 @@ export const templateSections = derived(templateBlocks, ($blocks): string[] => {
   }
   return result;
 });
+
+/**
+ * The blocks the status page should actually render for this client: the
+ * per-client override for the currently-selected template if one exists,
+ * otherwise the shared template's blocks. Single source of truth consumed by
+ * both the BlockRenderer and the section-tab derivation.
+ */
+export const effectiveTemplateBlocks = derived(
+  [templateBlocks, proposalOverrides, selectedTemplateId],
+  ([$blocks, $overrides, $tid]): QuoteBlock[] => {
+    const ov = $tid ? $overrides[$tid] : undefined;
+    if (ov && Array.isArray(ov.blocks) && ov.blocks.length > 0) return ov.blocks;
+    return $blocks;
+  },
+);
+
+/** True when the currently-selected template has a client-specific override. */
+export const hasProposalOverride = derived(
+  [proposalOverrides, selectedTemplateId],
+  ([$overrides, $tid]): boolean =>
+    !!($tid && $overrides[$tid] && Array.isArray($overrides[$tid].blocks)),
+);
+
+/**
+ * Unique ordered section labels — derived from the EFFECTIVE blocks so that a
+ * staff override's sections drive the Header tabs too (not just the base
+ * template's). Unused import `rawTemplateSections` kept null-effect below.
+ */
+export const templateSections = derived(effectiveTemplateBlocks, ($blocks): string[] => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const b of $blocks) {
+    if (b.section && !seen.has(b.section)) {
+      seen.add(b.section);
+      result.push(b.section);
+    }
+  }
+  return result;
+});
+// rawTemplateSections is retained for backward compatibility but not exported.
+void rawTemplateSections;
+
+/**
+ * Staff-only: save the per-client proposal override for a specific template.
+ * Writes consultations/{id}.proposalOverrides[templateId] via the dashboard
+ * endpoint; NEVER mutates the shared quote_templates document.
+ */
+export async function saveProposalOverride(
+  projectId: string,
+  templateId: string,
+  blocks: QuoteBlock[],
+): Promise<void> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${projectId}/proposal-blocks-override`,
+    { method: 'PATCH', body: JSON.stringify({ templateId, blocks }) },
+  );
+  if (data.proposalOverrides && typeof data.proposalOverrides === 'object') {
+    proposalOverrides.set(data.proposalOverrides);
+  } else {
+    proposalOverrides.update((m) => ({
+      ...m,
+      [templateId]: { blocks, updatedAt: new Date().toISOString() },
+    }));
+  }
+}
+
+/**
+ * Staff-only: clear the per-client override for a specific template, reverting
+ * the client's proposal back to the shared template content.
+ */
+export async function resetProposalOverride(
+  projectId: string,
+  templateId: string,
+): Promise<void> {
+  const data = await apiFetch(
+    `/api/dashboard/clients/${projectId}/proposal-blocks-override`,
+    { method: 'PATCH', body: JSON.stringify({ templateId, blocks: null }) },
+  );
+  if (data.proposalOverrides && typeof data.proposalOverrides === 'object') {
+    proposalOverrides.set(data.proposalOverrides);
+  } else {
+    proposalOverrides.update((m) => {
+      const next = { ...m };
+      delete next[templateId];
+      return next;
+    });
+  }
+}
+
 
 /**
  * Fetch a template's blocks via the PUBLIC endpoint (no auth required).

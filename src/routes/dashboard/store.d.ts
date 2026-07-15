@@ -1043,6 +1043,12 @@ export interface QuoteLineGroup {
      */
     labelId?: string | null;
     role: 'required' | 'optional' | 'fixed';
+    /**
+     * Optional client-visible description for this group (shown under the group's
+     * title on the status page). May be prefilled from the applied line-template's
+     * `description` and freely edited per-quote. Absent/null ⇒ no description.
+     */
+    description?: string | null;
     lineItems: QuoteLineItem[];
 }
 export interface Quote {
@@ -1443,6 +1449,27 @@ export interface TranslateRfqEditResult {
  * server returns the original text with `translated: false`.
  */
 export declare function translateRfqEdit(subject: string, bodyHtml: string, targetLangName: string): Promise<TranslateRfqEditResult>;
+/** The operator-facing RFQ template fields translated per selected language. */
+export interface RfqTranslatableFields {
+    serviceType: string;
+    commodity: string;
+    volume: string;
+    serviceOptions: string[];
+    notes: string;
+}
+export interface TranslateRfqFieldsResult {
+    /** False when the LLM failed/guardrail-missed — fields are returned unchanged. */
+    translated: boolean;
+    fields: RfqTranslatableFields;
+}
+/**
+ * Translate the RFQ template FIELDS (type of service, commodity, volume, service
+ * options, notes) into another language before they're injected into the
+ * pre-translated Sondeo template — so the whole email reads in one language.
+ * Technical codes (e.g. "40ft-container-hc", "HHG") are preserved. Fails safe:
+ * on any error the server returns the original fields with `translated: false`.
+ */
+export declare function translateRfqFields(fields: RfqTranslatableFields, targetLangName: string): Promise<TranslateRfqFieldsResult>;
 /** A vendor's submitted rate for a quote request. */
 export interface QuoteRequestProviderResponse {
     price: number | null;
