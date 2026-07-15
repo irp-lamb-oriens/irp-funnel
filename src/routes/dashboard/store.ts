@@ -3523,7 +3523,27 @@ export interface AutomationMeta {
   conditions: RuleCondition[];
   modes: RuleMode[];
   feedbackMigration: Record<string, string>;
+  /** Internal team addresses that CAN be excluded per email type (CC/BCC pool). */
+  teamRecipients: TeamRecipient[];
 }
+
+/** One selectable internal recipient (label for the UI, email as the value). */
+export interface TeamRecipient {
+  email: string;
+  label: string;
+}
+
+/** Per-email-type team CC/BCC exclusion rule (Automations → Recipients). */
+export interface EmailRecipientRule {
+  emailType: string;
+  /** Team addresses removed from the default CC/BCC for this email type. */
+  excludedRecipients: string[];
+  isSeed?: boolean;
+  updatedBy?: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
 
 /** Human labels for rule conditions (UI only). */
 export const RULE_CONDITION_LABELS: Record<RuleCondition, string> = {
@@ -3540,8 +3560,51 @@ export async function fetchAutomationMeta(): Promise<AutomationMeta> {
     conditions: Array.isArray(data?.conditions) ? data.conditions : ['always'],
     modes: Array.isArray(data?.modes) ? data.modes : ['auto', 'suggest'],
     feedbackMigration: data?.feedbackMigration ?? {},
+    teamRecipients: Array.isArray(data?.teamRecipients) ? data.teamRecipients : [],
   };
 }
+
+/**
+ * Fetch the per-email-type CC/BCC exclusion rules + the selectable team pool.
+ * The pool is the SAME single source of truth (`helper/team.ts`) the server
+ * uses for the default CC/BCC, so the editor can never drift from what sends.
+ */
+export async function fetchRecipientRules(): Promise<{
+  rules: EmailRecipientRule[];
+  teamRecipients: TeamRecipient[];
+}> {
+  const data = await apiFetch('/api/dashboard/automation/recipient-rules');
+  return {
+    rules: Array.isArray(data?.rules) ? (data.rules as EmailRecipientRule[]) : [],
+    teamRecipients: Array.isArray(data?.teamRecipients)
+      ? (data.teamRecipients as TeamRecipient[])
+      : [],
+  };
+}
+
+/**
+ * Upsert the exclusion set for one email type. Passing an empty array clears
+ * every exclusion (⇒ that email type resumes the full default team CC/BCC).
+ */
+export async function saveRecipientRule(
+  emailType: string,
+  excludedRecipients: string[],
+): Promise<EmailRecipientRule> {
+  const data = await apiFetch(
+    `/api/dashboard/automation/recipient-rules/${encodeURIComponent(emailType)}`,
+    { method: 'PUT', body: JSON.stringify({ excludedRecipients }) },
+  );
+  return data.rule as EmailRecipientRule;
+}
+
+/** Delete a recipient rule entirely (⇒ full default team copy resumes). */
+export async function deleteRecipientRule(emailType: string): Promise<void> {
+  await apiFetch(
+    `/api/dashboard/automation/recipient-rules/${encodeURIComponent(emailType)}`,
+    { method: 'DELETE' },
+  );
+}
+
 
 export async function fetchAutomationRules(): Promise<StageEmailRule[]> {
   const data = await apiFetch('/api/dashboard/automation/rules');

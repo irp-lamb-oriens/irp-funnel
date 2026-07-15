@@ -12,7 +12,10 @@
     saveAutomationTemplate,
     deleteAutomationTemplate,
     previewAutomationTemplate,
+    fetchRecipientRules,
+    saveRecipientRule,
     fetchStages,
+
     createStage,
     updateStage,
     reorderStages,
@@ -22,10 +25,13 @@
     type AutomationMeta,
     type StageEmailRule,
     type EmailTemplateRow,
+    type EmailRecipientRule,
+    type TeamRecipient,
     type RuleCondition,
     type RuleMode,
     type StageConfigRow,
   } from '../store.ts';
+
   import OverviewFieldsEditor from './OverviewFieldsEditor.svelte';
   import StageGatesEditor from './StageGatesEditor.svelte';
 
@@ -36,8 +42,16 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' | 'fields' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' | 'recipients' = 'stages';
   let busyId = ''; // id of the row currently saving (disables its controls)
+
+  // ── Recipients state (per-email-type team CC/BCC exclusions) ─────────────
+  // `recipientMap[emailType]` is the live Set of excluded team addresses for
+  // that type. Toggling a checkbox recomputes the set + persists it.
+  let teamRecipients: TeamRecipient[] = [];
+  let recipientMap: Record<string, Set<string>> = {};
+  let recipientBusy = ''; // `${emailType}::${email}` while a toggle is saving
+
 
   // ── Stage configuration state ───────────────────────────────────────────
   let stages: StageConfigRow[] = [];
@@ -93,16 +107,18 @@
     loading = true;
     error = '';
     try {
-      const [m, r, t, s] = await Promise.all([
+      const [m, r, t, s, rec] = await Promise.all([
         fetchAutomationMeta(),
         fetchAutomationRules(),
         fetchAutomationTemplates(),
         fetchStages().catch(() => [] as StageConfigRow[]),
+        fetchRecipientRules().catch(() => ({ rules: [] as EmailRecipientRule[], teamRecipients: [] as TeamRecipient[] })),
       ]);
       meta = m;
       rules = r;
       templates = t;
       stages = s;
+      applyRecipientData(rec.rules, rec.teamRecipients);
     } catch (e: any) {
       error = e?.message ?? 'Failed to load automation config.';
     } finally {
@@ -110,7 +126,46 @@
     }
   }
 
+  /** Rebuild the local exclusion map + team pool from a fetch. */
+  function applyRecipientData(rulesIn: EmailRecipientRule[], pool: TeamRecipient[]) {
+    // Prefer the meta pool when present (single fetch already has it); fall back
+    // to the dedicated endpoint's pool so the tab works even if meta lacked it.
+    teamRecipients = (meta?.teamRecipients?.length ? meta.teamRecipients : pool) ?? [];
+    const map: Record<string, Set<string>> = {};
+    for (const r of rulesIn) {
+      map[r.emailType] = new Set(r.excludedRecipients ?? []);
+    }
+    recipientMap = map;
+  }
+
+  /**
+   * Toggle whether `email` is excluded from `emailType`'s team CC/BCC, then
+   * persist the new exclusion set. Optimistic: the checkbox flips immediately.
+   */
+  async function toggleExclusion(emailType: string, email: string) {
+    const key = `${emailType}::${email}`;
+    recipientBusy = key;
+    error = '';
+    const current = new Set(recipientMap[emailType] ?? []);
+    if (current.has(email)) current.delete(email);
+    else current.add(email);
+    try {
+      const saved = await saveRecipientRule(emailType, [...current]);
+      recipientMap = { ...recipientMap, [emailType]: new Set(saved.excludedRecipients ?? []) };
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to update recipients.';
+    } finally {
+      recipientBusy = '';
+    }
+  }
+
+  /** True when `email` is currently excluded from `emailType`. */
+  function isExcluded(emailType: string, email: string): boolean {
+    return recipientMap[emailType]?.has(email) ?? false;
+  }
+
   onMount(loadAll);
+
 
   // ── Stage configuration actions ──────────────────────────────────────────
   async function reloadStages() {
@@ -480,7 +535,11 @@
     <button class="av-tab" class:av-tab--active={tab === 'fields'} on:click={() => (tab = 'fields')}>
       🧩 Overview fields
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'recipients'} on:click={() => (tab = 'recipients')}>
+      🚫 Recipients
+    </button>
   </div>
+
 
   {#if loading}
     <div class="av-loading">Loading automation config…</div>
@@ -544,7 +603,54 @@
     <section class="av-card">
       <OverviewFieldsEditor />
     </section>
+  {:else if tab === 'recipients'}
+    <!-- ── Per-email-type team CC/BCC exclusions ──────────────────────── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      Every automated client email is, by default, copied to the internal team
+      (CC/BCC). Tick a box to <strong>exclude</strong> that teammate from a
+      specific email — e.g. keep the pre-call shipping guide off the pricing
+      desk. Unticked = they still receive it. Changes save instantly.
+    </p>
+
+    {#if templates.length === 0 || teamRecipients.length === 0}
+      <div class="av-empty">No email types or team recipients to configure.</div>
+    {:else}
+      <section class="av-card">
+        <div class="av-table-wrap">
+          <table class="av-table av-recip-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                {#each teamRecipients as tr (tr.email)}
+                  <th class="av-recip-col" title={tr.email}>{tr.label}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each templates as t (t.emailType)}
+                <tr>
+                  <td class="av-email-cell">{t.label}<div class="av-type">{t.emailType}</div></td>
+                  {#each teamRecipients as tr (tr.email)}
+                    <td class="av-recip-cell">
+                      <label class="av-recip-check" title={`Exclude ${tr.label} from "${t.label}"`}>
+                        <input
+                          type="checkbox"
+                          checked={isExcluded(t.emailType, tr.email)}
+                          disabled={recipientBusy === `${t.emailType}::${tr.email}`}
+                          on:change={() => toggleExclusion(t.emailType, tr.email)}
+                        />
+                      </label>
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {/if}
   {:else if tab === 'stages'}
+
     <!-- ── Unified: every centralized stage + its automation rules ─────── -->
     <p class="av-subtitle" style="margin-bottom:1.1rem">
       One place for the whole pipeline: reorder, rename, set each column’s SLA,
@@ -1083,6 +1189,20 @@
   .av-unit { color: #94a3b8; font-size: 0.75rem; margin-left: 0.25rem; }
   .av-type { color: #94a3b8; font-size: 0.7rem; margin-top: 0.1rem; }
   .av-subject { color: #475569; font-size: 0.82rem; }
+
+  /* ── Recipients matrix ──────────────────────────────────────────────── */
+  .av-recip-table th.av-recip-col,
+  .av-recip-table td.av-recip-cell { text-align: center; white-space: nowrap; }
+  .av-recip-col { max-width: 120px; }
+  .av-recip-check {
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .av-recip-check input {
+    width: 17px; height: 17px; cursor: pointer;
+    accent-color: #c62426; /* red = "excluded" — matches the destructive palette */
+  }
+  .av-recip-check input:disabled { cursor: wait; opacity: 0.55; }
+
 
   /* ── Badges ─────────────────────────────────────────────────────────── */
   .av-badge {

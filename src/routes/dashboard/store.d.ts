@@ -1552,10 +1552,43 @@ export interface AutomationMeta {
     conditions: RuleCondition[];
     modes: RuleMode[];
     feedbackMigration: Record<string, string>;
+    /** Internal team addresses that CAN be excluded per email type (CC/BCC pool). */
+    teamRecipients: TeamRecipient[];
+}
+/** One selectable internal recipient (label for the UI, email as the value). */
+export interface TeamRecipient {
+    email: string;
+    label: string;
+}
+/** Per-email-type team CC/BCC exclusion rule (Automations → Recipients). */
+export interface EmailRecipientRule {
+    emailType: string;
+    /** Team addresses removed from the default CC/BCC for this email type. */
+    excludedRecipients: string[];
+    isSeed?: boolean;
+    updatedBy?: string;
+    updatedAt?: string;
+    createdAt?: string;
 }
 /** Human labels for rule conditions (UI only). */
 export declare const RULE_CONDITION_LABELS: Record<RuleCondition, string>;
 export declare function fetchAutomationMeta(): Promise<AutomationMeta>;
+/**
+ * Fetch the per-email-type CC/BCC exclusion rules + the selectable team pool.
+ * The pool is the SAME single source of truth (`helper/team.ts`) the server
+ * uses for the default CC/BCC, so the editor can never drift from what sends.
+ */
+export declare function fetchRecipientRules(): Promise<{
+    rules: EmailRecipientRule[];
+    teamRecipients: TeamRecipient[];
+}>;
+/**
+ * Upsert the exclusion set for one email type. Passing an empty array clears
+ * every exclusion (⇒ that email type resumes the full default team CC/BCC).
+ */
+export declare function saveRecipientRule(emailType: string, excludedRecipients: string[]): Promise<EmailRecipientRule>;
+/** Delete a recipient rule entirely (⇒ full default team copy resumes). */
+export declare function deleteRecipientRule(emailType: string): Promise<void>;
 export declare function fetchAutomationRules(): Promise<StageEmailRule[]>;
 /** Create or replace a rule (server keys it by triggerStage__emailType). */
 export declare function saveAutomationRule(rule: Partial<StageEmailRule>): Promise<StageEmailRule>;
