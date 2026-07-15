@@ -1192,7 +1192,7 @@
 
   /* ── Recipients matrix ──────────────────────────────────────────────── */
   .av-recip-table th.av-recip-col,
-  .av-recip-table td.av-recip-cell { text-align: center; white-space: nowrap; }
+  .av-recip-table td.av-recip-cell { text-overflow: ellipsis; width: 100%; text-align: center; white-space: nowrap; }
   .av-recip-col { max-width: 120px; }
   .av-recip-check {
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
