@@ -1545,6 +1545,8 @@ export interface EmailTemplateRow {
     hasOverride: boolean;
     isCustom: boolean;
     bodyHtml: string;
+    /** True when `bodyHtml` was seeded from the hardcoded template (no saved override yet). */
+    bodyDefaulted?: boolean;
 }
 export interface AutomationMeta {
     stages: string[];
@@ -1634,6 +1636,25 @@ export interface FieldConfigRow {
 export declare const fieldConfig: import("svelte/store").Writable<FieldConfigRow[]>;
 /** Active fields (what the Overview tab surfaces), in order. */
 export declare const activeFields: import("svelte/store").Readable<FieldConfigRow[]>;
+/** A merge-field option surfaced by the email-template editor's field picker. */
+export interface MergeFieldOption {
+    /** The token inserted into the body, e.g. "{{originCountry}}". */
+    token: string;
+    /** Human-readable field label shown in the picker. */
+    label: string;
+    /** Section label used to group options in the picker. */
+    group: string;
+}
+/**
+ * Map the Overview Field Registry → merge-field options for the email template
+ * editor. The registry is the SINGLE SOURCE OF TRUTH for which fields exist, so
+ * the editor never hardcodes a token list — it offers exactly the active fields
+ * operators configured in Automations → Overview fields. Each field's `id` is
+ * the consultation-doc key the send-time interpolator resolves `{{id}}` against.
+ */
+export declare function mergeFieldsFromRegistry(fields: FieldConfigRow[]): MergeFieldOption[];
+/** Reactive merge-field options derived from the live Overview field registry. */
+export declare const mergeFieldOptions: import("svelte/store").Readable<MergeFieldOption[]>;
 /** Raw fetch of the field registry (no side effects) — for the config editor UI. */
 export declare function fetchOverviewFields(): Promise<FieldConfigRow[]>;
 /** Load the field registry into the `fieldConfig` store (used on dashboard boot). */

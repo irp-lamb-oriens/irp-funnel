@@ -3515,7 +3515,10 @@ export interface EmailTemplateRow {
   hasOverride: boolean;
   isCustom: boolean;
   bodyHtml: string;
+  /** True when `bodyHtml` was seeded from the hardcoded template (no saved override yet). */
+  bodyDefaulted?: boolean;
 }
+
 
 export interface AutomationMeta {
   stages: string[];
@@ -3736,6 +3739,49 @@ export const fieldConfig = writable<FieldConfigRow[]>([]);
 export const activeFields = derived(fieldConfig, ($fields) =>
   $fields.filter((f) => f.active !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
 );
+
+/** A merge-field option surfaced by the email-template editor's field picker. */
+export interface MergeFieldOption {
+  /** The token inserted into the body, e.g. "{{originCountry}}". */
+  token: string;
+  /** Human-readable field label shown in the picker. */
+  label: string;
+  /** Section label used to group options in the picker. */
+  group: string;
+}
+
+const FIELD_SECTION_LABELS: Record<FieldSection, string> = {
+  identity: 'Identity',
+  route: 'Route',
+  move: 'Move details',
+  logistics: 'Logistics',
+  meta: 'Meta',
+  custom: 'Custom',
+};
+
+/**
+ * Map the Overview Field Registry → merge-field options for the email template
+ * editor. The registry is the SINGLE SOURCE OF TRUTH for which fields exist, so
+ * the editor never hardcodes a token list — it offers exactly the active fields
+ * operators configured in Automations → Overview fields. Each field's `id` is
+ * the consultation-doc key the send-time interpolator resolves `{{id}}` against.
+ */
+export function mergeFieldsFromRegistry(fields: FieldConfigRow[]): MergeFieldOption[] {
+  return (fields || [])
+    .filter((f) => f.active !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((f) => ({
+      token: `{{${f.id}}}`,
+      label: f.label || f.id,
+      group: FIELD_SECTION_LABELS[f.section] ?? 'Fields',
+    }));
+}
+
+/** Reactive merge-field options derived from the live Overview field registry. */
+export const mergeFieldOptions = derived(fieldConfig, ($fields) =>
+  mergeFieldsFromRegistry($fields),
+);
+
 
 /** Raw fetch of the field registry (no side effects) — for the config editor UI. */
 export async function fetchOverviewFields(): Promise<FieldConfigRow[]> {

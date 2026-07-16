@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+
   import {
     STAGE_LABELS,
     RULE_CONDITION_LABELS,
@@ -30,10 +32,15 @@
     type RuleCondition,
     type RuleMode,
     type StageConfigRow,
+    mergeFieldOptions,
+    fieldConfig,
+    loadOverviewFields,
   } from '../store.ts';
 
   import OverviewFieldsEditor from './OverviewFieldsEditor.svelte';
   import StageGatesEditor from './StageGatesEditor.svelte';
+  import LiveHtmlEditor from '$lib/LiveHtmlEditor.svelte';
+
 
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -164,7 +171,14 @@
     return recipientMap[emailType]?.has(email) ?? false;
   }
 
-  onMount(loadAll);
+  onMount(() => {
+    loadAll();
+    // Ensure the Overview Field Registry is loaded so the template editor's
+    // merge-field picker (`$mergeFieldOptions`) is populated. Non-blocking and
+    // idempotent — skipped when the dashboard boot already hydrated it.
+    if (get(fieldConfig).length === 0) loadOverviewFields().catch(() => {});
+  });
+
 
 
   // ── Stage configuration actions ──────────────────────────────────────────
@@ -967,10 +981,17 @@
             <span>Subject</span>
             <input type="text" bind:value={editSubject} />
           </label>
-          <label class="av-field av-field--grow">
-            <span>Body (HTML — supports <code>{'{{field}}'}</code> placeholders)</span>
-            <textarea bind:value={editBody} on:input={refreshPreview}></textarea>
-          </label>
+          <div class="av-field av-field--grow">
+            <span>Body — edit visually, insert client fields, or switch to HTML</span>
+            <LiveHtmlEditor
+              bind:value={editBody}
+              fields={$mergeFieldOptions}
+              minHeight="320px"
+              placeholder="Compose this email…"
+              on:input={refreshPreview}
+            />
+          </div>
+
         </div>
         <div class="av-preview-col">
           <div class="av-preview-head">Live preview {#if previewLoading}<span class="av-spin">…</span>{/if}</div>
@@ -1115,8 +1136,7 @@
     text-transform: none;
   }
   .av-field select,
-  .av-field input,
-  .av-field textarea {
+  .av-field input {
     padding: 0.5rem 0.6rem;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -1127,8 +1147,8 @@
     transition: border-color 0.14s, box-shadow 0.14s;
   }
   .av-field select:focus,
-  .av-field input:focus,
-  .av-field textarea:focus {
+  .av-field input:focus {
+
     outline: none;
     border-color: rgba(2, 181, 187, 0.48);
     box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.10);
@@ -1408,14 +1428,7 @@
     gap: 0.85rem;
   }
   .av-edit-col .av-field--grow { flex: 1; }
-  .av-edit-col textarea {
-    flex: 1;
-    min-height: 280px;
-    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    resize: vertical;
-  }
+
   .av-preview-col {
     display: flex;
     flex-direction: column;
