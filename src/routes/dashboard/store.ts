@@ -3676,6 +3676,43 @@ export async function previewAutomationTemplate(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Client offer popup (single global message shown on the client /status page)
+//
+// Dashboard-configured, single source of truth (one document). Edited from the
+// Automations → Client offer tab with the SAME WYSIWYG body editor as the email
+// templates. Backed by API/dashboard/automation/clientOffer.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The single global offer-popup configuration. */
+export interface ClientOfferConfig {
+  enabled: boolean;
+  title: string;
+  bodyHtml: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+/** Fetch the current client-offer config. */
+export async function fetchClientOffer(): Promise<ClientOfferConfig> {
+  const data = await apiFetch('/api/dashboard/client-offer');
+  return data.offer as ClientOfferConfig;
+}
+
+/** Save (upsert) the client-offer config. */
+export async function saveClientOffer(
+  payload: Pick<ClientOfferConfig, 'enabled' | 'title' | 'bodyHtml' | 'ctaLabel' | 'ctaUrl'>,
+): Promise<ClientOfferConfig> {
+  const data = await apiFetch('/api/dashboard/client-offer', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return data.offer as ClientOfferConfig;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Overview Field Registry (Automations → Overview fields)
 //
 // Centralized, DB-backed configuration of the fields shown on a client card's

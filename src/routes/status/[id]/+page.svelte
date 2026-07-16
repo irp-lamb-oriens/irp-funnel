@@ -40,6 +40,9 @@
 
     quotesLoading,
     loadQuotes,
+    // ── Client offer popup (dashboard-configured, shown once on access) ──
+    clientOffer,
+
     // ── Stage ratings (reused for the overall "move complete" review) ──────
     submitStageRating,
   } from "./store.ts";
@@ -58,6 +61,8 @@
   import { presendEmail, fetchEmailPreview } from "../../dashboard/store.ts";
   import RegulationsLanding from "./RegulationsLanding.svelte";
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
+  import ClientOfferPopup from "./ClientOfferPopup.svelte";
+
 
   import {
     irpStaffIsAuthenticated,
@@ -430,6 +435,40 @@
 
   // ─── Lily FAB state ─────────────────────────────────────────────────────────
   let lilyOpen = false;
+
+  // ─── Client offer popup (shown once per browser after access) ─────────────
+  // The server only sends `$clientOffer` (non-null) to END-CUSTOMERS when an
+  // operator has enabled it — staff viewers always get null. We additionally
+  // gate on `!$irpStaffIsAuthenticated` for defense-in-depth, and remember the
+  // dismissal per project id in localStorage so it appears once per browser.
+  let offerChecked = false;
+  let showOffer = false;
+  const offerStorageKey = (id: string) => `irp_offer_dismissed_${id}`;
+
+  $: if (
+    !offerChecked &&
+    $clientOffer &&
+    $project &&
+    $isAuthenticated &&
+    !$irpStaffIsAuthenticated
+  ) {
+    offerChecked = true;
+    let dismissed = false;
+    try {
+      dismissed =
+        typeof localStorage !== "undefined" &&
+        localStorage.getItem(offerStorageKey(projectId)) === "1";
+    } catch { /* private-mode / storage disabled — treat as not dismissed */ }
+    if (!dismissed) showOffer = true;
+  }
+
+  function dismissOffer() {
+    showOffer = false;
+    try {
+      localStorage.setItem(offerStorageKey(projectId), "1");
+    } catch { /* non-fatal */ }
+  }
+
 
   // ─── Staff email preview (Quotes tab) ────────────────────────────────────────
   // Allows IRP staff to preview and send the pricing_summary email directly
@@ -1805,7 +1844,20 @@
   {/if}
 </div>
 
+<!-- ══ CLIENT OFFER POPUP — dashboard-configured, shown once per browser once
+     the client has access to their status page. Never shown to staff. -->
+{#if showOffer && $clientOffer}
+  <ClientOfferPopup
+    title={$clientOffer.title}
+    bodyHtml={$clientOffer.bodyHtml}
+    ctaLabel={$clientOffer.ctaLabel}
+    ctaUrl={$clientOffer.ctaUrl}
+    on:close={dismissOffer}
+  />
+{/if}
+
 <Footer />
+
 
 <style>
   @keyframes spin {

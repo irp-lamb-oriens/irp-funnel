@@ -16,7 +16,11 @@
     previewAutomationTemplate,
     fetchRecipientRules,
     saveRecipientRule,
+    fetchClientOffer,
+    saveClientOffer,
+    type ClientOfferConfig,
     fetchStages,
+
 
     createStage,
     updateStage,
@@ -49,8 +53,16 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' | 'fields' | 'recipients' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' = 'stages';
   let busyId = ''; // id of the row currently saving (disables its controls)
+
+  // ── Client offer popup (single global message shown on the /status page) ──
+  let offer: ClientOfferConfig = {
+    enabled: false, title: '', bodyHtml: '', ctaLabel: '', ctaUrl: '',
+  };
+  let offerSaving = false;
+  let offerSavedMsg = '';
+
 
   // ── Recipients state (per-email-type team CC/BCC exclusions) ─────────────
   // `recipientMap[emailType]` is the live Set of excluded team addresses for
@@ -171,13 +183,45 @@
     return recipientMap[emailType]?.has(email) ?? false;
   }
 
+  // ── Client offer popup ─────────────────────────────────────────────────────
+  async function loadOffer() {
+    try {
+      offer = await fetchClientOffer();
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to load the client offer.';
+    }
+  }
+
+  async function saveOffer() {
+    offerSaving = true;
+    offerSavedMsg = '';
+    error = '';
+    try {
+      offer = await saveClientOffer({
+        enabled: offer.enabled,
+        title: offer.title.trim(),
+        bodyHtml: offer.bodyHtml,
+        ctaLabel: offer.ctaLabel.trim(),
+        ctaUrl: offer.ctaUrl.trim(),
+      });
+      offerSavedMsg = '✓ Saved';
+      setTimeout(() => (offerSavedMsg = ''), 2500);
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to save the client offer.';
+    } finally {
+      offerSaving = false;
+    }
+  }
+
   onMount(() => {
     loadAll();
+    loadOffer();
     // Ensure the Overview Field Registry is loaded so the template editor's
     // merge-field picker (`$mergeFieldOptions`) is populated. Non-blocking and
     // idempotent — skipped when the dashboard boot already hydrated it.
     if (get(fieldConfig).length === 0) loadOverviewFields().catch(() => {});
   });
+
 
 
 
@@ -552,7 +596,11 @@
     <button class="av-tab" class:av-tab--active={tab === 'recipients'} on:click={() => (tab = 'recipients')}>
       🚫 Recipients
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'offer'} on:click={() => (tab = 'offer')}>
+      🎁 Client offer
+    </button>
   </div>
+
 
 
   {#if loading}
@@ -663,9 +711,66 @@
         </div>
       </section>
     {/if}
+  {:else if tab === 'offer'}
+    <!-- ── Client offer popup (single global message on the /status page) ── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      Show a one-time pop-up to clients the moment they open their status page —
+      to announce an offer, a promotion, or any message. Edit it visually below
+      (same editor as the email templates). Nothing is shown to clients until you
+      turn it on. It appears once per browser and staff never see it.
+    </p>
+
+    <section class="av-card av-offer">
+      <div class="av-offer-head">
+        <label class="av-inline-field av-offer-toggle">
+          <span>{offer.enabled ? 'Live — clients see it' : 'Off — hidden from clients'}</span>
+          <button
+            class="av-switch"
+            class:av-switch--on={offer.enabled}
+            on:click={() => (offer.enabled = !offer.enabled)}
+            aria-label={offer.enabled ? 'Enabled' : 'Disabled'}
+          >
+            <span class="av-switch__knob"></span>
+          </button>
+        </label>
+      </div>
+
+      <label class="av-field">
+        <span>Title</span>
+        <input type="text" bind:value={offer.title} placeholder="e.g. A special offer for you 🎁" maxlength="200" />
+      </label>
+
+      <div class="av-field av-field--grow">
+        <span>Message — edit visually or switch to HTML</span>
+        <LiveHtmlEditor
+          bind:value={offer.bodyHtml}
+          minHeight="240px"
+          placeholder="Write the offer your clients will see…"
+        />
+      </div>
+
+      <div class="av-offer-cta-grid">
+        <label class="av-field">
+          <span>Button label <em class="av-optional">optional</em></span>
+          <input type="text" bind:value={offer.ctaLabel} placeholder="e.g. Claim offer" maxlength="120" />
+        </label>
+        <label class="av-field">
+          <span>Button link <em class="av-optional">optional</em></span>
+          <input type="url" bind:value={offer.ctaUrl} placeholder="https://…" maxlength="2000" />
+        </label>
+      </div>
+
+      <div class="av-offer-foot">
+        {#if offerSavedMsg}<span class="av-offer-saved">{offerSavedMsg}</span>{/if}
+        <button class="save-btn" on:click={saveOffer} disabled={offerSaving}>
+          {offerSaving ? 'Saving…' : '💾 Save offer'}
+        </button>
+      </div>
+    </section>
   {:else if tab === 'stages'}
 
     <!-- ── Unified: every centralized stage + its automation rules ─────── -->
+
     <p class="av-subtitle" style="margin-bottom:1.1rem">
       One place for the whole pipeline: reorder, rename, set each column’s SLA,
       choose whether clients see it, and manage the automated emails that fire on
@@ -1223,8 +1328,34 @@
   }
   .av-recip-check input:disabled { cursor: wait; opacity: 0.55; }
 
+  /* ── Client offer editor ────────────────────────────────────────────── */
+  .av-offer { display: flex; flex-direction: column; gap: 1.1rem; }
+  .av-offer-head { display: flex; align-items: center; justify-content: flex-start; }
+  .av-offer-toggle { gap: 0.6rem; }
+  .av-offer-toggle > span {
+    font-size: 0.78rem; font-weight: 700; color: #475569;
+    text-transform: none; letter-spacing: 0;
+  }
+  .av-offer-cta-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem;
+  }
+  .av-optional {
+    font-style: normal; font-size: 0.62rem; font-weight: 600;
+    color: rgba(148, 163, 184, 0.85); background: #f1f5f9;
+    border-radius: 4px; padding: 1px 5px; margin-left: 0.35rem;
+    text-transform: none; letter-spacing: 0;
+  }
+  .av-offer-foot {
+    display: flex; align-items: center; justify-content: flex-end; gap: 0.9rem;
+  }
+  .av-offer-saved { font-size: 0.82rem; font-weight: 700; color: #16a34a; }
+  @media (max-width: 700px) {
+    .av-offer-cta-grid { grid-template-columns: 1fr; }
+  }
+
 
   /* ── Badges ─────────────────────────────────────────────────────────── */
+
   .av-badge {
     display: inline-block;
     background: #f1f5f9;

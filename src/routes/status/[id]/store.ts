@@ -47,6 +47,21 @@ export const clientFields = writable<any[]>([]);
  */
 export const projectFieldFlags = writable<Record<string, { visible: boolean; editable: boolean }>>({});
 
+/**
+ * Dashboard-configured client offer popup (Automations → Client offer). Shown
+ * once (per browser) when the client gains access to their status page. `null`
+ * when disabled/absent so nothing renders — fully backward compatible.
+ */
+export interface ClientOffer {
+  enabled: boolean;
+  title: string;
+  bodyHtml: string;
+  ctaLabel: string;
+  ctaUrl: string;
+}
+export const clientOffer = writable<ClientOffer | null>(null);
+
+
 
 
 // ─── Lily Chat stores (declared early so fetchProject can reference them) ───
@@ -151,6 +166,14 @@ export async function fetchProject(projectId: string) {
     // its legacy always-on rendering — fully backward compatible.
     clientFields.set(Array.isArray(data.clientFields) ? data.clientFields : []);
     projectFieldFlags.set(data.projectFieldFlags && typeof data.projectFieldFlags === 'object' ? data.projectFieldFlags : {});
+    // Dashboard-configured offer popup. Server sends `null` when disabled or for
+    // staff viewers, so nothing renders — fully backward compatible.
+    clientOffer.set(
+      data.clientOffer && typeof data.clientOffer === 'object' && data.clientOffer.enabled
+        ? data.clientOffer
+        : null,
+    );
+
 
     // Per-client, per-template proposal overrides (staff-edited WYSIWYG). Keyed
     // by templateId. Absent → {} so the status page shows the shared template.

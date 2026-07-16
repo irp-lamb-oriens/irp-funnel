@@ -1607,6 +1607,20 @@ export declare function previewAutomationTemplate(emailType: string, opts?: {
     bodyHtml?: string;
     data?: Record<string, unknown>;
 }): Promise<string>;
+/** The single global offer-popup configuration. */
+export interface ClientOfferConfig {
+    enabled: boolean;
+    title: string;
+    bodyHtml: string;
+    ctaLabel: string;
+    ctaUrl: string;
+    updatedAt?: string | null;
+    updatedBy?: string | null;
+}
+/** Fetch the current client-offer config. */
+export declare function fetchClientOffer(): Promise<ClientOfferConfig>;
+/** Save (upsert) the client-offer config. */
+export declare function saveClientOffer(payload: Pick<ClientOfferConfig, 'enabled' | 'title' | 'bodyHtml' | 'ctaLabel' | 'ctaUrl'>): Promise<ClientOfferConfig>;
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';
