@@ -44,6 +44,8 @@
   import OverviewFieldsEditor from './OverviewFieldsEditor.svelte';
   import StageGatesEditor from './StageGatesEditor.svelte';
   import LiveHtmlEditor from '$lib/LiveHtmlEditor.svelte';
+  import ClientOfferPopup from '../../status/[id]/ClientOfferPopup.svelte';
+
 
 
 
@@ -62,6 +64,18 @@
   };
   let offerSaving = false;
   let offerSavedMsg = '';
+  let showOfferPreview = false;
+  // Sample values so merge-field tokens (e.g. {{name}}) render realistically in
+  // the staff preview — the real values are substituted per-client server-side.
+  const OFFER_PREVIEW_SAMPLE: Record<string, string> = {
+    name: 'Jordan', firstName: 'Jordan', surname: 'Rivera',
+    destinationCountry: 'Costa Rica', originCountry: 'United States',
+    destinationCity: 'San José', originCity: 'Miami',
+  };
+  function fillOfferSample(s: string): string {
+    return String(s ?? '').replace(/\{\{\s*([\w.$]+)\s*\}\}/g, (_m, p) => OFFER_PREVIEW_SAMPLE[p] ?? '');
+  }
+
 
 
   // ── Recipients state (per-email-type team CC/BCC exclusions) ─────────────
@@ -741,13 +755,15 @@
       </label>
 
       <div class="av-field av-field--grow">
-        <span>Message — edit visually or switch to HTML</span>
+        <span>Message — edit visually, insert client fields, or switch to HTML</span>
         <LiveHtmlEditor
           bind:value={offer.bodyHtml}
+          fields={$mergeFieldOptions}
           minHeight="240px"
           placeholder="Write the offer your clients will see…"
         />
       </div>
+
 
       <div class="av-offer-cta-grid">
         <label class="av-field">
@@ -762,11 +778,13 @@
 
       <div class="av-offer-foot">
         {#if offerSavedMsg}<span class="av-offer-saved">{offerSavedMsg}</span>{/if}
+        <button class="reload-btn" on:click={() => (showOfferPreview = true)}>👁 Preview</button>
         <button class="save-btn" on:click={saveOffer} disabled={offerSaving}>
           {offerSaving ? 'Saving…' : '💾 Save offer'}
         </button>
       </div>
     </section>
+
   {:else if tab === 'stages'}
 
     <!-- ── Unified: every centralized stage + its automation rules ─────── -->
@@ -1115,7 +1133,19 @@
   </div>
 {/if}
 
+<!-- ── Client offer preview (exactly what clients see; sample data filled in) ── -->
+{#if showOfferPreview}
+  <ClientOfferPopup
+    title={fillOfferSample(offer.title)}
+    bodyHtml={fillOfferSample(offer.bodyHtml)}
+    ctaLabel={offer.ctaLabel}
+    ctaUrl={offer.ctaUrl}
+    on:close={() => (showOfferPreview = false)}
+  />
+{/if}
+
 <style lang="scss">
+
   /* Cohesive with the IRP dashboard admin surfaces + global style bible:
      teal accent (--color-highlight-2 / #02b5bb), Jost body font, slate neutrals. */
   .automation-view {
