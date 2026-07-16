@@ -639,7 +639,7 @@
     status: "draft",
     approvers: [],
     approvals: [],
-    comments: [],
+    // comments: [],
     changeLog: [],
     clientVisible: false,
     sentToClientAt: null,
