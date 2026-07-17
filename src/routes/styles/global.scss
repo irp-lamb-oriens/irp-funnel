@@ -92,3 +92,77 @@
   user-select: none;
 }
 
+/* ── Markdown-rendered descriptions (client-facing quote/status copy) ────────
+   Applied to any container that renders staff-authored Markdown via
+   renderMarkdown(). The container keeps its own font-size / colour; these rules
+   style the generated elements while inheriting that base. Centralised here so
+   every description shares ONE definition (DRY). */
+:global(.md-prose > *:first-child) { margin-top: 0; }
+:global(.md-prose > *:last-child) { margin-bottom: 0; }
+:global(.md-prose p) { margin: 0 0 0.6em; }
+:global(.md-prose ul), :global(.md-prose ol) { margin: 0.5em 0; padding-left: 1.25em; }
+:global(.md-prose li) { margin: 0.2em 0; }
+:global(.md-prose li > p) { margin: 0; }
+:global(.md-prose li::marker) { color: var(--color-highlight-2); }
+:global(.md-prose strong) { font-weight: 700; }
+:global(.md-prose em) { font-style: italic; }
+:global(.md-prose a) {
+  color: #0a7e82;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+:global(.md-prose a:hover) { color: var(--color-highlight-2); }
+:global(.md-prose code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: rgba(var(--color-highlight-2-rgb), 0.08);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+:global(.md-prose pre) {
+  margin: 0.6em 0;
+  padding: 0.8em 1em;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.85em;
+}
+:global(.md-prose pre code) { background: none; padding: 0; color: inherit; }
+:global(.md-prose h1), :global(.md-prose h2), :global(.md-prose h3), :global(.md-prose h4) {
+  margin: 0.7em 0 0.35em;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+:global(.md-prose h1) { font-size: 1.35em; }
+:global(.md-prose h2) { font-size: 1.2em; }
+:global(.md-prose h3) { font-size: 1.08em; }
+:global(.md-prose h4) { font-size: 1em; }
+:global(.md-prose blockquote) {
+  margin: 0.6em 0;
+  padding: 0.4em 0.9em;
+  border-left: 3px solid rgba(var(--color-highlight-2-rgb), 0.45);
+  background: rgba(var(--color-highlight-2-rgb), 0.05);
+  border-radius: 0 8px 8px 0;
+  color: #475569;
+}
+:global(.md-prose hr) { border: none; border-top: 1px solid #e2e8f0; margin: 0.9em 0; }
+:global(.md-prose table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 0.95em;
+}
+:global(.md-prose th), :global(.md-prose td) {
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  text-align: left;
+}
+:global(.md-prose th) { background: #f8fafc; font-weight: 700; }
+:global(.md-prose img) { max-width: 100%; height: auto; border-radius: 8px; }
+
+

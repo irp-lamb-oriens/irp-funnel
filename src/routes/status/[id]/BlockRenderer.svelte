@@ -24,6 +24,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { Quote, QuoteBlock, QuoteLineItem } from '../../dashboard/store.ts';
   import { sanitizeHtml } from './sanitizeHtml.ts';
+  import { renderMarkdown } from './renderMarkdown.ts';
   import { aggregateByCurrency, formatMoney } from '$lib/money.ts';
   import { buildMergeContext, renderMergeFields } from '$lib/mergeFields.ts';
 
@@ -220,7 +221,7 @@
                       {#if item.isOptional && !isSelected}<span class="br-optional-tag">Optional</span>{/if}
                     </span>
                     {#if item.notes}
-                      <span class="br-item-notes">{item.notes}</span>
+                      <div class="br-item-notes md-prose">{@html renderMarkdown(item.notes)}</div>
                     {/if}
                   </td>
                   <td class="br-amt" class:br-amt-dim={!!item.isOptional && !isSelected}>
@@ -255,7 +256,7 @@
           {#if (quote as any).clientDescription}
             <div class="br-notes-card br-client-description">
               <p class="br-notes-label">About this service</p>
-              <p class="br-notes-text">{(quote as any).clientDescription}</p>
+              <div class="br-notes-text md-prose">{@html renderMarkdown((quote as any).clientDescription)}</div>
             </div>
           {/if}
         </div>

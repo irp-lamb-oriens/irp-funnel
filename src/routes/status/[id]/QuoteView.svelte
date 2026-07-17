@@ -4,6 +4,7 @@
   import type { Quote } from '../../dashboard/store.ts';
   import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription } from '../../dashboard/store.ts';
   import BlockRenderer from './BlockRenderer.svelte';
+  import { renderMarkdown } from './renderMarkdown.ts';
   import { project } from './store.ts';
   import { irpStaffIsAuthenticated } from '../../../lib/auth/irpStaff.ts';
 
@@ -266,7 +267,7 @@
                     <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
                   {#if g.description}
-                    <span class="qv-group__desc">{g.description}</span>
+                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
                   {/if}
                 </span>
               </div>
@@ -299,7 +300,7 @@
                     <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
                   {#if g.description}
-                    <span class="qv-group__desc">{g.description}</span>
+                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
                   {/if}
                   <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
 
@@ -337,7 +338,7 @@
                     <span class="qv-group__price">+{formatCurrency(groupClientTotal(g), quote.currency)}</span>
                   </span>
                   {#if g.description}
-                    <span class="qv-group__desc">{g.description}</span>
+                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
                   {/if}
                   <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
 
@@ -396,7 +397,7 @@
     {#if clientDesc}
       <div class="qv-notes">
         <p class="qv-notes-label">About this service</p>
-        <p class="qv-notes-text">{clientDesc}</p>
+        <div class="qv-notes-text md-prose">{@html renderMarkdown(clientDesc)}</div>
       </div>
     {:else if descLoading}
       <div class="qv-notes qv-notes--loading" aria-live="polite">
