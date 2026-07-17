@@ -3712,6 +3712,43 @@ export async function saveClientOffer(
 }
 
 
+// ─── Quote approvers (dashboard-configurable) ────────────────────────────────
+//
+// The staff addresses that may approve quotes / request changes, AND that
+// receive the "quote pending approval" email. Edited from Automations →
+// Approvers. Backed by API/dashboard/automation/quoteApprovers.ts.
+
+export interface QuoteApproversConfig {
+  approvers: string[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+/** Fetch the current quote-approvers list. */
+export async function fetchQuoteApprovers(): Promise<QuoteApproversConfig> {
+  const data = await apiFetch('/api/dashboard/quote-approvers');
+  return {
+    approvers: Array.isArray(data.approvers) ? data.approvers : [],
+    updatedAt: data.updatedAt ?? null,
+    updatedBy: data.updatedBy ?? null,
+  };
+}
+
+/** Save (upsert) the quote-approvers list. */
+export async function saveQuoteApprovers(approvers: string[]): Promise<QuoteApproversConfig> {
+  const data = await apiFetch('/api/dashboard/quote-approvers', {
+    method: 'PUT',
+    body: JSON.stringify({ approvers }),
+  });
+  return {
+    approvers: Array.isArray(data.approvers) ? data.approvers : [],
+    updatedAt: data.updatedAt ?? null,
+    updatedBy: data.updatedBy ?? null,
+  };
+}
+
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Overview Field Registry (Automations → Overview fields)
 //

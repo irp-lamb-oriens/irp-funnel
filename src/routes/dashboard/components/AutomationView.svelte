@@ -19,7 +19,10 @@
     fetchClientOffer,
     saveClientOffer,
     type ClientOfferConfig,
+    fetchQuoteApprovers,
+    saveQuoteApprovers,
     fetchStages,
+
 
 
     createStage,
@@ -55,7 +58,8 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' = 'stages';
+
   let busyId = ''; // id of the row currently saving (disables its controls)
 
   // ── Client offer popup (single global message shown on the /status page) ──
@@ -78,7 +82,57 @@
 
 
 
+  // ── Quote approvers (who may approve quotes + receives the approval email) ──
+  let approvers: string[] = [];
+  let approversSaving = false;
+  let approversSavedMsg = '';
+  let newApprover = '';
+
+  async function loadApprovers() {
+    try {
+      const cfg = await fetchQuoteApprovers();
+      approvers = cfg.approvers;
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to load quote approvers.';
+    }
+  }
+
+  async function persistApprovers(next: string[]) {
+    approversSaving = true;
+    approversSavedMsg = '';
+    error = '';
+    try {
+      const cfg = await saveQuoteApprovers(next);
+      approvers = cfg.approvers;
+      approversSavedMsg = '✓ Saved';
+      setTimeout(() => (approversSavedMsg = ''), 2500);
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to save quote approvers.';
+    } finally {
+      approversSaving = false;
+    }
+  }
+
+  function addApprover() {
+    const email = newApprover.trim().toLowerCase();
+    if (!email.includes('@')) {
+      error = 'Enter a valid email address.';
+      return;
+    }
+    if (approvers.includes(email)) {
+      newApprover = '';
+      return;
+    }
+    newApprover = '';
+    persistApprovers([...approvers, email]);
+  }
+
+  function removeApprover(email: string) {
+    persistApprovers(approvers.filter((a) => a !== email));
+  }
+
   // ── Recipients state (per-email-type team CC/BCC exclusions) ─────────────
+
   // `recipientMap[emailType]` is the live Set of excluded team addresses for
   // that type. Toggling a checkbox recomputes the set + persists it.
   let teamRecipients: TeamRecipient[] = [];
@@ -230,6 +284,8 @@
   onMount(() => {
     loadAll();
     loadOffer();
+    loadApprovers();
+
     // Ensure the Overview Field Registry is loaded so the template editor's
     // merge-field picker (`$mergeFieldOptions`) is populated. Non-blocking and
     // idempotent — skipped when the dashboard boot already hydrated it.
@@ -613,7 +669,11 @@
     <button class="av-tab" class:av-tab--active={tab === 'offer'} on:click={() => (tab = 'offer')}>
       🎁 Client offer
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'approvers'} on:click={() => (tab = 'approvers')}>
+      ✅ Approvers
+    </button>
   </div>
+
 
 
 
@@ -785,7 +845,55 @@
       </div>
     </section>
 
+  {:else if tab === 'approvers'}
+    <!-- ── Quote approvers (who may approve quotes + gets the approval email) ── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      These staff members receive the “quote pending approval” email and are the
+      only ones allowed to approve a quote or request changes. Add or remove
+      anyone below — changes take effect immediately for every new approval.
+    </p>
+
+    <section class="av-card av-offer">
+      <div class="av-approver-add">
+        <label class="av-field" style="flex:1">
+          <span>Add an approver</span>
+          <input
+            type="email"
+            bind:value={newApprover}
+            placeholder="name@internationalrelocationpartner.com"
+            on:keydown={(e) => e.key === 'Enter' && addApprover()}
+          />
+        </label>
+        <button class="save-btn" on:click={addApprover} disabled={approversSaving}>
+          {approversSaving ? 'Saving…' : '+ Add'}
+        </button>
+      </div>
+
+      {#if approvers.length === 0}
+        <div class="av-empty">No approvers configured — no one can approve quotes.</div>
+      {:else}
+        <ul class="av-approver-list">
+          {#each approvers as email (email)}
+            <li class="av-approver-row">
+              <span class="av-approver-email">{email}</span>
+              <button
+                class="remove-btn"
+                on:click={() => removeApprover(email)}
+                disabled={approversSaving}
+                title="Remove approver"
+              >✕</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+
+      {#if approversSavedMsg}
+        <div class="av-offer-foot"><span class="av-offer-saved">{approversSavedMsg}</span></div>
+      {/if}
+    </section>
+
   {:else if tab === 'stages'}
+
 
     <!-- ── Unified: every centralized stage + its automation rules ─────── -->
 
@@ -1382,6 +1490,16 @@
   @media (max-width: 700px) {
     .av-offer-cta-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── Quote approvers editor ─────────────────────────────────────────── */
+  .av-approver-add { display: flex; align-items: flex-end; gap: 0.7rem; }
+  .av-approver-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+  .av-approver-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.7rem;
+    padding: 0.55rem 0.8rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+  }
+  .av-approver-email { font-size: 0.86rem; font-weight: 600; color: #0f172a; word-break: break-all; }
+
 
 
   /* ── Badges ─────────────────────────────────────────────────────────── */

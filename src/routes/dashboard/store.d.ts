@@ -1621,6 +1621,15 @@ export interface ClientOfferConfig {
 export declare function fetchClientOffer(): Promise<ClientOfferConfig>;
 /** Save (upsert) the client-offer config. */
 export declare function saveClientOffer(payload: Pick<ClientOfferConfig, 'enabled' | 'title' | 'bodyHtml' | 'ctaLabel' | 'ctaUrl'>): Promise<ClientOfferConfig>;
+export interface QuoteApproversConfig {
+    approvers: string[];
+    updatedAt?: string | null;
+    updatedBy?: string | null;
+}
+/** Fetch the current quote-approvers list. */
+export declare function fetchQuoteApprovers(): Promise<QuoteApproversConfig>;
+/** Save (upsert) the quote-approvers list. */
+export declare function saveQuoteApprovers(approvers: string[]): Promise<QuoteApproversConfig>;
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';

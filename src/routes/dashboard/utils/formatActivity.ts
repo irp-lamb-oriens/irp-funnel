@@ -120,16 +120,35 @@ export function formatActivity(entry: ActivityEntry): FormattedActivity {
         raw: entry,
       };
     case 'email_triggered':
+    case 'email_sent': {
+      // Friendly labels for emails sent outside the client-drip registry
+      // (to providers, or to the team via the quote system). Unknown types fall
+      // back to the raw key so nothing is ever hidden from the audit feed.
+      const EMAIL_TYPE_LABELS: Record<string, string> = {
+        provider_rfq: 'provider RFQ',
+        provider_selected: 'provider selection',
+        provider_rating_request: 'provider rating request',
+        quote_approval_request: 'quote approval request',
+        quote_to_client: 'quote to client',
+        pricing_request: 'pricing-desk request',
+      };
+      const label = EMAIL_TYPE_LABELS[e.emailType] ?? e.emailType ?? 'custom';
+      const firstRecipient =
+        typeof e.recipientEmail === 'string' && e.recipientEmail
+          ? e.recipientEmail.split(',')[0].trim()
+          : '';
       return {
         who,
-        what: `sent a "${e.emailType ?? 'custom'}" email`,
-        detail: '',
+        what: `sent a "${label}" email`,
+        detail: firstRecipient ? `→ ${firstRecipient}` : '',
         whenRelative,
         whenExact,
         icon: '📧',
         undoable: false,
         raw: entry,
       };
+    }
+
     case 'client_reply': {
       const msg = typeof e.message === 'string' ? e.message : '';
       const preview = msg.length > 80 ? `"${msg.slice(0, 80)}…"` : msg ? `"${msg}"` : '';
