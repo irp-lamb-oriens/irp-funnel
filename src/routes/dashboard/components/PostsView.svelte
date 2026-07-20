@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { authToken, authEmail, STAGE_LABELS } from '../store.ts';
+  import { get } from 'svelte/store';
+  import {
+    authToken, authEmail, STAGE_LABELS,
+    mergeFieldOptions, fieldConfig, loadOverviewFields,
+  } from '../store.ts';
+  import LiveHtmlEditor from '$lib/LiveHtmlEditor.svelte';
+
 
   // ── Types ────────────────────────────────────────────────────────────────
   interface Post {
@@ -88,7 +94,12 @@
   onMount(async () => {
     await fetchPosts();
     newPost();
+    // Hydrate the Overview Field Registry so the WYSIWYG merge-field picker
+    // ($mergeFieldOptions) is populated. Idempotent + non-blocking — skipped
+    // when the dashboard boot already loaded it.
+    if (get(fieldConfig).length === 0) loadOverviewFields().catch(() => {});
   });
+
 
   async function fetchPosts() {
     loading = true;
@@ -586,23 +597,29 @@
         </div>
       {/if}
 
-      <!-- Body HTML -->
+      <!-- Body — centralized WYSIWYG editor (same engine as email templates &
+           the client-offer editor). Formatting toolbar + merge-field picker +
+           HTML-source toggle. Merge fields are offered for broadcasts only —
+           web articles are public pages with no client context. -->
       <div class="posts-view__field">
-        <div class="posts-view__section-label">📝 Body HTML</div>
-        <textarea
-          class="posts-view__textarea"
-          placeholder="Write your email body here. Full HTML is accepted — paragraphs, headers, lists, links. The IRP branded wrapper (logo, signature) is added automatically."
+        <div class="posts-view__section-label">📝 {kind === 'article' ? 'Article Body' : 'Email Body'}</div>
+        <LiveHtmlEditor
           bind:value={bodyHtml}
-          rows="10"
-        ></textarea>
+          fields={kind === 'broadcast' ? $mergeFieldOptions : []}
+          minHeight="280px"
+          placeholder={kind === 'article'
+            ? 'Write your article — format visually, or switch to HTML…'
+            : 'Write your email — format visually, insert client fields, or switch to HTML…'}
+        />
         <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
           {#if kind === 'article'}
-            Tip: Use &lt;p&gt; for paragraphs, &lt;h2&gt;/&lt;h3&gt; for sections, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists. The page header and styling are added automatically.
+            Format visually with the toolbar, or click <strong>&lt;/&gt; HTML</strong> to edit raw HTML. The page header and styling are added automatically.
           {:else}
-            Tip: Use &lt;p&gt; tags for paragraphs, &lt;strong&gt; for bold, &lt;ul&gt;/&lt;li&gt; for lists. The logo, header, and signature wrap your content automatically.
+            Format visually, insert client fields with <strong>{'{{ }}'} Field</strong>, or click <strong>&lt;/&gt; HTML</strong> for raw HTML. The logo, header, and signature wrap your content automatically.
           {/if}
         </div>
       </div>
+
 
       {#if kind === 'broadcast'}
       <!-- Send date -->
