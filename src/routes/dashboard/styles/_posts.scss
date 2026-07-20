@@ -334,6 +334,20 @@
       &:hover { background: $accent-hover; transform: translateY(-1px); }
     }
 
+    // "Send Now" — immediate dispatch. Vibrant success→accent gradient so it
+    // reads as the highest-intent action without clashing with the palette.
+    &--sendnow {
+      background: linear-gradient(135deg, $success, $accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba($success, 0.35);
+      &:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba($success, 0.45);
+      }
+    }
+
+
     &--preview {
       background: transparent;
       color: $accent;

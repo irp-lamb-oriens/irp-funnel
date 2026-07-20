@@ -255,9 +255,13 @@
         title: title.trim(),
         bodyHtml: bodyHtml.trim(),
         author: $authEmail ?? 'pablo@internationalrelocationpartner.com',
-        status: 'draft',
         kind,
       };
+      // Preserve status when editing an already-scheduled/dispatched post — a
+      // plain "Save" must never silently downgrade a live post back to draft.
+      // Brand-new posts (and existing drafts) are saved as "draft".
+      if (!selectedPost || selectedPost.status === 'draft') payload.status = 'draft';
+
       if (kind === 'article') {
         payload.slug = slug.trim();
       } else {
@@ -320,8 +324,39 @@
     }
   }
 
+  // ── Send Now (immediate dispatch + resend) ────────────────────────────────
+  // Persists the latest edits, then hits /send-now which enqueues to every
+  // matching client and kicks the queue flush server-side. Doubles as "resend"
+  // for an already-dispatched post.
+  async function sendNow() {
+    if (!title.trim() || !bodyHtml.trim()) {
+      error = 'Title and body are required before sending.';
+      return;
+    }
+    const n = audienceMatched;
+    const verb = selectedPost?.status === 'dispatched' ? 'Resend' : 'Send';
+    if (!confirm(`${verb} "${title.trim()}" to ${n} client${n === 1 ? '' : 's'} right now? This cannot be undone.`)) return;
+    saving = true;
+    error = '';
+    try {
+      // Persist current content first so the send uses exactly what's on screen.
+      await saveDraft();
+      if (!selectedPost) return;
+      const data = await apiFetch(`/api/posts/${selectedPost.id}/send-now`, { method: 'POST' });
+      showToast(`🚀 Queued ${data.sentCount ?? 0} email${(data.sentCount ?? 0) === 1 ? '' : 's'} — delivering now`);
+      await fetchPosts();
+      const refreshed = posts.find(p => p.id === selectedPost?.id);
+      if (refreshed) selectPost(refreshed);
+    } catch (e: any) {
+      error = e.message;
+    } finally {
+      saving = false;
+    }
+  }
+
   // ── Publish web article ─────────────────────────────────────────────────
   async function publishArticle() {
+
     if (!title.trim() || !bodyHtml.trim()) {
       error = 'Title and body are required before publishing.';
       return;
@@ -512,8 +547,9 @@
 
     <div class="posts-view__compose-title">
       {#if selectedPost?.status === 'dispatched'}
-        📊 Post Stats
+        ✏️ Edit Sent Post
       {:else if kind === 'article'}
+
         {selectedPost ? '✏️ Edit Article' : '📄 New Article'}
       {:else if selectedPost}
         ✏️ Edit Post
@@ -528,21 +564,23 @@
       </div>
     {/if}
 
-    <!-- Dispatched post — read-only stats ───────────────────────────────── -->
+    <!-- Dispatched post — compact "already sent" banner. The full form below
+         stays editable so operators can revise + reschedule + resend. -->
     {#if selectedPost?.status === 'dispatched'}
       <div class="posts-view__dispatch-info">
-        <strong>✓ Dispatched on {formatDate(selectedPost.dispatchedAt ?? '')}</strong><br>
-        Sent to <strong>{selectedPost.sentCount ?? 0}</strong> clients
+        <strong>✓ Sent on {formatDate(selectedPost.dispatchedAt ?? '')}</strong> —
+        delivered to <strong>{selectedPost.sentCount ?? 0}</strong> client{(selectedPost.sentCount ?? 0) === 1 ? '' : 's'}
         {#if (selectedPost.failedCount ?? 0) > 0}
           · <span style="color:var(--warning);">{selectedPost.failedCount} failed</span>
-        {/if}<br><br>
-        <strong>Subject / Title:</strong> {selectedPost.title}<br>
-        <strong>Author:</strong> {selectedPost.author}
+        {/if}
+        <br><span style="font-size:11px;color:var(--text-dim);">Edit the content below, then <strong>Reschedule</strong> or <strong>Resend Now</strong>.</span>
       </div>
+    {/if}
 
-    <!-- Active compose form ─────────────────────────────────────────────── -->
-    {:else}
+    <!-- Compose / edit form — drafts, scheduled AND dispatched posts are all
+         fully editable (operators can revise + reschedule + resend). -->
       <!-- Kind toggle (broadcast vs web article) -->
+
       <div class="posts-view__field">
         <div style="display:flex;gap:6px;">
           <button
@@ -735,7 +773,7 @@
           class="posts-view__btn posts-view__btn--save"
           on:click={saveDraft}
           disabled={saving}
-        >{saving ? 'Saving…' : '💾 Save Draft'}</button>
+        >{saving ? 'Saving…' : (selectedPost && selectedPost.status !== 'draft' ? '💾 Save' : '💾 Save Draft')}</button>
 
         {#if kind === 'article'}
           <button
@@ -748,7 +786,13 @@
             class="posts-view__btn posts-view__btn--schedule"
             on:click={schedulePost}
             disabled={saving || !title.trim() || !bodyHtml.trim()}
-          >{saving ? 'Scheduling…' : '📅 Schedule'}</button>
+          >{saving ? 'Scheduling…' : (selectedPost?.status === 'dispatched' ? '📅 Reschedule' : '📅 Schedule')}</button>
+          <button
+            class="posts-view__btn posts-view__btn--sendnow"
+            on:click={sendNow}
+            disabled={saving || !title.trim() || !bodyHtml.trim() || audienceMatched === 0}
+            title="Dispatch immediately to all matching drip-enabled clients"
+          >{saving ? 'Sending…' : (selectedPost?.status === 'dispatched' ? '🚀 Resend Now' : '🚀 Send Now')}</button>
         {/if}
 
         {#if selectedPost?.status === 'draft'}
@@ -759,9 +803,9 @@
           >🗑</button>
         {/if}
       </div>
-    {/if}
   </div>
 </div>
+
 
 <!-- ── Toast ────────────────────────────────────────────────────────────── -->
 {#if toast}
