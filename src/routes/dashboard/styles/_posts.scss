@@ -19,6 +19,8 @@
     grid-template-columns: 1fr;
     height: auto;
     overflow: auto;
+    padding: $sp-4;
+    gap: $sp-4;
   }
 
   // ── Left: post list ───────────────────────────────────────────────────────
@@ -27,6 +29,8 @@
     padding-right: $sp-2;
     &::-webkit-scrollbar { width: 4px; }
     &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 2px; }
+
+    @media (max-width: 900px) { padding-right: 0; }
   }
 
   &__list-header {
@@ -170,6 +174,10 @@
     @media (max-width: 900px) {
       height: auto;
       margin-top: $sp-4;
+    }
+    @media (max-width: 560px) {
+      padding: $sp-4;
+      margin-top: $sp-2;
     }
   }
 
@@ -321,6 +329,8 @@
     flex: 1;
     justify-content: center;
 
+    @media (max-width: 560px) { flex: 1 1 45%; }
+
     &--save {
       background: $surface-3;
       color: $text-2;
@@ -385,9 +395,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Recipient send audit — two panels (Delivered / Failed) shown under a
-   dispatched post so operators can see exactly who was reached and who failed
-   (and why). Distinct .posts-audit namespace; reuses the same design tokens.
+   Recipient send audit — two collapsible panels (Delivered / Failed) shown
+   under a dispatched post so operators can see exactly who was reached and who
+   failed (and why). Distinct .posts-audit namespace; reuses the design tokens.
+   Fully responsive (stacks < 720px) and tuned for AA contrast on the white bg.
    ═══════════════════════════════════════════════════════════════════════════ */
 .posts-audit {
   display: grid;
@@ -395,35 +406,48 @@
   gap: $sp-3;
   margin: $sp-4 0;
 
-  @media (max-width: 720px) { grid-template-columns: 1fr; }
+  @media (max-width: 720px) { grid-template-columns: 1fr; gap: $sp-2; }
 
   &__panel {
     display: flex;
     flex-direction: column;
     border: 1px solid $border;
     border-radius: $r-md;
-    background: $surface-2;
+    background: $surface;
     overflow: hidden;
+    transition: border-color $t-fast, box-shadow $t-fast;
 
-    &--fail {
-      border-color: rgba($danger, 0.28);
-      background: rgba($danger, 0.04);
-    }
+    &.is-open { box-shadow: $shadow-sm; }
+    &--fail { border-color: rgba($danger, 0.28); }
+    &--fail.is-open { box-shadow: 0 2px 10px rgba($danger, 0.12); }
   }
 
+  // Head doubles as the accordion toggle button.
   &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: $sp-2;
+    width: 100%;
+    min-height: 44px;
     padding: $sp-2 $sp-3;
-    border-bottom: 1px solid $border;
+    background: transparent;
+    border: none;
+    font-family: $font;
+    color: $text;
+    text-align: left;
+    cursor: pointer;
+    transition: background $t-fast;
+
+    &:hover { background: rgba(0, 0, 0, 0.025); }
+    &:focus-visible { outline: 2px solid $border-focus; outline-offset: -2px; }
   }
+  &__panel--fail &__head:hover { background: rgba($danger, 0.05); }
 
   &__title {
     display: inline-flex;
     align-items: center;
-    gap: $sp-1;
+    gap: $sp-2;
     font-size: 12px;
     font-weight: 700;
     color: $text;
@@ -432,28 +456,47 @@
 
   &__badge {
     display: inline-flex;
-    min-width: 20px;
+    min-width: 22px;
     height: 18px;
-    padding: 0 6px;
+    padding: 0 7px;
     align-items: center;
     justify-content: center;
     border-radius: $r-full;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1;
 
-    &--ok   { background: rgba($success, 0.15); color: $success; }
-    &--fail { background: rgba($danger, 0.16); color: $danger; }
+    // Darker fills so the count reads with AA contrast on the white panel.
+    &--ok   { background: rgba($success, 0.16); color: #047857; }
+    &--fail { background: rgba($danger, 0.12);  color: $danger; }
   }
 
+  &__chevron {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: $text-dim;
+    line-height: 1;
+    transition: transform $t-med;
+  }
+  &__panel.is-open &__chevron { transform: rotate(180deg); }
+
+  // Body revealed only when the panel is open.
+  &__body {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid $border;
+  }
+  &__panel--fail &__body { border-top-color: rgba($danger, 0.18); }
+
   &__search {
-    flex: 1;
-    min-width: 0;
-    height: 28px;
-    padding: 4px 10px;
+    align-self: stretch;
+    box-sizing: border-box;
+    margin: $sp-2 $sp-2 0;
+    height: 32px;
+    padding: 4px 12px;
     border-radius: $r-sm;
     border: 1px solid $border;
-    background: $surface;
+    background: $surface-2;
     color: $text;
     font-size: 12px;
     font-family: $font;
@@ -461,8 +504,7 @@
     transition: border-color $t-fast, box-shadow $t-fast;
 
     &::placeholder { color: $text-dim; }
-    &:focus { border-color: $accent; box-shadow: 0 0 0 2px $accent-glow; }
-    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:focus { border-color: $accent; box-shadow: 0 0 0 2px $accent-glow; background: $surface; }
   }
 
   &__list {
@@ -472,7 +514,11 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-height: 120px;
+    max-height: 320px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: $surface-4; border-radius: 2px; }
   }
 
   &__row {
@@ -480,11 +526,11 @@
     align-items: baseline;
     justify-content: space-between;
     gap: $sp-2;
-    padding: 7px 8px;
+    padding: 8px;
     border-radius: $r-sm;
     transition: background $t-fast;
 
-    &:hover { background: $surface-3; }
+    &:hover { background: $surface-2; }
     &--fail { flex-direction: column; align-items: stretch; gap: 3px; }
   }
 
@@ -512,11 +558,13 @@
     text-overflow: ellipsis;
     max-width: 55%;
   }
+  &__row--fail &__email { max-width: none; }
 
   &__reason {
     font-size: 11px;
     color: $danger;
-    line-height: 1.3;
+    line-height: 1.35;
+    word-break: break-word;
   }
 
   &__empty {
@@ -524,6 +572,44 @@
     text-align: center;
     font-size: 12px;
     color: $text-dim;
+  }
+
+  // Count-only fallback — shown when a send predates per-recipient tracking
+  // (counts exist on the post doc but the itemized arrays were never stored).
+  &__summary {
+    padding: $sp-4 $sp-3;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong { font-size: 22px; font-weight: 800; color: $text; line-height: 1.1; }
+    span   { font-size: 11px; color: $text-dim; }
+  }
+
+  &__error {
+    padding: $sp-4 $sp-3;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $sp-2;
+    font-size: 12px;
+    color: $danger;
+  }
+
+  &__retry {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: $r-sm;
+    border: 1px solid $border;
+    background: $surface;
+    color: $text-2;
+    cursor: pointer;
+    font-family: $font;
+    transition: border-color $t-fast, color $t-fast;
+    &:hover { border-color: $accent; color: $accent; }
   }
 
   &__pager {
@@ -537,14 +623,14 @@
     color: $text-muted;
 
     button {
-      width: 26px;
-      height: 26px;
+      width: 30px;
+      height: 30px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: $r-xs;
       border: 1px solid $border;
-      background: transparent;
+      background: $surface;
       color: $text;
       font-size: 15px;
       line-height: 1;

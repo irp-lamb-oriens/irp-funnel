@@ -95,14 +95,22 @@
   let showPreview = false;
 
   // ── Recipient audit (who a dispatched post reached / failed) ──────────────
+  // The per-recipient arrays load from a SEPARATE async endpoint than the post
+  // doc (which carries sentCount/failedCount). `auditState` tracks that fetch
+  // so the UI never shows a stale "0" while the real numbers are still loading,
+  // and reconciles against the post-doc counts once it resolves.
   let recipients: Recipient[] = [];
   let failures: Failure[] = [];
-  let auditLoading = false;
+  let auditState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
   let recipientSearch = '';
   let failureSearch = '';
   let recipientPage = 1;
   let failurePage = 1;
   const PAGE_SIZE = 8;
+
+  // Collapsible panels — Delivered open by default, Failed is a dropdown.
+  let deliveredOpen = true;
+  let failedOpen = false;
 
   // ── Init ──────────────────────────────────────────────────────────────────
   onMount(async () => {
@@ -128,10 +136,11 @@
     }
   }
 
-  // Load the per-recipient audit for a dispatched post. Best-effort: the send
-  // itself already happened, so a failed fetch here just hides the breakdown.
+  // Load the per-recipient audit for a dispatched post. Guards against a stale
+  // response when the operator switches posts mid-flight (only the fetch that
+  // still matches the selected post is allowed to commit its result).
   async function fetchRecipients(postId: string) {
-    auditLoading = true;
+    auditState = 'loading';
     recipients = [];
     failures = [];
     recipientSearch = '';
@@ -140,19 +149,29 @@
     failurePage = 1;
     try {
       const data = await apiFetch(`/api/posts/${postId}/recipients`);
+      if (selectedPost?.id !== postId) return; // superseded — ignore
       recipients = data.recipients ?? [];
       failures = data.failures ?? [];
-    } catch { /* silent */ }
-    finally { auditLoading = false; }
+      auditState = 'ready';
+    } catch {
+      if (selectedPost?.id === postId) auditState = 'error';
+    }
+  }
+
+  function retryAudit() {
+    if (selectedPost) fetchRecipients(selectedPost.id);
   }
 
   function clearAudit() {
     recipients = [];
     failures = [];
+    auditState = 'idle';
     recipientSearch = '';
     failureSearch = '';
     recipientPage = 1;
     failurePage = 1;
+    deliveredOpen = true;
+    failedOpen = false;
   }
 
   // Case-insensitive match across name + email (+ reason, for failures).
@@ -183,6 +202,15 @@
   $: if (failurePage > failurePages) failurePage = failurePages;
   $: pagedRecipients = pageSlice(filteredRecipients, recipientPage);
   $: pagedFailures   = pageSlice(filteredFailures, failurePage);
+
+  // Reconciled counts — prefer the itemized array length, else fall back to the
+  // authoritative post-doc counters so the badge always agrees with the banner.
+  $: deliveredCount = recipients.length > 0 ? recipients.length : (selectedPost?.sentCount ?? 0);
+  $: failedCount    = failures.length   > 0 ? failures.length   : (selectedPost?.failedCount ?? 0);
+  // Count-only = the fetch is done, the itemized list is empty, but the post-doc
+  // says people were reached/failed (a send that predates per-recipient tracking).
+  $: deliveredCountOnly = auditState === 'ready' && recipients.length === 0 && (selectedPost?.sentCount ?? 0) > 0;
+  $: failedCountOnly    = auditState === 'ready' && failures.length   === 0 && (selectedPost?.failedCount ?? 0) > 0;
 
   // ── Composer helpers ──────────────────────────────────────────────────────
   function newPost() {
@@ -226,8 +254,8 @@
     previewUrl = '';
     previewSrcdoc = '';
     // Load the send breakdown for dispatched posts; otherwise clear it.
+    clearAudit();
     if (p.status === 'dispatched') fetchRecipients(p.id);
-    else clearAudit();
     refreshAudience();
   }
 
@@ -633,7 +661,7 @@
     </div>
 
     {#if error}
-      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:#ef4444;margin-bottom:16px;">
+      <div style="background:rgba(198,36,38,0.08);border:1px solid rgba(198,36,38,0.3);border-radius:6px;padding:8px 12px;font-size:12px;color:#c62426;margin-bottom:16px;">
         {error}
       </div>
     {/if}
@@ -645,96 +673,127 @@
         <strong>✓ Sent on {formatDate(selectedPost.dispatchedAt ?? '')}</strong> —
         delivered to <strong>{selectedPost.sentCount ?? 0}</strong> client{(selectedPost.sentCount ?? 0) === 1 ? '' : 's'}
         {#if (selectedPost.failedCount ?? 0) > 0}
-          · <span style="color:var(--warning);">{selectedPost.failedCount} failed</span>
+          · <span style="color:var(--irp-warning);font-weight:600;">{selectedPost.failedCount} failed</span>
         {/if}
-        <br><span style="font-size:11px;color:var(--text-dim);">Edit the content below, then <strong>Reschedule</strong> or <strong>Resend Now</strong>.</span>
+        <br><span style="font-size:11px;color:var(--irp-text-dim);">Edit the content below, then <strong>Reschedule</strong> or <strong>Resend Now</strong>.</span>
       </div>
 
       <!-- Per-recipient audit — who was reached and who failed (+ why). Two
-           separate, searchable, paginated panels. -->
+           collapsible, searchable, paginated panels. Counts reconcile against
+           the post-doc totals so the badges always match the banner above. -->
       <div class="posts-audit">
         <!-- Delivered -->
-        <section class="posts-audit__panel">
-          <header class="posts-audit__head">
+        <section class="posts-audit__panel" class:is-open={deliveredOpen}>
+          <button class="posts-audit__head" on:click={() => (deliveredOpen = !deliveredOpen)} aria-expanded={deliveredOpen}>
             <span class="posts-audit__title">
               ✅ Delivered
-              <span class="posts-audit__badge posts-audit__badge--ok">{recipients.length}</span>
+              <span class="posts-audit__badge posts-audit__badge--ok">{deliveredCount}</span>
             </span>
-            <input
-              class="posts-audit__search"
-              type="search"
-              placeholder="Search name or email…"
-              bind:value={recipientSearch}
-              disabled={auditLoading || recipients.length === 0}
-            />
-          </header>
-
-          {#if auditLoading}
-            <div class="posts-audit__empty">Loading recipients…</div>
-          {:else if filteredRecipients.length === 0}
-            <div class="posts-audit__empty">
-              {recipients.length === 0 ? 'No delivery records for this send.' : 'No matches.'}
+            <span class="posts-audit__chevron" aria-hidden="true">▾</span>
+          </button>
+          {#if deliveredOpen}
+            <div class="posts-audit__body">
+              {#if auditState === 'loading'}
+                <div class="posts-audit__empty">Loading recipients…</div>
+              {:else if auditState === 'error'}
+                <div class="posts-audit__error">
+                  <span>Couldn’t load the recipient list.</span>
+                  <button class="posts-audit__retry" on:click={retryAudit}>Retry</button>
+                </div>
+              {:else if recipients.length > 0}
+                <input
+                  class="posts-audit__search"
+                  type="search"
+                  placeholder="Search name or email…"
+                  bind:value={recipientSearch}
+                />
+                {#if filteredRecipients.length === 0}
+                  <div class="posts-audit__empty">No matches.</div>
+                {:else}
+                  <ul class="posts-audit__list">
+                    {#each pagedRecipients as r (r.clientId + r.email)}
+                      <li class="posts-audit__row">
+                        <span class="posts-audit__name">{r.name || '—'}</span>
+                        <span class="posts-audit__email">{r.email}</span>
+                      </li>
+                    {/each}
+                  </ul>
+                  {#if recipientPages > 1}
+                    <footer class="posts-audit__pager">
+                      <button on:click={() => (recipientPage = Math.max(1, recipientPage - 1))} disabled={recipientPage <= 1} aria-label="Previous page">‹</button>
+                      <span>{recipientPage} / {recipientPages}</span>
+                      <button on:click={() => (recipientPage = Math.min(recipientPages, recipientPage + 1))} disabled={recipientPage >= recipientPages} aria-label="Next page">›</button>
+                    </footer>
+                  {/if}
+                {/if}
+              {:else if deliveredCountOnly}
+                <div class="posts-audit__summary">
+                  <strong>{selectedPost.sentCount}</strong>
+                  <span>delivered · itemized list not recorded for this send</span>
+                </div>
+              {:else}
+                <div class="posts-audit__empty">No delivery records for this send.</div>
+              {/if}
             </div>
-          {:else}
-            <ul class="posts-audit__list">
-              {#each pagedRecipients as r (r.clientId + r.email)}
-                <li class="posts-audit__row">
-                  <span class="posts-audit__name">{r.name || '—'}</span>
-                  <span class="posts-audit__email">{r.email}</span>
-                </li>
-              {/each}
-            </ul>
-            {#if recipientPages > 1}
-              <footer class="posts-audit__pager">
-                <button on:click={() => (recipientPage = Math.max(1, recipientPage - 1))} disabled={recipientPage <= 1} aria-label="Previous page">‹</button>
-                <span>{recipientPage} / {recipientPages}</span>
-                <button on:click={() => (recipientPage = Math.min(recipientPages, recipientPage + 1))} disabled={recipientPage >= recipientPages} aria-label="Next page">›</button>
-              </footer>
-            {/if}
           {/if}
         </section>
 
-        <!-- Failed -->
-        <section class="posts-audit__panel posts-audit__panel--fail">
-          <header class="posts-audit__head">
+        <!-- Failed (dropdown) -->
+        <section class="posts-audit__panel posts-audit__panel--fail" class:is-open={failedOpen}>
+          <button class="posts-audit__head" on:click={() => (failedOpen = !failedOpen)} aria-expanded={failedOpen}>
             <span class="posts-audit__title">
               ⚠️ Failed
-              <span class="posts-audit__badge posts-audit__badge--fail">{failures.length}</span>
+              <span class="posts-audit__badge posts-audit__badge--fail">{failedCount}</span>
             </span>
-            <input
-              class="posts-audit__search"
-              type="search"
-              placeholder="Search name, email or reason…"
-              bind:value={failureSearch}
-              disabled={auditLoading || failures.length === 0}
-            />
-          </header>
-
-          {#if auditLoading}
-            <div class="posts-audit__empty">Loading failures…</div>
-          {:else if filteredFailures.length === 0}
-            <div class="posts-audit__empty">
-              {failures.length === 0 ? 'No failures — everyone was reached 🎉' : 'No matches.'}
+            <span class="posts-audit__chevron" aria-hidden="true">▾</span>
+          </button>
+          {#if failedOpen}
+            <div class="posts-audit__body">
+              {#if auditState === 'loading'}
+                <div class="posts-audit__empty">Loading failures…</div>
+              {:else if auditState === 'error'}
+                <div class="posts-audit__error">
+                  <span>Couldn’t load the failure list.</span>
+                  <button class="posts-audit__retry" on:click={retryAudit}>Retry</button>
+                </div>
+              {:else if failures.length > 0}
+                <input
+                  class="posts-audit__search"
+                  type="search"
+                  placeholder="Search name, email or reason…"
+                  bind:value={failureSearch}
+                />
+                {#if filteredFailures.length === 0}
+                  <div class="posts-audit__empty">No matches.</div>
+                {:else}
+                  <ul class="posts-audit__list">
+                    {#each pagedFailures as f (f.clientId + f.email)}
+                      <li class="posts-audit__row posts-audit__row--fail">
+                        <div class="posts-audit__row-main">
+                          <span class="posts-audit__name">{f.name || '—'}</span>
+                          <span class="posts-audit__email">{f.email || 'no email on file'}</span>
+                        </div>
+                        <span class="posts-audit__reason" title={f.reason}>{f.reason}</span>
+                      </li>
+                    {/each}
+                  </ul>
+                  {#if failurePages > 1}
+                    <footer class="posts-audit__pager">
+                      <button on:click={() => (failurePage = Math.max(1, failurePage - 1))} disabled={failurePage <= 1} aria-label="Previous page">‹</button>
+                      <span>{failurePage} / {failurePages}</span>
+                      <button on:click={() => (failurePage = Math.min(failurePages, failurePage + 1))} disabled={failurePage >= failurePages} aria-label="Next page">›</button>
+                    </footer>
+                  {/if}
+                {/if}
+              {:else if failedCountOnly}
+                <div class="posts-audit__summary">
+                  <strong>{selectedPost.failedCount}</strong>
+                  <span>failed · itemized list not recorded for this send</span>
+                </div>
+              {:else}
+                <div class="posts-audit__empty">No failures — everyone was reached 🎉</div>
+              {/if}
             </div>
-          {:else}
-            <ul class="posts-audit__list">
-              {#each pagedFailures as f (f.clientId + f.email)}
-                <li class="posts-audit__row posts-audit__row--fail">
-                  <div class="posts-audit__row-main">
-                    <span class="posts-audit__name">{f.name || '—'}</span>
-                    <span class="posts-audit__email">{f.email || 'no email on file'}</span>
-                  </div>
-                  <span class="posts-audit__reason" title={f.reason}>{f.reason}</span>
-                </li>
-              {/each}
-            </ul>
-            {#if failurePages > 1}
-              <footer class="posts-audit__pager">
-                <button on:click={() => (failurePage = Math.max(1, failurePage - 1))} disabled={failurePage <= 1} aria-label="Previous page">‹</button>
-                <span>{failurePage} / {failurePages}</span>
-                <button on:click={() => (failurePage = Math.min(failurePages, failurePage + 1))} disabled={failurePage >= failurePages} aria-label="Next page">›</button>
-              </footer>
-            {/if}
           {/if}
         </section>
       </div>
@@ -749,19 +808,19 @@
           <button
             type="button"
             style={kind === 'broadcast'
-              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.5);background:rgba(2,181,187,0.15);color:#9fe9eb;font-size:12px;font-weight:600;cursor:pointer;'
-              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
+              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.55);background:rgba(2,181,187,0.12);color:#026a6e;font-size:12px;font-weight:700;cursor:pointer;'
+              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--irp-border);background:transparent;color:var(--irp-text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
             on:click={() => switchKind('broadcast')}
           >📢 Email Broadcast</button>
           <button
             type="button"
             style={kind === 'article'
-              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.5);background:rgba(2,181,187,0.15);color:#9fe9eb;font-size:12px;font-weight:600;cursor:pointer;'
-              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
+              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.55);background:rgba(2,181,187,0.12);color:#026a6e;font-size:12px;font-weight:700;cursor:pointer;'
+              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--irp-border);background:transparent;color:var(--irp-text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
             on:click={() => switchKind('article')}
           >📄 Web Article (Blog)</button>
         </div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+        <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
           {#if kind === 'article'}
             Publishes to a public page at <strong>/blog/&lt;slug&gt;</strong>. Not emailed to anyone.
           {:else}
@@ -792,7 +851,7 @@
             bind:value={slug}
             on:input={() => (slugTouched = true)}
           />
-          <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+          <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
             Public URL: <strong>/blog/{slug || 'your-slug'}</strong>
           </div>
         </div>
@@ -812,7 +871,7 @@
             ? 'Write your article — format visually, or switch to HTML…'
             : 'Write your email — format visually, insert client fields, or switch to HTML…'}
         />
-        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+        <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
           {#if kind === 'article'}
             Format visually with the toolbar, or click <strong>&lt;/&gt; HTML</strong> to edit raw HTML. The page header and styling are added automatically.
           {:else}
@@ -831,7 +890,7 @@
           type="datetime-local"
           bind:value={sendAt}
         />
-        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">
+        <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
           The dispatch job runs every 15 minutes. Posts with <em>sendAt ≤ now</em> and <em>status = scheduled</em> are picked up automatically.
         </div>
       </div>
@@ -842,7 +901,7 @@
 
         <!-- Destination countries -->
         <div style="margin-bottom:8px;">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Destination country (substring match)</div>
+          <div style="font-size:11px;color:var(--irp-text-muted);margin-bottom:4px;">Destination country (substring match)</div>
           <div style="display:flex;gap:6px;">
             <input
               class="posts-view__input"
@@ -869,7 +928,7 @@
 
         <!-- Origin countries -->
         <div style="margin-bottom:8px;">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Origin country (substring match)</div>
+          <div style="font-size:11px;color:var(--irp-text-muted);margin-bottom:4px;">Origin country (substring match)</div>
           <div style="display:flex;gap:6px;">
             <input
               class="posts-view__input"
@@ -896,12 +955,12 @@
 
         <!-- Pipeline stages -->
         <div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Pipeline stage filter</div>
+          <div style="font-size:11px;color:var(--irp-text-muted);margin-bottom:6px;">Pipeline stage filter</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;">
             {#each Object.entries(STAGE_LABELS) as [key, label]}
               <button
                 class="posts-view__tag"
-                style={targetStages.includes(key) ? 'background:rgba(2,181,187,0.15);border-color:rgba(2,181,187,0.5);' : 'background:transparent;color:var(--text-muted);border-color:var(--border);'}
+                style={targetStages.includes(key) ? 'background:rgba(2,181,187,0.12);border-color:rgba(2,181,187,0.55);color:#026a6e;' : 'background:transparent;color:var(--irp-text-muted);border-color:var(--irp-border);'}
                 on:click={() => toggleStage(key)}
               >{label}</button>
             {/each}
@@ -913,7 +972,7 @@
       <div class="posts-view__audience">
         <span>👥 Audience</span>
         {#if audienceLoading}
-          <span style="font-size:11px;color:var(--text-dim);margin-left:4px;">calculating…</span>
+          <span style="font-size:11px;color:var(--irp-text-dim);margin-left:4px;">calculating…</span>
         {/if}
         <span class="posts-view__audience-count">
           {audienceMatched} / {audienceTotal}
