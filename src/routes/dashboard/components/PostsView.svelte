@@ -32,6 +32,10 @@
     pipelineStages?: string[];
   }
 
+  // Per-recipient send audit (dispatched posts).
+  interface Recipient { clientId: string; email: string; name: string; }
+  interface Failure extends Recipient { reason: string; }
+
   // ── API utils ─────────────────────────────────────────────────────────────
   function getApiUrl(): string {
     if (typeof window !== 'undefined' && window.location.origin.startsWith('http://localhost')) {
@@ -90,6 +94,16 @@
   let previewSrcdoc = '';
   let showPreview = false;
 
+  // ── Recipient audit (who a dispatched post reached / failed) ──────────────
+  let recipients: Recipient[] = [];
+  let failures: Failure[] = [];
+  let auditLoading = false;
+  let recipientSearch = '';
+  let failureSearch = '';
+  let recipientPage = 1;
+  let failurePage = 1;
+  const PAGE_SIZE = 8;
+
   // ── Init ──────────────────────────────────────────────────────────────────
   onMount(async () => {
     await fetchPosts();
@@ -114,6 +128,62 @@
     }
   }
 
+  // Load the per-recipient audit for a dispatched post. Best-effort: the send
+  // itself already happened, so a failed fetch here just hides the breakdown.
+  async function fetchRecipients(postId: string) {
+    auditLoading = true;
+    recipients = [];
+    failures = [];
+    recipientSearch = '';
+    failureSearch = '';
+    recipientPage = 1;
+    failurePage = 1;
+    try {
+      const data = await apiFetch(`/api/posts/${postId}/recipients`);
+      recipients = data.recipients ?? [];
+      failures = data.failures ?? [];
+    } catch { /* silent */ }
+    finally { auditLoading = false; }
+  }
+
+  function clearAudit() {
+    recipients = [];
+    failures = [];
+    recipientSearch = '';
+    failureSearch = '';
+    recipientPage = 1;
+    failurePage = 1;
+  }
+
+  // Case-insensitive match across name + email (+ reason, for failures).
+  function filterRows<T extends Recipient>(rows: T[], q: string): T[] {
+    const t = q.trim().toLowerCase();
+    if (!t) return rows;
+    return rows.filter((r) =>
+      (r.name ?? '').toLowerCase().includes(t) ||
+      (r.email ?? '').toLowerCase().includes(t) ||
+      ((r as any).reason ?? '').toLowerCase().includes(t)
+    );
+  }
+
+  function pageSlice<T>(rows: T[], page: number): T[] {
+    const start = (page - 1) * PAGE_SIZE;
+    return rows.slice(start, start + PAGE_SIZE);
+  }
+
+  const pageCount = (total: number): number => Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Reactive filtered + paginated views. Page clamps down when a filter shrinks
+  // the result set so we never strand the user on an empty page.
+  $: filteredRecipients = filterRows(recipients, recipientSearch);
+  $: filteredFailures   = filterRows(failures, failureSearch);
+  $: recipientPages     = pageCount(filteredRecipients.length);
+  $: failurePages       = pageCount(filteredFailures.length);
+  $: if (recipientPage > recipientPages) recipientPage = recipientPages;
+  $: if (failurePage > failurePages) failurePage = failurePages;
+  $: pagedRecipients = pageSlice(filteredRecipients, recipientPage);
+  $: pagedFailures   = pageSlice(filteredFailures, failurePage);
+
   // ── Composer helpers ──────────────────────────────────────────────────────
   function newPost() {
     selectedPost = null;
@@ -135,6 +205,7 @@
     showPreview = false;
     previewUrl = '';
     previewSrcdoc = '';
+    clearAudit();
     refreshAudience();
   }
 
@@ -154,6 +225,9 @@
     showPreview = false;
     previewUrl = '';
     previewSrcdoc = '';
+    // Load the send breakdown for dispatched posts; otherwise clear it.
+    if (p.status === 'dispatched') fetchRecipients(p.id);
+    else clearAudit();
     refreshAudience();
   }
 
@@ -574,6 +648,95 @@
           · <span style="color:var(--warning);">{selectedPost.failedCount} failed</span>
         {/if}
         <br><span style="font-size:11px;color:var(--text-dim);">Edit the content below, then <strong>Reschedule</strong> or <strong>Resend Now</strong>.</span>
+      </div>
+
+      <!-- Per-recipient audit — who was reached and who failed (+ why). Two
+           separate, searchable, paginated panels. -->
+      <div class="posts-audit">
+        <!-- Delivered -->
+        <section class="posts-audit__panel">
+          <header class="posts-audit__head">
+            <span class="posts-audit__title">
+              ✅ Delivered
+              <span class="posts-audit__badge posts-audit__badge--ok">{recipients.length}</span>
+            </span>
+            <input
+              class="posts-audit__search"
+              type="search"
+              placeholder="Search name or email…"
+              bind:value={recipientSearch}
+              disabled={auditLoading || recipients.length === 0}
+            />
+          </header>
+
+          {#if auditLoading}
+            <div class="posts-audit__empty">Loading recipients…</div>
+          {:else if filteredRecipients.length === 0}
+            <div class="posts-audit__empty">
+              {recipients.length === 0 ? 'No delivery records for this send.' : 'No matches.'}
+            </div>
+          {:else}
+            <ul class="posts-audit__list">
+              {#each pagedRecipients as r (r.clientId + r.email)}
+                <li class="posts-audit__row">
+                  <span class="posts-audit__name">{r.name || '—'}</span>
+                  <span class="posts-audit__email">{r.email}</span>
+                </li>
+              {/each}
+            </ul>
+            {#if recipientPages > 1}
+              <footer class="posts-audit__pager">
+                <button on:click={() => (recipientPage = Math.max(1, recipientPage - 1))} disabled={recipientPage <= 1} aria-label="Previous page">‹</button>
+                <span>{recipientPage} / {recipientPages}</span>
+                <button on:click={() => (recipientPage = Math.min(recipientPages, recipientPage + 1))} disabled={recipientPage >= recipientPages} aria-label="Next page">›</button>
+              </footer>
+            {/if}
+          {/if}
+        </section>
+
+        <!-- Failed -->
+        <section class="posts-audit__panel posts-audit__panel--fail">
+          <header class="posts-audit__head">
+            <span class="posts-audit__title">
+              ⚠️ Failed
+              <span class="posts-audit__badge posts-audit__badge--fail">{failures.length}</span>
+            </span>
+            <input
+              class="posts-audit__search"
+              type="search"
+              placeholder="Search name, email or reason…"
+              bind:value={failureSearch}
+              disabled={auditLoading || failures.length === 0}
+            />
+          </header>
+
+          {#if auditLoading}
+            <div class="posts-audit__empty">Loading failures…</div>
+          {:else if filteredFailures.length === 0}
+            <div class="posts-audit__empty">
+              {failures.length === 0 ? 'No failures — everyone was reached 🎉' : 'No matches.'}
+            </div>
+          {:else}
+            <ul class="posts-audit__list">
+              {#each pagedFailures as f (f.clientId + f.email)}
+                <li class="posts-audit__row posts-audit__row--fail">
+                  <div class="posts-audit__row-main">
+                    <span class="posts-audit__name">{f.name || '—'}</span>
+                    <span class="posts-audit__email">{f.email || 'no email on file'}</span>
+                  </div>
+                  <span class="posts-audit__reason" title={f.reason}>{f.reason}</span>
+                </li>
+              {/each}
+            </ul>
+            {#if failurePages > 1}
+              <footer class="posts-audit__pager">
+                <button on:click={() => (failurePage = Math.max(1, failurePage - 1))} disabled={failurePage <= 1} aria-label="Previous page">‹</button>
+                <span>{failurePage} / {failurePages}</span>
+                <button on:click={() => (failurePage = Math.min(failurePages, failurePage + 1))} disabled={failurePage >= failurePages} aria-label="Next page">›</button>
+              </footer>
+            {/if}
+          {/if}
+        </section>
       </div>
     {/if}
 

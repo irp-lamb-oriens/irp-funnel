@@ -383,3 +383,176 @@
     strong { color: $success; }
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Recipient send audit — two panels (Delivered / Failed) shown under a
+   dispatched post so operators can see exactly who was reached and who failed
+   (and why). Distinct .posts-audit namespace; reuses the same design tokens.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.posts-audit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $sp-3;
+  margin: $sp-4 0;
+
+  @media (max-width: 720px) { grid-template-columns: 1fr; }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid $border;
+    border-radius: $r-md;
+    background: $surface-2;
+    overflow: hidden;
+
+    &--fail {
+      border-color: rgba($danger, 0.28);
+      background: rgba($danger, 0.04);
+    }
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $sp-2;
+    padding: $sp-2 $sp-3;
+    border-bottom: 1px solid $border;
+  }
+
+  &__title {
+    display: inline-flex;
+    align-items: center;
+    gap: $sp-1;
+    font-size: 12px;
+    font-weight: 700;
+    color: $text;
+    white-space: nowrap;
+  }
+
+  &__badge {
+    display: inline-flex;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    align-items: center;
+    justify-content: center;
+    border-radius: $r-full;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+
+    &--ok   { background: rgba($success, 0.15); color: $success; }
+    &--fail { background: rgba($danger, 0.16); color: $danger; }
+  }
+
+  &__search {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 4px 10px;
+    border-radius: $r-sm;
+    border: 1px solid $border;
+    background: $surface;
+    color: $text;
+    font-size: 12px;
+    font-family: $font;
+    outline: none;
+    transition: border-color $t-fast, box-shadow $t-fast;
+
+    &::placeholder { color: $text-dim; }
+    &:focus { border-color: $accent; box-shadow: 0 0 0 2px $accent-glow; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: $sp-1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 120px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $sp-2;
+    padding: 7px 8px;
+    border-radius: $r-sm;
+    transition: background $t-fast;
+
+    &:hover { background: $surface-3; }
+    &--fail { flex-direction: column; align-items: stretch; gap: 3px; }
+  }
+
+  &__row-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $sp-2;
+  }
+
+  &__name {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__email {
+    font-size: 11px;
+    color: $text-muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 55%;
+  }
+
+  &__reason {
+    font-size: 11px;
+    color: $danger;
+    line-height: 1.3;
+  }
+
+  &__empty {
+    padding: $sp-5 $sp-3;
+    text-align: center;
+    font-size: 12px;
+    color: $text-dim;
+  }
+
+  &__pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $sp-3;
+    padding: $sp-2;
+    border-top: 1px solid $border;
+    font-size: 12px;
+    color: $text-muted;
+
+    button {
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: $r-xs;
+      border: 1px solid $border;
+      background: transparent;
+      color: $text;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background $t-fast, border-color $t-fast;
+
+      &:hover:not(:disabled) { background: $accent-subtle; border-color: $accent; }
+      &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+  }
+}
