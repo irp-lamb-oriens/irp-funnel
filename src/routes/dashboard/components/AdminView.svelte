@@ -281,8 +281,9 @@
   }
 
   function addCollaborator() {
-    collaborators = [...collaborators, { email: '', name: '', function: '' }];
+    collaborators = [...collaborators, { email: '', name: '', function: '', notifyOnBroadcast: false }];
   }
+
 
   function removeCollaborator(index: number) {
     collaborators = collaborators.filter((_, i) => i !== index);
@@ -293,7 +294,8 @@
     collabSaveMsg = '';
     collabError = '';
     const cleaned = collaborators
-      .map((c) => ({ email: c.email.trim().toLowerCase(), name: c.name.trim(), function: c.function.trim() }))
+      .map((c) => ({ email: c.email.trim().toLowerCase(), name: c.name.trim(), function: c.function.trim(), notifyOnBroadcast: !!c.notifyOnBroadcast }))
+
       .filter((c) => c.email.includes('@'));
     if (cleaned.length === 0) {
       collabError = 'Add at least one collaborator with a valid email.';
@@ -799,7 +801,12 @@
                   placeholder="What this person handles (e.g. pricing questions, scheduling, immigration paperwork)…"
                   bind:value={collab.function}
                 ></textarea>
+                <label class="collab-broadcast" title="CC this teammate on every Posts email broadcast">
+                  <input type="checkbox" bind:checked={collab.notifyOnBroadcast} />
+                  <span>📣 Notify on broadcasts</span>
+                </label>
               </div>
+
               <button class="remove-btn" on:click={() => removeCollaborator(i)} title="Remove">✕</button>
             </div>
           {/each}
@@ -1403,6 +1410,29 @@
     min-height: 2.6rem;
     line-height: 1.5;
   }
+
+  /* Broadcast CC opt-in — one checkbox per collaborator row */
+  .collab-broadcast {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+    width: fit-content;
+    padding: 0.15rem 0;
+  }
+  .collab-broadcast input[type='checkbox'] {
+    width: 15px;
+    height: 15px;
+    accent-color: #02b5bb;
+    cursor: pointer;
+    margin: 0;
+  }
+  .collab-broadcast:hover { color: #02999e; }
+
 
   /* ─── Save bar ───────────────────────────────────────────────────────────── */
   .save-bar {
