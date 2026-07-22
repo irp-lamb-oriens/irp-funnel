@@ -47,6 +47,48 @@
   /** This client's stage block (if the last blocked move was for this client). */
   $: myBlock = $stageBlockNotice && $stageBlockNotice.clientId === clientId ? $stageBlockNotice : null;
 
+  // ── Local input state (decoupled from `requests`) ──────────────────────────
+  // Inputs own their own values. The store is written TO (debounced), but is
+  // never read back INTO the inputs after the initial seed. This breaks the
+  // feedback loop where a debounced server response reassigns `requests`,
+  // re-derives `draft`, and resets the caret / drops fast keystrokes.
+  let localOriginLabel = '';
+  let localOriginNotes = '';
+  let localDestinationLabel = '';
+  let localDestinationNotes = '';
+  let lastSyncedDraftId: string | null = null;
+
+  let localOptions: Record<string, { serviceLine: string; itemsText: string }> = {};
+  let lastOptionsKey = '';
+
+  // Seed header fields ONLY when the active draft changes (load / new / resume).
+  $: if (draft && draft.requestId !== lastSyncedDraftId) {
+    localOriginLabel = draft.originLabel;
+    localOriginNotes = draft.originNotes;
+    localDestinationLabel = draft.destinationLabel;
+    localDestinationNotes = draft.destinationNotes;
+    lastSyncedDraftId = draft.requestId;
+  }
+
+  // Seed option fields ONLY when the set of options changes (add / remove).
+  // Per-keystroke saves keep the same option ids, so this never overwrites
+  // in-progress edits.
+  $: if (draft) {
+    const key = draft.options.map((o) => o.optionId).join(',');
+    if (key !== lastOptionsKey) {
+      const next = { ...localOptions };
+      for (const o of draft.options) {
+        if (!next[o.optionId]) next[o.optionId] = { serviceLine: o.serviceLine, itemsText: itemsToText(o.items) };
+      }
+      for (const id of Object.keys(next)) {
+        if (!draft.options.some((o) => o.optionId === id)) delete next[id];
+      }
+      localOptions = next;
+      lastOptionsKey = key;
+    }
+  }
+
+
   async function load() {
     loading = true;
     error = '';
@@ -77,22 +119,38 @@
     }
   }
 
+  /** Merge the current local input values back onto the draft's options. */
+  function buildOptionsFromLocal(): PricingRequestOption[] {
+    if (!draft) return [];
+    return draft.options.map((o) => {
+      const local = localOptions[o.optionId];
+      return {
+        ...o,
+        serviceLine: local ? local.serviceLine : o.serviceLine,
+        items: local
+          ? local.itemsText.split('\n').map((s) => s.trim()).filter(Boolean)
+          : o.items,
+      };
+    });
+  }
+
   /** Persist the current draft's header + options (debounced by the caller). */
   async function persistDraft() {
     if (!draft) return;
     try {
       const saved = await updatePricingRequest(clientId, draft.requestId, {
-        originNotes: draft.originNotes,
-        destinationNotes: draft.destinationNotes,
-        originLabel: draft.originLabel,
-        destinationLabel: draft.destinationLabel,
-        options: draft.options,
+        originNotes: localOriginNotes,
+        destinationNotes: localDestinationNotes,
+        originLabel: localOriginLabel,
+        destinationLabel: localDestinationLabel,
+        options: buildOptionsFromLocal(),
       });
       requests = requests.map((r) => (r.requestId === saved.requestId ? saved : r));
     } catch (err: any) {
       toasts.error(err?.message ?? 'Could not save changes.');
     }
   }
+
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   function scheduleSave() {
@@ -119,20 +177,9 @@
       .filter((o) => o.optionId !== optionId)
       .map((o, i) => ({ ...o, index: i + 1 }));
     requests = requests.map((r) => (r.requestId === draft!.requestId ? { ...r, options } : r));
-    scheduleSave();
-  }
-
-  /** Bind a bullet-list textarea (one item per line) back onto an option. */
-  function setOptionItems(optionId: string, text: string) {
-    if (!draft) return;
-    const items = text.split('\n').map((s) => s.trim()).filter(Boolean);
-    updateOption(optionId, { items });
-  }
-
-  function updateOption(optionId: string, patch: Partial<PricingRequestOption>) {
-    if (!draft) return;
-    const options = draft.options.map((o) => (o.optionId === optionId ? { ...o, ...patch } : o));
-    requests = requests.map((r) => (r.requestId === draft!.requestId ? { ...r, options } : r));
+    const nextLocal = { ...localOptions };
+    delete nextLocal[optionId];
+    localOptions = nextLocal;
     scheduleSave();
   }
 
@@ -143,10 +190,11 @@
       // Flush any pending edits first so the email carries the latest content.
       if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
       const sent = await sendPricingRequest(clientId, draft.requestId, {
-        originNotes: draft.originNotes,
-        destinationNotes: draft.destinationNotes,
-        options: draft.options,
+        originNotes: localOriginNotes,
+        destinationNotes: localDestinationNotes,
+        options: buildOptionsFromLocal(),
       });
+
       requests = requests.map((r) => (r.requestId === sent.requestId ? sent : r));
       draftId = null;
       expanded[sent.requestId] = true;
@@ -245,13 +293,13 @@
       <div class="pr-grid">
         <label class="pr-field">
           <span class="pr-label">Origin</span>
-          <input class="pr-input" bind:value={draft.originLabel} on:input={scheduleSave} placeholder="City, ST ZIP, Country" />
-          <textarea class="pr-textarea pr-textarea--sm" bind:value={draft.originNotes} on:input={scheduleSave} placeholder="Origin notes (optional)…" rows="2"></textarea>
+          <input class="pr-input" bind:value={localOriginLabel} on:input={scheduleSave} placeholder="City, ST ZIP, Country" />
+          <textarea class="pr-textarea pr-textarea--sm" bind:value={localOriginNotes} on:input={scheduleSave} placeholder="Origin notes (optional)…" rows="2"></textarea>
         </label>
         <label class="pr-field">
           <span class="pr-label">Destination</span>
-          <input class="pr-input" bind:value={draft.destinationLabel} on:input={scheduleSave} placeholder="City, ZIP, Country" />
-          <textarea class="pr-textarea pr-textarea--sm" bind:value={draft.destinationNotes} on:input={scheduleSave} placeholder="Destination notes (optional)…" rows="2"></textarea>
+          <input class="pr-input" bind:value={localDestinationLabel} on:input={scheduleSave} placeholder="City, ZIP, Country" />
+          <textarea class="pr-textarea pr-textarea--sm" bind:value={localDestinationNotes} on:input={scheduleSave} placeholder="Destination notes (optional)…" rows="2"></textarea>
         </label>
       </div>
 
@@ -267,8 +315,8 @@
               <span class="pr-label pr-label--muted">Service (AI-suggested placeholder — editable)</span>
               <input
                 class="pr-input pr-input--service"
-                value={opt.serviceLine}
-                on:input={(e) => updateOption(opt.optionId, { serviceLine: e.currentTarget.value })}
+                bind:value={localOptions[opt.optionId].serviceLine}
+                on:input={scheduleSave}
                 placeholder="e.g. 20 ft Container (up to 28 m³) – Door-to-Door – Full Professional Packing"
               />
             </label>
@@ -276,8 +324,8 @@
               <span class="pr-label pr-label--muted">Include (one line per item)</span>
               <textarea
                 class="pr-textarea"
-                value={itemsToText(opt.items)}
-                on:input={(e) => setOptionItems(opt.optionId, e.currentTarget.value)}
+                bind:value={localOptions[opt.optionId].itemsText}
+                on:input={scheduleSave}
                 placeholder={'Loading\nExport customs clearance\nOcean freight\nImport customs clearance\nDelivery to final residence\nUnloading'}
                 rows="5"
               ></textarea>
