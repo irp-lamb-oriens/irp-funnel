@@ -914,6 +914,8 @@ export interface Collaborator {
     email: string;
     name: string;
     function: string;
+    /** When true, this teammate is CC'd on Posts email broadcasts. */
+    notifyOnBroadcast?: boolean;
 }
 /**
  * Fetch the editable collaborators map (email · name · function).

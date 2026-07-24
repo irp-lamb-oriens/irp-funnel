@@ -457,19 +457,35 @@ export const quotesError    = writable('');
 export const acceptingQuote = writable(false);
 export const acceptError    = writable('');
 
-/** Load received/accepted quotes for the status page quote panel. */
+/**
+ * Load received/accepted quotes for the status page quote panel.
+ *
+ * Retries up to 3 times with linear backoff (500ms, 1000ms) so a transient
+ * network hiccup on the first fetch doesn't silently leave the caller with an
+ * empty quotes list — which previously hid the Accept tab entirely on flaky
+ * connections. Only the final failure surfaces to `quotesError`.
+ */
 export async function loadQuotes(projectId: string): Promise<void> {
   quotesLoading.set(true);
   quotesError.set('');
-  try {
-    const data = await apiFetch(`/api/client-status/project/${projectId}/quotes`);
-    quotes.set(data.quotes ?? []);
-  } catch (err: any) {
-    quotesError.set(err.message ?? 'Failed to load quotes.');
-  } finally {
-    quotesLoading.set(false);
+  let lastErr: any;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+      const data = await apiFetch(`/api/client-status/project/${projectId}/quotes`);
+      quotes.set(data.quotes ?? []);
+      quotesLoading.set(false);
+      return;
+    } catch (err: any) {
+      lastErr = err;
+    }
   }
+  quotesError.set(lastErr?.message ?? 'Failed to load quotes.');
+  quotesLoading.set(false);
 }
+
 
 /**
  * Accept a quote with a full-name attestation and explicit consent.
