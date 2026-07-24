@@ -537,6 +537,14 @@
   // (pre-generated, sent-to-client quote) is present in the URL.
   $: showQuoteSection = hasQuotes || hasQuoteToken;
 
+  // showAcceptSection — gates the dedicated "Accept" tab/section (QuoteAcceptance,
+  // the subcollection acceptance flow). It is DISTINCT from the token flow: a
+  // ?quoteToken link renders QuoteView, which already contains its own inline
+  // accept form. Mounting QuoteAcceptance alongside it produced a duplicate
+  // "Quote not ready yet" card, so the token flow owns acceptance exclusively.
+  $: showAcceptSection = hasQuotes && !hasQuoteToken;
+
+
   // ─── Template Proposal — auto-load after data is ready ───────────────────────
   $: if (
     $project &&
@@ -598,12 +606,12 @@
               }))
             : []),
           { id: "__quotes", label: "Quote" },
-          // Accept tab — shown whenever the quote section is visible (subcollection
-          // quotes OR a ?quoteToken email link). Gating on `showQuoteSection`
-          // instead of `hasQuotes` makes the tab appear immediately on a token
-          // link, resilient to a slow/failed quotes fetch: QuoteAcceptance loads
-          // its own quotes on mount and shows a spinner/empty/receipt state.
-          ...(showQuoteSection ? [{ id: "__accept", label: "Accept" }] : []),
+          // Accept tab — only the subcollection acceptance flow (showAcceptSection).
+          // The token flow (?quoteToken) renders QuoteView with its own inline
+          // accept form under the Quote tab, so a separate Accept tab there would
+          // point at a non-rendered #cp-accept and duplicate the acceptance UI.
+          ...(showAcceptSection ? [{ id: "__accept", label: "Accept" }] : []),
+
 
         ]
       : []),
@@ -619,7 +627,8 @@
   $: isOverviewTab =
     !isCommentsTab && (activePortalTab === "__overview" || !showQuoteSection);
   $: isQuoteTab = showQuoteSection && activePortalTab === "__quotes";
-  $: isAcceptTab = showQuoteSection && activePortalTab === "__accept";
+  $: isAcceptTab = showAcceptSection && activePortalTab === "__accept";
+
 
   $: isProposalTab =
     hasQuotes &&
@@ -1782,12 +1791,14 @@
       {/if}
 
       <!-- ══ ACCEPT — dedicated consent / attestation form (single-landing).
-           Gated on showQuoteSection (not hasQuotes) so a ?quoteToken email link
-           mounts the acceptance form immediately, even before / independent of
-           the subcollection quotes fetch. QuoteAcceptance loads its own quotes
-           on mount and renders its spinner / empty / receipt / form states. -->
-      {#if showQuoteSection}
+           Gated on showAcceptSection (subcollection quotes AND no ?quoteToken):
+           the token flow's QuoteView already renders its own inline accept form,
+           so mounting QuoteAcceptance here too would double up (and show a stray
+           "Quote not ready yet" card). QuoteAcceptance loads its own quotes on
+           mount and renders its spinner / empty / receipt / form states. -->
+      {#if showAcceptSection}
         <div id="cp-accept" class="cp-section-anchor">
+
 
           <div class="cp-dashboard__full-width-section">
             <QuoteAcceptance

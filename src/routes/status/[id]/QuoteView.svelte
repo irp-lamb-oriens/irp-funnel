@@ -106,49 +106,72 @@
   const token = $page.url.searchParams.get('quoteToken') ?? '';
 
 
-  onMount(async () => {
-    if (!token) { loading = false; return; }
-    try {
-      quote = await fetchQuoteByToken(consultationId, token);
-      if (!quote) loadError = 'Quote not found.';
-      if (quote?.status === 'client_accepted') accepted = true;
-
-      // Phase D — surface the AI client description; lazily generate it on first
-      // view when the quote doesn't have one yet (a brief loading state shows).
-      clientDesc = (quote as any)?.clientDescription ?? '';
-      const qAny = quote as any;
-      const hasScope =
-        (Array.isArray(qAny?.lineGroups) && qAny.lineGroups.length > 0) ||
-        (Array.isArray(qAny?.lineItems) && qAny.lineItems.length > 0);
-      if (quote && !clientDesc && hasScope) {
-        descLoading = true;
-        fetchClientQuoteDescription(consultationId, token)
-          .then((t) => { if (t) clientDesc = t; })
-          .finally(() => { descLoading = false; });
-      }
-
-      // Phase 5 — if the quote was already accepted, restore the exact packages /
-      // add-ons the client picked (server returns `selectedGroupIds`) so the cards
-      // reflect their real choice rather than resetting to the auto-default.
-      const acc = quote as any;
-      if (Array.isArray(acc?.selectedGroupIds) && acc.selectedGroupIds.length > 0) {
-        const selIds: string[] = acc.selectedGroupIds;
-        const gs: any[] = Array.isArray(acc.lineGroups) ? acc.lineGroups : [];
-        const reqSel = gs.find((g) => g.role === 'required' && selIds.includes(g.groupId));
-
-        if (reqSel) selectedRequiredGroupId = reqSel.groupId;
-        selectedOptionalGroupIds = new Set(
-          gs.filter((g) => g.role === 'optional' && selIds.includes(g.groupId)).map((g) => g.groupId),
-        );
-        groupSelectionInit = true; // lock so the auto-default reactive can't overwrite it
-      }
-
-    } catch (e: any) {
-      loadError = e.message ?? 'Error loading quote.';
-    } finally {
-      loading = false;
-    }
+  onMount(() => {
+    void loadQuote();
   });
+
+  /**
+   * Load the token-gated quote with bounded retries + backoff.
+   *
+   * `fetchQuoteByToken` collapses every failure (network blip, cold-start
+   * timeout, transient 5xx) into `null`, so a SINGLE failed request used to
+   * permanently show "Quote not found" and hide the accept form — the exact
+   * cross-browser fetch race we hit (one browser rendered the form, another
+   * didn't). Retrying a few times before surfacing the error makes the accept
+   * form resilient to those transient races; a manual "Try again" is the
+   * graceful fallback if every attempt fails.
+   */
+  async function loadQuote() {
+    if (!token) { loading = false; return; }
+    loading = true;
+    loadError = '';
+    const MAX_ATTEMPTS = 4;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const q = await fetchQuoteByToken(consultationId, token);
+      if (q) { applyQuote(q); loading = false; return; }
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 300 * 2 ** (attempt - 1)));
+      }
+    }
+    loadError = 'We couldn’t load your quote just now. Please try again.';
+    loading = false;
+  }
+
+  /** Apply a loaded quote to component state (status, AI description, prior selection). */
+  function applyQuote(q: Quote) {
+    quote = q;
+    if (q.status === 'client_accepted') accepted = true;
+
+    // Phase D — surface the AI client description; lazily generate it on first
+    // view when the quote doesn't have one yet (a brief loading state shows).
+    clientDesc = (q as any)?.clientDescription ?? '';
+    const qAny = q as any;
+    const hasScope =
+      (Array.isArray(qAny?.lineGroups) && qAny.lineGroups.length > 0) ||
+      (Array.isArray(qAny?.lineItems) && qAny.lineItems.length > 0);
+    if (!clientDesc && hasScope) {
+      descLoading = true;
+      fetchClientQuoteDescription(consultationId, token)
+        .then((t) => { if (t) clientDesc = t; })
+        .finally(() => { descLoading = false; });
+    }
+
+    // Phase 5 — if the quote was already accepted, restore the exact packages /
+    // add-ons the client picked (server returns `selectedGroupIds`) so the cards
+    // reflect their real choice rather than resetting to the auto-default.
+    const acc = q as any;
+    if (Array.isArray(acc?.selectedGroupIds) && acc.selectedGroupIds.length > 0) {
+      const selIds: string[] = acc.selectedGroupIds;
+      const gs: any[] = Array.isArray(acc.lineGroups) ? acc.lineGroups : [];
+      const reqSel = gs.find((g) => g.role === 'required' && selIds.includes(g.groupId));
+      if (reqSel) selectedRequiredGroupId = reqSel.groupId;
+      selectedOptionalGroupIds = new Set(
+        gs.filter((g) => g.role === 'optional' && selIds.includes(g.groupId)).map((g) => g.groupId),
+      );
+      groupSelectionInit = true; // lock so the auto-default reactive can't overwrite it
+    }
+  }
+
 
   async function handleAccept() {
     if (!quote || !token) return;
@@ -212,8 +235,12 @@
 {:else if loading}
   <div class="qv-loading">Loading quote...</div>
 {:else if loadError}
-  <div class="qv-error">{loadError}</div>
+  <div class="qv-error">
+    <p class="qv-error__msg">{loadError}</p>
+    <button class="qv-error__retry" type="button" on:click={loadQuote}>Try again</button>
+  </div>
 {:else if quote}
+
   {#if Array.isArray(quote.blocks) && quote.blocks.length > 0}
     <!-- ── Block-based Qwilr-style document renderer (Phase 1) ──────────
          BlockRenderer owns the accept block state and dispatches the
@@ -480,6 +507,28 @@
       'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
   .qv-error { color: #dc2626; }
+  .qv-error__msg { margin: 0 0 14px; }
+  .qv-error__retry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(2, 181, 187, 0.4);
+    transition: box-shadow 0.2s, filter 0.2s;
+  }
+  .qv-error__retry:hover {
+    filter: brightness(1.07);
+    box-shadow: 0 8px 28px rgba(2, 181, 187, 0.52);
+  }
+
 
   /* ── Main container ───────────────────────────────────────────────────── */
   .qv-container {

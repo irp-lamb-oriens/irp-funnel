@@ -96,7 +96,11 @@
       maxDate.setUTCDate(maxDate.getUTCDate() + 14);
 
       for (let d = new Date(startOfDay); d <= maxDate; d.setUTCDate(d.getUTCDate() + 1)) {
-        if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+        // Skip Sun (0), Fri (5) and Sat (6) — mirrors backend scheduling-policy.ts.
+        // Friday was previously surfaced as bookable, so users could pick a slot
+        // the server then 422-rejected with "outside_hours".
+        if (d.getUTCDay() === 0 || d.getUTCDay() === 5 || d.getUTCDay() === 6) continue;
+
         const dateKey = d.toISOString().split("T")[0];
         datesWithHours[dateKey] = [
           { name: "Morning", children: [] },
@@ -168,10 +172,12 @@
     while (workingDaysToAdd > 0) {
       date.setUTCDate(date.getUTCDate() + 1);
       const dayOfWeek = date.getUTCDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // Fri (5) is NOT a working day — mirrors backend getEarliestBookableTime().
+      if (dayOfWeek !== 0 && dayOfWeek !== 5 && dayOfWeek !== 6) {
         workingDaysToAdd--;
       }
     }
+
     return date;
   }
 </script>
