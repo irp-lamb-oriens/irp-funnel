@@ -4,6 +4,8 @@
   import { formState, updateField } from "./formStore.js";
   import store from "../../../store.ts";
   import TagNode from "./TagNode.svelte";
+  import { parseBusyEvents, slotConflictsWithBusy } from "../slotConflict.ts";
+
 
   const availableDatesStore = writable<{ date: string; availableHours: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] }[]>([]);
   const errorLoading = writable<string | null>(null);
@@ -88,7 +90,8 @@
       const response = await fetch(`${apiUrl}/api/events`);
       if (!response.ok) throw new Error("Failed to fetch events");
       const events = await response.json();
-      const busyTimes = events.map((e: any) => new Date(e.start.dateTime).getTime());
+      const busyEvents = parseBusyEvents(events);
+
 
       const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] } = {};
       const startOfDay = getStartDate();
@@ -123,9 +126,11 @@
 
 
           const slotTime = availableTime.getTime();
-          // Check for conflicts: 60 minutes buffer (30 min call + 30 min notes)
-          // A slot is unavailable if there exists an event such that abs(slotTime - eventTime) < 60 mins
-          const isBusy = busyTimes.some((eventTime: number) => Math.abs(slotTime - eventTime) < 60 * 60 * 1000);
+          // A slot is unavailable if it overlaps an event OR sits within the
+          // 30-min inter-call buffer of one (no back-to-back calls). Shared with
+          // the backend rule via slotConflict.ts → mirrors scheduling-policy.ts.
+          const isBusy = slotConflictsWithBusy(slotTime, busyEvents);
+
 
           const timeString = availableTime.toLocaleTimeString('en-US', {
             hour: '2-digit',

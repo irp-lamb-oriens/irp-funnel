@@ -31,6 +31,8 @@
   import { onMount } from 'svelte';
   import { writable, get } from 'svelte/store';
   import TagNode from '../Calendar/TagNode.svelte';
+  import { parseBusyEvents, slotConflictsWithBusy } from '../slotConflict.ts';
+
 
   // ── Props ──────────────────────────────────────────────────────────────────
   /** Called with the selected ISO string (or "" to deselect). */
@@ -195,7 +197,8 @@
       const response = await fetch(`${base}/api/events`);
       if (!response.ok) throw new Error('Failed to fetch events');
       const events = await response.json();
-      const busyTimes: number[] = events.map((e: any) => new Date(e.start.dateTime).getTime());
+      const busyEvents = parseBusyEvents(events);
+
 
       const datesWithHours: Record<string, Segment[]> = {};
       const startOfDay = getStartDate();
@@ -214,7 +217,10 @@
           const t = new Date(d);
           t.setUTCHours(hour + 6, 0, 0, 0);
           const slotMs = t.getTime();
-          const isBusy = busyTimes.some(bt => Math.abs(slotMs - bt) < 60 * 60 * 1000);
+          // Unavailable if it overlaps an event OR sits within the 30-min
+          // inter-call buffer of one — same rule as the backend (slotConflict.ts).
+          const isBusy = slotConflictsWithBusy(slotMs, busyEvents);
+
           const timeString = t.toLocaleTimeString('en-US', {
             hour: '2-digit', minute: '2-digit', timeZone: 'America/Costa_Rica',
           });
