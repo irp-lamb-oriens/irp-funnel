@@ -73,7 +73,83 @@
     font-size: 13px;
   }
 
+  // ── List search + pagination ──────────────────────────────────────────────
+  // A rounded search field (magnifier + clear) that filters the active tab,
+  // plus a page counter. The pager itself reuses .posts-audit__pager; the
+  // &__list-pager modifier only softens its divider for this context.
+  &__list-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: $sp-2 0 $sp-3;
+  }
+
+  &__list-search-icon {
+    position: absolute;
+    left: 11px;
+    color: $text-dim;
+    pointer-events: none;
+    transition: color $t-fast;
+  }
+  &__list-search:focus-within &__list-search-icon { color: $accent; }
+
+  &__list-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 4px 34px;
+    border: 1px solid $border;
+    border-radius: $r-full;
+    background: $surface-2;
+    color: $text;
+    font-size: 12.5px;
+    font-family: $font;
+    outline: none;
+    transition: border-color $t-fast, box-shadow $t-fast, background $t-fast;
+    box-sizing: border-box;
+
+    &::placeholder { color: $text-dim; }
+    &:focus {
+      border-color: $accent;
+      box-shadow: 0 0 0 2px $accent-glow;
+      background: $surface;
+    }
+    // Suppress the browser-native ✕ so only our clear button shows.
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration { -webkit-appearance: none; }
+  }
+
+  &__list-search-clear {
+    position: absolute;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: $r-full;
+    background: $surface-4;
+    color: $text-muted;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background $t-fast, color $t-fast;
+    &:hover { background: $surface-3; color: $text; }
+  }
+
+  &__list-count {
+    font-size: 11px;
+    color: $text-dim;
+    margin: -2px 0 $sp-3 6px;
+  }
+
+  &__list-pager {
+    border-top: none;
+    padding-top: $sp-3;
+  }
+
   // ── Post card ─────────────────────────────────────────────────────────────
+
   &__card {
     background: $surface;
     border: 1px solid $border;

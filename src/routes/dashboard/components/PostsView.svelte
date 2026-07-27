@@ -15,7 +15,8 @@
     bodyHtml: string;
     author: string;
     status: 'draft' | 'scheduled' | 'dispatched' | 'published';
-    kind?: 'broadcast' | 'article';
+    kind?: 'broadcast' | 'article' | 'country-guide';
+
     slug?: string;
     createdAt: string;
     updatedAt: string;
@@ -63,7 +64,47 @@
   let error = '';
   let toast = '';
 
+  // List filter — segment the post list by kind. Seeded country guides can
+  // number in the hundreds, so tabs keep the list usable.
+  type ListFilter = 'all' | 'broadcast' | 'article' | 'country-guide';
+  let listFilter: ListFilter = 'all';
+  const FILTER_TABS: Array<{ key: ListFilter; label: string }> = [
+    { key: 'all', label: 'All' },
+    { key: 'broadcast', label: '📢 Broadcasts' },
+    { key: 'article', label: '📄 Articles' },
+    { key: 'country-guide', label: '🌍 Guides' },
+  ];
+
+  // Search + pagination for the list pane. Country guides alone number in the
+  // hundreds, so the active tab is filtered by a free-text query and sliced
+  // into pages (reusing the same helpers as the recipient audit below).
+  let listSearch = '';
+  let listPage = 1;
+  const LIST_PAGE_SIZE = 12;
+
+  $: kindCounts = {
+    all: posts.length,
+    broadcast: posts.filter((p) => (p.kind ?? 'broadcast') === 'broadcast').length,
+    article: posts.filter((p) => p.kind === 'article').length,
+    'country-guide': posts.filter((p) => p.kind === 'country-guide').length,
+  } as Record<ListFilter, number>;
+
+  // Kind tab → free-text search → page slice. Tab counts stay on the full set
+  // (kindCounts above) so the badges show totals, not the filtered subset.
+  $: kindFiltered = listFilter === 'all'
+    ? posts
+    : posts.filter((p) => (p.kind ?? 'broadcast') === listFilter);
+  $: visiblePosts = matchPosts(kindFiltered, listSearch);
+  $: listPages = pageCount(visiblePosts.length, LIST_PAGE_SIZE);
+  // Reset to the first page whenever the tab or query changes…
+  $: listFilter, listSearch, (listPage = 1);
+  // …then clamp so a shrinking result set never strands us past the last page.
+  $: if (listPage > listPages) listPage = listPages;
+  $: pagedPosts = pageSlice(visiblePosts, listPage, LIST_PAGE_SIZE);
+
+
   // Which post card is selected (edit mode)
+
   let selectedPost: Post | null = null;
 
   // Compose form
@@ -76,12 +117,17 @@
   let destInput  = '';
   let originInput = '';
 
-  // Web article (blog) fields
-  let kind: 'broadcast' | 'article' = 'broadcast';
+  // Web post (blog article + country guide) fields
+  let kind: 'broadcast' | 'article' | 'country-guide' = 'broadcast';
   let slug = '';
   let slugTouched = false;
+  // Web posts (articles + country guides) publish to a public page instead of
+  // emailing an audience; grouping them keeps the compose-form logic in one flag.
+  $: isWebPost = kind === 'article' || kind === 'country-guide';
+  $: publicPathBase = kind === 'country-guide' ? '/guides' : '/blog';
   // Auto-derive slug from title until the operator edits it manually.
-  $: if (kind === 'article' && !slugTouched) slug = slugify(title);
+  $: if (isWebPost && !slugTouched) slug = slugify(title);
+
 
   // Audience count
   let audienceTotal   = 0;
@@ -185,12 +231,24 @@
     );
   }
 
-  function pageSlice<T>(rows: T[], page: number): T[] {
-    const start = (page - 1) * PAGE_SIZE;
-    return rows.slice(start, start + PAGE_SIZE);
+  function pageSlice<T>(rows: T[], page: number, size = PAGE_SIZE): T[] {
+    const start = (page - 1) * size;
+    return rows.slice(start, start + size);
   }
 
-  const pageCount = (total: number): number => Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageCount = (total: number, size = PAGE_SIZE): number => Math.max(1, Math.ceil(total / size));
+
+  // Case-insensitive match across title, slug, and author for the list search.
+  function matchPosts(rows: Post[], q: string): Post[] {
+    const t = q.trim().toLowerCase();
+    if (!t) return rows;
+    return rows.filter((p) =>
+      (p.title ?? '').toLowerCase().includes(t) ||
+      (p.slug ?? '').toLowerCase().includes(t) ||
+      (p.author ?? '').toLowerCase().includes(t)
+    );
+  }
+
 
   // Reactive filtered + paginated views. Page clamps down when a filter shrinks
   // the result set so we never strand the user on an empty page.
@@ -247,7 +305,8 @@
     targetStages       = p.targeting?.pipelineStages ?? [];
     destInput = '';
     originInput = '';
-    kind = p.kind === 'article' ? 'article' : 'broadcast';
+    kind = p.kind === 'article' ? 'article' : p.kind === 'country-guide' ? 'country-guide' : 'broadcast';
+
     slug = p.slug ?? '';
     slugTouched = true;
     showPreview = false;
@@ -299,8 +358,9 @@
 
   // ── Audience preview ──────────────────────────────────────────────────────
   function refreshAudience() {
-    // Articles have no audience — they publish to a public web page.
-    if (kind === 'article') return;
+    // Web posts have no audience — they publish to a public web page.
+    if (isWebPost) return;
+
     if (audienceDebounce) clearTimeout(audienceDebounce);
     audienceDebounce = setTimeout(fetchAudience, 500);
   }
@@ -336,13 +396,14 @@
       .replace(/^-+|-+$/g, '');
   }
 
-  function switchKind(k: 'broadcast' | 'article') {
+  function switchKind(k: 'broadcast' | 'article' | 'country-guide') {
     kind = k;
-    if (k === 'article' && !slugTouched && title.trim()) {
+    if (k !== 'broadcast' && !slugTouched && title.trim()) {
       slug = slugify(title);
     }
     refreshAudience();
   }
+
 
   // ── Save / Schedule ───────────────────────────────────────────────────────
   async function saveDraft() {
@@ -364,9 +425,10 @@
       // Brand-new posts (and existing drafts) are saved as "draft".
       if (!selectedPost || selectedPost.status === 'draft') payload.status = 'draft';
 
-      if (kind === 'article') {
+      if (isWebPost) {
         payload.slug = slug.trim();
       } else {
+
         payload.sendAt = sendAt ? new Date(sendAt).toISOString() : new Date().toISOString();
         payload.targeting = buildTargeting();
       }
@@ -473,10 +535,11 @@
       const payload = {
         title: title.trim(),
         bodyHtml: bodyHtml.trim(),
-        kind: 'article',
+        kind,
         slug: slug.trim(),
         author: $authEmail ?? 'pablo@internationalrelocationpartner.com',
         status: 'published',
+
       };
       if (selectedPost) {
         await apiFetch(`/api/posts/${selectedPost.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
@@ -605,12 +668,50 @@
       <button class="posts-view__new-btn" on:click={newPost}>+ New</button>
     </div>
 
+    <!-- Kind filter tabs — segment broadcasts, blog articles, and country guides. -->
+    <div style="display:flex;gap:4px;padding:8px 12px 4px;flex-wrap:wrap;">
+      {#each FILTER_TABS as tab}
+        <button
+          type="button"
+          style={listFilter === tab.key
+            ? 'padding:4px 10px;border-radius:999px;border:1px solid rgba(2,181,187,0.55);background:rgba(2,181,187,0.12);color:#026a6e;font-size:11px;font-weight:700;cursor:pointer;'
+            : 'padding:4px 10px;border-radius:999px;border:1px solid var(--irp-border);background:transparent;color:var(--irp-text-muted);font-size:11px;font-weight:600;cursor:pointer;'}
+          on:click={() => (listFilter = tab.key)}
+        >{tab.label} ({kindCounts[tab.key]})</button>
+      {/each}
+    </div>
+
+    <!-- List search — filter the active tab by title, slug, or author. -->
+    <div class="posts-view__list-search">
+      <svg class="posts-view__list-search-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        class="posts-view__list-search-input"
+        type="search"
+        placeholder="Search title, slug, or author…"
+        bind:value={listSearch}
+        aria-label="Search posts"
+      />
+      {#if listSearch}
+        <button class="posts-view__list-search-clear" type="button" on:click={() => (listSearch = '')} aria-label="Clear search">×</button>
+      {/if}
+    </div>
+    {#if listSearch.trim()}
+      <div class="posts-view__list-count">{visiblePosts.length} result{visiblePosts.length === 1 ? '' : 's'} in {FILTER_TABS.find((t) => t.key === listFilter)?.label}</div>
+    {/if}
+
     {#if loading}
       <div class="posts-view__empty">Loading…</div>
-    {:else if posts.length === 0}
-      <div class="posts-view__empty">No posts yet. Create your first broadcast.</div>
+
+    {:else if visiblePosts.length === 0}
+      <div class="posts-view__empty">
+        {listSearch.trim() ? 'No posts match your search.' : 'No posts in this view.'}
+      </div>
     {:else}
-      {#each posts as p (p.id)}
+      {#each pagedPosts as p (p.id)}
+
+
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
@@ -628,7 +729,10 @@
           <div class="posts-view__card-meta">
             {#if p.kind === 'article'}
               <span class="posts-view__card-stat">📄 /blog/{p.slug}</span>
+            {:else if p.kind === 'country-guide'}
+              <span class="posts-view__card-stat">🌍 /guides/{p.slug}</span>
             {:else}
+
               <span class="posts-view__card-stat">🗓 {p.status === 'dispatched' ? formatDate(p.dispatchedAt ?? p.sendAt) : formatDate(p.sendAt)}</span>
               {#if p.status === 'dispatched'}
                 <span class="posts-view__card-stat posts-view__card-stat--success">✓ {p.sentCount ?? 0} sent</span>
@@ -641,19 +745,29 @@
           </div>
         </div>
       {/each}
+      {#if listPages > 1}
+        <footer class="posts-audit__pager posts-view__list-pager">
+          <button on:click={() => (listPage = Math.max(1, listPage - 1))} disabled={listPage <= 1} aria-label="Previous page">‹</button>
+          <span>{listPage} / {listPages}</span>
+          <button on:click={() => (listPage = Math.min(listPages, listPage + 1))} disabled={listPage >= listPages} aria-label="Next page">›</button>
+        </footer>
+      {/if}
     {/if}
   </div>
 
   <!-- ── Right: compose / detail ─────────────────────────────────────────── -->
+
   <div class="posts-view__compose-pane">
 
     <div class="posts-view__compose-title">
       {#if selectedPost?.status === 'dispatched'}
         ✏️ Edit Sent Post
+      {:else if kind === 'country-guide'}
+        {selectedPost ? '✏️ Edit Country Guide' : '🌍 New Country Guide'}
       {:else if kind === 'article'}
-
         {selectedPost ? '✏️ Edit Article' : '📄 New Article'}
       {:else if selectedPost}
+
         ✏️ Edit Post
       {:else}
         ✍️ New Post
@@ -819,19 +933,30 @@
               : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--irp-border);background:transparent;color:var(--irp-text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
             on:click={() => switchKind('article')}
           >📄 Web Article (Blog)</button>
+          <button
+            type="button"
+            style={kind === 'country-guide'
+              ? 'flex:1;padding:8px;border-radius:6px;border:1px solid rgba(2,181,187,0.55);background:rgba(2,181,187,0.12);color:#026a6e;font-size:12px;font-weight:700;cursor:pointer;'
+              : 'flex:1;padding:8px;border-radius:6px;border:1px solid var(--irp-border);background:transparent;color:var(--irp-text-muted);font-size:12px;font-weight:600;cursor:pointer;'}
+            on:click={() => switchKind('country-guide')}
+          >🌍 Country Guide</button>
         </div>
         <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
-          {#if kind === 'article'}
+          {#if kind === 'country-guide'}
+            Publishes to a public page at <strong>/guides/&lt;slug&gt;</strong>. Not emailed to anyone.
+          {:else if kind === 'article'}
             Publishes to a public page at <strong>/blog/&lt;slug&gt;</strong>. Not emailed to anyone.
           {:else}
             Emailed to all matching drip-enabled clients at the scheduled time.
           {/if}
         </div>
+
       </div>
 
       <!-- Title -->
       <div class="posts-view__field">
-        <div class="posts-view__section-label">📌 {kind === 'article' ? 'Article Title' : 'Subject / Title'}</div>
+        <div class="posts-view__section-label">📌 {kind === 'broadcast' ? 'Subject / Title' : kind === 'country-guide' ? 'Guide Title' : 'Article Title'}</div>
+
         <input
           class="posts-view__input"
           type="text"
@@ -840,8 +965,9 @@
         />
       </div>
 
-      {#if kind === 'article'}
+      {#if isWebPost}
         <!-- Slug -->
+
         <div class="posts-view__field">
           <div class="posts-view__section-label">🔗 URL Slug</div>
           <input
@@ -852,7 +978,8 @@
             on:input={() => (slugTouched = true)}
           />
           <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
-            Public URL: <strong>/blog/{slug || 'your-slug'}</strong>
+            Public URL: <strong>{publicPathBase}/{slug || 'your-slug'}</strong>
+
           </div>
         </div>
       {/if}
@@ -862,19 +989,20 @@
            HTML-source toggle. Merge fields are offered for broadcasts only —
            web articles are public pages with no client context. -->
       <div class="posts-view__field">
-        <div class="posts-view__section-label">📝 {kind === 'article' ? 'Article Body' : 'Email Body'}</div>
+        <div class="posts-view__section-label">📝 {isWebPost ? 'Body' : 'Email Body'}</div>
         <LiveHtmlEditor
           bind:value={bodyHtml}
           fields={kind === 'broadcast' ? $mergeFieldOptions : []}
           minHeight="280px"
-          placeholder={kind === 'article'
-            ? 'Write your article — format visually, or switch to HTML…'
+          placeholder={isWebPost
+            ? 'Write your content — format visually, or switch to HTML…'
             : 'Write your email — format visually, insert client fields, or switch to HTML…'}
         />
         <div style="font-size:10px;color:var(--irp-text-dim);margin-top:4px;">
-          {#if kind === 'article'}
+          {#if isWebPost}
             Format visually with the toolbar, or click <strong>&lt;/&gt; HTML</strong> to edit raw HTML. The page header and styling are added automatically.
           {:else}
+
             Format visually, insert client fields with <strong>{'{{ }}'} Field</strong>, or click <strong>&lt;/&gt; HTML</strong> for raw HTML. The logo, header, and signature wrap your content automatically.
           {/if}
         </div>
@@ -987,7 +1115,8 @@
       <div class="posts-view__actions">
         <button
           class="posts-view__btn posts-view__btn--preview"
-          on:click={kind === 'article' ? openArticlePreview : openPreview}
+          on:click={isWebPost ? openArticlePreview : openPreview}
+
           disabled={saving || !bodyHtml.trim()}
         >👁 Preview</button>
 
@@ -997,10 +1126,11 @@
           disabled={saving}
         >{saving ? 'Saving…' : (selectedPost && selectedPost.status !== 'draft' ? '💾 Save' : '💾 Save Draft')}</button>
 
-        {#if kind === 'article'}
+        {#if isWebPost}
           <button
             class="posts-view__btn posts-view__btn--schedule"
             on:click={publishArticle}
+
             disabled={saving || !title.trim() || !bodyHtml.trim() || !slug.trim()}
           >{saving ? 'Publishing…' : '🌐 Publish'}</button>
         {:else}

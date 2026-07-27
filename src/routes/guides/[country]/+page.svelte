@@ -9,7 +9,15 @@
   import { irpStaffIsAuthenticated, checkIrpStaff } from '../../../lib/auth/irpStaff.ts';
   import './guide.scss';
 
-  export let data: { country: string; markdownContent: string };
+  export let data: {
+    country: string;
+    markdownContent?: string;
+    bodyHtml?: string;
+    title?: string;
+    displayName?: string;
+    pdfUrl?: string;
+  };
+
 
   let htmlContent = "";
   let showModal = false;
@@ -52,9 +60,12 @@
 
     isCheckingAccess = false;
 
-    // Parse markdown into HTML when component mounts
-    let parsedHtml = marked(data.markdownContent) as string;
-    
+    // Prefer CRM-authored HTML (WYSIWYG); fall back to bundled markdown.
+    let parsedHtml = data.bodyHtml && data.bodyHtml.trim()
+      ? data.bodyHtml
+      : (marked(data.markdownContent || '') as string);
+
+
     // Add target="_blank" to links, and some base classes to tables safely via regex
     // This avoids compatibility issues with different versions of the `marked` renderer API.
     parsedHtml = parsedHtml.replace(/<a href="/g, '<a target="_blank" rel="noopener noreferrer" href="');
@@ -64,8 +75,10 @@
     htmlContent = parsedHtml;
   });
   
-  // Format country name for display
-  $: displayName = countries.find(c => c.code === data.country.toUpperCase())?.name || data.country;
+  // Format country name for display — prefer the CRM guide's country label,
+  // then the country-code lookup, then the raw route param.
+  $: displayName = data.displayName || countries.find(c => c.code === data.country.toUpperCase())?.name || data.country;
+
 
   /**
    * Staff-only: open the lead-capture modal so an organization agent can
