@@ -194,25 +194,24 @@
     }
   }
 
-  function unblur(e: KeyboardEvent) {
-    e.currentTarget?.dispatchEvent(new CustomEvent('unblur', {
-      detail: { timeTriggered: Date.now() },
-      bubbles: true // Allows the event to bubble up the DOM tree
-    }))
-  }
-
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
       cancelEdit();
     } else if (e.key === 'Enter' && !multiline) {
       e.preventDefault();
-      unblur(e);
+      // Blur to commit exactly once. Committing on keydown AND on the teardown
+      // blur fired editField() twice: the second call carried the now-stale
+      // expectedOldValue and the server rejected it with 409
+      // "value_changed_concurrently" (the "won't let me change it" bug).
+      // Blurring makes on:blur the single commit path.
+      inputEl?.blur();
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      unblur(e);
+      inputEl?.blur();
     }
   }
+
 </script>
 
 <div class="editable-field" class:editable-field--inline={variant === 'inline'} class:editable-field--editing={editing} class:editable-field--readonly={readonly}>
