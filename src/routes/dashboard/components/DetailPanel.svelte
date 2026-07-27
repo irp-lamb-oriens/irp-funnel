@@ -47,6 +47,8 @@
   import EditableField from './EditableField.svelte';
   import DateFieldRow from './DateFieldRow.svelte';
   import FieldControl from './FieldControl.svelte';
+  import VehicleListEditor from './VehicleListEditor.svelte';
+
   import TranscriptPaster from './TranscriptPaster.svelte';
 
   import PendingBadge from './PendingBadge.svelte';
@@ -1064,7 +1066,11 @@
                widgets; scalars use the generic click-to-edit <EditableField>. -->
           {#each overviewFields as f (f.id)}
             {@const val = ovValue($selectedClient, f, latestIdx)}
-            {#if f.showWhenEmpty || ovHasValue(val)}
+            <!-- `vehicles` is an in-place editor (add/edit/delete), so it always
+                 renders — even empty/non-existent — so an operator can build the
+                 list from scratch. Every other field honors its showWhenEmpty. -->
+            {#if f.showWhenEmpty || ovHasValue(val) || f.valueType === 'vehicles'}
+
               <div class="detail-field" class:detail-field--full={f.valueType === 'route' || f.valueType === 'text'}>
                 <span class="detail-field__label">{f.label}</span>
 
@@ -1126,12 +1132,13 @@
 
 
                 {:else if f.valueType === 'vehicles'}
-                  <!-- Composite: vehicles[] chips (display) -->
-                  <div class="detail-field__value">
-                    {#each ($selectedClient.vehicles || []) as v}
-                      <span class="detail-field__tag">{v.year} {v.make} {v.model}</span>
-                    {/each}
-                  </div>
+                  <!-- Composite: add / edit / delete vehicle rows (shown even when empty) -->
+                  <VehicleListEditor
+                    clientId={$selectedClient.id}
+                    path={`consultations.${latestIdx}.vehicles`}
+                    vehicles={$selectedClient.vehicles || []}
+                  />
+
 
                 {:else if f.valueType === 'datetime-list'}
                   <!-- Composite: scheduling[] with reschedule / schedule CTA -->
