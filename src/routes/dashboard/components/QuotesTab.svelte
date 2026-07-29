@@ -299,15 +299,22 @@
     <!-- ── Inline quote editor — opens in place (above the list), instead of
          replacing the whole tab. Cancel/Save collapse it back to the list. ── -->
     {#if showEditor}
-      <div class="quotes-tab__editor-inline">
-        <QuoteEditor
-          {clientId}
-          quoteId={editingQuoteId}
-          on:saved={handleEditorSaved}
-          on:cancelled={handleEditorCancelled}
-        />
-      </div>
+      <!-- Key on the quote id so switching which quote is edited (or New Quote)
+           remounts the editor and re-runs its load. Without this, the editor is
+           reused in place and only loads on first mount — clicking Edit on
+           another quote while it's already open would appear to do nothing. -->
+      {#key editingQuoteId}
+        <div class="quotes-tab__editor-inline">
+          <QuoteEditor
+            {clientId}
+            quoteId={editingQuoteId}
+            on:saved={handleEditorSaved}
+            on:cancelled={handleEditorCancelled}
+          />
+        </div>
+      {/key}
     {/if}
+
 
     {#if loading}
 
