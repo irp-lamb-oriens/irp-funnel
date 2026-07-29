@@ -2588,12 +2588,12 @@ export interface Quote {
 }
 
 export const QUOTE_STATUS_LABEL: Record<Quote['status'], { label: string; color: string }> = {
-  draft:            { label: 'Borrador',       color: '#94a3b8' },
-  pending_approval: { label: 'En revisión',    color: '#f59e0b' },
-  changes_requested:{ label: 'Cambios pedidos',color: '#ef4444' },
-  approved:         { label: 'Aprobada',       color: '#22c55e' },
-  sent_to_client:   { label: 'Enviada al cliente', color: '#3b82f6' },
-  client_accepted:  { label: 'Aceptada ✓',    color: '#16a34a' },
+  draft:            { label: 'Draft',             color: '#94a3b8' },
+  pending_approval: { label: 'In review',         color: '#f59e0b' },
+  changes_requested:{ label: 'Changes requested', color: '#ef4444' },
+  approved:         { label: 'Ready to send',     color: '#f59e0b' },
+  sent_to_client:   { label: 'Sent to client',    color: '#3b82f6' },
+  client_accepted:  { label: 'Accepted ✓',        color: '#16a34a' },
 };
 
 /** Fetch all quotes for a client (newest first). */
