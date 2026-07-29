@@ -33,11 +33,13 @@
     updateOverviewField,
     reorderOverviewFields,
     deleteOverviewField,
+    COMPOSITE_SUBFIELDS,
     type FieldConfigRow,
     type FieldValueType,
     type FieldSection,
     type FieldScope,
   } from '../store.ts';
+
 
   let loading = true;
   let error = '';
@@ -163,7 +165,18 @@
     }
   }
 
+  /**
+   * Update one sub-label of a composite field (route/property). Merges the new
+   * value into the field's `subLabels` map and persists via the same PATCH
+   * helper — a blank value falls back to the built-in caption on render.
+   */
+  async function patchSubLabel(field: FieldConfigRow, key: string, value: string) {
+    const next = { ...(field.subLabels ?? {}), [key]: value.trim() };
+    await patchField(field, { subLabels: next });
+  }
+
   async function confirmDelete() {
+
     if (!deleteModalField) return;
     const id = deleteModalField.id;
     busyId = id;
@@ -371,7 +384,37 @@
                 >
               </td>
             </tr>
+
+            <!-- Composite fields (route / property) carry several nameless
+                 sub-inputs. Let operators name each one here; blank falls back
+                 to the built-in caption on the Overview tab. -->
+            {#if COMPOSITE_SUBFIELDS[field.valueType]}
+              <tr class="ofe-sub-row" class:ofe-row--off={field.active === false}>
+                <td></td>
+                <td colspan="7">
+                  <div class="ofe-sublabels">
+                    <span class="ofe-sublabels__hint">Sub-labels — name each input</span>
+                    <div class="ofe-sublabels__grid">
+                      {#each COMPOSITE_SUBFIELDS[field.valueType] ?? [] as sub (sub.key)}
+                        <label class="ofe-sublabels__item">
+                          <span class="ofe-sublabels__key">{sub.key}</span>
+                          <input
+                            class="ofe-sublabels__input"
+                            type="text"
+                            value={field.subLabels?.[sub.key] ?? ''}
+                            placeholder={sub.fallback}
+                            disabled={busyId === field.id}
+                            on:change={(e) => patchSubLabel(field, sub.key, e.currentTarget.value)}
+                          />
+                        </label>
+                      {/each}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {/if}
           {/each}
+
         </tbody>
       </table>
     </div>
@@ -553,7 +596,59 @@
     box-shadow: 0 0 0 2px rgba(2, 181, 187, 0.12);
   }
 
+  /* ── Composite sub-label editor (route / property rows) ─────────────── */
+  .ofe-sub-row td {
+    padding-top: 0.15rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fafbff;
+  }
+  .ofe-sublabels {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .ofe-sublabels__hint {
+    font-size: 0.63rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .ofe-sublabels__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .ofe-sublabels__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .ofe-sublabels__key {
+    font-size: 0.6rem;
+    color: #b6c0cf;
+    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  }
+  .ofe-sublabels__input {
+    width: 130px;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.14s, box-shadow 0.14s;
+  }
+  .ofe-sublabels__input:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 2px rgba(2, 181, 187, 0.12);
+  }
+
   .ofe-col-order { width: 64px; white-space: nowrap; }
+
   .ofe-col-toggle { width: 72px; text-align: center; }
   .ofe-col-actions { width: 48px; text-align: right; }
 

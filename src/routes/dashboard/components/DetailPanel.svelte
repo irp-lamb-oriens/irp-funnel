@@ -1075,59 +1075,89 @@
                 <span class="detail-field__label">{f.label}</span>
 
                 {#if f.valueType === 'route'}
-                  <!-- Composite: origin city/country → destination city/country -->
+                  {@const sl = f.subLabels ?? {}}
+                  <!-- Composite: origin city/country → destination city/country.
+                       Each box carries a small caption sourced from the field's
+                       configurable `subLabels` (Automations → Overview fields),
+                       falling back to a built-in label so it's never nameless. -->
                   <div class="detail-field__route">
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.originCity`}
-                      value={$selectedClient.originCity}
-                      label="Origin city"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.originCity ?? 'City'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.originCity`}
+                        value={$selectedClient.originCity}
+                        label={sl.originCity ?? 'Origin city'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                     <span class="detail-field__route-sep">,</span>
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.originCountry`}
-                      value={$selectedClient.originCountry}
-                      label="Origin country"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.originCountry ?? 'Country'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.originCountry`}
+                        value={$selectedClient.originCountry}
+                        label={sl.originCountry ?? 'Origin country'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                     <span class="detail-field__route-arrow">→</span>
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.destinationCity`}
-                      value={$selectedClient.destinationCity}
-                      label="Destination city"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.destinationCity ?? 'City'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.destinationCity`}
+                        value={$selectedClient.destinationCity}
+                        label={sl.destinationCity ?? 'Destination city'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                     <span class="detail-field__route-sep">,</span>
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.destinationCountry`}
-                      value={$selectedClient.destinationCountry}
-                      label="Destination country"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.destinationCountry ?? 'Country'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.destinationCountry`}
+                        value={$selectedClient.destinationCountry}
+                        label={sl.destinationCountry ?? 'Destination country'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                   </div>
 
                 {:else if f.valueType === 'property'}
-                  <!-- Composite: property type origin → destination -->
+                  {@const sl = f.subLabels ?? {}}
+                  <!-- Composite: property type origin → destination. Captions
+                       come from the field's configurable `subLabels`. -->
                   <div class="detail-field__route">
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.propertyTypeFrom`}
-                      value={$selectedClient.propertyTypeFrom}
-                      label="From"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.propertyTypeFrom ?? 'From'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.propertyTypeFrom`}
+                        value={$selectedClient.propertyTypeFrom}
+                        label={sl.propertyTypeFrom ?? 'From'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                     <span class="detail-field__route-arrow">→</span>
-                    <EditableField
-                      clientId={$selectedClient.id}
-                      path={`consultations.${latestIdx}.propertyTypeTo`}
-                      value={$selectedClient.propertyTypeTo}
-                      label="To"
-                      placeholder="—"
-                    />
+                    <div class="detail-field__sub">
+                      <span class="detail-field__sub-label">{sl.propertyTypeTo ?? 'To'}</span>
+                      <EditableField
+                        clientId={$selectedClient.id}
+                        path={`consultations.${latestIdx}.propertyTypeTo`}
+                        value={$selectedClient.propertyTypeTo}
+                        label={sl.propertyTypeTo ?? 'To'}
+                        variant="inline"
+                        placeholder="—"
+                      />
+                    </div>
                   </div>
 
 

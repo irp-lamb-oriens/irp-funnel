@@ -3800,16 +3800,46 @@ export interface FieldConfigRow {
   clientVisible?: boolean;
   /** Client-portal editability (client may edit on /status). Default false. */
   clientEditable?: boolean;
+  /**
+   * Per-sub-input labels for composite fields (route/property), keyed by the
+   * sub-input's consultation-doc key (e.g. `originCity`, `propertyTypeFrom`).
+   * Drives the visible caption above each otherwise-nameless box. Optional —
+   * absent falls back to the renderer's built-in caption (see COMPOSITE_SUBFIELDS).
+   */
+  subLabels?: Record<string, string>;
   active: boolean;
   isSeed?: boolean;
+
 
   updatedBy?: string;
   updatedAt?: string;
   createdAt?: string;
 }
 
+/**
+ * The sub-inputs each COMPOSITE field type renders, in visual order, with the
+ * consultation-doc key they bind to and a built-in fallback caption. This is the
+ * single source of truth shared by the Overview renderer (DetailPanel) and the
+ * sub-label editor (OverviewFieldsEditor): a field's `subLabels[key]` overrides
+ * the fallback, so operators can rename each otherwise-nameless box from
+ * Automations → Overview fields. Types absent here have no editable sub-labels.
+ */
+export const COMPOSITE_SUBFIELDS: Partial<Record<FieldValueType, { key: string; fallback: string }[]>> = {
+  route: [
+    { key: 'originCity', fallback: 'City' },
+    { key: 'originCountry', fallback: 'Country' },
+    { key: 'destinationCity', fallback: 'City' },
+    { key: 'destinationCountry', fallback: 'Country' },
+  ],
+  property: [
+    { key: 'propertyTypeFrom', fallback: 'From' },
+    { key: 'propertyTypeTo', fallback: 'To' },
+  ],
+};
+
 /** The full ordered Overview-field registry as last loaded from the server. */
 export const fieldConfig = writable<FieldConfigRow[]>([]);
+
 
 /** Active fields (what the Overview tab surfaces), in order. */
 export const activeFields = derived(fieldConfig, ($fields) =>

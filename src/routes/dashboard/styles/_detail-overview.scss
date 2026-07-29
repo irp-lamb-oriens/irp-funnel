@@ -77,6 +77,26 @@
       font-size: 16px;
       margin: 0 $sp-1;
     }
+    /*
+     * A single labelled sub-input inside the Route / Property composites. The
+     * caption above each box names the otherwise-nameless input (City / Country
+     * / From / To …), sourced from the field's configurable `subLabels`.
+     */
+    &__sub {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    &__sub-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: $text-dim;
+      line-height: 1;
+    }
+
     &__tag {
       display: inline-block;
       font-size: 12px;
