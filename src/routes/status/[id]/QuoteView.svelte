@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import type { Quote } from '../../dashboard/store.ts';
-  import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription } from '../../dashboard/store.ts';
+  import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription, QUOTE_STATUS_LABEL } from '../../dashboard/store.ts';
+
   import BlockRenderer from './BlockRenderer.svelte';
   import { renderMarkdown } from './renderMarkdown.ts';
   import { project } from './store.ts';
@@ -23,7 +24,15 @@
   // True when an IRP staff member is viewing via the dashboard bypass — they
   // must never be able to accept a quote on the client's behalf.
   $: isStaff = $irpStaffIsAuthenticated;
+  // Staff-only: the exact quote status (Draft / Sent to client / etc.) so IRP
+  // staff can tell the real state on the status page. Clients still see the
+  // simple "Pending acceptance" / "Accepted" badge. Colors/labels come from the
+  // centralized QUOTE_STATUS_LABEL map (single source of truth for statuses).
+  $: statusMeta = quote
+    ? (QUOTE_STATUS_LABEL[quote.status] ?? { label: quote.status, color: '#64748b' })
+    : { label: '', color: '#64748b' };
   // Phase 3 — selections captured from BlockRenderer's accept event
+
   let selectedLineItemIds: string[] = [];
 
   // Phase D — AI client description shown below the title, with a loading state
@@ -247,8 +256,18 @@
          `accept` event back up so we can orchestrate via acceptQuoteAsClient.
          Legacy quotes without `blocks` are unaffected — they fall through
          to the qv-container path below. -->
+    {#if isStaff}
+      <!-- Staff-only status pill — clients never see this. -->
+      <div class="qv-staff-status-bar">
+        <span
+          class="qv-badge"
+          style="background: {statusMeta.color}18; color: {statusMeta.color}; border-color: {statusMeta.color}44;"
+        >{statusMeta.label}</span>
+      </div>
+    {/if}
     <BlockRenderer
       blocks={quote.blocks}
+
       {quote}
       {accepted}
       {accepting}
@@ -272,9 +291,16 @@
         <h2 class="qv-title">{quote.title || 'Quote'}</h2>
       {#if quote.status === 'client_accepted'}
         <span class="qv-badge qv-badge-accepted">✓ Accepted</span>
+      {:else if isStaff}
+        <!-- Staff-only: real status (Draft / Ready to send / Sent to client / …) -->
+        <span
+          class="qv-badge"
+          style="background: {statusMeta.color}18; color: {statusMeta.color}; border-color: {statusMeta.color}44;"
+        >{statusMeta.label}</span>
       {:else}
         <span class="qv-badge qv-badge-pending">Pending acceptance</span>
       {/if}
+
     </div>
 
     {#if hasGroups}
@@ -590,6 +616,15 @@
     color: #d97706;
     border-color: #fde68a;
   }
+  /* Staff-only status pill — colors come from QUOTE_STATUS_LABEL via inline style. */
+  .qv-staff-status-bar {
+    display: flex;
+    justify-content: flex-end;
+    max-width: 820px;
+    margin: 0 auto 12px;
+    padding: 0 8px;
+  }
+
 
   /* ── Line items table ─────────────────────────────────────────────────── */
   .qv-table {
