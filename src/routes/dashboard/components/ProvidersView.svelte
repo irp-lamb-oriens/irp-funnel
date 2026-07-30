@@ -1,5 +1,6 @@
 <script lang="ts">
   import Alert from './ui/Alert.svelte';
+  import StepModal from './ui/StepModal.svelte';
   /**
    * ProvidersView.svelte
    *
@@ -130,6 +131,8 @@
   // Form state
   let showForm = false;
   let editingId: string | null = null;
+  /** Active index in the create/edit wizard. Reset whenever the modal opens. */
+  let currentStep = 0;
 
   /**
    * Globally known custom field names — fetched from /field-schema.
@@ -175,6 +178,47 @@
   }
 
 
+
+  // ── Form validation (single source of truth for the wizard + save) ───────
+  //
+  // Each `*Valid` flag below feeds BOTH the StepModal gate (which disables
+  // Next/Submit) and `saveProvider`, so the wizard can never let through a
+  // payload the save path would reject.
+
+  /** Contacts with all-blank rows dropped — what actually gets submitted. */
+  $: cleanContacts = form.contacts
+    .map((c) => ({ name: c.name.trim(), email: c.email.trim(), phone: (c.phone || '').trim() }))
+    .filter((c) => c.name || c.email || c.phone);
+
+  $: identityValid = form.name.trim().length > 0;
+  $: contactsValid =
+    cleanContacts.length > 0 &&
+    cleanContacts.every((c) => c.name.length > 0 && c.email.includes('@'));
+  $: servicesValid =
+    form.serviceCategories.length > 0 && form.shippingModalities.length > 0;
+
+  /** Wizard definition. `valid: false` gates the step in <StepModal>. */
+  $: providerSteps = [
+    {
+      id: 'identity',
+      label: 'Identity',
+      valid: identityValid,
+      hint: 'A provider name is required.',
+    },
+    {
+      id: 'contacts',
+      label: 'Contacts',
+      valid: contactsValid,
+      hint: 'Add at least one contact — each needs a name and a valid email.',
+    },
+    {
+      id: 'services',
+      label: 'Services',
+      valid: servicesValid,
+      hint: 'Pick at least one service category and one shipping modality.',
+    },
+    { id: 'coverage', label: 'Coverage' },
+  ];
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -237,25 +281,30 @@
     error = '';
     success = '';
 
-    if (!form.name.trim()) { error = 'Name is required.'; return; }
-
-    // Contacts: drop fully-empty rows, then require a valid name + email on each.
-    const cleanContacts = form.contacts
-      .map(c => ({ name: c.name.trim(), email: c.email.trim(), phone: (c.phone || '').trim() }))
-      .filter(c => c.name || c.email || c.phone);
-    if (cleanContacts.length === 0) { error = 'Add at least one contact.'; return; }
-    for (const c of cleanContacts) {
-      if (!c.name) { error = 'Each contact needs a name.'; return; }
-      if (!c.email.includes('@')) { error = `Contact "${c.name}" needs a valid email.`; return; }
+    // Last line of defence. The wizard already gates each of these, but the
+    // save path stays authoritative — and jumps the operator to the offending
+    // step rather than just printing a message.
+    if (!identityValid) {
+      error = 'Name is required.';
+      currentStep = 0;
+      return;
     }
+    if (!contactsValid) {
+      error = 'Add at least one contact — each needs a name and a valid email.';
+      currentStep = 1;
+      return;
+    }
+    if (!servicesValid) {
+      error = 'Select at least one service category and one shipping modality.';
+      currentStep = 2;
+      return;
+    }
+
     const contactsPayload = cleanContacts.map(c => ({
       name: c.name,
       email: c.email,
       ...(c.phone ? { phone: c.phone } : {}),
     }));
-
-    if (form.serviceCategories.length === 0) { error = 'Select at least one service category.'; return; }
-    if (form.shippingModalities.length === 0) { error = 'Select at least one shipping modality.'; return; }
 
     // Collect non-empty custom fields
     const customFieldsPayload: Record<string, string> = {};
@@ -309,6 +358,7 @@
   async function startEdit(p: Provider) {
     editingId = p.id;
     showForm = true;
+    currentStep = 0;
     error = '';
     success = '';
 
@@ -355,6 +405,7 @@
   function cancelForm() {
     showForm = false;
     editingId = null;
+    currentStep = 0;
     form = emptyForm();
     // Reset custom fields to blank stubs for known names
     formCustomFields = {};
@@ -445,116 +496,133 @@
     <Alert type="success" dismissible on:dismiss={() => success = ''}>{success}</Alert>
   {/if}
 
-  <!-- Create / Edit Form -->
-  {#if showForm}
-    <div class="provider-modal-overlay" role="presentation" on:click|self={cancelForm}>
-      <div class="provider-modal" role="dialog" aria-modal="true">
-        <div class="provider-modal-head">
-          <h3>{editingId ? '✏️ Edit Provider' : '➕ New Provider'}</h3>
-          <button class="provider-modal-close" type="button" on:click={cancelForm} aria-label="Close">✕</button>
-        </div>
-
-        <div class="provider-modal-body">
+  <!-- Create / Edit wizard -->
+  <StepModal
+    open={showForm}
+    title={editingId ? '✏️ Edit Provider' : '➕ New Provider'}
+    steps={providerSteps}
+    bind:current={currentStep}
+    submitting={loading}
+    submitLabel={editingId ? '💾 Update Provider' : '➕ Create Provider'}
+    {error}
+    size="lg"
+    on:close={cancelForm}
+    on:submit={saveProvider}
+    let:current
+  >
+    <!-- ── Step 1 · Identity ─────────────────────────────────────────── -->
+    {#if current === 0}
+      <p class="step-intro">Who is this provider? Only the name is required.</p>
       <div class="form-grid">
-        <!-- Basic Info -->
         <div class="form-field">
-          <label>Name *</label>
-          <input bind:value={form.name} placeholder="Shipping Co. Name" />
+          <label for="pv-name">Name *</label>
+          <input id="pv-name" bind:value={form.name} placeholder="Shipping Co. Name" />
         </div>
         <div class="form-field">
-          <label>Website</label>
-          <input bind:value={form.website} placeholder="https://shippingco.com" />
+          <label for="pv-website">Website</label>
+          <input id="pv-website" bind:value={form.website} placeholder="https://shippingco.com" />
         </div>
-        <div class="form-field">
-          <label>Quality Score <span class="hint">(drag the stars)</span></label>
-          <div class="score-field">
-            <StarRating
-              value={form.score}
-              size={24}
-              on:change={(e) => form.score = e.detail}
-            />
+        <div class="form-field form-field--full">
+          <span class="field-label" id="pv-score-label">
+            Quality Score <span class="hint">(drag the stars)</span>
+          </span>
+          <div class="score-field" role="group" aria-labelledby="pv-score-label">
+            <StarRating value={form.score} size={24} on:change={(e) => form.score = e.detail} />
           </div>
         </div>
+      </div>
 
-        <!-- Contacts (one or more) -->
-        <div class="form-field form-field--full">
-          <label>Contacts * <span class="hint">(the first entry is the primary contact)</span></label>
-          <div class="contacts-list">
-            {#each form.contacts as contact, i (i)}
-              <div class="contact-row">
-                <span class="contact-index">{i + 1}</span>
-                <input class="contact-input" bind:value={contact.name} placeholder="Name (e.g. Juan Arias)" />
-                <input class="contact-input" type="email" bind:value={contact.email} placeholder="email@company.com" />
-                <input class="contact-input" bind:value={contact.phone} placeholder="Phone (optional)" />
-                <button
-                  type="button"
-                  class="contact-remove"
-                  title="Remove contact"
-                  aria-label="Remove contact"
-                  on:click={() => removeContactRow(i)}
-                  disabled={form.contacts.length <= 1}
-                >✕</button>
-              </div>
-            {/each}
+    <!-- ── Step 2 · Contacts ─────────────────────────────────────────── -->
+    {:else if current === 1}
+      <p class="step-intro">
+        Add everyone we might need to reach. The first entry is the primary contact.
+      </p>
+      <div class="contacts-list">
+        {#each form.contacts as contact, i (i)}
+          <div class="contact-row">
+            <span class="contact-index">{i + 1}</span>
+            <input class="contact-input" bind:value={contact.name} placeholder="Name (e.g. Juan Arias)" />
+            <input class="contact-input" type="email" bind:value={contact.email} placeholder="email@company.com" />
+            <input class="contact-input" bind:value={contact.phone} placeholder="Phone (optional)" />
+            <button
+              type="button"
+              class="contact-remove"
+              title="Remove contact"
+              aria-label="Remove contact"
+              on:click={() => removeContactRow(i)}
+              disabled={form.contacts.length <= 1}
+            >✕</button>
           </div>
-          <button type="button" class="btn-add-contact" on:click={addContactRow}>+ Add contact</button>
+        {/each}
+      </div>
+      <button type="button" class="btn-add-contact" on:click={addContactRow}>+ Add contact</button>
+
+    <!-- ── Step 3 · Services ─────────────────────────────────────────── -->
+    {:else if current === 2}
+      <p class="step-intro">What does this provider actually do, and how do they ship?</p>
+
+      <div class="form-field form-field--full">
+        <span class="field-label" id="pv-cats-label">
+          Service Categories * <span class="hint">(what they offer)</span>
+        </span>
+        <div class="checkbox-group" role="group" aria-labelledby="pv-cats-label">
+          {#each SERVICE_CATEGORY_OPTIONS as opt}
+            <label class="checkbox-label" class:checked={form.serviceCategories.includes(opt.value)}>
+              <input
+                type="checkbox"
+                checked={form.serviceCategories.includes(opt.value)}
+                on:change={() => form.serviceCategories = toggleCheckbox(form.serviceCategories, opt.value)}
+              />
+              {CATEGORY_EMOJI[opt.value]} {opt.label}
+            </label>
+          {/each}
         </div>
+      </div>
 
-
-
-        <!-- Service Categories -->
-        <div class="form-field form-field--full">
-          <label>Service Categories * <span class="hint">(what they offer)</span></label>
-          <div class="checkbox-group">
-            {#each SERVICE_CATEGORY_OPTIONS as opt}
-              <label class="checkbox-label" class:checked={form.serviceCategories.includes(opt.value)}>
-                <input
-                  type="checkbox"
-                  checked={form.serviceCategories.includes(opt.value)}
-                  on:change={() => form.serviceCategories = toggleCheckbox(form.serviceCategories, opt.value)}
-                />
-                {CATEGORY_EMOJI[opt.value]} {opt.label}
-              </label>
-            {/each}
-          </div>
+      <div class="form-field form-field--full step-block">
+        <span class="field-label" id="pv-mods-label">
+          Shipping Modalities * <span class="hint">(transport modes they support)</span>
+        </span>
+        <div class="checkbox-group" role="group" aria-labelledby="pv-mods-label">
+          {#each SHIPPING_MODALITY_OPTIONS as opt}
+            <label class="checkbox-label" class:checked={form.shippingModalities.includes(opt.value)}>
+              <input
+                type="checkbox"
+                checked={form.shippingModalities.includes(opt.value)}
+                on:change={() => form.shippingModalities = toggleCheckbox(form.shippingModalities, opt.value)}
+              />
+              {opt.label}
+            </label>
+          {/each}
         </div>
+      </div>
 
-        <!-- Shipping Modalities -->
-        <div class="form-field form-field--full">
-          <label>Shipping Modalities * <span class="hint">(transport modes they support)</span></label>
-          <div class="checkbox-group">
-            {#each SHIPPING_MODALITY_OPTIONS as opt}
-              <label class="checkbox-label" class:checked={form.shippingModalities.includes(opt.value)}>
-                <input
-                  type="checkbox"
-                  checked={form.shippingModalities.includes(opt.value)}
-                  on:change={() => form.shippingModalities = toggleCheckbox(form.shippingModalities, opt.value)}
-                />
-                {opt.label}
-              </label>
-            {/each}
-          </div>
-        </div>
-
-        <!-- Regions -->
+    <!-- ── Step 4 · Coverage & notes (all optional) ──────────────────── -->
+    {:else if current === 3}
+      <p class="step-intro">Everything here is optional. Save whenever you're ready.</p>
+      <div class="form-grid">
         <div class="form-field">
-          <label>Origin Regions <span class="hint">(comma-separated)</span></label>
-          <input bind:value={form.originRegions} placeholder="USA, Canada, Mexico" />
+          <label for="pv-origin">Origin Regions <span class="hint">(comma-separated)</span></label>
+          <input id="pv-origin" bind:value={form.originRegions} placeholder="USA, Canada, Mexico" />
         </div>
         <div class="form-field">
-          <label>Destination Regions <span class="hint">(comma-separated)</span></label>
-          <input bind:value={form.destinationRegions} placeholder="Costa Rica, Panama, Spain" />
+          <label for="pv-dest">Destination Regions <span class="hint">(comma-separated)</span></label>
+          <input id="pv-dest" bind:value={form.destinationRegions} placeholder="Costa Rica, Panama, Spain" />
         </div>
 
-        <!-- Notes -->
         <div class="form-field form-field--full">
-          <label>Internal Notes</label>
-          <textarea bind:value={form.notes} rows="3" placeholder="E.g. preferred for LCL, slow response times for ocean FCL…"></textarea>
+          <label for="pv-notes">Internal Notes</label>
+          <textarea
+            id="pv-notes"
+            bind:value={form.notes}
+            rows="3"
+            placeholder="E.g. preferred for LCL, slow response times for ocean FCL…"
+          ></textarea>
         </div>
 
-        <!-- Custom Fields ─ grow organically; every key ever added appears on all future providers -->
+        <!-- Custom fields grow organically; every key ever added appears on all future providers -->
         <div class="form-field form-field--full">
-          <label>
+          <label for="pv-newfield">
             Additional Fields
             <span class="hint"> — any field added here becomes available on all providers</span>
           </label>
@@ -574,34 +642,25 @@
           {/if}
           <div class="custom-field-add-row">
             <input
+              id="pv-newfield"
               bind:value={newCustomFieldName}
               placeholder="New field name (e.g. Port of Origin)"
               class="custom-field-name-input"
               on:keydown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomFieldRow())}
             />
-            <button type="button" class="btn-add-field" on:click={addCustomFieldRow} disabled={!newCustomFieldName.trim()}>
+            <button
+              type="button"
+              class="btn-add-field"
+              on:click={addCustomFieldRow}
+              disabled={!newCustomFieldName.trim()}
+            >
               + Add Field
             </button>
           </div>
         </div>
       </div>
-
-        </div><!-- /provider-modal-body -->
-
-        <div class="provider-modal-foot">
-          {#if error}
-            <Alert type="error" compact>{error}</Alert>
-          {/if}
-          <div class="provider-modal-foot-actions">
-            <button class="btn-ghost" type="button" on:click={cancelForm}>Cancel</button>
-            <button class="btn-primary" on:click={saveProvider} disabled={loading}>
-              {loading ? 'Saving…' : editingId ? '💾 Update Provider' : '➕ Create Provider'}
-            </button>
-          </div>
-        </div>
-      </div><!-- /provider-modal -->
-    </div><!-- /provider-modal-overlay -->
-  {/if}
+    {/if}
+  </StepModal>
 
 
   <!-- Search bar -->
@@ -816,20 +875,6 @@
   .btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.35); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-  .btn-ghost {
-    background: transparent;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
-  }
-  .btn-ghost:hover { background: #f3f4f6; border-color: #cbd5e1; }
-  .btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.25); }
-
   .btn-icon {
     background: none;
     border: none;
@@ -923,101 +968,15 @@
     color: #111;
   }
 
-  /* ── Modal (create / edit provider) ──────────────────────── */
-  .provider-modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: rgba(6, 13, 13, 0.55);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 40px 16px;
-    overflow-y: auto;
-    animation: providerOverlayIn 0.18s ease;
+  /* ── Wizard steps (shell + rail live in ui/StepModal.svelte) ─────────── */
+  .step-intro {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.55;
   }
-  @keyframes providerOverlayIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  .provider-modal {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    width: 100%;
-    max-width: 720px;
-    margin: auto;
-    max-height: calc(100vh - 80px);
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 24px 70px rgba(6, 13, 13, 0.30);
-    overflow: hidden;
-    animation: providerModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  @keyframes providerModalIn {
-    from { opacity: 0; transform: translateY(14px) scale(0.985); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .provider-modal-head {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 20px 24px;
-    border-bottom: 1px solid #eef0f2;
-    flex-shrink: 0;
-    background: linear-gradient(180deg, #fbfdfd 0%, #ffffff 100%);
-  }
-  .provider-modal-head::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #02b5bb 0%, #0b3b3d 100%);
-  }
-  .provider-modal-head h3 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 700;
-    color: #111;
-  }
-  .provider-modal-close {
-    background: #f3f4f6;
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    font-size: 15px;
-    color: #6b7280;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.12s, color 0.12s;
-  }
-  .provider-modal-close:hover { background: #e5e7eb; color: #111; }
-  .provider-modal-body {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  .provider-modal-foot {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px 24px;
-    border-top: 1px solid #eef0f2;
-    background: #fafbfc;
-    flex-shrink: 0;
-  }
-
-  .provider-modal-foot-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-  }
+  /* Spacing between two stacked blocks inside one step. */
+  .step-block { margin-top: 20px; }
 
   /* ── Contacts (repeatable) ───────────────────────────────── */
   .contacts-list {
@@ -1092,7 +1051,10 @@
     gap: 16px;
     margin-bottom: 20px;
   }
-  .form-field label {
+  /* `.field-label` is the non-control variant, for captions that head a group
+     of checkboxes or a widget rather than a single input. */
+  .form-field label,
+  .form-field .field-label {
     display: block;
     font-size: 13px;
     font-weight: 600;
