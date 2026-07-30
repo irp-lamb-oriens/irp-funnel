@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Alert from './ui/Alert.svelte';
   /**
    * ProvidersView.svelte
    *
@@ -436,12 +437,12 @@
     </button>
   </div>
 
-  <!-- Alerts -->
-  {#if error}
-    <div class="alert alert-error">{error}</div>
+  <!-- Alerts (hidden when the modal is open — the modal has its own inline alert) -->
+  {#if error && !showForm}
+    <Alert type="error" dismissible on:dismiss={() => error = ''}>{error}</Alert>
   {/if}
   {#if success}
-    <div class="alert alert-success">{success}</div>
+    <Alert type="success" dismissible on:dismiss={() => success = ''}>{success}</Alert>
   {/if}
 
   <!-- Create / Edit Form -->
@@ -589,7 +590,7 @@
 
         <div class="provider-modal-foot">
           {#if error}
-            <div class="alert alert-error modal-alert">{error}</div>
+            <Alert type="error" compact>{error}</Alert>
           {/if}
           <div class="provider-modal-foot-actions">
             <button class="btn-ghost" type="button" on:click={cancelForm}>Cancel</button>
@@ -841,15 +842,7 @@
   .btn-icon:hover { background: #f3f4f6; }
   .btn-icon.btn-danger:hover { background: #fee2e2; }
 
-  /* ── Alerts ─────────────────────────────────────────────── */
-  .alert {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 16px;
-  }
-  .alert-error   { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-  .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  /* Alerts are rendered by the shared <Alert> component (ui/Alert.svelte). */
 
   /* ── Search bar ──────────────────────────────────────────── */
   .providers-search-wrap {
@@ -1024,11 +1017,6 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-  }
-
-  .modal-alert {
-    margin-bottom: 0;
-    font-size: 13px;
   }
 
   /* ── Contacts (repeatable) ───────────────────────────────── */
