@@ -588,10 +588,15 @@
         </div><!-- /provider-modal-body -->
 
         <div class="provider-modal-foot">
-          <button class="btn-ghost" type="button" on:click={cancelForm}>Cancel</button>
-          <button class="btn-primary" on:click={saveProvider} disabled={loading}>
-            {loading ? 'Saving…' : editingId ? '💾 Update Provider' : '➕ Create Provider'}
-          </button>
+          {#if error}
+            <div class="alert alert-error modal-alert">{error}</div>
+          {/if}
+          <div class="provider-modal-foot-actions">
+            <button class="btn-ghost" type="button" on:click={cancelForm}>Cancel</button>
+            <button class="btn-primary" on:click={saveProvider} disabled={loading}>
+              {loading ? 'Saving…' : editingId ? '💾 Update Provider' : '➕ Create Provider'}
+            </button>
+          </div>
         </div>
       </div><!-- /provider-modal -->
     </div><!-- /provider-modal-overlay -->
@@ -1007,12 +1012,23 @@
   }
   .provider-modal-foot {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+    flex-direction: column;
+    gap: 10px;
     padding: 16px 24px;
     border-top: 1px solid #eef0f2;
     background: #fafbfc;
     flex-shrink: 0;
+  }
+
+  .provider-modal-foot-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .modal-alert {
+    margin-bottom: 0;
+    font-size: 13px;
   }
 
   /* ── Contacts (repeatable) ───────────────────────────────── */
