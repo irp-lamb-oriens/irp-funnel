@@ -4391,11 +4391,21 @@ export const financeMetrics = writable<FinanceMetrics | null>(null);
  * measure a non-USD book; quotes in every other currency are then reported
  * under `skipped.currencies` instead of being converted.
  */
+/**
+ * Reading every quote takes seconds, so two of these overlap easily: switch
+ * currency twice, or hit Refresh while the first read is still running. The
+ * ticket makes the LAST REQUESTED read the one that lands, instead of whichever
+ * happens to return last, which would otherwise show figures for a currency the
+ * operator already moved away from.
+ */
+let financeMetricsSeq = 0;
+
 export async function fetchFinanceMetrics(currency = 'USD'): Promise<FinanceMetrics> {
+  const ticket = ++financeMetricsSeq;
   const data = await apiFetch(
     `/api/dashboard/finance/metrics?currency=${encodeURIComponent(currency)}`,
   );
-  financeMetrics.set(data as FinanceMetrics);
+  if (ticket === financeMetricsSeq) financeMetrics.set(data as FinanceMetrics);
   return data as FinanceMetrics;
 }
 
@@ -4534,11 +4544,98 @@ export interface FinanceLedgerReport {
 
 export const financeLedger = writable<FinanceLedgerReport | null>(null);
 
+/**
+ * The move taxonomy: the vocabulary every price report groups by, plus the
+ * floor that decides which quotes count as whole moves. One document, edited in
+ * Finance, read by the analysis pipeline. Editing it here is the only way to
+ * change the categories.
+ */
+export interface MoveTaxonomy {
+  modalities: string[];
+  packingTiers: string[];
+  cargoTypes: string[];
+  minMovePrice: number;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export const moveTaxonomy = writable<MoveTaxonomy | null>(null);
+/** What the code ships with, so the editor can offer a reset. */
+export const moveTaxonomySeed = writable<MoveTaxonomy | null>(null);
+
+/**
+ * Monotonic ticket for taxonomy writes to the store.
+ *
+ * Two loads can be in flight at once (a mount racing a Reload, or a save's
+ * reload racing a manual one). Without a ticket the SLOWER response wins simply
+ * because it lands last, which shows the operator older data than they already
+ * had. Every writer takes a ticket and only commits while it is still the
+ * newest, so the store always ends on the most recently requested read.
+ */
+let taxonomySeq = 0;
+
+export async function fetchMoveTaxonomy(): Promise<MoveTaxonomy> {
+  const ticket = ++taxonomySeq;
+  const data = await apiFetch('/api/dashboard/finance/taxonomy');
+  const taxonomy = data.taxonomy as MoveTaxonomy;
+  if (ticket === taxonomySeq) {
+    moveTaxonomy.set(taxonomy);
+    moveTaxonomySeed.set(data.seed as MoveTaxonomy);
+  }
+  return taxonomy;
+}
+
+/** Raised for a 409, carrying the document that won so the UI can show it. */
+export class TaxonomyConflict extends Error {
+  constructor(message: string, public current: MoveTaxonomy | null) {
+    super(message);
+    this.name = 'TaxonomyConflict';
+  }
+}
+
+/**
+ * Save the taxonomy.
+ *
+ * `expectedUpdatedAt` travels with the write so the server can refuse a save
+ * built on a document someone else has since changed. A save always wins the
+ * ticket race against reads in flight, because it is the newest known truth.
+ */
+export async function saveMoveTaxonomy(taxonomy: MoveTaxonomy): Promise<MoveTaxonomy> {
+  const ticket = ++taxonomySeq;
+  try {
+    const data = await apiFetch('/api/dashboard/finance/taxonomy', {
+      method: 'PUT',
+      body: JSON.stringify({
+        ...taxonomy,
+        expectedUpdatedAt: get(moveTaxonomy)?.updatedAt ?? null,
+      }),
+    });
+    const saved = data.taxonomy as MoveTaxonomy;
+    if (ticket === taxonomySeq) moveTaxonomy.set(saved);
+    return saved;
+  } catch (err: any) {
+    if (err?.status === 409) {
+      // The rejected save must not leave the store showing the losing version.
+      const current = (err?.data?.taxonomy ?? null) as MoveTaxonomy | null;
+      if (current && ticket === taxonomySeq) moveTaxonomy.set(current);
+      throw new TaxonomyConflict(
+        err?.data?.error ?? 'Someone else changed the taxonomy while you were editing.',
+        current,
+      );
+    }
+    throw err;
+  }
+}
+
+/** Same ticket discipline as the metrics read, and for the same reason. */
+let financeLedgerSeq = 0;
+
 export async function fetchFinanceLedger(currency = 'USD'): Promise<FinanceLedgerReport> {
+  const ticket = ++financeLedgerSeq;
   const data = await apiFetch(
     `/api/dashboard/finance/ledger?currency=${encodeURIComponent(currency)}`,
   );
-  financeLedger.set(data as FinanceLedgerReport);
+  if (ticket === financeLedgerSeq) financeLedger.set(data as FinanceLedgerReport);
   return data as FinanceLedgerReport;
 }
 
@@ -4560,6 +4657,10 @@ export async function saveQuoteSettlement(
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+  // A write invalidates any report read still in flight: that response was
+  // built before this save and would land showing the pre-save totals.
+  financeLedgerSeq++;
+  financeMetricsSeq++;
 }
 
 export async function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<void> {
@@ -4567,6 +4668,7 @@ export async function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<vo
     method: 'POST',
     body: JSON.stringify(entry),
   });
+  financeLedgerSeq++;
 }
 
 export async function updateLedgerEntry(
@@ -4577,12 +4679,14 @@ export async function updateLedgerEntry(
     method: 'PUT',
     body: JSON.stringify(entry),
   });
+  financeLedgerSeq++;
 }
 
 export async function deleteLedgerEntry(id: string): Promise<void> {
   await apiFetch(`/api/dashboard/finance/ledger/entries/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
+  financeLedgerSeq++;
 }
 
 

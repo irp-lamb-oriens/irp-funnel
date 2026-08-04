@@ -1944,11 +1944,6 @@ export interface FinanceMetrics {
     clientsRead: number;
 }
 export declare const financeMetrics: import("svelte/store").Writable<FinanceMetrics | null>;
-/**
- * Load the finance metrics into the `financeMetrics` store. Pass a currency to
- * measure a non-USD book; quotes in every other currency are then reported
- * under `skipped.currencies` instead of being converted.
- */
 export declare function fetchFinanceMetrics(currency?: string): Promise<FinanceMetrics>;
 export interface ClientPayment {
     id: string;
@@ -2072,6 +2067,37 @@ export interface FinanceLedgerReport {
     acceptedQuotesRead: number;
 }
 export declare const financeLedger: import("svelte/store").Writable<FinanceLedgerReport | null>;
+/**
+ * The move taxonomy: the vocabulary every price report groups by, plus the
+ * floor that decides which quotes count as whole moves. One document, edited in
+ * Finance, read by the analysis pipeline. Editing it here is the only way to
+ * change the categories.
+ */
+export interface MoveTaxonomy {
+    modalities: string[];
+    packingTiers: string[];
+    cargoTypes: string[];
+    minMovePrice: number;
+    updatedAt?: string;
+    updatedBy?: string;
+}
+export declare const moveTaxonomy: import("svelte/store").Writable<MoveTaxonomy | null>;
+/** What the code ships with, so the editor can offer a reset. */
+export declare const moveTaxonomySeed: import("svelte/store").Writable<MoveTaxonomy | null>;
+export declare function fetchMoveTaxonomy(): Promise<MoveTaxonomy>;
+/** Raised for a 409, carrying the document that won so the UI can show it. */
+export declare class TaxonomyConflict extends Error {
+    current: MoveTaxonomy | null;
+    constructor(message: string, current: MoveTaxonomy | null);
+}
+/**
+ * Save the taxonomy.
+ *
+ * `expectedUpdatedAt` travels with the write so the server can refuse a save
+ * built on a document someone else has since changed. A save always wins the
+ * ticket race against reads in flight, because it is the newest known truth.
+ */
+export declare function saveMoveTaxonomy(taxonomy: MoveTaxonomy): Promise<MoveTaxonomy>;
 export declare function fetchFinanceLedger(currency?: string): Promise<FinanceLedgerReport>;
 /**
  * Replace the payment rows of one accepted quote. The server recomputes every

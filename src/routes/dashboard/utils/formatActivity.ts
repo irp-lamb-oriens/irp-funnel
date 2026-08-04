@@ -227,6 +227,45 @@ export function formatActivity(entry: ActivityEntry): FormattedActivity {
         raw: entry,
       };
     }
+    /**
+     * Finance writes carry their own sentence from the server, where the
+     * amounts and counts are already known. Repeating that formatting here
+     * would mean two places to keep in step.
+     */
+    case 'finance.settlement.updated': {
+      const parts: string[] = [];
+      if (e.receivedTotal) parts.push(`${e.receivedTotal} received`);
+      if (e.providerPaidTotal) parts.push(`${e.providerPaidTotal} paid out`);
+      return {
+        who,
+        what: 'recorded payments on a quote',
+        detail: parts.join(', '),
+        whenRelative,
+        whenExact,
+        icon: '💵',
+        undoable: false,
+        raw: entry,
+      };
+    }
+    case 'finance.ledger_entry.created':
+    case 'finance.ledger_entry.updated':
+    case 'finance.ledger_entry.deleted': {
+      const verb = e.type.endsWith('created')
+        ? 'added'
+        : e.type.endsWith('deleted')
+          ? 'deleted'
+          : 'edited';
+      return {
+        who,
+        what: `${verb} a ledger entry`,
+        detail: e.summary ?? '',
+        whenRelative,
+        whenExact,
+        icon: e.type.endsWith('deleted') ? '🗑️' : '📒',
+        undoable: false,
+        raw: entry,
+      };
+    }
     default:
 
       return {

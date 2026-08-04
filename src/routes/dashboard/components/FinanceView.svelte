@@ -15,17 +15,20 @@
   import { onMount } from 'svelte';
   import { financeMetrics, fetchFinanceMetrics, type FinanceMoneyStats, type FinanceBucket } from '../store.ts';
   import FinanceLedgerPanel from './FinanceLedgerPanel.svelte';
+  import MoveTaxonomyPanel from './MoveTaxonomyPanel.svelte';
 
   let loading = false;
   let errorMsg = '';
   let currency = 'USD';
 
   /**
-   * Two questions, two sections. "Quotes" is what the pipeline promises;
-   * "Money" is what actually moved. They are deliberately separate because a
-   * healthy quote book and an empty bank account can happen at the same time.
+   * Three sections. "Quotes" is what the pipeline promises, "Money" is what
+   * actually moved, and "Configuration" holds the vocabulary both are grouped
+   * by. They are deliberately separate because a healthy quote book and an
+   * empty bank account can happen at the same time, and because the categories
+   * behind both numbers are a business decision that belongs on screen.
    */
-  let section: 'quotes' | 'money' = 'quotes';
+  let section: 'quotes' | 'money' | 'config' = 'quotes';
 
   async function load(): Promise<void> {
     loading = true;
@@ -104,10 +107,13 @@
   <nav class="finance__sections">
     <button class:active={section === 'quotes'} on:click={() => (section = 'quotes')}>Quotes</button>
     <button class:active={section === 'money'} on:click={() => (section = 'money')}>Money in and out</button>
+    <button class:active={section === 'config'} on:click={() => (section = 'config')}>Configuration</button>
   </nav>
 
   {#if section === 'money'}
     <FinanceLedgerPanel {currency} />
+  {:else if section === 'config'}
+    <MoveTaxonomyPanel />
   {:else}
 
   {#if errorMsg}
