@@ -59,7 +59,7 @@ export function buildBookedConsultationMessage(
 
   const lines: string[] = [];
   lines.push(
-    `Hi Pablo, a new client just booked a consultation${
+    `Hi Pablo, I'm a booked a consultation${
       opts.source === "lily" ? " through Lily" : " through the website form"
     }.`
   );
