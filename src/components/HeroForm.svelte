@@ -17,6 +17,8 @@
   import Vehicles from './systems/inputs/Vehicles/Vehicles.svelte';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
+  import { SALES_WHATSAPP_PHONE, buildBookedConsultationMessage, openWhatsApp } from '../lib/whatsapp.ts';
+
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import Loader from './Loader/Loader.svelte';
@@ -121,6 +123,16 @@
     const text = encodeURIComponent(`Hi Lili! I'm interested in international relocation. My email is ${email}.`);
     return `https://wa.me/${WHATSAPP_PHONE}?text=${text}`;
   }
+
+  // Once a consultation is booked (form or Lily), hand the client off to Pablo
+  // on WhatsApp with every detail they provided plus the scheduled call time.
+  let salesHandoffSent = false;
+  function handoffToSales(source: 'form' | 'lily') {
+    if (salesHandoffSent) return;
+    salesHandoffSent = true;
+    openWhatsApp(SALES_WHATSAPP_PHONE, buildBookedConsultationMessage($formState, { source }));
+  }
+
 
   // ─── Input refs ───────────────────────────────────────────────────────────
   let nameInput: HTMLInputElement, surnameInput: HTMLInputElement;
@@ -257,8 +269,10 @@
     if (fields.hangoutLink) {
       hangoutLink = fields.hangoutLink;
     }
+    const justBooked = Boolean(fields.calendarLink || fields.hangoutLink);
 
     for (const [key, value] of Object.entries(fields)) {
+
       if (!FORM_KEYS.has(key)) continue; // Skip fields not in formStore
       if (value === null || value === undefined) continue;
       
@@ -276,7 +290,12 @@
         }
       }
     }
+
+    // Lily just closed the booking: hand the client off to Pablo on WhatsApp
+    // after the extracted fields have landed in the store.
+    if (justBooked) handoffToSales('lily');
   }
+
   function handleChannelSelect(channel: string) {
     if (channel === 'whatsapp') window.open(getWhatsAppUrl(), '_blank');
   }
@@ -360,6 +379,8 @@
         window.open(calendarLink, '_blank');
       }
       formStep = showYoutubeVideoStep ? 14 : 13; // thank you
+      handoffToSales('form');
+
     } catch (error) { console.error('Form submission error:', error); }
     finally { isLoading = false; }
   }
