@@ -355,7 +355,7 @@ export interface Filters {
     callOutcome: string;
 }
 export declare const filters: import("svelte/store").Writable<Filters>;
-export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations">;
+export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance">;
 /**
  * Stages hidden from the board/list UI. The three "private feedback" columns
  * were retired: their emails are now sent automatically by the Stage Email
@@ -1892,3 +1892,198 @@ export interface StageBlockNotice {
     at: number;
 }
 export declare const stageBlockNotice: import("svelte/store").Writable<StageBlockNotice | null>;
+export interface FinanceMoneyStats {
+    /** Number of quotes behind these figures. */
+    n: number;
+    revenue: number;
+    cost: number;
+    margin: number;
+    /** Margin as a percentage of revenue. Null when revenue is 0. */
+    marginPct: number | null;
+    avgDealSize: number | null;
+}
+export interface FinanceBucket extends FinanceMoneyStats {
+    key: string;
+    label: string;
+}
+export interface FinancePeriod extends FinanceMoneyStats {
+    /** `YYYY-MM`. */
+    month: string;
+}
+export interface FinanceMetrics {
+    baseCurrency: string;
+    generatedAt: string;
+    totals: {
+        won: FinanceMoneyStats;
+        openPipeline: FinanceMoneyStats;
+        draft: FinanceMoneyStats;
+        all: FinanceMoneyStats;
+    };
+    winRate: {
+        sentOrBeyond: number;
+        won: number;
+        pct: number | null;
+    };
+    cycleDays: {
+        n: number;
+        median: number | null;
+    };
+    byMonth: FinancePeriod[];
+    byRoute: FinanceBucket[];
+    byService: FinanceBucket[];
+    byProvider: FinanceBucket[];
+    byStage: FinanceBucket[];
+    skipped: {
+        currency: number;
+        zeroTotal: number;
+        exclusiveAlternates: number;
+        currencies: Record<string, number>;
+    };
+    marginUnknown: number;
+    quotesRead: number;
+    clientsRead: number;
+}
+export declare const financeMetrics: import("svelte/store").Writable<FinanceMetrics | null>;
+/**
+ * Load the finance metrics into the `financeMetrics` store. Pass a currency to
+ * measure a non-USD book; quotes in every other currency are then reported
+ * under `skipped.currencies` instead of being converted.
+ */
+export declare function fetchFinanceMetrics(currency?: string): Promise<FinanceMetrics>;
+export interface ClientPayment {
+    id: string;
+    date?: string | null;
+    /** Either an absolute figure or a share of the contract value. */
+    amount?: number | null;
+    percent?: number | null;
+    method?: string | null;
+    note?: string | null;
+    /** False for an instalment that is scheduled but has not arrived. */
+    received?: boolean;
+}
+export interface ProviderPayment {
+    id: string;
+    providerId?: string | null;
+    providerName?: string | null;
+    date?: string | null;
+    amount?: number | null;
+    /** False for a bill that is expected but not yet settled. */
+    paid?: boolean;
+    note?: string | null;
+}
+export interface ExtraCharge {
+    id: string;
+    date?: string | null;
+    amount?: number | null;
+    /** What this charge costs IRP. 0 by default, making the charge pure margin. */
+    cost?: number | null;
+    description?: string | null;
+    collected?: boolean;
+}
+export interface QuoteSettlement {
+    quoteId: string;
+    consultationId: string | null;
+    clientName: string | null;
+    currency: string;
+    acceptedAt: string | null;
+    contractValue: number;
+    billedTotal: number;
+    collected: number;
+    collectedPct: number | null;
+    clientOutstanding: number;
+    providerCost: number;
+    providerPaid: number;
+    providerOutstanding: number;
+    expectedMargin: number;
+    expectedMarginPct: number | null;
+    /** collected − providerPaid: what this quote has actually banked. */
+    netCash: number;
+    fullySettled: boolean;
+}
+export type LedgerKind = 'expense' | 'income' | 'investment';
+export type Recurrence = 'none' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export interface LedgerEntry {
+    id: string;
+    kind: LedgerKind;
+    category?: string | null;
+    label?: string | null;
+    amount?: number | null;
+    currency?: string | null;
+    date?: string | null;
+    recurrence?: Recurrence | null;
+    endDate?: string | null;
+    /** Money an investment has earned back. Drives its ROI. */
+    returnAmount?: number | null;
+    quoteId?: string | null;
+    note?: string | null;
+}
+export interface LedgerCategoryRollup {
+    kind: LedgerKind;
+    category: string;
+    n: number;
+    amount: number;
+    returned: number;
+    netReturn: number | null;
+    roiPct: number | null;
+}
+export interface LedgerPeriod {
+    month: string;
+    expense: number;
+    income: number;
+    investment: number;
+    investmentReturn: number;
+    net: number;
+}
+export interface FinanceLedgerReport {
+    baseCurrency: string;
+    generatedAt: string;
+    settlements: QuoteSettlement[];
+    settlementTotals: {
+        n: number;
+        contractValue: number;
+        billedTotal: number;
+        collected: number;
+        clientOutstanding: number;
+        providerCost: number;
+        providerPaid: number;
+        providerOutstanding: number;
+        expectedMargin: number;
+        netCash: number;
+        fullySettled: number;
+    };
+    totals: {
+        expense: number;
+        income: number;
+        investment: number;
+        investmentReturn: number;
+        recurringMonthly: number;
+    };
+    reinvestable: {
+        realisedMargin: number;
+        spent: number;
+        remaining: number;
+    };
+    byCategory: LedgerCategoryRollup[];
+    byMonth: LedgerPeriod[];
+    skippedCurrency: number;
+    entries: LedgerEntry[];
+    /** Seed category names per kind. The API accepts any string beyond these. */
+    categories: Record<LedgerKind, string[]>;
+    acceptedQuotesRead: number;
+}
+export declare const financeLedger: import("svelte/store").Writable<FinanceLedgerReport | null>;
+export declare function fetchFinanceLedger(currency?: string): Promise<FinanceLedgerReport>;
+/**
+ * Replace the payment rows of one accepted quote. The server recomputes every
+ * derived figure, so the caller reloads the report rather than patching totals
+ * locally, which is how two views end up disagreeing.
+ */
+export declare function saveQuoteSettlement(quoteId: string, payload: {
+    consultationId?: string | null;
+    clientPayments: ClientPayment[];
+    providerPayments: ProviderPayment[];
+    extraCharges: ExtraCharge[];
+}): Promise<void>;
+export declare function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<void>;
+export declare function updateLedgerEntry(id: string, entry: Partial<LedgerEntry>): Promise<void>;
+export declare function deleteLedgerEntry(id: string): Promise<void>;

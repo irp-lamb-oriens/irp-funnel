@@ -816,7 +816,8 @@ export const filters = writable<Filters>({
   callOutcome: ''
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance'>('board');
+
 
 /**
  * Stages hidden from the board/list UI. The three "private feedback" columns
@@ -4320,6 +4321,270 @@ export interface StageBlockNotice {
   at: number;
 }
 export const stageBlockNotice = writable<StageBlockNotice | null>(null);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Finance metrics (Finance view)
+//
+// Read-only aggregation of every client's quotes, computed server-side by
+// API/finance/financeAggregate.ts. The money semantics come from the quote
+// documents themselves: `revenue` is what clients are charged, `cost` is what
+// IRP pays providers, `margin` is the difference.
+//
+// `skipped` exists so a figure that looks low can be explained rather than
+// doubted: quotes in another currency, quotes never priced, and the discarded
+// alternatives of an exclusive option group are all counted there instead of
+// being silently folded into the totals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface FinanceMoneyStats {
+  /** Number of quotes behind these figures. */
+  n: number;
+  revenue: number;
+  cost: number;
+  margin: number;
+  /** Margin as a percentage of revenue. Null when revenue is 0. */
+  marginPct: number | null;
+  avgDealSize: number | null;
+}
+
+export interface FinanceBucket extends FinanceMoneyStats {
+  key: string;
+  label: string;
+}
+
+export interface FinancePeriod extends FinanceMoneyStats {
+  /** `YYYY-MM`. */
+  month: string;
+}
+
+export interface FinanceMetrics {
+  baseCurrency: string;
+  generatedAt: string;
+  totals: {
+    won: FinanceMoneyStats;
+    openPipeline: FinanceMoneyStats;
+    draft: FinanceMoneyStats;
+    all: FinanceMoneyStats;
+  };
+  winRate: { sentOrBeyond: number; won: number; pct: number | null };
+  cycleDays: { n: number; median: number | null };
+  byMonth: FinancePeriod[];
+  byRoute: FinanceBucket[];
+  byService: FinanceBucket[];
+  byProvider: FinanceBucket[];
+  byStage: FinanceBucket[];
+  skipped: {
+    currency: number;
+    zeroTotal: number;
+    exclusiveAlternates: number;
+    currencies: Record<string, number>;
+  };
+  marginUnknown: number;
+  quotesRead: number;
+  clientsRead: number;
+}
+
+export const financeMetrics = writable<FinanceMetrics | null>(null);
+
+/**
+ * Load the finance metrics into the `financeMetrics` store. Pass a currency to
+ * measure a non-USD book; quotes in every other currency are then reported
+ * under `skipped.currencies` instead of being converted.
+ */
+export async function fetchFinanceMetrics(currency = 'USD'): Promise<FinanceMetrics> {
+  const data = await apiFetch(
+    `/api/dashboard/finance/metrics?currency=${encodeURIComponent(currency)}`,
+  );
+  financeMetrics.set(data as FinanceMetrics);
+  return data as FinanceMetrics;
+}
+
+// ─── Finance: settlements on accepted quotes, and the money ledger ───────────
+//
+// The metrics above measure what quotes promise. Everything below measures what
+// actually moved: who has paid, what is still owed to providers, and where the
+// surviving margin was spent. All arithmetic happens on the server
+// (API/finance/financeLedger.ts) so these types only mirror its output.
+
+export interface ClientPayment {
+  id: string;
+  date?: string | null;
+  /** Either an absolute figure or a share of the contract value. */
+  amount?: number | null;
+  percent?: number | null;
+  method?: string | null;
+  note?: string | null;
+  /** False for an instalment that is scheduled but has not arrived. */
+  received?: boolean;
+}
+
+export interface ProviderPayment {
+  id: string;
+  providerId?: string | null;
+  providerName?: string | null;
+  date?: string | null;
+  amount?: number | null;
+  /** False for a bill that is expected but not yet settled. */
+  paid?: boolean;
+  note?: string | null;
+}
+
+export interface ExtraCharge {
+  id: string;
+  date?: string | null;
+  amount?: number | null;
+  /** What this charge costs IRP. 0 by default, making the charge pure margin. */
+  cost?: number | null;
+  description?: string | null;
+  collected?: boolean;
+}
+
+export interface QuoteSettlement {
+  quoteId: string;
+  consultationId: string | null;
+  clientName: string | null;
+  currency: string;
+  acceptedAt: string | null;
+  contractValue: number;
+  billedTotal: number;
+  collected: number;
+  collectedPct: number | null;
+  clientOutstanding: number;
+  providerCost: number;
+  providerPaid: number;
+  providerOutstanding: number;
+  expectedMargin: number;
+  expectedMarginPct: number | null;
+  /** collected − providerPaid: what this quote has actually banked. */
+  netCash: number;
+  fullySettled: boolean;
+}
+
+export type LedgerKind = 'expense' | 'income' | 'investment';
+export type Recurrence = 'none' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface LedgerEntry {
+  id: string;
+  kind: LedgerKind;
+  category?: string | null;
+  label?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  date?: string | null;
+  recurrence?: Recurrence | null;
+  endDate?: string | null;
+  /** Money an investment has earned back. Drives its ROI. */
+  returnAmount?: number | null;
+  quoteId?: string | null;
+  note?: string | null;
+}
+
+export interface LedgerCategoryRollup {
+  kind: LedgerKind;
+  category: string;
+  n: number;
+  amount: number;
+  returned: number;
+  netReturn: number | null;
+  roiPct: number | null;
+}
+
+export interface LedgerPeriod {
+  month: string;
+  expense: number;
+  income: number;
+  investment: number;
+  investmentReturn: number;
+  net: number;
+}
+
+export interface FinanceLedgerReport {
+  baseCurrency: string;
+  generatedAt: string;
+  settlements: QuoteSettlement[];
+  settlementTotals: {
+    n: number;
+    contractValue: number;
+    billedTotal: number;
+    collected: number;
+    clientOutstanding: number;
+    providerCost: number;
+    providerPaid: number;
+    providerOutstanding: number;
+    expectedMargin: number;
+    netCash: number;
+    fullySettled: number;
+  };
+  totals: {
+    expense: number;
+    income: number;
+    investment: number;
+    investmentReturn: number;
+    recurringMonthly: number;
+  };
+  reinvestable: { realisedMargin: number; spent: number; remaining: number };
+  byCategory: LedgerCategoryRollup[];
+  byMonth: LedgerPeriod[];
+  skippedCurrency: number;
+  entries: LedgerEntry[];
+  /** Seed category names per kind. The API accepts any string beyond these. */
+  categories: Record<LedgerKind, string[]>;
+  acceptedQuotesRead: number;
+}
+
+export const financeLedger = writable<FinanceLedgerReport | null>(null);
+
+export async function fetchFinanceLedger(currency = 'USD'): Promise<FinanceLedgerReport> {
+  const data = await apiFetch(
+    `/api/dashboard/finance/ledger?currency=${encodeURIComponent(currency)}`,
+  );
+  financeLedger.set(data as FinanceLedgerReport);
+  return data as FinanceLedgerReport;
+}
+
+/**
+ * Replace the payment rows of one accepted quote. The server recomputes every
+ * derived figure, so the caller reloads the report rather than patching totals
+ * locally, which is how two views end up disagreeing.
+ */
+export async function saveQuoteSettlement(
+  quoteId: string,
+  payload: {
+    consultationId?: string | null;
+    clientPayments: ClientPayment[];
+    providerPayments: ProviderPayment[];
+    extraCharges: ExtraCharge[];
+  },
+): Promise<void> {
+  await apiFetch(`/api/dashboard/finance/settlements/${encodeURIComponent(quoteId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<void> {
+  await apiFetch('/api/dashboard/finance/ledger/entries', {
+    method: 'POST',
+    body: JSON.stringify(entry),
+  });
+}
+
+export async function updateLedgerEntry(
+  id: string,
+  entry: Partial<LedgerEntry>,
+): Promise<void> {
+  await apiFetch(`/api/dashboard/finance/ledger/entries/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(entry),
+  });
+}
+
+export async function deleteLedgerEntry(id: string): Promise<void> {
+  await apiFetch(`/api/dashboard/finance/ledger/entries/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
 
 
 

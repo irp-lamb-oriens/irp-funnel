@@ -42,6 +42,8 @@
   import AdminView from './components/AdminView.svelte';
   import TemplatesView from './components/TemplatesView.svelte';
   import AutomationView from './components/AutomationView.svelte';
+  import FinanceView from './components/FinanceView.svelte';
+
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
   import ClientImportExportModal from './components/ClientImportExportModal.svelte';
@@ -679,6 +681,9 @@
           {#if allowedViews.includes('metrics')}
             <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
           {/if}
+          {#if allowedViews.includes('finance')}
+            <button class:active={$activeView === 'finance'} on:click={() => switchView('finance')} title="Revenue, provider cost and margin across every quote">Finance</button>
+          {/if}
           {#if allowedViews.includes('evo')}
             <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
           {/if}
@@ -1064,6 +1069,10 @@
     <!-- ══════════════ AUTOMATIONS VIEW ══════════════ -->
     {:else if $activeView === 'automations'}
       <AutomationView />
+
+    <!-- ══════════════ FINANCE VIEW ══════════════ -->
+    {:else if $activeView === 'finance'}
+      <FinanceView />
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

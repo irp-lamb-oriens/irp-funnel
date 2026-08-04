@@ -11,9 +11,10 @@
  *   or (preferred) use the Admin → Access Config tab in the dashboard.
  */
 
-export type DashView = 'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations';
+export type DashView = 'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance';
 
-export const ALL_VIEWS: DashView[] = ['board', 'list', 'metrics', 'evo', 'providers', 'posts', 'admin', 'templates', 'automations'];
+export const ALL_VIEWS: DashView[] = ['board', 'list', 'metrics', 'evo', 'providers', 'posts', 'admin', 'templates', 'automations', 'finance'];
+
 
 /**
  * Static fallback access map.
