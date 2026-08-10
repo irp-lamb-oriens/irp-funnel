@@ -4689,6 +4689,154 @@ export async function deleteLedgerEntry(id: string): Promise<void> {
   financeLedgerSeq++;
 }
 
+// ─── Finance: invoices generated from accepted quotes ────────────────────────
+// Mirrors irp-funnel-server/API/finance/invoicesRouter.ts. An invoice is a
+// snapshot of what a quote charges plus the payments received against it.
+// `received` and `balanceDue` are computed server-side on every read.
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  qty: number;
+  rate: number;
+  discount: number;
+  amount: number;
+}
+
+export interface InvoicePayment {
+  id: string;
+  date: string | null;
+  amount: number;
+  method: string | null;
+  note: string | null;
+  received: boolean;
+}
+
+export type InvoiceStatus = 'draft' | 'sent' | 'partially_paid' | 'paid';
+
+export interface Invoice {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  quoteId: string | null;
+  consultationId: string | null;
+  clientId: string | null;
+  clientName: string;
+  clientEmail: string;
+  date: string;
+  dueDate: string | null;
+  terms: string;
+  poNumber: string | null;
+  lineItems: InvoiceLineItem[];
+  discount: number;
+  subtotal: number;
+  total: number;
+  payments: InvoicePayment[];
+  notes: string | null;
+  termsAndConditions: string[];
+  status: InvoiceStatus;
+  sentAt: string | null;
+  sentToEmail: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string | null;
+  received: number;
+  balanceDue: number;
+}
+
+export const invoices = writable<Invoice[] | null>(null);
+
+let invoicesSeq = 0;
+
+export async function fetchInvoices(): Promise<Invoice[]> {
+  const ticket = ++invoicesSeq;
+  const data = await apiFetch('/api/dashboard/finance/invoices');
+  const list = (data?.invoices ?? []) as Invoice[];
+  if (ticket === invoicesSeq) invoices.set(list);
+  return list;
+}
+
+export async function fetchInvoice(id: string): Promise<Invoice> {
+  const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}`);
+  return data.invoice as Invoice;
+}
+
+export async function createInvoiceFromQuote(payload: {
+  quoteId: string;
+  consultationId?: string | null;
+  clientName?: string;
+  clientEmail?: string;
+  amount?: number;
+}): Promise<Invoice> {
+  const data = await apiFetch('/api/dashboard/finance/invoices', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+  return data.invoice as Invoice;
+}
+
+export async function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice> {
+  const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+  return data.invoice as Invoice;
+}
+
+export async function deleteInvoice(id: string): Promise<void> {
+  await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+}
+
+export async function sendInvoice(id: string, email?: string): Promise<Invoice> {
+  const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}/send`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+  return data.invoice as Invoice;
+}
+
+export async function recordInvoicePayment(
+  id: string,
+  payments: InvoicePayment[],
+): Promise<Invoice> {
+  const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}/payment`, {
+    method: 'POST',
+    body: JSON.stringify({ payments }),
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+  return data.invoice as Invoice;
+}
+
+export async function downloadInvoicePdf(id: string): Promise<void> {
+  const token = get(authToken);
+  const headers: Record<string, string> = {};
+  if (token) headers['x-dashboard-token'] = token;
+  const res = await fetch(`${getApiUrl()}/api/dashboard/finance/invoices/${encodeURIComponent(id)}/pdf`, {
+    headers,
+  });
+  if (!res.ok) throw new Error(`Failed to download the PDF (${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `invoice-${id}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 
 
 

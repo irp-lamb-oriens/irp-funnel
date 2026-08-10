@@ -91,6 +91,7 @@
     "nearest-color": "^0.4.4",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",
+    "pdfmake": "^0.3.11",
     "postcss": "^8.5.1",
     "qrcode": "^1.5.4",
     "scene-preset": "^2.4.19",

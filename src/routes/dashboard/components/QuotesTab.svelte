@@ -9,6 +9,7 @@
     fetchQuoteTemplates,
     inferClientTemplate,
     selectedClient,
+    createInvoiceFromQuote,
     type QuoteTemplate,
     type InferTemplateResult,
   } from '../store.ts';
@@ -209,6 +210,30 @@
     navigator.clipboard?.writeText(url).catch(() => {});
   }
 
+  // ── Create invoice from an accepted quote ─────────────────────────────────
+  let creatingInvoice = false;
+  let invoiceMsg = '';
+
+  async function handleCreateInvoice(quote: Quote) {
+    if (creatingInvoice) return;
+    creatingInvoice = true;
+    invoiceMsg = '';
+    try {
+      const client = get(selectedClient);
+      await createInvoiceFromQuote({
+        quoteId: quote.quoteId,
+        consultationId: clientId,
+        clientName: client?.displayName || client?.name || undefined,
+        clientEmail: client?.email || undefined,
+      });
+      invoiceMsg = 'Invoice created. Open Finance → Invoices to review and send it.';
+    } catch (err: any) {
+      invoiceMsg = 'Could not create the invoice: ' + (err?.message ?? err);
+    } finally {
+      creatingInvoice = false;
+    }
+  }
+
   // ── Formatting helpers ─────────────────────────────────────────────────────
   function formatTotal(quote: Quote): string {
     const total = quote.total ?? quote.lineItems?.reduce((s, li) => s + (li.amount ?? 0), 0) ?? 0;
@@ -377,7 +402,21 @@
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
+                {#if quote.status === 'client_accepted'}
+                  <button
+                    class="quotes-tab__invoice-btn"
+                    title="Create invoice from this accepted quote"
+                    on:click|stopPropagation={() => handleCreateInvoice(quote)}
+                    disabled={creatingInvoice}
+                  >
+                    {creatingInvoice ? 'Creating…' : 'Create invoice'}
+                  </button>
+                {/if}
               </div>
+            {/if}
+
+            {#if invoiceMsg}
+              <p class="quotes-tab__invoice-msg">{invoiceMsg}</p>
             {/if}
 
             <div class="quotes-tab__item-actions">
@@ -839,5 +878,33 @@
   }
   .quotes-tab__copy-btn:active {
     transform: scale(0.96);
+  }
+
+  /* ── Create-invoice button (accepted quotes) ─────────────────────────── */
+  .quotes-tab__invoice-btn {
+    padding: 3px 10px;
+    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: filter 0.14s, transform 0.14s;
+  }
+  .quotes-tab__invoice-btn:hover:not(:disabled) {
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+  }
+  .quotes-tab__invoice-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  .quotes-tab__invoice-msg {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #0d9488;
+    line-height: 1.4;
   }
 </style>
