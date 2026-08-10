@@ -195,7 +195,7 @@
   }
 
   // ── Live preview object ───────────────────────────────────────────────────
-  $: previewInvoice: Invoice = {
+  $: previewInvoice = {
     id: invoice?.id ?? 'preview',
     invoiceId: invoice?.invoiceId ?? 'preview',
     invoiceNumber: invoice?.invoiceNumber ?? 'DRAFT',
