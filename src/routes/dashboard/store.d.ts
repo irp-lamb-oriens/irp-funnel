@@ -2113,3 +2113,64 @@ export declare function saveQuoteSettlement(quoteId: string, payload: {
 export declare function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<void>;
 export declare function updateLedgerEntry(id: string, entry: Partial<LedgerEntry>): Promise<void>;
 export declare function deleteLedgerEntry(id: string): Promise<void>;
+export interface InvoiceLineItem {
+    id: string;
+    description: string;
+    qty: number;
+    rate: number;
+    discount: number;
+    amount: number;
+}
+export interface InvoicePayment {
+    id: string;
+    date: string | null;
+    amount: number;
+    method: string | null;
+    note: string | null;
+    received: boolean;
+}
+export type InvoiceStatus = 'draft' | 'sent' | 'partially_paid' | 'paid';
+export interface Invoice {
+    id: string;
+    invoiceId: string;
+    invoiceNumber: string;
+    quoteId: string | null;
+    consultationId: string | null;
+    clientId: string | null;
+    clientName: string;
+    clientEmail: string;
+    date: string;
+    dueDate: string | null;
+    terms: string;
+    poNumber: string | null;
+    lineItems: InvoiceLineItem[];
+    discount: number;
+    subtotal: number;
+    total: number;
+    payments: InvoicePayment[];
+    notes: string | null;
+    termsAndConditions: string[];
+    status: InvoiceStatus;
+    sentAt: string | null;
+    sentToEmail: string | null;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string | null;
+    received: number;
+    balanceDue: number;
+}
+export declare const invoices: import("svelte/store").Writable<Invoice[] | null>;
+export declare function fetchInvoices(): Promise<Invoice[]>;
+export declare function fetchInvoice(id: string): Promise<Invoice>;
+export declare function createInvoiceFromQuote(payload: {
+    quoteId: string;
+    consultationId?: string | null;
+    clientName?: string;
+    clientEmail?: string;
+    amount?: number;
+}): Promise<Invoice>;
+export declare function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice>;
+export declare function deleteInvoice(id: string): Promise<void>;
+export declare function sendInvoice(id: string, email?: string): Promise<Invoice>;
+export declare function recordInvoicePayment(id: string, payments: InvoicePayment[]): Promise<Invoice>;
+export declare function downloadInvoicePdf(id: string): Promise<void>;
