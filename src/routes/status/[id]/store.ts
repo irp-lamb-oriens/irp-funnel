@@ -153,6 +153,67 @@ export function logout() {
   }
 }
 
+/**
+ * The client's own billing statement: every sent invoice against them, plus
+ * the balance still outstanding on each accepted quote. Mirrors
+ * GET /api/client-status/project/:id/charges.
+ */
+export interface StatusCharge {
+  invoiceNumber: string | null;
+  quoteId: string | null;
+  date: string | null;
+  dueDate: string | null;
+  terms: string | null;
+  lineItems: Array<{
+    description: string;
+    qty: number;
+    rate: number;
+    discount: number;
+    amount: number;
+  }>;
+  subtotal: number;
+  discount: number;
+  total: number;
+  received: number;
+  balanceDue: number;
+  status: 'paid' | 'partially_paid' | 'sent';
+  sentAt: string | null;
+}
+
+export interface StatusQuoteBalance {
+  title: string;
+  acceptedAt: string | null;
+  date: string | null;
+  currency: string;
+  quoteTotal: number;
+  invoiced: number;
+  remaining: number;
+}
+
+export interface StatusCharges {
+  charges: StatusCharge[];
+  quoteBalances: StatusQuoteBalance[];
+  totals: {
+    charged: number;
+    received: number;
+    balanceDue: number;
+    notYetInvoiced: number;
+  };
+}
+
+export const charges = writable<StatusCharges | null>(null);
+
+export async function fetchCharges(projectId: string): Promise<StatusCharges> {
+  const data = await apiFetch(`/api/client-status/project/${projectId}/charges`);
+  const result: StatusCharges = {
+    charges: Array.isArray(data.charges) ? data.charges : [],
+    quoteBalances: Array.isArray(data.quoteBalances) ? data.quoteBalances : [],
+    totals: data.totals ?? { charged: 0, received: 0, balanceDue: 0, notYetInvoiced: 0 },
+  };
+  charges.set(result);
+  return result;
+}
+
 export async function fetchProject(projectId: string) {
   loading.set(true);
   error.set('');

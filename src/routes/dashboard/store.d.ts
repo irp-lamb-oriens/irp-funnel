@@ -2120,6 +2120,11 @@ export interface InvoiceLineItem {
     rate: number;
     discount: number;
     amount: number;
+    /**
+     * The quote line this was billed from, when the invoice came off a quote.
+     * Lets the dashboard show which quoted lines are still uninvoiced.
+     */
+    quoteLineItemId?: string | null;
 }
 export interface InvoicePayment {
     id: string;
@@ -2134,7 +2139,16 @@ export interface Invoice {
     id: string;
     invoiceId: string;
     invoiceNumber: string;
+    /** Null on custom invoices raised against a client with no quote behind them. */
     quoteId: string | null;
+    /** Which installment of that quote this is (1, 2, 3...). Null without a quote. */
+    quoteInvoiceIndex?: number | null;
+    /** The quote's full client-facing total, snapshotted at creation. */
+    quoteTotal?: number | null;
+    /** The share of the quote this invoice bills, when billed by percentage. */
+    quotePercentage?: number | null;
+    quoteTitle?: string | null;
+    quoteDate?: string | null;
     consultationId: string | null;
     clientId: string | null;
     clientName: string;
@@ -2159,18 +2173,87 @@ export interface Invoice {
     received: number;
     balanceDue: number;
 }
+/** What the client pays for one quote line. */
+export declare function quoteLineClientPrice(li: QuoteLineItem, defaultMarginPct?: number): number;
+/** One billable line on a quote, priced for the client. */
+export interface QuoteBillableLine {
+    lineId: string;
+    label: string;
+    price: number;
+}
+/**
+ * Every billable line on a quote, flattened and priced.
+ *
+ * Newer quotes hold their lines inside `lineGroups`; older flat ones use
+ * `lineItems`. Both are read so an invoice never silently misses a group.
+ */
+export declare function quoteBillableLines(quote: Quote | null | undefined): QuoteBillableLine[];
+/** How much of a quote has already been invoiced, and what is left. */
+export interface QuoteBillingSummary {
+    /** The quote's full client-facing total. */
+    quoteTotal: number;
+    /** Sum of every invoice raised against this quote. */
+    invoicedTotal: number;
+    invoicedPct: number;
+    /** quoteTotal − invoicedTotal, floored at 0. */
+    remainingTotal: number;
+    remainingPct: number;
+    /** Quote lines that appear on at least one invoice. */
+    invoicedLineIds: Set<string>;
+    /** Quote lines that have never been invoiced. */
+    uninvoicedLines: QuoteBillableLine[];
+    invoiceCount: number;
+}
+/**
+ * Reconcile a quote against the invoices raised from it, so an operator can see
+ * what is left to bill and which quoted lines were never invoiced at all.
+ */
+export declare function summarizeQuoteBilling(quote: Quote | null | undefined, allInvoices: Invoice[] | null | undefined): QuoteBillingSummary;
 export declare const invoices: import("svelte/store").Writable<Invoice[] | null>;
+/** Every invoice raised against one client, newest first. */
+export declare function invoicesForClient(allInvoices: Invoice[] | null | undefined, clientId: string): Invoice[];
 export declare function fetchInvoices(): Promise<Invoice[]>;
 export declare function fetchInvoice(id: string): Promise<Invoice>;
-export declare function createInvoiceFromQuote(payload: {
-    quoteId: string;
+/**
+ * Create an invoice, with or without a quote behind it.
+ *
+ * With `quoteId` the server snapshots the quote's priced lines, notes and
+ * terms. `percentage` bills a share of the quote and `quoteLineItemIds` bills
+ * only the picked lines. Without a quote, pass `clientId` and explicit
+ * `lineItems` — that is a custom charge for work that was never quoted.
+ */
+export declare function createInvoice(payload: {
+    quoteId?: string | null;
     consultationId?: string | null;
+    clientId?: string | null;
     clientName?: string;
     clientEmail?: string;
+    /** Flat total override. Skips the line-derived total. */
     amount?: number;
+    /** 1-100. Scales every quote line so subtotal still equals total. */
+    percentage?: number | null;
+    lineItems?: Array<Partial<InvoiceLineItem>>;
+    quoteLineItemIds?: string[];
+    discount?: number;
+    notes?: string | null;
+    date?: string | null;
+    dueDate?: string | null;
+    terms?: string;
+    poNumber?: string | null;
 }): Promise<Invoice>;
+/** @deprecated Use {@link createInvoice}, which does not require a quote. */
+export declare const createInvoiceFromQuote: typeof createInvoice;
 export declare function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice>;
 export declare function deleteInvoice(id: string): Promise<void>;
 export declare function sendInvoice(id: string, email?: string): Promise<Invoice>;
 export declare function recordInvoicePayment(id: string, payments: InvoicePayment[]): Promise<Invoice>;
+/**
+ * Mark an invoice paid in full, or reopen it.
+ *
+ * Ticking settles the outstanding balance in one entry; unticking removes only
+ * that dashboard-generated entry, so a hand-recorded wire payment survives.
+ * Logged separately from {@link recordInvoicePayment} so the activity trail
+ * reads "marked invoice X paid" rather than "recorded 1 payment(s)".
+ */
+export declare function setInvoicePaid(id: string, paid: boolean): Promise<Invoice>;
 export declare function downloadInvoicePdf(id: string): Promise<void>;

@@ -54,6 +54,7 @@
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
   import QuotesTab from './QuotesTab.svelte';
+  import ChargesTab from './ChargesTab.svelte';
   import ProvidersRfqPanel from './ProvidersRfqPanel.svelte';
   import ProviderResponsesPanel from './ProviderResponsesPanel.svelte';
   import ShipmentTrackingCard from './ShipmentTrackingCard.svelte';
@@ -115,7 +116,7 @@
   let emailSentMessage = '';
   let newFieldKey = '';
   let newFieldValue = '';
-  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' | 'providers' = 'overview';
+  let detailTab: 'overview' | 'insights' | 'journey' | 'notes' | 'activity' | 'emails' | 'conversations' | 'actions' | 'lily' | 'quotes' | 'charges' | 'providers' = 'overview';
   // Stage options for the chip popover (searchable) + the Actions cross-stage
   // selector. Reactive to the centralized DB stage config ($stageConfig,
   // hydrated from GET /api/dashboard/stage-config) so stages created / renamed /
@@ -944,6 +945,9 @@
       <button class:active={detailTab === 'quotes'} on:click={() => detailTab = 'quotes'}>
         💰 Quotes
         <PendingBadge count={pendingTabCounts.quotes ?? 0} variant="tab" />
+      </button>
+      <button class:active={detailTab === 'charges'} on:click={() => detailTab = 'charges'}>
+        🧾 Charges
       </button>
       <button class:active={detailTab === 'providers'} on:click={() => detailTab = 'providers'}>
         📨 Providers
@@ -2413,6 +2417,12 @@
         <section class="tab-content">
           {#if $selectedClient}
             <QuotesTab clientId={$selectedClient.id} />
+          {/if}
+        </section>
+      {:else if detailTab === 'charges'}
+        <section class="tab-content">
+          {#if $selectedClient}
+            <ChargesTab clientId={$selectedClient.id} />
           {/if}
         </section>
       {:else if detailTab === 'providers'}

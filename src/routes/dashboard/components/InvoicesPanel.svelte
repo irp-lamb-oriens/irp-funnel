@@ -7,8 +7,9 @@
    * InvoiceEditor), download PDF, send (emails the invoice), record a payment,
    * and delete (blocked server-side once the invoice has been sent).
    *
-   * "New invoice" opens the editor in create mode; the operator picks the
-   * quote to bill from the prefill selector.
+   * "New invoice" opens the editor in create mode, where the operator picks the
+   * client and then optionally a quote. An invoice without a quote is a custom
+   * charge for work that was never quoted.
    */
   import { onMount } from 'svelte';
   import {
@@ -33,15 +34,16 @@
   let creating = false;
   let viewing: Invoice | null = null;
 
-  // Send / payment state
+  // Send / payment state. `sendOpenId` and `payOpenId` hold the invoice the form
+  // is open for — a shared boolean would open it under every row at once.
   let sendingId = '';
   let sendEmail = '';
-  let sendOpen = false;
+  let sendOpenId = '';
   let payingId = '';
   let payAmount = '';
   let payMethod = '';
   let payDate = new Date().toISOString().slice(0, 10);
-  let payOpen = false;
+  let payOpenId = '';
 
   async function load(): Promise<void> {
     loading = true;
@@ -107,7 +109,7 @@
     errorMsg = '';
     try {
       await sendInvoice(inv.id, sendEmail.trim() || undefined);
-      sendOpen = false;
+      sendOpenId = '';
       sendEmail = '';
       await load();
     } catch (err: any) {
@@ -130,7 +132,7 @@
         received: true,
       };
       await recordInvoicePayment(inv.id, [...(inv.payments ?? []), payment]);
-      payOpen = false;
+      payOpenId = '';
       payAmount = '';
       payMethod = '';
       payDate = new Date().toISOString().slice(0, 10);
@@ -185,7 +187,7 @@
   {#if creating}
     <div class="ip__editor-wrap">
       <InvoiceEditor
-        prefill={{ quoteId: '' }}
+        prefill={null}
         onSaved={onSaved}
         onCancel={() => (creating = false)}
       />
@@ -199,15 +201,16 @@
       />
     </div>
   {:else if viewing}
+    {@const shown = viewing}
     <div class="ip__view">
       <div class="ip__view-head">
         <button class="ip__back" on:click={() => (viewing = null)}>← Back to list</button>
         <div class="ip__view-actions">
-          <button class="ip__ghost" on:click={() => openEdit(viewing)}>Edit</button>
-          <button class="ip__ghost" on:click={() => doDownload(viewing)}>Download PDF</button>
+          <button class="ip__ghost" on:click={() => openEdit(shown)}>Edit</button>
+          <button class="ip__ghost" on:click={() => doDownload(shown)}>Download PDF</button>
         </div>
       </div>
-      <InvoiceDocument invoice={viewing} />
+      <InvoiceDocument invoice={shown} />
     </div>
   {:else}
     {#if !$invoices}
@@ -249,14 +252,14 @@
                   <div class="ip__row-actions">
                     <button class="ip__link" on:click={() => openEdit(inv)}>Edit</button>
                     <button class="ip__link" on:click={() => doDownload(inv)}>PDF</button>
-                    <button class="ip__link" on:click={() => { sendOpen = true; sendEmail = inv.clientEmail || ''; }}>Send</button>
-                    <button class="ip__link" on:click={() => { payOpen = true; payAmount = ''; payMethod = ''; }}>Pay</button>
+                    <button class="ip__link" on:click={() => { sendOpenId = inv.id; payOpenId = ''; sendEmail = inv.clientEmail || ''; }}>Send</button>
+                    <button class="ip__link" on:click={() => { payOpenId = inv.id; sendOpenId = ''; payAmount = String(inv.balanceDue > 0 ? inv.balanceDue : ''); payMethod = ''; }}>Pay</button>
                     <button class="ip__link ip__link--danger" on:click={() => doDelete(inv)}>Delete</button>
                   </div>
                 </td>
               </tr>
 
-              {#if sendOpen}
+              {#if sendOpenId === inv.id}
                 <tr class="ip__action-row">
                   <td colspan="9">
                     <div class="ip__action">
@@ -267,13 +270,13 @@
                       <button class="ip__save" on:click={() => doSend(inv)} disabled={sendingId === inv.id}>
                         {sendingId === inv.id ? 'Sending…' : 'Send invoice'}
                       </button>
-                      <button class="ip__ghost" on:click={() => (sendOpen = false)}>Cancel</button>
+                      <button class="ip__ghost" on:click={() => (sendOpenId = '')}>Cancel</button>
                     </div>
                   </td>
                 </tr>
               {/if}
 
-              {#if payOpen}
+              {#if payOpenId === inv.id}
                 <tr class="ip__action-row">
                   <td colspan="9">
                     <div class="ip__action">
@@ -292,7 +295,7 @@
                       <button class="ip__save" on:click={() => doPay(inv)} disabled={payingId === inv.id}>
                         {payingId === inv.id ? 'Saving…' : 'Record payment'}
                       </button>
-                      <button class="ip__ghost" on:click={() => (payOpen = false)}>Cancel</button>
+                      <button class="ip__ghost" on:click={() => (payOpenId = '')}>Cancel</button>
                     </div>
                   </td>
                 </tr>

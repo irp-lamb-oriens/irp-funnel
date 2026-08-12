@@ -61,6 +61,7 @@
   import { presendEmail, fetchEmailPreview } from "../../dashboard/store.ts";
   import RegulationsLanding from "./RegulationsLanding.svelte";
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
+  import ChargesCard from "./ChargesCard.svelte";
   import ClientOfferPopup from "./ClientOfferPopup.svelte";
 
 
@@ -1572,6 +1573,9 @@
         <div id="cp-your-details" class="cp-section-anchor">
           <div class="cp-dashboard__full-width-section">
             <ClientFieldsCard />
+          </div>
+          <div class="cp-dashboard__full-width-section">
+            <ChargesCard />
           </div>
         </div>
       {/if}

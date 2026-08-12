@@ -4701,6 +4701,11 @@ export interface InvoiceLineItem {
   rate: number;
   discount: number;
   amount: number;
+  /**
+   * The quote line this was billed from, when the invoice came off a quote.
+   * Lets the dashboard show which quoted lines are still uninvoiced.
+   */
+  quoteLineItemId?: string | null;
 }
 
 export interface InvoicePayment {
@@ -4718,7 +4723,16 @@ export interface Invoice {
   id: string;
   invoiceId: string;
   invoiceNumber: string;
+  /** Null on custom invoices raised against a client with no quote behind them. */
   quoteId: string | null;
+  /** Which installment of that quote this is (1, 2, 3...). Null without a quote. */
+  quoteInvoiceIndex?: number | null;
+  /** The quote's full client-facing total, snapshotted at creation. */
+  quoteTotal?: number | null;
+  /** The share of the quote this invoice bills, when billed by percentage. */
+  quotePercentage?: number | null;
+  quoteTitle?: string | null;
+  quoteDate?: string | null;
   consultationId: string | null;
   clientId: string | null;
   clientName: string;
@@ -4744,9 +4758,128 @@ export interface Invoice {
   balanceDue: number;
 }
 
+// ── Quote → invoice billing maths ───────────────────────────────────────────
+// Mirrors `clientPriceOf` / `quoteBillableLines` in the server's invoicesRouter.
+// A quote line's `amount` is the PROVIDER COST; the client pays cost + margin.
+// Billing the raw `amount` would under-charge every client, so every consumer
+// (the invoice editor, the Charges tab, the client status page) goes through
+// these helpers rather than reading `amount` directly.
+
+/** What the client pays for one quote line. */
+export function quoteLineClientPrice(
+  li: QuoteLineItem,
+  defaultMarginPct = 20,
+): number {
+  const cost = Number(li?.amount) || 0;
+  if (li?.marginMode === 'flat') {
+    return round2Money(cost + (Number(li?.marginFlat) || 0));
+  }
+  const pct = typeof li?.marginPct === 'number' ? li.marginPct : defaultMarginPct;
+  return round2Money(cost * (1 + pct / 100));
+}
+
+function round2Money(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+/** One billable line on a quote, priced for the client. */
+export interface QuoteBillableLine {
+  lineId: string;
+  label: string;
+  price: number;
+}
+
+/**
+ * Every billable line on a quote, flattened and priced.
+ *
+ * Newer quotes hold their lines inside `lineGroups`; older flat ones use
+ * `lineItems`. Both are read so an invoice never silently misses a group.
+ */
+export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillableLine[] {
+  if (!quote) return [];
+  const defaultMarginPct = typeof quote.defaultMarginPct === 'number' ? quote.defaultMarginPct : 20;
+  const raw: QuoteLineItem[] = [];
+  if (Array.isArray(quote.lineItems)) raw.push(...quote.lineItems);
+  if (Array.isArray(quote.lineGroups)) {
+    for (const g of quote.lineGroups) {
+      if (Array.isArray(g?.lineItems)) raw.push(...g.lineItems);
+    }
+  }
+  return raw.map((li, i) => ({
+    lineId: String(li?.lineId ?? `q-${i}`),
+    label: String(li?.label || li?.notes || 'Relocation services'),
+    price: quoteLineClientPrice(li, defaultMarginPct),
+  }));
+}
+
+/** How much of a quote has already been invoiced, and what is left. */
+export interface QuoteBillingSummary {
+  /** The quote's full client-facing total. */
+  quoteTotal: number;
+  /** Sum of every invoice raised against this quote. */
+  invoicedTotal: number;
+  invoicedPct: number;
+  /** quoteTotal − invoicedTotal, floored at 0. */
+  remainingTotal: number;
+  remainingPct: number;
+  /** Quote lines that appear on at least one invoice. */
+  invoicedLineIds: Set<string>;
+  /** Quote lines that have never been invoiced. */
+  uninvoicedLines: QuoteBillableLine[];
+  invoiceCount: number;
+}
+
+/**
+ * Reconcile a quote against the invoices raised from it, so an operator can see
+ * what is left to bill and which quoted lines were never invoiced at all.
+ */
+export function summarizeQuoteBilling(
+  quote: Quote | null | undefined,
+  allInvoices: Invoice[] | null | undefined,
+): QuoteBillingSummary {
+  const lines = quoteBillableLines(quote);
+  const lineSum = round2Money(lines.reduce((s, l) => s + l.price, 0));
+  const quoteTotal = round2Money(Number(quote?.total) > 0 ? Number(quote?.total) : lineSum);
+
+  const mine = (allInvoices ?? []).filter(
+    (inv) => quote?.quoteId && inv.quoteId === quote.quoteId,
+  );
+  const invoicedTotal = round2Money(mine.reduce((s, inv) => s + (Number(inv.total) || 0), 0));
+
+  const invoicedLineIds = new Set<string>();
+  for (const inv of mine) {
+    for (const li of inv.lineItems ?? []) {
+      if (li.quoteLineItemId) invoicedLineIds.add(li.quoteLineItemId);
+    }
+  }
+
+  const remainingTotal = round2Money(Math.max(0, quoteTotal - invoicedTotal));
+  return {
+    quoteTotal,
+    invoicedTotal,
+    invoicedPct: quoteTotal > 0 ? round2Money((invoicedTotal / quoteTotal) * 100) : 0,
+    remainingTotal,
+    remainingPct: quoteTotal > 0 ? round2Money((remainingTotal / quoteTotal) * 100) : 0,
+    invoicedLineIds,
+    uninvoicedLines: lines.filter((l) => !invoicedLineIds.has(l.lineId)),
+    invoiceCount: mine.length,
+  };
+}
+
 export const invoices = writable<Invoice[] | null>(null);
 
 let invoicesSeq = 0;
+
+/** Every invoice raised against one client, newest first. */
+export function invoicesForClient(
+  allInvoices: Invoice[] | null | undefined,
+  clientId: string,
+): Invoice[] {
+  if (!clientId) return [];
+  return (allInvoices ?? []).filter(
+    (inv) => inv.clientId === clientId || inv.consultationId === clientId,
+  );
+}
 
 export async function fetchInvoices(): Promise<Invoice[]> {
   const ticket = ++invoicesSeq;
@@ -4761,12 +4894,32 @@ export async function fetchInvoice(id: string): Promise<Invoice> {
   return data.invoice as Invoice;
 }
 
-export async function createInvoiceFromQuote(payload: {
-  quoteId: string;
+/**
+ * Create an invoice, with or without a quote behind it.
+ *
+ * With `quoteId` the server snapshots the quote's priced lines, notes and
+ * terms. `percentage` bills a share of the quote and `quoteLineItemIds` bills
+ * only the picked lines. Without a quote, pass `clientId` and explicit
+ * `lineItems` — that is a custom charge for work that was never quoted.
+ */
+export async function createInvoice(payload: {
+  quoteId?: string | null;
   consultationId?: string | null;
+  clientId?: string | null;
   clientName?: string;
   clientEmail?: string;
+  /** Flat total override. Skips the line-derived total. */
   amount?: number;
+  /** 1-100. Scales every quote line so subtotal still equals total. */
+  percentage?: number | null;
+  lineItems?: Array<Partial<InvoiceLineItem>>;
+  quoteLineItemIds?: string[];
+  discount?: number;
+  notes?: string | null;
+  date?: string | null;
+  dueDate?: string | null;
+  terms?: string;
+  poNumber?: string | null;
 }): Promise<Invoice> {
   const data = await apiFetch('/api/dashboard/finance/invoices', {
     method: 'POST',
@@ -4774,8 +4927,12 @@ export async function createInvoiceFromQuote(payload: {
   });
   financeLedgerSeq++;
   financeMetricsSeq++;
+  invoicesSeq++;
   return data.invoice as Invoice;
 }
+
+/** @deprecated Use {@link createInvoice}, which does not require a quote. */
+export const createInvoiceFromQuote = createInvoice;
 
 export async function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice> {
   const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}`, {
@@ -4816,6 +4973,29 @@ export async function recordInvoicePayment(
   financeLedgerSeq++;
   financeMetricsSeq++;
   return data.invoice as Invoice;
+}
+
+/**
+ * Mark an invoice paid in full, or reopen it.
+ *
+ * Ticking settles the outstanding balance in one entry; unticking removes only
+ * that dashboard-generated entry, so a hand-recorded wire payment survives.
+ * Logged separately from {@link recordInvoicePayment} so the activity trail
+ * reads "marked invoice X paid" rather than "recorded 1 payment(s)".
+ */
+export async function setInvoicePaid(id: string, paid: boolean): Promise<Invoice> {
+  const data = await apiFetch(`/api/dashboard/finance/invoices/${encodeURIComponent(id)}/paid`, {
+    method: 'POST',
+    body: JSON.stringify({ paid }),
+  });
+  financeLedgerSeq++;
+  financeMetricsSeq++;
+  const updated = data.invoice as Invoice;
+  // Patch in place so the Charges tab reflects the toggle without a refetch.
+  invoices.update((list) =>
+    list ? list.map((inv) => (inv.id === updated.id ? updated : inv)) : list,
+  );
+  return updated;
 }
 
 export async function downloadInvoicePdf(id: string): Promise<void> {
