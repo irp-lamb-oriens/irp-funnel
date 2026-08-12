@@ -39,6 +39,7 @@
     type QuoteBillingSummary,
   } from '../store.ts';
   import InvoiceDocument from './InvoiceDocument.svelte';
+  import Select, { type SelectOption } from './ui/Select.svelte';
 
   export let invoice: Invoice | undefined = undefined;
   /**
@@ -167,6 +168,18 @@
   $: sortedClients = [...$clients].sort((a, b) =>
     (a.displayName || a.email || '').localeCompare(b.displayName || b.email || ''),
   );
+
+  /**
+   * The client picker is a searchable combobox. Each option carries the display
+   * name as its label and the email as its description, so the operator can
+   * filter by either and the two read as distinct lines in the dropdown.
+   */
+  let clientOptions: SelectOption[] = [];
+  $: clientOptions = sortedClients.map((c) => ({
+    value: c.id,
+    label: c.displayName || `${c.name} ${c.surname}`.trim() || c.email || c.id,
+    description: c.email || null,
+  }));
 
   /**
    * Only accepted quotes are offered by default: an invoice for a quote the
@@ -423,14 +436,15 @@
       <div class="ie__pick">
         <label class="ie__pick-field">
           Client
-          <select bind:value={selectedClientId} on:change={onClientChange}>
-            <option value="">Select a client…</option>
-            {#each sortedClients as c (c.id)}
-              <option value={c.id}>
-                {c.displayName || c.email || c.id}{c.email ? ` · ${c.email}` : ''}
-              </option>
-            {/each}
-          </select>
+          <Select
+            options={clientOptions}
+            bind:value={selectedClientId}
+            on:change={onClientChange}
+            searchable
+            searchPlaceholder="Search by name or email…"
+            placeholder="Select a client…"
+            ariaLabel="Client"
+          />
         </label>
 
         <label class="ie__pick-field">
