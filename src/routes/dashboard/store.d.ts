@@ -2125,6 +2125,10 @@ export interface InvoiceLineItem {
      * Lets the dashboard show which quoted lines are still uninvoiced.
      */
     quoteLineItemId?: string | null;
+    /** Internal — provider cost for this line. Never shown to the client. */
+    costTotal?: number | null;
+    /** Internal — our margin on this line (amount − costTotal). Never shown. */
+    marginTotal?: number | null;
 }
 export interface InvoicePayment {
     id: string;
@@ -2161,6 +2165,12 @@ export interface Invoice {
     discount: number;
     subtotal: number;
     total: number;
+    /** Internal — provider cost across all lines. Never shown to the client. */
+    costTotal?: number | null;
+    /** Internal — our margin (total − costTotal). Never shown to the client. */
+    marginTotal?: number | null;
+    /** True when this invoice came off an accepted quote (amounts are locked). */
+    locked?: boolean;
     payments: InvoicePayment[];
     notes: string | null;
     termsAndConditions: string[];
@@ -2175,17 +2185,28 @@ export interface Invoice {
 }
 /** What the client pays for one quote line. */
 export declare function quoteLineClientPrice(li: QuoteLineItem, defaultMarginPct?: number): number;
-/** One billable line on a quote, priced for the client. */
+/** One billable unit on a quote, priced for the client, with internal cost/margin. */
 export interface QuoteBillableLine {
     lineId: string;
     label: string;
+    /** What the client pays (cost + margin). */
     price: number;
+    /** Internal — provider cost. Never shown to the client. */
+    cost: number;
+    /** Internal — our margin (price − cost). Never shown to the client. */
+    margin: number;
 }
 /**
- * Every billable line on a quote, flattened and priced.
+ * Every billable unit on a quote, priced for the client, with the internal
+ * cost and margin alongside.
  *
- * Newer quotes hold their lines inside `lineGroups`; older flat ones use
- * `lineItems`. Both are read so an invoice never silently misses a group.
+ * Grouped quotes bill the ACCEPTED groups — the packages / add-ons / fixed
+ * services the client agreed to on the status page (`selectedGroupIds`, plus
+ * every `role: 'fixed'` group which is always billed). Each accepted group
+ * becomes ONE invoice line at its group total, so an invoice never dumps every
+ * individual quote line onto the client. When nothing has been selected yet (a
+ * sent quote awaiting acceptance), every group is offered so the operator can
+ * pick. Legacy flat quotes (no `lineGroups`) keep the line-level behaviour.
  */
 export declare function quoteBillableLines(quote: Quote | null | undefined): QuoteBillableLine[];
 /** How much of a quote has already been invoiced, and what is left. */

@@ -118,6 +118,9 @@
     lineItems = (inv.lineItems ?? []).map((li) => ({ ...li }));
     selectedClientId = inv.clientId ?? inv.consultationId ?? '';
     selectedQuoteId = inv.quoteId ?? '';
+    // Quote-derived invoices are locked: the client already accepted the group
+    // totals, so only descriptions are editable afterwards.
+    locked = inv.locked ?? !!inv.quoteId;
   }
 
   onMount(async () => {
@@ -275,6 +278,11 @@
    * subtotal on the PDF still adds up to what is being charged. The operator can
    * edit any line afterwards; those edits are what get saved.
    */
+  // ── Internal margin breakdown (our side only, never on the client doc) ───
+  let locked = false;
+  $: invoiceCost = round2(lineItems.reduce((s, li) => s + (Number(li.costTotal) || 0), 0));
+  $: invoiceMargin = round2(total - invoiceCost);
+
   function rebuildLinesFromQuote(): void {
     if (!selectedQuote) return;
     const picked: QuoteBillableLine[] = pickedLineIds.length
@@ -292,6 +300,10 @@
         rate,
         discount: 0,
         amount: rate,
+        // Internal — provider cost + our margin for this group. Never rendered
+        // on the client-facing PDF/HTML; the margin panel uses them.
+        costTotal: round2(l.cost * scale),
+        marginTotal: round2(l.margin * scale),
       };
     });
   }
@@ -314,7 +326,15 @@
       const qty = Number(li.qty) || 0;
       const rate = Number(li.rate) || 0;
       const disc = Number(li.discount) || 0;
-      return { ...li, amount: round2(qty * rate - disc) };
+      const amount = round2(qty * rate - disc);
+      // Custom invoices: keep the provider cost, recompute our margin so the
+      // internal panel stays honest when the operator edits a rate.
+      const cost = Number(li.costTotal) || 0;
+      return {
+        ...li,
+        amount,
+        marginTotal: round2(amount - cost),
+      };
     });
   }
 
@@ -340,6 +360,8 @@
         rate: Number(li.rate) || 0,
         discount: Number(li.discount) || 0,
         amount: Number(li.amount) || 0,
+        costTotal: Number(li.costTotal) || 0,
+        marginTotal: Number(li.marginTotal) || 0,
       })),
     };
   }
@@ -595,18 +617,21 @@
               placeholder="Qty"
               bind:value={li.qty}
               on:change={() => recomputeLine(li.id)}
+              disabled={locked}
             />
             <input
               type="number"
               placeholder="Rate"
               bind:value={li.rate}
               on:change={() => recomputeLine(li.id)}
+              disabled={locked}
             />
             <input
               type="number"
               placeholder="Discount"
               bind:value={li.discount}
               on:change={() => recomputeLine(li.id)}
+              disabled={locked}
             />
             <span class="ie__line-amount">{money(li.amount)}</span>
             <button class="ie__x" on:click={() => removeLine(li.id)}>✕</button>
@@ -618,13 +643,25 @@
     <div class="ie__totals">
       <label>
         Discount
-        <input type="number" bind:value={discount} />
+        <input type="number" bind:value={discount} disabled={locked} />
       </label>
       <div class="ie__totals-sum">
         <span>Subtotal</span><strong>{money(subtotal)}</strong>
         <span>Total</span><strong>{money(total)}</strong>
       </div>
     </div>
+
+    {#if locked}
+      <div class="ie__margin">
+        <div class="ie__margin-head">
+          <h4>Internal margin (not shown to the client)</h4>
+        </div>
+        <div class="ie__margin-row">
+          <span>Provider cost</span><strong>{money(invoiceCost)}</strong>
+          <span>Our margin</span><strong>{money(invoiceMargin)}</strong>
+        </div>
+      </div>
+    {/if}
 
     <label class="ie__wide">
       Notes
@@ -1026,6 +1063,38 @@
   }
 
   .ie__x:hover { background: rgba(239, 68, 68, 0.12); }
+
+  .ie__margin {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .ie__margin-head h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .ie__margin-row {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.2rem 1rem;
+    font-size: 0.82rem;
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ie__margin-row strong {
+    color: #0f172a;
+    font-weight: 800;
+    text-align: right;
+  }
 
   .ie__totals {
     display: flex;
