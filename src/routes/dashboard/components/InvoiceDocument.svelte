@@ -17,7 +17,7 @@
   const COMPANY = {
     name: 'International Relocation Partner LLC',
     address: 'Miami Florida 33130, U.S.A',
-    email: 'zohodev@internationalrelocationpartner.com',
+    email: 'finance@internationalrelocationpartner.com',
     website: 'www.internationalrelocationpartner.com',
   };
 
