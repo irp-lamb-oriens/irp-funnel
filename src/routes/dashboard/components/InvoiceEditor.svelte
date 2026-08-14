@@ -1088,6 +1088,11 @@
     border-left: 2px solid rgba(2, 181, 187, 0.35);
     background: #f8fafc;
     border-radius: 0 8px 8px 0;
+    /* Long quote-line labels (especially the accepted group's full service
+       description) otherwise push the price out of the container. Scroll
+       instead of overflowing. */
+    overflow: auto;
+    max-width: 100%;
   }
 
   .ie__group-lines-head {
