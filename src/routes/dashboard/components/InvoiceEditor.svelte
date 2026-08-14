@@ -187,12 +187,12 @@
   }));
 
   /**
-   * Only accepted quotes are offered by default: an invoice for a quote the
-   * client has not agreed to is a billing mistake, not a shortcut. Anything
-   * already sent is still listed so a deposit can be raised alongside it.
+   * Only ACCEPTED quotes are billable. An invoice for a quote the client has
+   * not agreed to is a billing mistake, not a shortcut — the client accepted
+   * the group totals, so those are the only totals an invoice may carry.
    */
   $: billableQuotes = clientQuotes.filter(
-    (q) => q.status === 'client_accepted' || q.status === 'sent_to_client',
+    (q) => q.status === 'client_accepted',
   );
 
   $: selectedQuote = clientQuotes.find((q) => q.quoteId === selectedQuoteId) ?? null;
@@ -240,6 +240,9 @@
       lineItems = [];
       return;
     }
+    // The client already accepted these group totals — amounts are locked,
+    // only descriptions are editable.
+    locked = true;
     const summary = summarizeQuoteBilling(quote, $invoices);
     percentage = summary.remainingPct > 0 ? summary.remainingPct : 100;
     const uninvoiced = summary.uninvoicedLines.map((l) => l.lineId);
@@ -256,6 +259,7 @@
       pickedLineIds = [];
       percentage = 100;
       lineItems = [];
+      locked = false;
       return;
     }
     selectQuote(selectedQuoteId);

@@ -4856,9 +4856,18 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
       });
   }
 
-  // Legacy flat quote — bill the selected lines (or all of them).
+  // Legacy flat quote — bill the selected lines (or all of them), deduped by
+  // lineId so a quote whose flat `lineItems` array was accidentally duplicated
+  // never bills the same service twice.
   const raw: QuoteLineItem[] = Array.isArray(quote.lineItems) ? quote.lineItems : [];
-  return raw.map((li, i) => {
+  const seen = new Set<string>();
+  const unique = raw.filter((li) => {
+    const id = String(li?.lineId ?? '');
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  return unique.map((li, i) => {
     const price = quoteLineClientPrice(li, defaultMarginPct);
     const cost = Number(li.amount) || 0;
     return {
@@ -4867,6 +4876,7 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
       price,
       cost,
       margin: round2Money(price - cost),
+      groupDescription: null,
     };
   });
 }
