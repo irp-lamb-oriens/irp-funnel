@@ -4812,6 +4812,9 @@ export interface QuoteBillableLine {
   /** Client-visible group description from the accepted quote group.
    *  Rendered under the item description on the PDF/preview. */
   groupDescription: string | null;
+  /** The individual quote lines inside this accepted group — shown to staff
+   *  in the editor's line-items breakdown, never on the client-facing doc. */
+  lines: Array<{ lineId: string; label: string; price: number; cost: number; margin: number }>;
 }
 
 /**
@@ -4852,6 +4855,19 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
           groupDescription: typeof g.description === 'string' && g.description.trim()
             ? g.description.trim()
             : null,
+          // The individual quote lines inside this accepted group — staff-only
+          // detail shown in the editor, never on the client-facing doc.
+          lines: items.map((li) => {
+            const p = quoteLineClientPrice(li, defaultMarginPct);
+            const c = Number(li.amount) || 0;
+            return {
+              lineId: String(li?.lineId ?? ''),
+              label: String(li?.label || li?.notes || 'Relocation services'),
+              price: p,
+              cost: c,
+              margin: round2Money(p - c),
+            };
+          }),
         };
       });
   }
@@ -4877,6 +4893,7 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
       cost,
       margin: round2Money(price - cost),
       groupDescription: null,
+      lines: [],
     };
   });
 }

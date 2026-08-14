@@ -289,6 +289,15 @@
   $: invoiceCost = round2(lineItems.reduce((s, li) => s + (Number(li.costTotal) || 0), 0));
   $: invoiceMargin = round2(total - invoiceCost);
 
+  // Map each aggregated invoice line back to the individual quote lines inside
+  // its accepted group, so staff can see the full breakdown on the left while
+  // the client-facing preview (right) stays aggregated.
+  $: quoteLinesByGroup = new Map(quoteLines.map((l) => [l.lineId, l.lines ?? []]));
+  function groupLinesFor(li: InvoiceLineItem): Array<{ lineId: string; label: string; price: number; cost: number; margin: number }> {
+    if (!li.quoteLineItemId) return [];
+    return quoteLinesByGroup.get(li.quoteLineItemId) ?? [];
+  }
+
   function rebuildLinesFromQuote(): void {
     if (!selectedQuote) return;
     const picked: QuoteBillableLine[] = pickedLineIds.length
@@ -653,6 +662,17 @@
             <span class="ie__line-amount">{money(li.amount)}</span>
             <button class="ie__x" on:click={() => removeLine(li.id)}>✕</button>
           </div>
+          {#if groupLinesFor(li).length > 0}
+            <div class="ie__group-lines">
+              <div class="ie__group-lines-head">Quote lines in this group (staff only)</div>
+              {#each groupLinesFor(li) as gl (gl.lineId)}
+                <div class="ie__group-line">
+                  <span class="ie__group-line-label">{gl.label}</span>
+                  <span class="ie__group-line-price">{money(gl.price)}</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
         {/each}
       {/if}
     </div>
@@ -1060,6 +1080,46 @@
     gap: 0.4rem;
     align-items: center;
     margin-bottom: 0.4rem;
+  }
+
+  .ie__group-lines {
+    margin: 0 0 0.6rem 1.4rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 2px solid rgba(2, 181, 187, 0.35);
+    background: #f8fafc;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .ie__group-lines-head {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+
+  .ie__group-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.78rem;
+    color: #475569;
+    padding: 0.12rem 0;
+  }
+
+  .ie__group-line-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ie__group-line-price {
+    font-weight: 700;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .ie__line input[type='number'] { text-align: right; }
