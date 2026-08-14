@@ -1080,6 +1080,7 @@
     gap: 0.4rem;
     align-items: center;
     margin-bottom: 0.4rem;
+    overflow: auto;
   }
 
   .ie__group-lines {
