@@ -1473,7 +1473,7 @@ export async function initDashboardSocket() {
           delete fetchTimeouts['chatbot_threads'];
         }, 300);
       }
-      else if (collection.startsWith('evo_')) {
+      else if (typeof collection === 'string' && collection.startsWith('evo_')) {
         // 5. Live Evolutionary UI Update
         if (fetchTimeouts['evo']) clearTimeout(fetchTimeouts['evo']);
         fetchTimeouts['evo'] = setTimeout(async () => {
