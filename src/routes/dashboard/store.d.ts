@@ -2205,6 +2205,15 @@ export interface QuoteBillableLine {
     /** Client-visible group description from the accepted quote group.
      *  Rendered under the item description on the PDF/preview. */
     groupDescription: string | null;
+    /** The individual quote lines inside this accepted group — shown to staff
+     *  in the editor's line-items breakdown, never on the client-facing doc. */
+    lines: Array<{
+        lineId: string;
+        label: string;
+        price: number;
+        cost: number;
+        margin: number;
+    }>;
 }
 /**
  * Every billable unit on a quote, priced for the client, with the internal
