@@ -119,15 +119,17 @@
             <td class="doc__num">{i + 1}</td>
             <td>
               <span class="doc__item-desc">{item.description}</span>
-              {#if item.groupDescription}
-                <span class="doc__item-sub">{item.groupDescription}</span>
-              {/if}
             </td>
             <td class="doc__num">{item.qty}</td>
             <td class="doc__num">{money(item.rate)}</td>
             <td class="doc__num">{money(item.discount)}</td>
             <td class="doc__num">{money(item.amount)}</td>
           </tr>
+          {#if item.groupDescription}
+            <tr>
+              <td colspan="6" class="doc__item-sub-row">{item.groupDescription}</td>
+            </tr>
+          {/if}
         {:else}
           <tr>
             <td colspan="6" class="doc__empty">No line items yet.</td>
@@ -331,12 +333,13 @@
     color: #1e293b;
   }
 
-  .doc__item-sub {
-    display: block;
-    margin-top: 0.15rem;
+  .doc__item-sub-row {
+    padding: 0.35rem 0.8rem 0.7rem !important;
     font-size: 0.76rem;
     color: #94a3b8;
-    line-height: 1.45;
+    line-height: 1.5;
+    background: #fafbfc;
+    white-space: pre-wrap;
   }
 
   .doc__table {
