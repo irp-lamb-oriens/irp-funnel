@@ -94,6 +94,13 @@
       </div>
     </section>
 
+    <!-- Overall service description from the accepted quote (clientDescription) -->
+    {#if invoice.overallDescription}
+      <section class="doc__overall">
+        <p>{invoice.overallDescription}</p>
+      </section>
+    {/if}
+
     <!-- Line items -->
     <table class="doc__table">
       <thead>
@@ -110,7 +117,12 @@
         {#each invoice.lineItems as item, i (item.id)}
           <tr>
             <td class="doc__num">{i + 1}</td>
-            <td>{item.description}</td>
+            <td>
+              <span class="doc__item-desc">{item.description}</span>
+              {#if item.groupDescription}
+                <span class="doc__item-sub">{item.groupDescription}</span>
+              {/if}
+            </td>
             <td class="doc__num">{item.qty}</td>
             <td class="doc__num">{money(item.rate)}</td>
             <td class="doc__num">{money(item.discount)}</td>
@@ -296,6 +308,35 @@
   .doc__value--strong {
     font-weight: 700;
     color: #0f172a;
+  }
+
+  .doc__overall {
+    margin-bottom: 1.25rem;
+    padding: 0.9rem 1rem;
+    background: #f8fafc;
+    border-left: 3px solid #02b5bb;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .doc__overall p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.6;
+  }
+
+  .doc__item-desc {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .doc__item-sub {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.76rem;
+    color: #94a3b8;
+    line-height: 1.45;
   }
 
   .doc__table {

@@ -69,6 +69,7 @@
   let terms = 'Due on receipt';
   let poNumber = '';
   let notes = '';
+  let overallDescription = '';
   let termsAndConditions = '';
   let discount = 0;
   let lineItems: InvoiceLineItem[] = [];
@@ -113,6 +114,7 @@
     terms = inv.terms || 'Due on receipt';
     poNumber = inv.poNumber ?? '';
     notes = inv.notes ?? '';
+    overallDescription = inv.overallDescription ?? '';
     termsAndConditions = (inv.termsAndConditions ?? []).join('\n');
     discount = inv.discount ?? 0;
     lineItems = (inv.lineItems ?? []).map((li) => ({ ...li }));
@@ -296,6 +298,9 @@
         id: newId(),
         quoteLineItemId: l.lineId,
         description: `${l.label}${suffix}`,
+        // Client-visible group description captured from the accepted group.
+        // Shown under the item description on the PDF/preview.
+        groupDescription: l.groupDescription ?? null,
         qty: 1,
         rate,
         discount: 0,
@@ -348,6 +353,7 @@
       terms: terms.trim() || 'Due on receipt',
       poNumber: poNumber.trim() || null,
       notes: notes.trim() || null,
+      overallDescription: overallDescription.trim() || null,
       termsAndConditions: termsAndConditions
         .split('\n')
         .map((t) => t.trim())
@@ -356,6 +362,7 @@
       lineItems: lineItems.map((li) => ({
         id: li.id,
         description: li.description,
+        groupDescription: li.groupDescription ?? null,
         qty: Number(li.qty) || 0,
         rate: Number(li.rate) || 0,
         discount: Number(li.discount) || 0,
@@ -428,6 +435,7 @@
     total,
     payments: invoice?.payments ?? [],
     notes: notes.trim() || null,
+    overallDescription: overallDescription.trim() || null,
     termsAndConditions: termsAndConditions
       .split('\n')
       .map((t) => t.trim())
@@ -613,6 +621,11 @@
               bind:value={li.description}
             />
             <input
+              type="text"
+              placeholder="Group description (visible to client)"
+              bind:value={li.groupDescription}
+            />
+            <input
               type="number"
               placeholder="Qty"
               bind:value={li.qty}
@@ -662,6 +675,11 @@
         </div>
       </div>
     {/if}
+
+    <label class="ie__wide">
+      Overall service description
+      <textarea bind:value={overallDescription} rows="3" placeholder="Describe the overall service shown on the invoice"></textarea>
+    </label>
 
     <label class="ie__wide">
       Notes

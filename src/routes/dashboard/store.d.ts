@@ -2125,6 +2125,9 @@ export interface InvoiceLineItem {
      * Lets the dashboard show which quoted lines are still uninvoiced.
      */
     quoteLineItemId?: string | null;
+    /** Client-visible group description captured from the accepted quote group.
+     *  Shown under the item description on the PDF/preview. Editable. */
+    groupDescription?: string | null;
     /** Internal — provider cost for this line. Never shown to the client. */
     costTotal?: number | null;
     /** Internal — our margin on this line (amount − costTotal). Never shown. */
@@ -2151,6 +2154,10 @@ export interface Invoice {
     quoteTotal?: number | null;
     /** The share of the quote this invoice bills, when billed by percentage. */
     quotePercentage?: number | null;
+    /** The overall service description from the accepted quote
+     *  (clientDescription). Rendered above the line-items table
+     *  on the PDF/preview. */
+    overallDescription?: string | null;
     quoteTitle?: string | null;
     quoteDate?: string | null;
     consultationId: string | null;
@@ -2195,6 +2202,9 @@ export interface QuoteBillableLine {
     cost: number;
     /** Internal — our margin (price − cost). Never shown to the client. */
     margin: number;
+    /** Client-visible group description from the accepted quote group.
+     *  Rendered under the item description on the PDF/preview. */
+    groupDescription: string | null;
 }
 /**
  * Every billable unit on a quote, priced for the client, with the internal
