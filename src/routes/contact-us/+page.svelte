@@ -72,6 +72,7 @@
     <p>Moving abroad is a unique experience for everybody, with different motives, family sizes, and needs. Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your relocation project.</p>
     <div class="consultation-iframe">
       <iframe
+        title="Consultation booking"
         loading="lazy"
         width="100%"
         height="750px"

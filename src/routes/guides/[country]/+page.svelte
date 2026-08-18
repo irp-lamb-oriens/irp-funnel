@@ -100,48 +100,6 @@
   <meta property="og:url" content="https://yourwebsite.com/guides/{country-slug}" />
   <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
-+++++++ REPLACE## 5. Every-time checklist (read before sending)
-
-- [ ] Am I sending a tool call? If yes: it is ONE tool, it has ALL
-      required parameters filled with real non-empty G TD values.
-- [ ] Is the XML well-formed? Opening tag, parameters, closing tag. If I
-      can't spell the full closing tag, write it BEFORE the parameters.
-- [ ] Am I writing any empty `<bash>` or angle-tag pseudo-tool? Banned.
-      Use the real tool or use attempt_completion.
-- [ ] Am I about to send only prose? Then either carry the prose inside a
-      pending tool call (context param), or call attempt_completion — or
-      if I need to answer a question, ask_followup_question. Prose alone
-      is the #1 error generator.
-- [ ] Parameter values: contain zero tag fragments, zero "..." placeholders,
-      zero auto-complete garbage snippets.
-- [ ] File paths point at real, existing files. Not a path + content +
-      words. For a `write` use write_to_file; for an edit replace kahenera
-      replace_in_file with SEARCH/REPLACE using the
-      `=======` and `+++++++` markers.
-
-## 10. The two golden rules of the harness loop
-
-1. **One message = one action.** If it's not a sanitized, complete,
-   well-formed tool call, the message is lost. Never emit half a call hoping the
-   harness repairs it — commentary drifting from the call with a paragraph, and do not
-   summarize in prose unless a final result. Place text IN the call.
-2. **In ACT MODE, the message body is a tool call: shell the body to
-   the actual tool.** There are no "ad-hoc" bash blocks, no "here's my edit"
-   with a code snippet in chat, no "let's explore first" text-only blocks.
-   If you write code, it happens inside `write_to_file` or
-   `replace_in_file`. If you run something, it happens inside
-   `execute_command`. Never echo a command in plain prose.
-
-## 11. Summary: the fixes mapped to the errors
-
-| Seen error | Root cause | Fix |
-|---|---|---|
-| "You did not use a tool" | prose with no call | wrap in tool or finish |
-| "content parameter was empty" | placeholder/wording mismatch in params | re-emit clean, only real values |
-| "wrong tool" | custom `<bash>` tags | use execute_command only |
-| "malformed call" | missing closing tag | emit full closing tag with call |
-| repeated identical retries | re-sent broken call | re-emit as a clean call or new strategy |
-| mid-message drift | breaking analysis between tool steps | keep analysis inside individual tool calls |
 
 <Header />
 
