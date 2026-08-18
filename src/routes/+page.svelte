@@ -143,7 +143,16 @@
 
 </script>
 
-<Header />
+<svelte:head>
+  <title>International Relocation Partner | Moving Abroad Made Simple</title>
+  <meta name="description" content="Relocation services for expats, retirees and digital nomads. International moving, relocation tours, courier assistance, customs rules, cost of living guides and automobile shipping." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="International Relocation Partner | Relocating Abroad Made Simple" />
+  <meta property="og:description" content="Trusted relocation partner for expats, retirees and digital nomads. International moving, relocation tours, courier help, customs regulations and auto shipping." />
+  <meta property="og:url" content="https://yourwebsite.com/" />
+  <meta name="twitter:card" content="summary_large_image" />
+</svelte:head>
+
 
 <main id="main-content">
   <ImageGrid images={[

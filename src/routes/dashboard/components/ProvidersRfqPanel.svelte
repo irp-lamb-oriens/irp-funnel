@@ -10,8 +10,8 @@
    *   2. Compose a pre-translated RFQ ("request your best rates") email from the
    *      project data (Dinorah's template), with a MISSING-FIELD detector that
    *      disables Send until every required field is filled.
-   *   3. Pick a LANGUAGE (11 pre-translated templates); the panel recommends one
-   *      from the DESTINATION country via a bidirectional country↔language map.
+   *   3. Pick a LANGUAGE (11 pre-translated templates); English is always the
+   *      recommended setting and the default on load, regardless of the client.
    *   4. EDIT the email in a WYSIWYG preview reusing the SAME centralized email
    *      editor engine (emailEditorEngine.ts) used by the pre-send drawer.
    *   5. CC support2@ + pricing2@ and SEND to the selected providers.
@@ -51,7 +51,6 @@
     type RfqLang,
   } from '$lib/rfq/sondeoTemplates.ts';
   import {
-    recommendedLanguageForCountry,
     normalizeCountryCode,
   } from '$lib/i18n/countryLanguage.ts';
 
@@ -580,9 +579,10 @@
   }
 
   onMount(async () => {
-    // Seed recommended language + fields from the destination country.
-    recommendedLang = recommendedLanguageForCountry(destinationCountry());
-    lang = recommendedLang;
+    // English is the recommended language, always. It is never re-derived from
+    // the destination country after fetch.
+    recommendedLang = 'en';
+    lang = 'en';
     fields = buildFieldsFromClient(lang);
     serviceOptionsText = (fields.serviceOptions ?? []).join('\n');
     // The client's project data can be in any language; ensure the seeded
@@ -707,7 +707,7 @@
                     <button type="button" class="rfq-lang__opt" class:sel={o.code === lang} on:click={() => chooseLanguage(o.code)}>
                       <span>{o.label}</span>
                       <span class="rfq-lang__en">{o.englishName}</span>
-                      {#if o.code === recommendedLang}<span class="rfq-lang__recdot" title="Recommended for destination">★</span>{/if}
+                      {#if o.code === recommendedLang}<span class="rfq-lang__recdot" title="Recommended">★</span>{/if}
                     </button>
                   {/each}
                   {#if langMenuOptions.length === 0}
