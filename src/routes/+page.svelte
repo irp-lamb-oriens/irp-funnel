@@ -155,6 +155,7 @@
 
 
 <main id="main-content">
+  <Header />
   <ImageGrid images={[
 		"icons/partners/AAH.svg",
 		"icons/partners/AAE.webp",
