@@ -1,6 +1,7 @@
 import { get } from "svelte/store";
 import { formState, type FormState } from "./formStore.js";
 import store from "../../../store.js";
+import { getClientTimezone } from "../../../../lib/timezone.ts";
 
 export async function submitScheduling() {
   const formData = get(formState);
@@ -44,6 +45,7 @@ export async function submitScheduling() {
     ...formData,
     notes: normalisedNotes,
     events: schedulingData,
+    clientTimeZone: getClientTimezone(),
   };
 
 

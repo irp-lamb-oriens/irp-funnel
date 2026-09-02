@@ -5,6 +5,16 @@
   import store from "../../../store.ts";
   import TagNode from "./TagNode.svelte";
   import { parseBusyEvents, slotConflictsWithBusy } from "../slotConflict.ts";
+  import {
+    getClientTimezone,
+    getTimezoneNotice,
+    getTimezoneLabel,
+    formatTimeInZone,
+  } from "../../../../lib/timezone.ts";
+
+  const clientTz = getClientTimezone();
+  const tzNotice = getTimezoneNotice(clientTz);
+  const clientTzLabel = getTimezoneLabel(clientTz);
 
 
   const availableDatesStore = writable<{ date: string; availableHours: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] }[]>([]);
@@ -132,11 +142,7 @@
           const isBusy = slotConflictsWithBusy(slotTime, busyEvents);
 
 
-          const timeString = availableTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: 'America/Costa_Rica'
-          });
+          const timeString = formatTimeInZone(availableTime, clientTz);
           const isoString = availableTime.toISOString();
           const slot = { name: timeString, value: isoString, disabled: isBusy };
 
@@ -193,6 +199,12 @@
   {:else if !$availableDatesStore.length}
     <p>Loading...</p>
   {:else}
+    {#if tzNotice}
+      <div class="tz-notice">
+        <span class="tz-notice__dot"></span>
+        <span>Times shown in {clientTzLabel} ({tzNotice})</span>
+      </div>
+    {/if}
     <div class="calendar-header">
       <button on:click={previousMonth}>&lt;</button>
       <span>{new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
@@ -407,5 +419,29 @@
     padding: 1rem;
     background: rgba(239, 68, 68, 0.1);
     border-radius: 1rem;
+  }
+
+  .tz-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 1rem;
+    border-radius: 0.75rem;
+    background: rgba(2, 181, 187, 0.08);
+    border: 1px solid rgba(2, 181, 187, 0.22);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .tz-notice__dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-highlight-2, #02b5bb);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.15);
   }
 </style>

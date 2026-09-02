@@ -32,6 +32,12 @@
   import { writable, get } from 'svelte/store';
   import TagNode from '../Calendar/TagNode.svelte';
   import { parseBusyEvents, slotConflictsWithBusy } from '../slotConflict.ts';
+  import {
+    getClientTimezone,
+    getTimezoneLabel,
+    getTimezoneNotice,
+    formatTimeInZone,
+  } from '../../../../lib/timezone.ts';
 
 
   // ── Props ──────────────────────────────────────────────────────────────────
@@ -57,6 +63,14 @@
    * the 2-day grace and working-hours filter. NEVER set this on the public form.
    */
   export let staffMode: boolean = false;
+
+  // ── Timezone-aware display ────────────────────────────────────────────────
+  // Slots are generated in the org timezone (America/Costa_Rica) but the
+  // visible labels are rendered in the client's browser timezone. The slot
+  // VALUE (ISO instant) never changes — only the label is transformed.
+  const clientTz = getClientTimezone();
+  const tzNotice = getTimezoneNotice(clientTz);
+  const clientTzLabel = getTimezoneLabel(clientTz);
 
   // ── Staff custom-time state ────────────────────────────────────────────────
   let useCustomTime = false;
@@ -221,9 +235,7 @@
           // inter-call buffer of one — same rule as the backend (slotConflict.ts).
           const isBusy = slotConflictsWithBusy(slotMs, busyEvents);
 
-          const timeString = t.toLocaleTimeString('en-US', {
-            hour: '2-digit', minute: '2-digit', timeZone: 'America/Costa_Rica',
-          });
+          const timeString = formatTimeInZone(t, clientTz);
           const slot: AvailableHour = { name: timeString, value: t.toISOString(), disabled: isBusy };
           if (hour < 12) datesWithHours[dateKey][0].children.push(slot);
           else if (hour < 17) datesWithHours[dateKey][1].children.push(slot);
@@ -271,6 +283,13 @@
 </script>
 
 <div class="ap ap--{theme}" class:ap--disabled={disabled}>
+  {#if tzNotice}
+    <div class="ap__tz-notice" role="status">
+      <span class="ap__tz-dot" aria-hidden="true"></span>
+      <span>Times shown in {clientTzLabel} ({tzNotice})</span>
+    </div>
+  {/if}
+
   {#if staffMode}
     <div class="ap__staff-bar">
       <button type="button" class="ap__staff-toggle" on:click={toggleCustomTime}>
@@ -425,6 +444,30 @@
     border-radius: 8px;
     text-align: center;
     font-size: 0.85rem;
+  }
+
+  .ap__tz-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.85rem;
+    border-radius: 8px;
+    background: var(--ap-avail-bg);
+    border: 1px solid var(--ap-avail-bdr);
+    color: var(--ap-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  .ap__tz-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ap-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ap-accent) 18%, transparent);
   }
 
   .ap__loading {
