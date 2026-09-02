@@ -837,6 +837,30 @@
       alert('Failed: ' + err.message);
     }
   }
+
+  // ── Critical overview fields surfaced in the header ─────────────────────
+  // A compact glance-strip of the move's essential facts. Mirrors the Overview
+  // tab but stays visible in the panel header so an operator can answer
+  // "where / how big / when / how much" without opening Overview. Only rows
+  // with a non-empty value render; when nothing is populated the strip hides.
+  $: criticalHeaderFields = (() => {
+    const c = $selectedClient;
+    if (!c) return [] as { label: string; value: string }[];
+
+    const originParts = [c.originCity, c.originCountry].filter(Boolean);
+    const destParts = [c.destinationCity, c.destinationCountry].filter(Boolean);
+    const route = (originParts.length || destParts.length)
+      ? `${originParts.join(', ') || '—'} → ${destParts.join(', ') || '—'}`
+      : '';
+
+    const items: { label: string; value: string }[] = [];
+    if (route) items.push({ label: 'Route', value: route });
+    if (c.budget) items.push({ label: 'Budget', value: c.budget });
+    if (c.size) items.push({ label: 'Move size', value: c.size });
+    if (c.immigrationStatus) items.push({ label: 'Immigration', value: c.immigrationStatus });
+    if (c.moveTimeline) items.push({ label: 'Timeline', value: c.moveTimeline });
+    return items;
+  })();
 </script>
 
 {#if $detailPanelOpen && $selectedClient}
@@ -862,6 +886,17 @@
           <span style="font-size: 11px; color: #94a3b8; font-family: monospace; display: flex; align-items: center;">· ID: {$selectedClient.sessionId.split('-')[0]}</span>
         {/if}
       </div>
+
+      {#if criticalHeaderFields.length}
+        <div class="detail-panel__critical">
+          {#each criticalHeaderFields as cf (cf.label)}
+            <span class="detail-panel__critical-item">
+              <span class="detail-panel__critical-label">{cf.label}</span>
+              <span class="detail-panel__critical-value">{cf.value}</span>
+            </span>
+          {/each}
+        </div>
+      {/if}
     </div>
 
     <!-- Stage Chip + Popover (replaces the giant emoji-strip selector). -->
