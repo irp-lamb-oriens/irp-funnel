@@ -102,15 +102,17 @@
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #f87171;
+    color: var(--color-highlight-1, #c62426);
   }
   .estate__title {
-    font-size: clamp(2rem, 4.5vw, 3.4rem);
-    line-height: 1.05;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+    font-family: var(--font-title, 'Kiona Regular', serif);
+    font-size: clamp(1.9rem, 4.5vw, 3rem);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin: 0 0 1.4rem;
-    max-width: 20ch;
+    max-width: 22ch;
+    color: #f1f5f9;
   }
   .estate__sub {
     font-size: 1.15rem;
@@ -128,9 +130,9 @@
     font-weight: 700;
     font-size: 0.95rem;
     text-decoration: none;
-    background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+    background: linear-gradient(135deg, var(--color-highlight-1, #c62426) 0%, #9f1d1e 100%);
     color: #fff;
-    box-shadow: 0 10px 24px -8px rgba(225, 29, 72, 0.5);
+    box-shadow: 0 10px 24px -8px rgba(198, 36, 38, 0.5);
     transition: filter 0.15s, transform 0.15s;
   }
   .estate__btn:hover { filter: brightness(1.06); }
@@ -146,10 +148,11 @@
     text-align: left;
   }
   .estate__h2 {
+    font-family: var(--font-title, 'Kiona Regular', serif);
     font-size: clamp(1.6rem, 3vw, 2.3rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    color: #111827;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-foreground, #181818);
     margin: 0 0 1rem;
   }
   .estate__cta-sub {
@@ -174,13 +177,15 @@
   }
   .estate-card__name {
     margin: 0 0 0.35rem;
-    font-size: 1.05rem;
-    color: #0f172a;
+    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-foreground, #181818);
   }
   .estate-card__towns {
     margin: 0 0 0.5rem;
     font-size: 0.86rem;
-    color: #e11d48;
+    color: var(--color-highlight-1, #c62426);
     font-weight: 600;
   }
   .estate-card__note {

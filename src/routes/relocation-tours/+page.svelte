@@ -207,15 +207,17 @@
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #02b5bb;
+    color: var(--color-highlight-2, #02b5bb);
   }
   .tour__title {
-    font-size: clamp(2rem, 4.5vw, 3.4rem);
-    line-height: 1.05;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+    font-family: var(--font-title, 'Kiona Regular', serif);
+    font-size: clamp(1.9rem, 4.5vw, 3rem);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin: 0 0 1.4rem;
-    max-width: 18ch;
+    max-width: 20ch;
+    color: #f1f5f9;
   }
   .tour__sub {
     font-size: 1.15rem;
@@ -293,10 +295,11 @@
     margin: 0 auto;
   }
   .tour__h2 {
+    font-family: var(--font-title, 'Kiona Regular', serif);
     font-size: clamp(1.6rem, 3vw, 2.3rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    color: #111827;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-foreground, #181818);
     margin: 0 0 1rem;
   }
   .tour__lead {
@@ -320,8 +323,10 @@
   }
   .tour__reality-card h3 {
     margin: 0 0 0.6rem;
-    font-size: 1.05rem;
-    color: #0f172a;
+    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-foreground, #181818);
   }
   .tour__reality-card p {
     margin: 0;
@@ -347,8 +352,10 @@
   }
   .tour__region h3 {
     margin: 0 0 0.35rem;
-    color: #0f172a;
-    font-size: 1rem;
+    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
+    color: var(--color-foreground, #181818);
+    font-size: 0.98rem;
+    font-weight: 700;
   }
   .tour__region p {
     margin: 0;

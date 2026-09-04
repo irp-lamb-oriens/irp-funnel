@@ -44,7 +44,7 @@
       href: '/consultation',
       cta: 'Plan your move',
       icon: 'ship',
-      accent: '#f59e0b',
+      accent: '#02b5bb',
     },
   ];
 </script>
@@ -104,12 +104,13 @@
   }
 
   .services__title {
+    font-family: var(--font-title, 'Kiona Regular', serif);
     font-size: clamp(1.7rem, 3vw + 0.6rem, 2.6rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
     margin: 0 0 0.8rem;
-    color: #111827;
+    color: var(--color-foreground, #181818);
   }
 
   .services__sub {
@@ -176,10 +177,11 @@
   }
 
   .services-card__title {
-    font-size: 1.3rem;
-    font-weight: 800;
+    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
+    font-size: 1.12rem;
+    font-weight: 700;
     margin: 0;
-    color: #111827;
+    color: var(--color-foreground, #181818);
     letter-spacing: -0.01em;
   }
 

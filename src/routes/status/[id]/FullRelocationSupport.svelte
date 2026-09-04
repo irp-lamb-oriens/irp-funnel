@@ -74,10 +74,11 @@
   }
   .support__title {
     margin: 0 0 0.6rem;
+    font-family: var(--font-title, 'Kiona Regular', serif);
     font-size: 1.5rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    color: #111827;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-foreground, #181818);
   }
   .support__lead {
     margin: 0;
@@ -101,9 +102,10 @@
   }
   .support__item-title {
     margin: 0 0 0.45rem;
-    font-size: 1rem;
-    font-weight: 800;
-    color: #0f172a;
+    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--color-foreground, #181818);
   }
   .support__item-body {
     margin: 0;
