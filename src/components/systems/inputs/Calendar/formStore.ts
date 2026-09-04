@@ -28,6 +28,8 @@ export type FormState = {
   vehicles: Vehicle[];
   notes: string | string[];
   chatHistory: { role: string; content: string }[];
+  /** Service category pre-filled by a service landing page (e.g. relocation_tour). */
+  serviceCategory: string;
 };
 
 // Define a store for the form state
@@ -53,6 +55,7 @@ export const formState = writable<FormState>({
   vehicles: [],
   notes: "",
   chatHistory: [],
+  serviceCategory: "",
 });
 
 // Update the form state on input change

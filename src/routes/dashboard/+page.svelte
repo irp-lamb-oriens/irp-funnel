@@ -65,6 +65,28 @@
     { value: 'nurture', label: 'Nurture' },
     { value: 'no_show', label: 'No Show' },
   ];
+  // Service category is free-form (pre-filled by service landings), so the
+  // picker offers the DISTINCT values present in the loaded client list, just
+  // like origin/destination/budget/size filters below.
+  const SERVICE_CATEGORY_LABELS: Record<string, string> = {
+    relocation_tour: 'Relocation tour',
+    real_estate: 'Real estate due diligence',
+    international_moving: 'International moving',
+    immigration_advice: 'Immigration advice',
+    settling_in: 'Settling in',
+  };
+  function serviceCategoryOptions(): SelectOption[] {
+    const present = $clients
+      .map((c) => c.serviceCategory)
+      .filter((v): v is string => typeof v === 'string' && v.length > 0);
+    return toFilterOptions(
+      [...new Set(present)].sort(),
+      'Any Service',
+    ).map((o) => ({
+      value: o.value,
+      label: o.value ? (SERVICE_CATEGORY_LABELS[o.value] ?? o.value) : o.label,
+    }));
+  }
   /** Build a SelectOption[] from a flat list of distinct values + an "any" label. */
   function toFilterOptions(values: string[], anyLabel: string): SelectOption[] {
     return [{ value: '', label: anyLabel }, ...values.map((v) => ({ value: v, label: v }))];
@@ -753,6 +775,14 @@
         </div>
         <div class="filter-select-wrap">
           <Select
+            options={serviceCategoryOptions()}
+            bind:value={$filters.serviceCategory}
+            size="sm"
+            ariaLabel="Filter by service"
+          />
+        </div>
+        <div class="filter-select-wrap">
+          <Select
             options={toFilterOptions([...new Set($clients.map(c => c.originCountry).filter(Boolean))].sort(), 'Any Origin')}
             bind:value={$filters.originCountry}
             size="sm"
@@ -783,7 +813,7 @@
             ariaLabel="Filter by move size"
           />
         </div>
-        <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: ''}}>Clear</button>
+        <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: '', serviceCategory: ''}}>Clear</button>
       </div>
     {/if}
 

@@ -54,6 +54,8 @@ export interface Client {
     budget: string;
     size: string;
     immigrationStatus: string;
+    /** Service category pre-filled by a service landing (e.g. relocation_tour, real_estate). Optional for backward compatibility. */
+    serviceCategory?: string;
     propertyTypeFrom: string;
     propertyTypeTo: string;
     /** Approximate move date/timeline (AI-extracted by Lily, or set manually). */
@@ -353,6 +355,7 @@ export interface Filters {
     budget: string;
     size: string;
     callOutcome: string;
+    serviceCategory?: string;
 }
 export declare const filters: import("svelte/store").Writable<Filters>;
 export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance">;
@@ -1632,6 +1635,35 @@ export interface QuoteApproversConfig {
 export declare function fetchQuoteApprovers(): Promise<QuoteApproversConfig>;
 /** Save (upsert) the quote-approvers list. */
 export declare function saveQuoteApprovers(approvers: string[]): Promise<QuoteApproversConfig>;
+export interface TourScheduleConfig {
+    enabled: boolean;
+    cadenceWeeks: number;
+    anchorMonday: string;
+    bookableMonths: number;
+    weekStartDay: number;
+    label: string;
+    priceNote: string;
+    updatedAt?: string | null;
+    updatedBy?: string | null;
+    auditLog?: Array<{
+        at: string;
+        by: string;
+        before: unknown;
+        after: unknown;
+    }>;
+}
+/** A single upcoming active tour-week block (Monday → Sunday). */
+export interface TourWeekBlock {
+    start: string;
+    end: string;
+}
+export interface TourScheduleSaveResult extends TourScheduleConfig {
+    weeks: TourWeekBlock[];
+}
+/** Fetch the current tour-schedule config. */
+export declare function fetchTourSchedule(): Promise<TourScheduleConfig>;
+/** Save (upsert) the tour-schedule config; returns config + derived weeks. */
+export declare function saveTourSchedule(payload: Partial<TourScheduleConfig>): Promise<TourScheduleSaveResult>;
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';

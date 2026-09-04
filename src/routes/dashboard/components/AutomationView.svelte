@@ -21,6 +21,10 @@
     type ClientOfferConfig,
     fetchQuoteApprovers,
     saveQuoteApprovers,
+    fetchTourSchedule,
+    saveTourSchedule,
+    type TourScheduleConfig,
+    type TourWeekBlock,
     fetchStages,
 
 
@@ -58,7 +62,7 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' | 'tours' = 'stages';
 
   let busyId = ''; // id of the row currently saving (disables its controls)
 
@@ -81,6 +85,61 @@
   }
 
 
+
+  // ── Tour schedule (alternating-week cadence for relocation tours) ──────────
+  let tour: TourScheduleConfig = {
+    enabled: false,
+    cadenceWeeks: 2,
+    anchorMonday: '',
+    bookableMonths: 6,
+    weekStartDay: 1,
+    label: 'Private Relocation Experience',
+    priceNote: '',
+  };
+  let tourWeeks: TourWeekBlock[] = [];
+  let tourSaving = false;
+  let tourSavedMsg = '';
+
+  async function loadTourSchedule() {
+    try {
+      tour = await fetchTourSchedule();
+      tourWeeks = [];
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to load tour schedule.';
+    }
+  }
+
+  async function saveTour() {
+    tourSaving = true;
+    tourSavedMsg = '';
+    error = '';
+    try {
+      const res = await saveTourSchedule({
+        enabled: tour.enabled,
+        cadenceWeeks: tour.cadenceWeeks,
+        anchorMonday: tour.anchorMonday,
+        bookableMonths: tour.bookableMonths,
+        weekStartDay: tour.weekStartDay,
+        label: tour.label,
+        priceNote: tour.priceNote,
+      });
+      tour = res;
+      tourWeeks = res.weeks ?? [];
+      tourSavedMsg = '✓ Saved';
+      setTimeout(() => (tourSavedMsg = ''), 2500);
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to save tour schedule.';
+    } finally {
+      tourSaving = false;
+    }
+  }
+
+  function fmtTourWeek(start: string, end: string): string {
+    const s = new Date(`${start}T00:00:00`);
+    const e = new Date(`${end}T00:00:00`);
+    const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', opts)}`;
+  }
 
   // ── Quote approvers (who may approve quotes + receives the approval email) ──
   let approvers: string[] = [];
@@ -285,6 +344,7 @@
     loadAll();
     loadOffer();
     loadApprovers();
+    loadTourSchedule();
 
     // Ensure the Overview Field Registry is loaded so the template editor's
     // merge-field picker (`$mergeFieldOptions`) is populated. Non-blocking and
@@ -672,6 +732,9 @@
     <button class="av-tab" class:av-tab--active={tab === 'approvers'} on:click={() => (tab = 'approvers')}>
       ✅ Approvers
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'tours'} on:click={() => (tab = 'tours')}>
+      🗓️ Tour schedule
+    </button>
   </div>
 
 
@@ -891,6 +954,108 @@
         <div class="av-offer-foot"><span class="av-offer-saved">{approversSavedMsg}</span></div>
       {/if}
     </section>
+
+  {:else if tab === 'tours'}
+    <!-- ── Relocation-tour schedule (alternating-week cadence) ─────────── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      Relocation tours run on an alternating-week cadence (every other week by
+      default). Set the cadence and the Monday that starts a “tour” week — the
+      public tour landing page and the booking gate derive the active weeks from
+      this one place. Every saved change is logged below.
+    </p>
+
+    <section class="av-card av-offer">
+      <div class="av-offer-head">
+        <label class="av-inline-field av-offer-toggle">
+          <span>{tour.enabled ? 'Live — tours are bookable' : 'Off — booking disabled'}</span>
+          <button
+            class="av-switch"
+            class:av-switch--on={tour.enabled}
+            on:click={() => (tour.enabled = !tour.enabled)}
+            aria-label={tour.enabled ? 'Enabled' : 'Disabled'}
+          >
+            <span class="av-switch__knob"></span>
+          </button>
+        </label>
+      </div>
+
+      <div class="av-offer-cta-grid">
+        <label class="av-field">
+          <span>Cadence (weeks)</span>
+          <input
+            type="number"
+            min="1"
+            max="26"
+            bind:value={tour.cadenceWeeks}
+            title="2 = every other week, 3 = every third week"
+          />
+        </label>
+        <label class="av-field">
+          <span>Anchor Monday <code>YYYY-MM-DD</code></span>
+          <input
+            type="date"
+            bind:value={tour.anchorMonday}
+          />
+        </label>
+        <label class="av-field">
+          <span>Bookable window (months)</span>
+          <input type="number" min="1" max="24" bind:value={tour.bookableMonths} />
+        </label>
+        <label class="av-field">
+          <span>Label shown on the landing</span>
+          <input type="text" bind:value={tour.label} maxlength="120" />
+        </label>
+      </div>
+
+      <label class="av-field">
+        <span>Price note <em class="av-optional">optional, shown under the booking</em></span>
+        <input type="text" bind:value={tour.priceNote} placeholder="e.g. $1,500 per couple — paid after booking" maxlength="2000" />
+      </label>
+
+      <div class="av-offer-foot">
+        {#if tourSavedMsg}<span class="av-offer-saved">{tourSavedMsg}</span>{/if}
+        <button class="save-btn" on:click={saveTour} disabled={tourSaving}>
+          {tourSaving ? 'Saving…' : '💾 Save schedule'}
+        </button>
+      </div>
+
+      {#if tourWeeks.length}
+        <div style="margin-top:0.5rem">
+          <h3 class="av-card-title">Upcoming tour weeks</h3>
+          <ul class="av-approver-list">
+            {#each tourWeeks as w (w.start)}
+              <li class="av-approver-row">
+                <span class="av-approver-email">{fmtTourWeek(w.start, w.end)}</span>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {:else if tour.enabled}
+        <div class="av-stage-norules">No active weeks derived yet — save with an anchor Monday set.</div>
+      {/if}
+    </section>
+
+    {#if (tour.auditLog ?? []).length}
+      <section class="av-card">
+        <h3 class="av-card-title">Change log</h3>
+        <div class="av-table-wrap">
+          <table class="av-table">
+            <thead>
+              <tr><th>When</th><th>By</th><th>Change</th></tr>
+            </thead>
+            <tbody>
+              {#each [...(tour.auditLog ?? [])].reverse() as entry (entry.at + entry.by)}
+                <tr>
+                  <td>{new Date(entry.at).toLocaleString()}</td>
+                  <td>{entry.by}</td>
+                  <td>{JSON.stringify(entry.after)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {/if}
 
   {:else if tab === 'stages'}
 

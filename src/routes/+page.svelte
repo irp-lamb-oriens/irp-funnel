@@ -4,6 +4,7 @@
   import Footer from '../components/Footer/Footer.svelte';
   import HeroBanner from '../components/HeroBanner.svelte';
   import SpecializationSection from '../components/SpecializationSection.svelte';
+  import ServicesSection from '../components/ServicesSection.svelte';
   import RelocationPhilosophySection from '../components/RelocationPhilosophySection.svelte';
   import ContactCTASection from '../components/ContactCTASection.svelte';
   import TestimonialsSection from '../components/TestimonialsSection.svelte';
@@ -173,6 +174,8 @@
   <HeroForm />
 
   <!-- <SoftTitle pushToRead={false} text="IRP" /> -->
+
+  <ServicesSection />
 
   <SpecializationSection />
 

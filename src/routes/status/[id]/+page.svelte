@@ -63,6 +63,7 @@
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
   import ChargesCard from "./ChargesCard.svelte";
   import ClientOfferPopup from "./ClientOfferPopup.svelte";
+  import FullRelocationSupport from "./FullRelocationSupport.svelte";
 
 
   import {
@@ -507,6 +508,8 @@
       scrollToSection("cp-overview");
     } else if (id === "__comments") {
       scrollToSection("cp-comments");
+    } else if (id === "__support") {
+      scrollToSection("cp-support");
     } else if (id === "__quotes") {
       scrollToSection("cp-quotes");
     } else if (id === "__accept") {
@@ -597,6 +600,12 @@
     // Comments is always available — clients (and staff) can leave a note at
     // any stage; it lives in its own tab so the overview stays focused.
     { id: "__comments", label: "Comments" },
+    // Full relocation support — the deep service catalogue (immigration,
+    // settling in, vehicle/pet/business) kept inside the portal, never public.
+    // Also never shown to staff viewing the portal (internal info).
+    ...(!$irpStaffIsAuthenticated
+      ? [{ id: "__support", label: "Full support" }]
+      : []),
     ...(showQuoteSection
       ? [
           // Template-section tabs only when subcollection quotes exist (unchanged).
@@ -1576,6 +1585,18 @@
           </div>
           <div class="cp-dashboard__full-width-section">
             <ChargesCard />
+          </div>
+        </div>
+      {/if}
+
+      <!-- ══ FULL RELOCATION SUPPORT — the deep service catalogue, gated inside
+           the authenticated portal. This is where immigration, settling in,
+           vehicle/pet/business support live — deliberately NOT on the public
+           site, so IRP does not read as competing with its own partners. -->
+      {#if $project && !$irpStaffIsAuthenticated}
+        <div id="cp-support" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section cp-support-section">
+            <FullRelocationSupport />
           </div>
         </div>
       {/if}

@@ -161,6 +161,14 @@
     } else {
       updateField(referrer.trim(), 'referredBy');
     }
+    // A service landing page can pre-annotate the booking with the service the
+    // prospect is interested in (e.g. "relocation_tour"), so the CRM can bucket
+    // the lead and the backend can enforce service-specific gates (such as the
+    // alternating-week cadence for tours). Fully additive: absent param = "".
+    const service = urlParams.get('service');
+    if (service && service.trim()) {
+      updateField(service.trim(), 'serviceCategory');
+    }
     // Evo: log the exposure to the visitor's assigned HeroForm variant.
     trackExposure(EVO_COMPONENT, evoCopyVariantStr, { variantLabel: evoCopyVariantStr });
     trackExposure(EVO_COLOR_COMPONENT, evoColorVariantStr, { variantLabel: evoColorVariantStr });

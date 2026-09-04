@@ -28,6 +28,8 @@ export type FormState = {
         role: string;
         content: string;
     }[];
+    /** Service category pre-filled by a service landing page (e.g. relocation_tour). */
+    serviceCategory: string;
 };
 export declare const formState: import("svelte/store").Writable<FormState>;
 export declare function updateField(value: string | string[] | Vehicle[] | {

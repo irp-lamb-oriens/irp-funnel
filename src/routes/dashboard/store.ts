@@ -90,6 +90,8 @@ export interface Client {
   budget: string;
   size: string;
   immigrationStatus: string;
+  /** Service category pre-filled by a service landing (e.g. relocation_tour, real_estate). Optional for backward compatibility. */
+  serviceCategory?: string;
   propertyTypeFrom: string;
   propertyTypeTo: string;
   /** Approximate move date/timeline (AI-extracted by Lily, or set manually). */
@@ -805,6 +807,7 @@ export interface Filters {
   budget: string;
   size: string;
   callOutcome: string;
+  serviceCategory?: string;
 }
 
 export const filters = writable<Filters>({
@@ -813,7 +816,8 @@ export const filters = writable<Filters>({
   destinationCountry: '',
   budget: '',
   size: '',
-  callOutcome: ''
+  callOutcome: '',
+  serviceCategory: '',
 });
 
 export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance'>('board');
@@ -1023,6 +1027,7 @@ export const filteredClients = derived([clients, searchQuery, filters], ([$clien
     if ($filters.destinationCountry && c.destinationCountry !== $filters.destinationCountry) return false;
     if ($filters.budget && c.budget !== $filters.budget) return false;
     if ($filters.size && c.size !== $filters.size) return false;
+    if ($filters.serviceCategory && (c.serviceCategory ?? '') !== $filters.serviceCategory) return false;
     
     if ($filters.callOutcome) {
       if ($filters.callOutcome === 'none') {
@@ -3747,6 +3752,57 @@ export async function saveQuoteApprovers(approvers: string[]): Promise<QuoteAppr
     approvers: Array.isArray(data.approvers) ? data.approvers : [],
     updatedAt: data.updatedAt ?? null,
     updatedBy: data.updatedBy ?? null,
+  };
+}
+
+
+// ─── Tour schedule (dashboard-configurable alternating-week cadence) ─────────
+//
+// Relocation tours run every other week (infinite cadence). Operators set the
+// cadence + an anchor Monday from Automations; the public tour landing page and
+// the booking gate both derive active weeks from this one config. Backed by
+// API/dashboard/automation/tourSchedule.ts.
+
+export interface TourScheduleConfig {
+  enabled: boolean;
+  cadenceWeeks: number;
+  anchorMonday: string;
+  bookableMonths: number;
+  weekStartDay: number;
+  label: string;
+  priceNote: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  auditLog?: Array<{ at: string; by: string; before: unknown; after: unknown }>;
+}
+
+/** A single upcoming active tour-week block (Monday → Sunday). */
+export interface TourWeekBlock {
+  start: string;
+  end: string;
+}
+
+export interface TourScheduleSaveResult extends TourScheduleConfig {
+  weeks: TourWeekBlock[];
+}
+
+/** Fetch the current tour-schedule config. */
+export async function fetchTourSchedule(): Promise<TourScheduleConfig> {
+  const data = await apiFetch('/api/dashboard/tour-schedule');
+  return data.schedule as TourScheduleConfig;
+}
+
+/** Save (upsert) the tour-schedule config; returns config + derived weeks. */
+export async function saveTourSchedule(
+  payload: Partial<TourScheduleConfig>,
+): Promise<TourScheduleSaveResult> {
+  const data = await apiFetch('/api/dashboard/tour-schedule', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return {
+    ...(data.schedule as TourScheduleConfig),
+    weeks: Array.isArray(data.weeks) ? (data.weeks as TourWeekBlock[]) : [],
   };
 }
 
