@@ -1,0 +1,279 @@
+<script lang="ts">
+  import { onMount, tick } from 'svelte';
+  import PlainText from './systems/inputs/PlainText/PlainText.svelte';
+  import Email from './systems/inputs/Email/Email.svelte';
+  import Phone from './systems/inputs/Phone/Phone.svelte';
+  import Calendar from './systems/inputs/Calendar/Calendar.svelte';
+  import IconButton from './systems/buttons/IconButton/IconButton.svelte';
+  import store from './store.js';
+  import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
+  import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
+  import {
+    fetchServiceConfig,
+    evaluateCondition,
+    type ServiceConfig,
+    type ServiceFieldDef,
+    type ServiceType,
+  } from '../lib/serviceConfig.js';
+
+  export let serviceType: ServiceType = 'relocation_tour';
+
+  type Step =
+    | { kind: 'field'; field: ServiceFieldDef }
+    | { kind: 'person'; idx: number }
+    | { kind: 'calendar' }
+    | { kind: 'done' };
+
+  let config: ServiceConfig | null = null;
+  let steps: Step[] = [];
+  let stepIndex = 0;
+  let isLoading = true;
+  let loadError = '';
+  let submitting = false;
+  let submitError = '';
+  let calendarLink = '';
+  let hangoutLink = '';
+
+  let emailValid = false;
+  let phoneValid = false;
+  let nameInput: HTMLInputElement;
+  let surnameInput: HTMLInputElement;
+  let emailInput: HTMLInputElement;
+  let phoneInput: HTMLButtonElement;
+
+  // Current step, as a reactive convenience.
+  $: current = steps[stepIndex];
+
+  function visibleFields(): ServiceFieldDef[] {
+    if (!config) return [];
+    return config.fields.filter((f) =>
+      evaluateCondition(f.showWhen, $formState as unknown as Record<string, any>),
+    );
+  }
+
+  function buildSteps(): Step[] {
+    const out: Step[] = [];
+    for (const f of visibleFields()) {
+      if (f.type === 'people') {
+        const count = Math.max(1, Math.min(3, Number($formState.partySize) || 1));
+        for (let i = 0; i < count; i++) out.push({ kind: 'person', idx: i });
+      } else if (f.type === 'calendar') {
+        out.push({ kind: 'calendar' });
+      } else {
+        out.push({ kind: 'field', field: f });
+      }
+    }
+    return out;
+  }
+
+  function rebuildSteps() {
+    steps = buildSteps();
+    if (stepIndex >= steps.length) stepIndex = Math.max(0, steps.length - 1);
+  }
+
+  function ensureTravelers(count: number) {
+    const cur = $formState.travelers || [];
+    const next = Array.from({ length: count }, (_, i) => ({
+      name: cur[i]?.name || '',
+      surname: cur[i]?.surname || '',
+    }));
+    updateField(next, 'travelers');
+  }
+
+  function setTraveler(idx: number, key: 'name' | 'surname', value: string) {
+    const next = ($formState.travelers || []).map((t, i) =>
+      i === idx ? { ...t, [key]: value } : t,
+    );
+    updateField(next, 'travelers');
+  }
+
+  function onPartySize(value: string) {
+    updateField(value, 'partySize');
+    const count = Math.max(1, Math.min(3, Number(value) || 1));
+    ensureTravelers(count);
+    if (count !== 3) updateField('', 'roomPreference');
+    rebuildSteps();
+  }
+
+  async function next() {
+    const step = current;
+    if (step?.kind === 'field') {
+      const v = ($formState as any)[step.field.id];
+      if (step.field.required && !String(v || '').trim()) return;
+    }
+    if (step?.kind === 'person') {
+      const t = $formState.travelers?.[step.idx];
+      if (!t?.name?.trim() || !t?.surname?.trim()) return;
+    }
+    if (stepIndex >= steps.length - 1) {
+      await submitForm();
+      return;
+    }
+    stepIndex++;
+    await tick();
+  }
+
+  function back() {
+    if (stepIndex <= 0) return;
+    stepIndex--;
+  }
+
+  async function submitForm() {
+    submitting = true;
+    submitError = '';
+    try {
+      const response = await submitScheduling();
+      if (response?.calendarLink) {
+        calendarLink = response.calendarLink;
+        hangoutLink = response.hangoutLink;
+      }
+      steps = [...steps, { kind: 'done' }];
+      stepIndex = steps.length - 1;
+    } catch (e: any) {
+      submitError = e?.message || 'Unable to submit.';
+    } finally {
+      submitting = false;
+    }
+  }
+
+  onMount(async () => {
+    try {
+      config = await fetchServiceConfig($store.apiURL(), serviceType);
+      updateField(serviceType, 'serviceCategory');
+      ensureTravelers(Math.max(1, Math.min(3, Number($formState.partySize) || 1)));
+      rebuildSteps();
+    } catch (e: any) {
+      loadError = e?.message || 'Unable to load the form.';
+    } finally {
+      isLoading = false;
+    }
+  });
+</script>
+
+<div class="intake">
+  {#if isLoading}
+    <p class="intake__note">Loading…</p>
+  {:else if loadError}
+    <p class="intake__note intake__note--error">{loadError}</p>
+  {:else if current?.kind === 'done'}
+    <div class="intake__done">
+      <div class="intake__done-icon">✓</div>
+      <h2>Thank You!</h2>
+      <p>An email has been sent to your inbox.</p>
+      {#if calendarLink}
+        <a class="intake__link" href={calendarLink} target="_blank" rel="noopener noreferrer">View on Google Calendar</a>
+      {/if}
+      {#if hangoutLink}
+        <a class="intake__link" href={hangoutLink} target="_blank" rel="noopener noreferrer">Join Meeting</a>
+      {/if}
+    </div>
+  {:else}
+    <div class="intake__step">
+      {#if stepIndex > 0}
+        <div class="intake__back-bar">
+          <button class="intake__back" on:click={back}>← Back</button>
+        </div>
+      {/if}
+
+      {#if current?.kind === 'field'}
+        {@const f = current.field}
+
+        {#if f.id === 'name'}
+          <h2>{f.label}</h2>
+          <PlainText label={f.label} placeholder={f.placeholder || 'First name'} bind:value={$formState.name} onChange={(v) => updateField(v, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
+        {:else if f.id === 'surname'}
+          <h2>{f.label}</h2>
+          <PlainText label={f.label} placeholder={f.placeholder || 'Last name'} bind:value={$formState.surname} onChange={(v) => updateField(v, 'surname')} onEnter={next} bind:inputElement={surnameInput} />
+        {:else if f.id === 'email'}
+          <h2>{f.label}</h2>
+          <Email label={f.label} placeholder={f.placeholder || 'you@email.com'} bind:value={$formState.email} onChange={(v) => updateField(v, 'email')} onEnter={next} bind:inputElement={emailInput} bind:valid={emailValid} />
+        {:else if f.id === 'phone'}
+          <h2>{f.label}</h2>
+          <p class="intake__sub">(optional)</p>
+          <Phone bind:value={$formState.phone} onUpdate={(v) => updateField(v, 'phone')} onEnter={next} bind:inputElement={phoneInput} bind:isValid={phoneValid} />
+        {:else if f.type === 'options'}
+          <h2>{f.label}</h2>
+          <div class="intake__options">
+            {#each f.options || [] as opt (opt.value)}
+              <button
+                class="intake__opt"
+                class:intake__opt--selected={String(($formState as any)[f.id]) === opt.value}
+                on:click={() => (f.id === 'partySize' ? onPartySize(opt.value) : updateField(opt.value, f.id as any))}
+              >
+                {opt.label}
+              </button>
+            {/each}
+          </div>
+        {:else}
+          <!-- Fallback for any future scalar field; text-or-options only today -->
+          <h2>{f.label}</h2>
+          <PlainText label={f.label} placeholder={f.placeholder || ''} value={($formState as any)[f.id]} onChange={(v) => updateField(v, f.id as any)} onEnter={next} />
+        {/if}
+
+        <div class="intake__actions">
+          <IconButton src="./icons/right-arrow.svg" callback={next} loading={submitting} />
+        </div>
+
+      {:else if current?.kind === 'person'}
+        {@const p = current}
+        {@const t = $formState.travelers?.[p.idx] || { name: '', surname: '' }}
+        <h2>Traveler {p.idx + 1}</h2>
+        <PlainText label="First name" placeholder="First name" value={t.name} onChange={(v) => setTraveler(p.idx, 'name', v)} onEnter={() => surnameInput?.focus()} />
+        <PlainText label="Last name" placeholder="Last name" value={t.surname} bind:inputElement={surnameInput} onChange={(v) => setTraveler(p.idx, 'surname', v)} onEnter={next} />
+        <div class="intake__actions">
+          <IconButton src="./icons/right-arrow.svg" callback={next} loading={submitting} />
+        </div>
+
+      {:else if current?.kind === 'calendar'}
+        <h2>Choose your call time</h2>
+        <Calendar />
+        <div class="intake__actions">
+          <IconButton src="./icons/right-arrow.svg" callback={submitForm} loading={submitting} />
+        </div>
+      {/if}
+
+      {#if submitError}
+        <p class="intake__note intake__note--error">{submitError}</p>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+<style lang="scss">
+  .intake {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    color: #fff;
+  }
+  .intake__step { display: flex; flex-direction: column; gap: 1.25rem; }
+  .intake__back-bar { display: flex; justify-content: flex-start; margin-bottom: 0.25rem; }
+  .intake__back {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7); padding: 0.4rem 0.9rem; border-radius: 0.75rem;
+    cursor: pointer; font-size: 0.8rem; font-weight: 600;
+    &:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  }
+  h2 { font-size: 1.6rem; line-height: 1.2; margin: 0; }
+  .intake__sub { color: rgba(255,255,255,0.6); margin: -0.5rem 0 0; }
+  .intake__options { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+  .intake__opt {
+    padding: 1rem 1.25rem; border-radius: 1rem; cursor: pointer; text-align: left;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+    color: #fff; font-size: 1rem; transition: all 0.2s ease;
+    &:hover { background: rgba(255,255,255,0.1); }
+    &--selected {
+      border-color: var(--color-highlight-2, #02b5bb);
+      background: rgba(var(--color-highlight-2-rgb, 2,181,187), 0.15);
+    }
+  }
+  .intake__actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+  .intake__note { color: #cbd5e1; }
+  .intake__note--error { color: #fda4a4; }
+  .intake__done { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  .intake__done-icon {
+    width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: rgba(16,185,129,0.15); border: 2px solid rgba(16,185,129,0.4); color: #10b981; font-size: 1.6rem;
+  }
+  .intake__link { color: var(--color-highlight-2, #1ccfc9); text-decoration: underline; }
+</style>

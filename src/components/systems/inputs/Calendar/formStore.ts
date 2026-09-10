@@ -6,6 +6,11 @@ export type Vehicle = {
   model: string;
 };
 
+export type Traveler = {
+  name: string;
+  surname: string;
+};
+
 export type FormState = {
   name: string;
   surname: string;
@@ -30,6 +35,13 @@ export type FormState = {
   chatHistory: { role: string; content: string }[];
   /** Service category pre-filled by a service landing page (e.g. relocation_tour). */
   serviceCategory: string;
+  // ── Relocation-tour fields (additive) ────────────────────────────
+  partySize: string;
+  occupancy: string;
+  roomPreference: string;
+  duration: string;
+  route: string;
+  travelers: Traveler[];
 };
 
 // Define a store for the form state
@@ -56,11 +68,22 @@ export const formState = writable<FormState>({
   notes: "",
   chatHistory: [],
   serviceCategory: "",
+  partySize: "",
+  occupancy: "",
+  roomPreference: "",
+  duration: "",
+  route: "",
+  travelers: [],
 });
 
 // Update the form state on input change
 export function updateField(
-  value: string | string[] | Vehicle[] | { role: string; content: string }[],
+  value:
+    | string
+    | string[]
+    | Vehicle[]
+    | Traveler[]
+    | { role: string; content: string }[],
   field: keyof FormState
 ) {
   // Update form state

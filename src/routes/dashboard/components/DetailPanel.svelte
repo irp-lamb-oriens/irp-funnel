@@ -861,6 +861,17 @@
     if (c.moveTimeline) items.push({ label: 'Timeline', value: c.moveTimeline });
     return items;
   })();
+
+  // ── Service type badge ──────────────────────────────────────────────────
+  // Pins the lead category (relocation / relocation_tour / both) at the top of
+  // the Overview tab. Empty (pre-existing leads) defaults to "Relocation" so
+  // nothing looks broken; the same value is also an editable enum registry row.
+  const SERVICE_TYPE_META: Record<string, { label: string; key: string }> = {
+    relocation: { label: 'Relocation', key: 'relocation' },
+    relocation_tour: { label: 'Relocation Tour', key: 'relocation_tour' },
+    both: { label: 'Relocation + Tour', key: 'both' },
+  };
+  $: serviceTypeMeta = SERVICE_TYPE_META[$selectedClient?.serviceCategory || ''] || SERVICE_TYPE_META.relocation;
 </script>
 
 {#if $detailPanelOpen && $selectedClient}
@@ -1000,6 +1011,17 @@
       -->
       {#if detailTab === 'overview'}
         <div class="detail-overview detail-fields">
+          <!-- ── Service type badge ────────────────────────────────────────
+               Pins the lead category at the very top of Overview so an
+               operator sees "Relocation / Relocation Tour / Both" at a glance.
+               The same value is also an editable enum registry row. -->
+          <div class="detail-field detail-field--full">
+            <span class="detail-field__label">Service Type</span>
+            <span class="service-type-badge service-type-badge--{serviceTypeMeta.key}" title="Lead category selected by the prospect">
+              {serviceTypeMeta.label}
+            </span>
+          </div>
+
           <!-- ── Pricing banner ──────────────────────────────────────────
                Shown only when:
                  • the client has some transcript/meeting-notes text (call happened)
@@ -2483,6 +2505,36 @@
 {/if}
 
 <style>
+  /* ── Service type badge (Overview — lead category highlight) ──────────────
+     Pinned at the top of Overview. Uses the global token palette + dark/light
+     theme vars so it stays cohesive, with a distinct accent per category. */
+  .service-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+  }
+  .service-type-badge--relocation {
+    color: #0b7285;
+    background: rgba(2, 181, 187, 0.12);
+    border-color: rgba(2, 181, 187, 0.3);
+  }
+  .service-type-badge--relocation_tour {
+    color: #7c3aed;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+  }
+  .service-type-badge--both {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+
   /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────
      Cohesive with the dashboard admin dialect: teal accent (#02b5bb), slate
      neutrals, 12px cards. Two subtle type accents (client comment = teal,

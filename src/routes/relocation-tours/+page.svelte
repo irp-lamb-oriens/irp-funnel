@@ -1,6 +1,7 @@
 <script lang="ts">
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
+  import ServiceIntakeForm from '../../components/ServiceIntakeForm.svelte';
   import { onMount, onDestroy } from 'svelte';
   import { initLanding, type LandingCleanup } from '$lib/animations/landing';
 
@@ -208,10 +209,12 @@
         <p class="tour__book-note tour__book-note--error">{error}</p>
       {:else if !enabled}
         <p class="tour__book-note" data-animate="up">
-          Tours are not open for booking right now. Book a discovery call and
-          we'll tell you about the next available experience.
+          Tours are not open for booking right now. Leave your details and we'll
+          tell you about the next available experience.
         </p>
-        <a class="tour__btn tour__btn--primary" href="/consultation" data-magnetic>Book a discovery call</a>
+        <div class="tour__book-form">
+          <ServiceIntakeForm serviceType="relocation_tour" />
+        </div>
       {:else if weeks.length === 0}
         <p class="tour__book-note">No upcoming weeks are published yet.</p>
       {:else}
@@ -563,6 +566,14 @@
     margin: 0 0 1.6rem;
   }
   .tour__book-note--error { color: #fda4a4; }
+  .tour__book-form {
+    margin-top: 1.5rem;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+  }
   .tour__book-note--price {
     margin-top: 1.6rem;
     font-weight: 600;
