@@ -17,6 +17,8 @@
   } from '../lib/serviceConfig.js';
 
   export let serviceType: ServiceType = 'relocation_tour';
+  /** When embedded (e.g. inside HeroForm), called to leave the form entirely. */
+  export let onBack: (() => void) | undefined = undefined;
 
   type Step =
     | { kind: 'field'; field: ServiceFieldDef }
@@ -114,8 +116,11 @@
   }
 
   function back() {
-    if (stepIndex <= 0) return;
-    stepIndex--;
+    if (stepIndex > 0) {
+      stepIndex--;
+      return;
+    }
+    onBack?.();
   }
 
   async function submitForm() {
@@ -169,7 +174,7 @@
     </div>
   {:else}
     <div class="intake__step">
-      {#if stepIndex > 0}
+      {#if stepIndex > 0 || onBack}
         <div class="intake__back-bar">
           <button class="intake__back" on:click={back}>← Back</button>
         </div>

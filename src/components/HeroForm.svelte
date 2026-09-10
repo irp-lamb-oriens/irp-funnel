@@ -21,6 +21,8 @@
 
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
+  import ServiceIntakeForm from './ServiceIntakeForm.svelte';
+  import { SERVICE_TYPE_OPTIONS, type ServiceType } from '../lib/serviceConfig.js';
   import Loader from './Loader/Loader.svelte';
   import Chatbot from './Chatbot.svelte';
   import Language from './systems/inputs/Language/Language.svelte';
@@ -83,7 +85,7 @@
   // 'name' is the step inserted between 'email' and 'choice' where the visitor
   // provides first name + surname before seeing the Lili/Form choice screen.
   // All downstream paths ('choice', 'chatbot', 'form') are unchanged.
-  type ViewState = 'cta' | 'email' | 'name' | 'choice' | 'chatbot' | 'form';
+  type ViewState = 'cta' | 'email' | 'name' | 'service' | 'choice' | 'chatbot' | 'serviceForm' | 'form';
   let view: ViewState = 'cta';
   let formStep = 0; // which step within the multi-step form (0-12)
 
@@ -225,12 +227,27 @@
     errors = {};
     if (!$formState.name.trim())    { errors.name    = 'Required'; await tick(); nameInput?.focus();    return; }
     if (!$formState.surname.trim()) { errors.surname  = 'Required'; await tick(); surnameInput?.focus(); return; }
+    view = 'service';
+  }
+
+  let selectedService: ServiceType = 'relocation';
+
+  function selectService(type: ServiceType) {
+    selectedService = type;
+    updateField(type, 'serviceCategory');
     view = 'choice';
   }
 
   function openChatbot() { view = 'chatbot'; }
 
   function openForm() {
+    // Service-aware: tour / both use the config-driven intake instead of the
+    // hardcoded relocation steps.
+    if (selectedService !== 'relocation') {
+      updateField(selectedService, 'serviceCategory');
+      view = 'serviceForm';
+      return;
+    }
     view = 'form';
     // Auto-skip to first unfilled step
     if (showYoutubeVideoStep) formStep = 13;
@@ -476,6 +493,28 @@
           </div>
         {/if}
 
+        <!-- ═══════════ SERVICE SELECT ═══════════ -->
+        <!-- New step between name and choice: the prospect picks the service
+             type (relocation / tour / both) so both the chatbot and the form
+             morph to the matching field set. -->
+        {#if view === 'service'}
+          <div class="form-frame active">
+            <div class="back-bar">
+              <button class="back-btn" on:click={() => (view = 'name')}>← Back</button>
+            </div>
+            <h2>What are you interested in?</h2>
+            <p class="sub-heading">Select the service you'd like help with.</p>
+            <div class="service-options">
+              {#each SERVICE_TYPE_OPTIONS as opt (opt.value)}
+                <button class="service-option" on:click={() => selectService(opt.value)}>
+                  <span class="service-option__label">{opt.label}</span>
+                  <span class="service-option__arrow">→</span>
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
         <!-- ═══════════ CHOICE ═══════════ -->
         {#if view === 'choice'}
           <div class="form-frame active">
@@ -532,6 +571,16 @@
               {/if}
             </div>
             <Chatbot initialContext={$formState} onBackToForm={backToChoice} onExtractedFields={handleExtractedFields} onErrorFallback={backToChoice} onChannelSelect={handleChannelSelect} preferredLanguage={selectedLanguage} />
+          </div>
+        {/if}
+
+        <!-- ═══════════ SERVICE FORM (tour / both) ═══════════ -->
+        <!-- Navigation is owned by ServiceIntakeForm; it calls onBack from
+             step 0, so the wrapper must NOT render its own back button (that
+             produced a duplicate "← Back" beside the form's internal one). -->
+        {#if view === 'serviceForm'}
+          <div class="form-frame active">
+            <ServiceIntakeForm serviceType={selectedService} onBack={backToChoice} />
           </div>
         {/if}
 
@@ -949,6 +998,19 @@
     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
     50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(37, 211, 102, 0); }
   }
+
+  /* ═══ Service Selection ═══ */
+  .service-options { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 440px; }
+  .service-option {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 1rem 1.25rem; border-radius: 1rem; cursor: pointer;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+    color: #fff; font-size: 1.05rem; font-weight: 700; text-align: left;
+    transition: all 0.3s cubic-bezier(0.23,1,0.32,1);
+    &:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); border-color: rgba(var(--color-highlight-2-rgb), 0.5); }
+  }
+  .service-option__label { flex: 1; }
+  .service-option__arrow { color: var(--color-highlight-2, #02b5bb); font-size: 1.2rem; font-weight: 700; }
 
   /* ═══ Thank You ═══ */
   .thank-you { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem;
