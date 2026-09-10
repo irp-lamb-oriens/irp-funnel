@@ -33,19 +33,19 @@
         'https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&cs=tinysrgb&w=1200',
       tag: 'On the ground'
     },
-    {
-      key: 'real-estate',
-      title: 'Real estate due diligence',
-      description:
-        "We don't sell houses. We investigate which zones actually fit your life, your budget and your schools, before you sign anything expensive.",
-      href: '/real-estate',
-      cta: 'Get real estate due diligence',
-      icon: 'estate',
-      accent: '#c62426',
-      image:
-        'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1200',
-      tag: 'Independent'
-    },
+    // {
+    //   key: 'real-estate',
+    //   title: 'Real estate due diligence',
+    //   description:
+    //     "We don't sell houses. We investigate which zones actually fit your life, your budget and your schools, before you sign anything expensive.",
+    //   href: '/real-estate',
+    //   cta: 'Get real estate due diligence',
+    //   icon: 'estate',
+    //   accent: '#c62426',
+    //   image:
+    //     'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1200',
+    //   tag: 'Independent'
+    // },
     {
       key: 'moving',
       title: 'International moving',
