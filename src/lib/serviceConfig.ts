@@ -17,7 +17,13 @@ export type ServiceFieldType =
   | "options"
   | "people"
   | "notes"
-  | "calendar";
+  | "calendar"
+  | "budget"
+  | "move-size"
+  | "immigration"
+  | "property-from"
+  | "property-to"
+  | "vehicles";
 
 export interface ServiceFieldOption {
   value: string;

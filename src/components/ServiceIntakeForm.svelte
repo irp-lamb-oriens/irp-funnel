@@ -1,13 +1,22 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import PlainText from './systems/inputs/PlainText/PlainText.svelte';
   import Email from './systems/inputs/Email/Email.svelte';
   import Phone from './systems/inputs/Phone/Phone.svelte';
+  import Country from './systems/inputs/Country/Country.svelte';
   import Calendar from './systems/inputs/Calendar/Calendar.svelte';
   import IconButton from './systems/buttons/IconButton/IconButton.svelte';
+  import Budget from './systems/inputs/Budget/Budget.svelte';
+  import MoveSize from './systems/inputs/MoveSize/MoveSize.svelte';
+  import ImmigrationStatus from './systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte';
+  import IconGridSelector from './systems/selectors/IconGridSelector/IconGridSelector.svelte';
+  import Vehicles from './systems/inputs/Vehicles/Vehicles.svelte';
   import store from './store.js';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
+  import { budgetStore } from './systems/inputs/Budget/store.js';
+  import { moveSizeStore } from './systems/inputs/MoveSize/store.js';
+  import { immigrationStatusStore } from './systems/inputs/ImmigrationStatus/store.js';
   import {
     fetchServiceConfig,
     evaluateCondition,
@@ -42,9 +51,26 @@
   let surnameInput: HTMLInputElement;
   let emailInput: HTMLInputElement;
   let phoneInput: HTMLButtonElement;
+  let destinationCountryInput: HTMLButtonElement;
+  let originCountryInput: HTMLButtonElement;
+  let budgetInput: HTMLButtonElement;
+  let sizeInput: HTMLButtonElement;
+  let immigrationInput: HTMLButtonElement;
 
-  // Current step, as a reactive convenience.
   $: current = steps[stepIndex];
+
+  // Mirror the original dropdown stores into formState so submitScheduling()
+  // (which serializes formState) picks them up.
+  const unsubBudget = budgetStore.subscribe((v) => updateField(v || '', 'budget'));
+  const unsubSize = moveSizeStore.subscribe((v) => updateField(v || '', 'size'));
+  const unsubImmigration = immigrationStatusStore.subscribe((v) =>
+    updateField(v || '', 'immigrationStatus'),
+  );
+  onDestroy(() => {
+    unsubBudget();
+    unsubSize();
+    unsubImmigration();
+  });
 
   function visibleFields(): ServiceFieldDef[] {
     if (!config) return [];
@@ -183,19 +209,74 @@
       {#if current?.kind === 'field'}
         {@const f = current.field}
 
-        {#if f.id === 'name'}
+        {#if f.id === 'originCountry'}
+          <h2>{f.label}</h2>
+          <Country onSelect={(code) => updateField(code || '', 'originCountry')} bind:buttonRef={originCountryInput} />
+
+        {:else if f.id === 'destinationCountry'}
+          <h2>{f.label}</h2>
+          <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} bind:buttonRef={destinationCountryInput} />
+
+        {:else if f.type === 'budget'}
+          <h2>{f.label}</h2>
+          <Budget bind:buttonRef={budgetInput} />
+
+        {:else if f.type === 'move-size'}
+          <h2>{f.label}</h2>
+          <MoveSize bind:buttonRef={sizeInput} />
+
+        {:else if f.type === 'immigration'}
+          <h2>{f.label}</h2>
+          <ImmigrationStatus bind:buttonRef={immigrationInput} />
+
+        {:else if f.type === 'property-from'}
+          <h2>{f.label}</h2>
+          <IconGridSelector
+            options={[
+              { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+              { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+              { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+              { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' },
+            ]}
+            bind:selectedValue={$formState.propertyTypeFrom}
+            on:update={(e) => updateField(e.detail, 'propertyTypeFrom')}
+          />
+
+        {:else if f.type === 'property-to'}
+          <h2>{f.label}</h2>
+          <IconGridSelector
+            options={[
+              { value: 'apartment', label: 'Apartment', iconSrc: '/icons/apartment.svg' },
+              { value: 'condo', label: 'Condo', iconSrc: '/icons/condo.svg' },
+              { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
+              { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' },
+            ]}
+            bind:selectedValue={$formState.propertyTypeTo}
+            on:update={(e) => updateField(e.detail, 'propertyTypeTo')}
+          />
+
+        {:else if f.type === 'vehicles'}
+          <h2>{f.label}</h2>
+          <p class="intake__sub">Tell us about the vehicles you are shipping.</p>
+          <Vehicles bind:vehicles={$formState.vehicles} onUpdate={(v) => updateField(v, 'vehicles')} />
+
+        {:else if f.id === 'name'}
           <h2>{f.label}</h2>
           <PlainText label={f.label} placeholder={f.placeholder || 'First name'} bind:value={$formState.name} onChange={(v) => updateField(v, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
+
         {:else if f.id === 'surname'}
           <h2>{f.label}</h2>
           <PlainText label={f.label} placeholder={f.placeholder || 'Last name'} bind:value={$formState.surname} onChange={(v) => updateField(v, 'surname')} onEnter={next} bind:inputElement={surnameInput} />
-        {:else if f.id === 'email'}
+
+        {:else if f.type === 'email'}
           <h2>{f.label}</h2>
           <Email label={f.label} placeholder={f.placeholder || 'you@email.com'} bind:value={$formState.email} onChange={(v) => updateField(v, 'email')} onEnter={next} bind:inputElement={emailInput} bind:valid={emailValid} />
-        {:else if f.id === 'phone'}
+
+        {:else if f.type === 'phone'}
           <h2>{f.label}</h2>
           <p class="intake__sub">(optional)</p>
           <Phone bind:value={$formState.phone} onUpdate={(v) => updateField(v, 'phone')} onEnter={next} bind:inputElement={phoneInput} bind:isValid={phoneValid} />
+
         {:else if f.type === 'options'}
           <h2>{f.label}</h2>
           <div class="intake__options">
@@ -209,10 +290,14 @@
               </button>
             {/each}
           </div>
-        {:else}
-          <!-- Fallback for any future scalar field; text-or-options only today -->
+
+        {:else if f.type === 'notes'}
           <h2>{f.label}</h2>
-          <PlainText label={f.label} placeholder={f.placeholder || ''} value={($formState as any)[f.id]} onChange={(v) => updateField(v, f.id as any)} onEnter={next} />
+          <textarea class="intake__notes" placeholder="Add any details…" value={String($formState.notes ?? '')} on:input={(e) => updateField((e.target as HTMLTextAreaElement).value, 'notes')}></textarea>
+
+        {:else}
+          <h2>{f.label}</h2>
+          <PlainText label={f.label} placeholder={f.placeholder || ''} value={String(($formState as any)[f.id] ?? '')} onChange={(v) => updateField(v, f.id as any)} onEnter={next} />
         {/if}
 
         <div class="intake__actions">
@@ -271,6 +356,11 @@
       border-color: var(--color-highlight-2, #02b5bb);
       background: rgba(var(--color-highlight-2-rgb, 2,181,187), 0.15);
     }
+  }
+  .intake__notes {
+    width: 100%; min-height: 110px; resize: vertical; border-radius: 1rem; padding: 1rem;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;
+    &:focus { outline: none; border-color: rgba(255,255,255,0.3); }
   }
   .intake__actions { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
   .intake__note { color: #cbd5e1; }
