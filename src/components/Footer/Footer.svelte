@@ -47,7 +47,7 @@
           <ul class="footer-links-list">
             <li><a href="/">Home</a></li>
             <li><a href="/careers">Careers</a></li>
-            <li><a href="/free-resources">Resources</a></li>
+            <!-- <li><a href="/free-resources">Resources</a></li> -->
             <li><a href="/guides">Guides</a></li>
             <li><a href="/news-updates">News</a></li>
             <li><a href="/contact-us">Contact</a></li>

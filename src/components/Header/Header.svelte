@@ -53,7 +53,7 @@
   // ── Website mode ───────────────────────────────────────────────────────────
   const menuItems: MenuItem[] = [
     { label: "Home", href: "/" },
-    { label: "Resources", href: "/free-resources" },
+    // { label: "Resources", href: "/free-resources" },
     { label: "Guides", href: "/guides" },
     { label: "News", href: "/news-updates" },
     { label: "Contact", href: "/contact-us" },
