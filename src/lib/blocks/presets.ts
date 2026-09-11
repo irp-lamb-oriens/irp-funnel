@@ -428,8 +428,8 @@ export const BLOCK_PRESETS: BlockPreset[] = [
     section: 'Our Partners',
     create: () => {
       const logos = [
-        'AAH.svg', 'AAE.webp', 'AAK.svg', 'AAB.svg', 'AAC.svg', 'AAA.png',
-        'AAD.svg', 'AAF.svg', 'AAG.svg', 'AAI.svg', 'AAJ.png',
+        'AAE.webp', 'AAK.svg', 'AAB.svg', 'AAC.svg', 'AAE2.svg', 'AAE3.png', 
+        'AAD.svg', 'AAF.svg', 'AAG.svg', 'AAI.svg', 'AAJ.png', 'AAA.png',
       ];
       const grid =
         `<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:18px 28px;margin:8px 0 0;">` +

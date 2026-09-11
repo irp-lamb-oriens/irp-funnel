@@ -158,12 +158,13 @@
 <main id="main-content">
   <Header />
   <ImageGrid images={[
-		"icons/partners/AAH.svg",
 		"icons/partners/AAE.webp",
 		"icons/partners/AAK.svg",
 		"icons/partners/AAB.svg",
 		"icons/partners/AAC.svg",
 		"icons/partners/AAA.png",
+		"icons/partners/AAE2.svg",
+		"icons/partners/AAE3.svg",
 		"icons/partners/AAD.svg",
 		"icons/partners/AAF.svg",
 		"icons/partners/AAG.svg",
