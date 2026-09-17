@@ -3,7 +3,8 @@
   import Footer from '../../components/Footer/Footer.svelte';
   import ServiceIntakeForm from '../../components/ServiceIntakeForm.svelte';
   import { onMount, onDestroy } from 'svelte';
-  import { initLanding, type LandingCleanup } from '$lib/animations/landing';
+  import { initLanding, type LandingCleanup } from '../../lib/animations/landing.ts';
+    import ImageGrid from '../../components/systems/wrappers/ImageGrid/ImageGrid.svelte';
 
   type TourWeek = { start: string; end: string };
 
@@ -47,36 +48,77 @@
     return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', opts)}`;
   }
 
-  const realities = [
+  const reviews = [
     {
-      n: '01',
-      title: 'Choosing the wrong region',
-      body: 'Costa Rica is small on a map. It does not feel small when you live here. We test the region that fits your life: healthcare, schools, climate, distance, daily services.',
-      image:
-        'https://images.pexels.com/photos/1006965/pexels-photo-1006965.jpeg?auto=compress&cs=tinysrgb&w=900'
+      name: 'Teresa Health',
+      route: 'Dallas, Texas → Costa Rica',
+      quote:
+        'IRP has been amazing. We had questions and anxiety about shipping overseas. Everyone was kind and informative, and they answered every question from the start. Everything arrived in perfect condition.',
+      link: 'https://share.google/0a6xZdtS4QdGtPZrH',
     },
     {
-      n: '02',
-      title: 'Buying the wrong property',
-      body: 'Access problems, water, road conditions, flooding, resale difficulty. A private scouting experience costs a fraction of one wrong purchase.',
-      image:
-        'https://images.pexels.com/photos/280222/pexels-photo-280222.jpeg?auto=compress&cs=tinysrgb&w=900'
+      name: 'Cathy Hilborn',
+      route: 'International move to Costa Rica',
+      quote:
+        'Pablo and his team were professional, knowledgeable, and incredibly patient. He even made a long trip to personally obtain our temporary vehicle plate so we could get on the road as soon as we arrived.',
+      link: 'https://share.google/RBtpbRj51cJEwTWCn',
     },
     {
-      n: '03',
-      title: "A residency plan that doesn't hold",
-      body: 'Misunderstood categories, missing documentation, timelines longer than expected. We surface this before your belongings are on the way.',
-      image:
-        'https://images.pexels.com/photos/4386366/pexels-photo-4386366.jpeg?auto=compress&cs=tinysrgb&w=900'
-    }
+      name: 'John Daly',
+      route: 'Costa Rica → Boquete, Panama',
+      quote:
+        'A seamless process from pickup in Atenas through customs clearance and delivery. They use AI to video your boxes and build the packing list. Packed and unpacked with care.',
+      link: 'https://share.google/faQbqam5bG87ZlgZZ',
+    },
+    {
+      name: 'Jeanne Fuqua',
+      route: 'Indianapolis, Indiana → Portimão, Portugal',
+      quote:
+        'Our household items were packed with care, with punctual arrival times and courteous team members. Outstanding communication and clear explanations on import fees and taxes.',
+      link: 'https://share.google/i3tnBKcxBcihOoJm8',
+    },
+    {
+      name: 'Angela Hryniuk',
+      route: 'Australia → Guanacaste, Costa Rica',
+      quote:
+        'From the day the truck wrapped our things until the last box was unloaded, communication was excellent. They handled our goods with care and were upfront with all costs.',
+      link: 'https://share.google/YVjrs9L4hkstr6Yr5',
+    },
+    {
+      name: 'Debbie Keller',
+      route: 'Costa Rica → Boquete, Panama',
+      quote:
+        'This was our second move with this company. The moving crew is so helpful, and this move was just as smooth as the last one.',
+      link: 'https://share.google/6VzDIRwHo5VlJpRR5',
+    },
+    {
+      name: 'Anita',
+      route: 'Relocation assistance',
+      quote:
+        'Your information was invaluable. I truly appreciated the perspectives you offered, and I would recommend you to anyone in need of relocation assistance.',
+      link: 'https://share.google/YCdyFNmWQ0TSR2Wg1',
+    },
+    {
+      name: 'Christine George Wray',
+      route: 'International move',
+      quote:
+        'Extremely well-coordinated and organized. Everyone was polite, efficient, and knowledgeable. Marjorie, our coordinator, was a gem.',
+      link: 'https://share.google/6XLxrgPipcCYn0BIg',
+    },
+    {
+      name: 'Blake Sturcke',
+      route: 'United States → Costa Rica',
+      quote:
+        'Once we connected with Pablo and his team, we were sure we had found a great group. Our household goods and our car arrived exactly as we had last seen them.',
+      link: 'https://share.google/JSpDa8WQvg2RbdR6D',
+    },
   ];
 
   const regions = [
-    { name: 'Central Valley & West', towns: 'San José, Escazú, Santa Ana, Heredia, Grecia, San Ramón', image: 'https://images.pexels.com/photos/2382681/pexels-photo-2382681.jpeg?auto=compress&cs=tinysrgb&w=900' },
-    { name: 'Arenal & Northern Highlands', towns: 'Grecia, San Carlos, La Fortuna, Lake Arenal, Tilarán', image: 'https://images.pexels.com/photos/2662116/pexels-photo-2662116.jpeg?auto=compress&cs=tinysrgb&w=900' },
-    { name: 'Central Pacific & Southern Zone', towns: 'Atenas, Jacó, Quepos, Dominical, Uvita, Ojochal', image: 'https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&cs=tinysrgb&w=900' },
+    { name: 'Central Valley & West', towns: 'San José, Escazú, Santa Ana, Heredia, Grecia, San Ramón', image: 'https://images.pexels.com/photos/38991438/pexels-photo-38991438.jpeg?auto=compress&cs=tinysrgb&w=900' },
+    { name: 'Arenal & Northern Highlands', towns: 'Grecia, San Carlos, La Fortuna, Lake Arenal, Tilarán', image: 'https://images.pexels.com/photos/29943338/pexels-photo-29943338.jpeg?auto=compress&cs=tinysrgb&w=900' },
+    { name: 'Central Pacific & Southern Zone', towns: 'Atenas, Jacó, Quepos, Dominical, Uvita, Ojochal', image: 'https://images.pexels.com/photos/29635789/pexels-photo-29635789.jpeg?auto=compress&cs=tinysrgb&w=900' },
     { name: 'Guanacaste', towns: 'Sámara, Avellanas, Tamarindo, Conchal, Potrero, Coco, Liberia', image: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=900' },
-    { name: 'Costa Rica vs. Panama', towns: 'Southern Zone, David, Boquete, Panama City. Compare before you choose.', image: 'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&cs=tinysrgb&w=900' }
   ];
 
   const promises = [
@@ -97,12 +139,27 @@
 <Header />
 
 <main class="tour" bind:this={root}>
+  <ImageGrid images={[
+		"icons/partners/AAE.webp",
+		"icons/partners/AAK.svg",
+		"icons/partners/AAB.svg",
+		"icons/partners/AAE3.png",
+		"icons/partners/AAE2.svg",
+		"icons/partners/AAC.svg",
+		"icons/partners/AAA.png",
+		"icons/partners/AAD.svg",
+		"icons/partners/AAF.svg",
+		"icons/partners/AAG.svg",
+		"icons/partners/AAI.svg",
+		"icons/partners/AAJ.png",
+	]}/>
+
   <!-- ── HERO ─────────────────────────────────────────────────────────── -->
   <section class="tour__hero">
     <div class="tour__hero-media" aria-hidden="true">
       <img
         data-parallax="0.2"
-        src="https://images.pexels.com/photos/2166553/pexels-photo-2166553.jpeg?auto=compress&cs=tinysrgb&w=1800"
+        src="https://images.pexels.com/photos/14510492/pexels-photo-14510492.jpeg"
         alt=""
       />
       <span class="tour__hero-scrim"></span>
@@ -115,7 +172,7 @@
       <p class="tour__sub" data-animate="up" data-animate-delay="0.12">
         Before you buy property, ship your belongings, import a car, enroll your
         kids, or commit your savings, spend a few private days understanding what
-        your real life in Costa Rica or Panama would actually look like.
+        your real life in Costa Rica would actually look like.
       </p>
       <div class="tour__hero-ctas" data-animate="up" data-animate-delay="0.18">
         <a class="tour__btn tour__btn--primary" href="#book" data-magnetic>Book a private experience</a>
@@ -148,24 +205,28 @@
   <!-- ── REALITY ──────────────────────────────────────────────────────── -->
   <section class="tour__reality">
     <div class="tour__reality-inner">
-      <h2 class="tour__h2" data-animate="up">Most relocation mistakes don't look like mistakes at first.</h2>
+      <h2 class="tour__h2" data-animate="up">Rated five stars by the people we've moved</h2>
       <p class="tour__lead" data-animate="up" data-animate-delay="0.06">
-        The house looks beautiful. The beach feels perfect. The realtor is
-        enthusiastic. Then you actually move, and six months later you discover
-        the questions you should have asked before you came.
+        Real reviews from clients who shipped household goods and vehicles with us.
       </p>
       <div class="tour__reality-grid">
-        {#each realities as r (r.n)}
-          <article class="rcard" data-animate="scale" data-tilt>
-            <span class="rcard__media" aria-hidden="true">
-              <img src={r.image} alt="" loading="lazy" />
-            </span>
-            <span class="rcard__num">{r.n}</span>
-            <div class="rcard__body">
-              <h3>{r.title}</h3>
-              <p>{r.body}</p>
-            </div>
-          </article>
+        {#each reviews as review (review.link)}
+          <a
+            class="review-card"
+            href={review.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-animate="scale"
+            data-tilt
+            aria-label={`Read ${review.name}'s five-star review`}
+          >
+            <span class="review-card__stars" aria-hidden="true">★★★★★</span>
+            <blockquote class="review-card__quote">{review.quote}</blockquote>
+            <footer class="review-card__meta">
+              <span class="review-card__name">{review.name}</span>
+              <span class="review-card__route">{review.route}</span>
+            </footer>
+          </a>
         {/each}
       </div>
     </div>
@@ -213,7 +274,7 @@
           tell you about the next available experience.
         </p>
         <div class="tour__book-form">
-          <ServiceIntakeForm serviceType="relocation_tour" />
+          <ServiceIntakeForm serviceTypes={['relocation_tour']} />
         </div>
       {:else if weeks.length === 0}
         <p class="tour__book-note">No upcoming weeks are published yet.</p>
@@ -430,66 +491,59 @@
     margin: 0 0 2.5rem;
   }
 
-  /* ── REALITY CARDS ────────────────────────────────────────────────── */
+  /* ── REVIEWS ────────────────────────────────────────────────────── */
   .tour__reality-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.25rem;
   }
-  .rcard {
-    position: relative;
+  .review-card {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    min-height: 380px;
+    gap: 1rem;
     padding: 1.6rem;
-    border-radius: 20px;
-    overflow: hidden;
-    isolation: isolate;
-    color: #fff;
-    background: #0f172a;
-    box-shadow: 0 26px 54px -30px rgba(15, 23, 42, 0.55);
+    border-radius: 18px;
+    background: #fff;
+    border: 1px solid #e8eef5;
+    box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.45);
+    color: #1a1a2e;
+    text-decoration: none;
     transform-style: preserve-3d;
     will-change: transform;
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
-  .rcard__media {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.72) 60%, rgba(15, 23, 42, 0.95) 100%);
-    }
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scale(1.06);
-      transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+  .review-card:hover {
+    border-color: rgba(2, 181, 187, 0.35);
+    box-shadow: 0 26px 54px -28px rgba(15, 23, 42, 0.5);
   }
-  .rcard:hover .rcard__media img { transform: scale(1.12); }
-  .rcard__num {
-    position: absolute;
-    top: 1.1rem;
-    right: 1.3rem;
+  .review-card__stars {
+    color: #f59e0b;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+  }
+  .review-card__quote {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.6;
+    color: #475569;
+    flex: 1;
+  }
+  .review-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eef2f6;
+  }
+  .review-card__name {
     font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
-    font-size: 2.4rem;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.22);
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.9rem;
   }
-  .rcard__body {
-    transform: translateZ(28px);
-    h3 {
-      margin: 0 0 0.5rem;
-      font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
-      font-size: 1.18rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    p { margin: 0; color: rgba(226, 232, 240, 0.85); line-height: 1.55; font-size: 0.94rem; }
+  .review-card__route {
+    font-size: 0.8rem;
+    color: #64748b;
   }
 
   /* ── REGIONS (image bento) ────────────────────────────────────────── */
@@ -635,6 +689,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .rcard__media img, .region__media img { transition: none; }
+    .region__media img { transition: none; }
   }
 </style>

@@ -259,7 +259,7 @@
   .image-grid-outer {
     position: relative;
     width: 100%;
-    padding: 6rem 0;
+    padding: 6rem 0 0;
     background: linear-gradient(to bottom, #000, #111, #000);
     overflow: hidden;
   }

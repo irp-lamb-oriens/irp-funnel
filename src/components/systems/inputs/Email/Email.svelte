@@ -21,12 +21,17 @@
   // Validate email format on input, update the store, and call onChange.
   function handleInput(event: Event | null, newValue?: string) {
     const target = event?.target as HTMLInputElement;
-    value = target?.value?.trim?.() || (newValue as string);
+    const raw = target?.value ?? newValue ?? "";
+    value = raw.trim();
     valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     emailStore.set(value);
 
-    // Call onChange with empty string if invalid or empty, otherwise with the value
-    onChange(valid ? value : "");
+    // Always report the current (trimmed) value. Blanking the value here when
+    // it is still invalid caused a reactive race with two-way `bind:value`: the
+    // empty string was written back into the parent store and re-bound into
+    // this input, wiping every keystroke until the field was complete. The
+    // parent's submit guard reads the `valid` flag, so the raw value is safe.
+    onChange(value);
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -38,9 +43,13 @@
   }
 
   onMount(() => {
-    // Initialize the store with the initial value.
+    // Initialize the store with the initial value. Report the existing value
+    // without re-applying the blank-on-invalid behaviour (already handled in
+    // handleInput), so a pre-filled value survives the mount.
     emailStore.set(value);
-    handleInput(null, value);
+    const trimmed = (value ?? "").trim();
+    valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    onChange(trimmed);
   });
 </script>
 

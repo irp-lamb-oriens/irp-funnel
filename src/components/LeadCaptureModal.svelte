@@ -18,10 +18,10 @@
 
   $: isFormValid = nameValue.trim().length > 0 && isEmailValid && emailValue.trim().length > 0;
 
-  function handleEmailChange(newValue: string) {
-    // Only update validity flag. bind:value handles the raw string.
-    isEmailValid = newValue !== "";
-  }
+  // Email.svelte reports the raw trimmed value through `onChange` and its own
+  // regex validation through `bind:valid`. Validity is bound directly below so
+  // the "Read guide" submit guard stays correct without deriving it from the
+  // value (which would mark any non-empty, invalid address as valid).
 
   async function handleSubmit() {
     if (!isFormValid) return;
@@ -88,7 +88,7 @@
 
         <Email 
           bind:value={emailValue} 
-          onChange={handleEmailChange} 
+          bind:valid={isEmailValid} 
           onEnter={handleSubmit} 
           bind:inputElement={emailInputRef} 
           label="Your Best Email"

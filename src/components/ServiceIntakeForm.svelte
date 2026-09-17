@@ -19,13 +19,14 @@
   import { immigrationStatusStore } from './systems/inputs/ImmigrationStatus/store.js';
   import {
     fetchServiceConfig,
+    deriveServiceCategory,
     evaluateCondition,
     type ServiceConfig,
     type ServiceFieldDef,
     type ServiceType,
   } from '../lib/serviceConfig.js';
 
-  export let serviceType: ServiceType = 'relocation_tour';
+  export let serviceTypes: ServiceType[] = ['relocation_tour'];
   /** When embedded (e.g. inside HeroForm), called to leave the form entirely. */
   export let onBack: (() => void) | undefined = undefined;
 
@@ -58,6 +59,39 @@
   let immigrationInput: HTMLButtonElement;
 
   $: current = steps[stepIndex];
+
+  // ─── Early opt-in lead capture ──────────────────────────────────────────
+  // Mirrors HeroForm: as soon as identity (name + surname + email) is complete,
+  // save the prospect to the `captures` collection so the dashboard sees the
+  // lead even if they abandon before scheduling a call. Fire-and-forget; a
+  // failure never blocks the questionnaire.
+  let leadCaptured = false;
+
+  async function captureLead() {
+    if (leadCaptured) return;
+    const email = ($formState.email || '').trim();
+    if (!email) return;
+    leadCaptured = true;
+    try {
+      await fetch(`${$store.apiURL()}/api/capture-data`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          name: ($formState.name || '').trim(),
+          surname: ($formState.surname || '').trim(),
+          serviceCategory: deriveServiceCategory(serviceTypes),
+          source: 'relocation-tours-email-capture',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
+      console.error('Lead capture failed:', err);
+      // Allow a retry on the next advance so a transient network error does not
+      // permanently lose the lead.
+      leadCaptured = false;
+    }
+  }
 
   // Mirror the original dropdown stores into formState so submitScheduling()
   // (which serializes formState) picks them up.
@@ -133,6 +167,12 @@
       const t = $formState.travelers?.[step.idx];
       if (!t?.name?.trim() || !t?.surname?.trim()) return;
     }
+    // Identity is now first in every service config, so the email step is
+    // guaranteed to have a valid address by the time it advances. Capture the
+    // opt-in lead here so it reaches the dashboard before the tour details.
+    if (step?.kind === 'field' && step.field.id === 'email' && emailValid) {
+      void captureLead();
+    }
     if (stepIndex >= steps.length - 1) {
       await submitForm();
       return;
@@ -169,8 +209,9 @@
 
   onMount(async () => {
     try {
-      config = await fetchServiceConfig($store.apiURL(), serviceType);
-      updateField(serviceType, 'serviceCategory');
+      config = await fetchServiceConfig($store.apiURL(), serviceTypes);
+      updateField([...serviceTypes], 'serviceCategories');
+      updateField(deriveServiceCategory(serviceTypes), 'serviceCategory');
       ensureTravelers(Math.max(1, Math.min(3, Number($formState.partySize) || 1)));
       rebuildSteps();
     } catch (e: any) {
@@ -216,6 +257,10 @@
         {:else if f.id === 'destinationCountry'}
           <h2>{f.label}</h2>
           <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} bind:buttonRef={destinationCountryInput} />
+
+        {:else if f.type === 'country' && f.id === 'nationality'}
+          <h2>{f.label}</h2>
+          <Country onSelect={(code) => updateField(code || '', 'nationality')} defaultCountryCode={$formState.nationality} />
 
         {:else if f.type === 'budget'}
           <h2>{f.label}</h2>

@@ -867,11 +867,17 @@
   // the Overview tab. Empty (pre-existing leads) defaults to "Relocation" so
   // nothing looks broken; the same value is also an editable enum registry row.
   const SERVICE_TYPE_META: Record<string, { label: string; key: string }> = {
-    relocation: { label: 'Relocation', key: 'relocation' },
+    relocation: { label: 'International Shipping', key: 'relocation' },
     relocation_tour: { label: 'Relocation Tour', key: 'relocation_tour' },
+    immigration: { label: 'Immigration Consultancy', key: 'immigration' },
     both: { label: 'Relocation + Tour', key: 'both' },
   };
-  $: serviceTypeMeta = SERVICE_TYPE_META[$selectedClient?.serviceCategory || ''] || SERVICE_TYPE_META.relocation;
+  $: serviceTypeMeta = (() => {
+    const cat = $selectedClient?.serviceCategory || '';
+    const parts = cat.split(',').filter(Boolean);
+    if (parts.length > 1) return { label: 'Multiple services', key: 'multiple' };
+    return SERVICE_TYPE_META[cat] || SERVICE_TYPE_META.relocation;
+  })();
 </script>
 
 {#if $detailPanelOpen && $selectedClient}
@@ -2533,6 +2539,16 @@
     color: #b45309;
     background: rgba(245, 158, 11, 0.14);
     border-color: rgba(245, 158, 11, 0.4);
+  }
+  .service-type-badge--immigration {
+    color: #047857;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.35);
+  }
+  .service-type-badge--multiple {
+    color: #0f172a;
+    background: rgba(100, 116, 139, 0.12);
+    border-color: rgba(100, 116, 139, 0.35);
   }
 
   /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────

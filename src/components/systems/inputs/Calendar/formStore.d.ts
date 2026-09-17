@@ -3,6 +3,10 @@ export type Vehicle = {
     make: string;
     model: string;
 };
+export type Traveler = {
+    name: string;
+    surname: string;
+};
 export type FormState = {
     name: string;
     surname: string;
@@ -30,9 +34,21 @@ export type FormState = {
     }[];
     /** Service category pre-filled by a service landing page (e.g. relocation_tour). */
     serviceCategory: string;
+    /** Additive multi-select list (canonical selection from the slide). */
+    serviceCategories: string[];
+    partySize: string;
+    occupancy: string;
+    roomPreference: string;
+    duration: string;
+    route: string;
+    travelers: Traveler[];
+    nationality: string;
+    residencyPathway: string;
+    applicantCount: string;
+    residencyTimeline: string;
 };
 export declare const formState: import("svelte/store").Writable<FormState>;
-export declare function updateField(value: string | string[] | Vehicle[] | {
+export declare function updateField(value: string | string[] | Vehicle[] | Traveler[] | {
     role: string;
     content: string;
 }[], field: keyof FormState): void;

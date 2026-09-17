@@ -69,7 +69,9 @@
   // picker offers the DISTINCT values present in the loaded client list, just
   // like origin/destination/budget/size filters below.
   const SERVICE_CATEGORY_LABELS: Record<string, string> = {
+    relocation: 'International Shipping',
     relocation_tour: 'Relocation tour',
+    immigration: 'Immigration consultancy',
     real_estate: 'Real estate due diligence',
     international_moving: 'International moving',
     immigration_advice: 'Immigration advice',

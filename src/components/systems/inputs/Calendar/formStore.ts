@@ -35,6 +35,8 @@ export type FormState = {
   chatHistory: { role: string; content: string }[];
   /** Service category pre-filled by a service landing page (e.g. relocation_tour). */
   serviceCategory: string;
+  /** Additive multi-select list (canonical selection from the slide). */
+  serviceCategories: string[];
   // ── Relocation-tour fields (additive) ────────────────────────────
   partySize: string;
   occupancy: string;
@@ -42,6 +44,11 @@ export type FormState = {
   duration: string;
   route: string;
   travelers: Traveler[];
+  // ── Immigration-consultancy fields (additive) ────────────────────
+  nationality: string;
+  residencyPathway: string;
+  applicantCount: string;
+  residencyTimeline: string;
 };
 
 // Define a store for the form state
@@ -68,12 +75,17 @@ export const formState = writable<FormState>({
   notes: "",
   chatHistory: [],
   serviceCategory: "",
+  serviceCategories: [],
   partySize: "",
   occupancy: "",
   roomPreference: "",
   duration: "",
   route: "",
   travelers: [],
+  nationality: "",
+  residencyPathway: "",
+  applicantCount: "",
+  residencyTimeline: "",
 });
 
 // Update the form state on input change

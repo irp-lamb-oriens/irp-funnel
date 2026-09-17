@@ -22,7 +22,7 @@
   import store from './store.js';
   import VideoBanner from './VideoBanner.svelte';
   import ServiceIntakeForm from './ServiceIntakeForm.svelte';
-  import { SERVICE_TYPE_OPTIONS, type ServiceType } from '../lib/serviceConfig.js';
+  import { SERVICE_TYPE_OPTIONS, ALL_SERVICE_TYPES, SERVICE_SLIDE_GATE_COUNTRIES, deriveServiceCategory, parseServiceTypes, type ServiceType } from '../lib/serviceConfig.js';
   import Loader from './Loader/Loader.svelte';
   import Chatbot from './Chatbot.svelte';
   import Language from './systems/inputs/Language/Language.svelte';
@@ -77,15 +77,16 @@
 
   // ─── Views ────────────────────────────────────────────────────────────────
 
-  // 'cta'     = initial CTA button
-  // 'email'   = email capture
-  // 'choice'  = channel picker (Lili / WhatsApp / Form)
-  // 'chatbot' = inline chatbot
-  // 'form'    = multi-step consultation form
-  // 'name' is the step inserted between 'email' and 'choice' where the visitor
-  // provides first name + surname before seeing the Lili/Form choice screen.
-  // All downstream paths ('choice', 'chatbot', 'form') are unchanged.
-  type ViewState = 'cta' | 'email' | 'name' | 'service' | 'choice' | 'chatbot' | 'serviceForm' | 'form';
+  // 'cta'         = initial CTA button
+  // 'email'       = email capture
+  // 'name'        = first name + surname capture
+  // 'destination' = destination country capture (gates the service slide)
+  // 'service'     = service type picker (shipping / tour / both)
+  // 'choice'      = channel picker (Lili / WhatsApp / Form)
+  // 'chatbot'     = inline chatbot
+  // 'serviceForm' = config-driven intake for tour / both
+  // 'form'        = multi-step consultation form
+  type ViewState = 'cta' | 'email' | 'name' | 'destination' | 'service' | 'choice' | 'chatbot' | 'serviceForm' | 'form';
   let view: ViewState = 'cta';
   let formStep = 0; // which step within the multi-step form (0-12)
 
@@ -139,6 +140,7 @@
   // ─── Input refs ───────────────────────────────────────────────────────────
   let nameInput: HTMLInputElement, surnameInput: HTMLInputElement;
   let destinationCountryInput: HTMLButtonElement, destinationCityInput: HTMLInputElement, destinationZipInput: HTMLInputElement;
+  let destinationStepCountryInput: HTMLButtonElement;
   let originCountryInput: HTMLButtonElement, originCityInput: HTMLInputElement, originZipInput: HTMLInputElement;
   let phoneInput: HTMLButtonElement, budgetInput: HTMLButtonElement;
   let sizeInput: HTMLButtonElement, immigrationStatusInput: HTMLButtonElement;
@@ -169,7 +171,15 @@
     // alternating-week cadence for tours). Fully additive: absent param = "".
     const service = urlParams.get('service');
     if (service && service.trim()) {
-      updateField(service.trim(), 'serviceCategory');
+      const types = parseServiceTypes(service.trim());
+      if (types.length > 0) {
+        updateField(deriveServiceCategory(types), 'serviceCategory');
+        updateField([...types], 'serviceCategories');
+      } else {
+        // Legacy, non-service annotation (e.g. real_estate) — preserve verbatim
+        // so existing landing pages keep working unchanged.
+        updateField(service.trim(), 'serviceCategory');
+      }
     }
     // Evo: log the exposure to the visitor's assigned HeroForm variant.
     trackExposure(EVO_COMPONENT, evoCopyVariantStr, { variantLabel: evoCopyVariantStr });
@@ -227,24 +237,70 @@
     errors = {};
     if (!$formState.name.trim())    { errors.name    = 'Required'; await tick(); nameInput?.focus();    return; }
     if (!$formState.surname.trim()) { errors.surname  = 'Required'; await tick(); surnameInput?.focus(); return; }
-    view = 'service';
+    view = 'destination';
+    await tick();
+    destinationStepCountryInput?.focus();
   }
 
-  let selectedService: ServiceType = 'relocation';
+  async function handleDestinationSubmit() {
+    errors = {};
+    const dest = ($formState.destinationCountry || '').trim();
+    if (!dest) {
+      errors.destinationCountry = 'Required';
+      await tick();
+      destinationStepCountryInput?.focus();
+      return;
+    }
+    if (SERVICE_SLIDE_GATE_COUNTRIES.includes(dest)) {
+      view = 'service';
+      return;
+    }
+    // Non-gated destination: the service slide is skipped, so pin the default
+    // `relocation` service. This preserves the pre-change behavior where every
+    // lead passed through the slide and had a serviceCategory set.
+    applyServiceSelection(['relocation']);
+    view = 'choice';
+  }
 
-  function selectService(type: ServiceType) {
-    selectedService = type;
-    updateField(type, 'serviceCategory');
+  let selectedServices: ServiceType[] = [];
+
+  $: isAllSelected =
+    selectedServices.length === ALL_SERVICE_TYPES.length &&
+    ALL_SERVICE_TYPES.every((t) => selectedServices.includes(t));
+  $: canContinue = selectedServices.length > 0;
+
+  function applyServiceSelection(types: ServiceType[]) {
+    selectedServices = [...new Set(types.filter(Boolean))];
+    updateField([...selectedServices], 'serviceCategories');
+    updateField(deriveServiceCategory(selectedServices), 'serviceCategory');
+  }
+
+  function toggleService(type: ServiceType) {
+    const next = selectedServices.includes(type)
+      ? selectedServices.filter((t) => t !== type)
+      : [...selectedServices, type];
+    applyServiceSelection(next);
+  }
+
+  function toggleAllServices() {
+    // If everything is already ticked, clear; otherwise select all three.
+    applyServiceSelection(isAllSelected ? [] : [...ALL_SERVICE_TYPES]);
+  }
+
+  function continueFromService() {
+    if (!canContinue) return;
     view = 'choice';
   }
 
   function openChatbot() { view = 'chatbot'; }
 
   function openForm() {
-    // Service-aware: tour / both use the config-driven intake instead of the
-    // hardcoded relocation steps.
-    if (selectedService !== 'relocation') {
-      updateField(selectedService, 'serviceCategory');
+    // Service-aware: any non-default selection uses the config-driven intake
+    // instead of the hardcoded relocation steps. A lone `relocation` selection
+    // (or the non-gated default) keeps the classic multi-step form.
+    const isPlainRelocation =
+      selectedServices.length === 1 && selectedServices[0] === 'relocation';
+    if (selectedServices.length > 0 && !isPlainRelocation) {
       view = 'serviceForm';
       return;
     }
@@ -493,24 +549,60 @@
           </div>
         {/if}
 
-        <!-- ═══════════ SERVICE SELECT ═══════════ -->
-        <!-- New step between name and choice: the prospect picks the service
-             type (relocation / tour / both) so both the chatbot and the form
-             morph to the matching field set. -->
-        {#if view === 'service'}
+        <!-- ═══════════ DESTINATION (gates the service slide) ═══════════ -->
+        <!-- Collected before service selection so the service slide only
+             appears for destinations whose ISO-2 code is in
+             SERVICE_SLIDE_GATE_COUNTRIES. Every other country skips the slide
+             and continues with the default `relocation` service. -->
+        {#if view === 'destination'}
           <div class="form-frame active">
             <div class="back-bar">
               <button class="back-btn" on:click={() => (view = 'name')}>← Back</button>
             </div>
+            <h2>Where are you moving to?</h2>
+            <p class="sub-heading">Select the country you're relocating to.</p>
+            <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} defaultCountryCode={$formState.destinationCountry} bind:buttonRef={destinationStepCountryInput} on:enter={() => {}} />
+            {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+            <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={handleDestinationSubmit} loading={isLoading} /></div>
+          </div>
+        {/if}
+
+        <!-- ═══════════ SERVICE SELECT ═══════════ -->
+        <!-- Additive multi-select. The three atomic services can be combined in
+             any way; "All of the above" is a master toggle that mirrors the
+             other three (selected only when all are ticked; clicking it ticks
+             or clears all three). At least one service is required to continue. -->
+        {#if view === 'service'}
+          <div class="form-frame active">
+            <div class="back-bar">
+              <button class="back-btn" on:click={() => (view = 'destination')}>← Back</button>
+            </div>
             <h2>What are you interested in?</h2>
-            <p class="sub-heading">Select the service you'd like help with.</p>
+            <p class="sub-heading">Select one or more services you'd like help with.</p>
             <div class="service-options">
               {#each SERVICE_TYPE_OPTIONS as opt (opt.value)}
-                <button class="service-option" on:click={() => selectService(opt.value)}>
+                <button
+                  class="service-option"
+                  class:service-option--selected={selectedServices.includes(opt.value)}
+                  on:click={() => toggleService(opt.value)}
+                >
+                  <span class="service-option__check" aria-hidden="true">
+                    {selectedServices.includes(opt.value) ? '✓' : ''}
+                  </span>
                   <span class="service-option__label">{opt.label}</span>
-                  <span class="service-option__arrow">→</span>
                 </button>
               {/each}
+            </div>
+            <button
+              class="service-option service-option--all"
+              class:service-option--selected={isAllSelected}
+              on:click={toggleAllServices}
+            >
+              <span class="service-option__check" aria-hidden="true">{isAllSelected ? '✓' : ''}</span>
+              <span class="service-option__label">All of the above</span>
+            </button>
+            <div class="button-wrapper">
+              <IconButton src="./icons/right-arrow.svg" callback={continueFromService} loading={isLoading} disabled={!canContinue} />
             </div>
           </div>
         {/if}
@@ -519,8 +611,7 @@
         {#if view === 'choice'}
           <div class="form-frame active">
             <div class="choice-screen">
-              <div class="choice-screen__check">✓</div>
-              <h2 class="choice-screen__title">You're all set!</h2>
+              <h2 class="choice-screen__title">Next step is to book your consultation call with an expert</h2>
               <p class="choice-screen__desc">Choose how you'd like to continue:</p>
               <div class="language-picker">
                 <Language 
@@ -580,7 +671,7 @@
              produced a duplicate "← Back" beside the form's internal one). -->
         {#if view === 'serviceForm'}
           <div class="form-frame active">
-            <ServiceIntakeForm serviceType={selectedService} onBack={backToChoice} />
+            <ServiceIntakeForm serviceTypes={selectedServices} onBack={backToChoice} />
           </div>
         {/if}
 
@@ -612,9 +703,13 @@
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 1}
-              <h2>Where are you moving to?</h2>
-              <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
-              {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+              {#if $formState.destinationCountry}
+                <h2>Which city in {destinationCountryName} are you moving to?</h2>
+              {:else}
+                <h2>Where are you moving to?</h2>
+                <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} defaultCountryCode={$formState.destinationCountry} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
+                {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+              {/if}
               <PlainText label="Destination City" placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
               {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
               <PlainText label="Zip Code (optional)" placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={formNext} bind:inputElement={destinationZipInput} />
@@ -816,7 +911,7 @@
   /* ═══ CTA Hero ═══ */
   .cta-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem;
     &__eyebrow { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color:white; }
-    &__title { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
+    &__title { font-size: 1.8rem; font-weight: 900; color: #fff; line-height: 1.1; letter-spacing: -0.03em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; max-width: 520px; }
     &__sub { font-size: 1.05rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 440px; }
     &__btn-wrap { display: flex; justify-content: center; width: 100%; margin-top: 1rem; }
     &__btn {
@@ -1010,7 +1105,18 @@
     &:hover { transform: translateY(-2px); background: rgba(255,255,255,0.1); border-color: rgba(var(--color-highlight-2-rgb), 0.5); }
   }
   .service-option__label { flex: 1; }
-  .service-option__arrow { color: var(--color-highlight-2, #02b5bb); font-size: 1.2rem; font-weight: 700; }
+  .service-option__check {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);
+    color: #041e1e; font-size: 0.85rem; font-weight: 800;
+  }
+  .service-option--all { margin-top: 0.25rem; border-style: dashed; }
+  .service-option--selected {
+    border-color: rgba(var(--color-highlight-2-rgb), 0.7);
+    background: rgba(var(--color-highlight-2-rgb), 0.15);
+    .service-option__check { background: var(--color-highlight-2, #02b5bb); border-color: var(--color-highlight-2, #02b5bb); }
+  }
 
   /* ═══ Thank You ═══ */
   .thank-you { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem;
