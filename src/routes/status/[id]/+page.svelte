@@ -7,6 +7,7 @@
     isAuthenticated,
     isCheckingAuth,
     authEmail,
+    reconstructEmailFromProjectId,
     project,
     loading,
     error,
@@ -77,6 +78,20 @@
   import "./status.scss";
 
   $: projectId = $page.params.id;
+
+  // Prefill the login email from the document id the moment the gate renders.
+  // The doc id IS the client email with `@`/`.` → `_`, so anyone who already
+  // holds this /status/:id URL can recover the same address. We only prefill
+  // when there is nothing typed yet and no staff bypass happened, so the
+  // client's registered address is waiting for them without an extra request.
+  let loginEmailPrefilled = false;
+  $: if (projectId && !loginEmailPrefilled && !loginEmailInput) {
+    const recovered = reconstructEmailFromProjectId(projectId);
+    if (recovered) {
+      loginEmailPrefilled = true;
+      loginEmailInput = recovered;
+    }
+  }
 
   // ─── Login State ────────────────────────────────────────────────────────
   let loginEmailInput = "";
@@ -882,8 +897,9 @@
             ></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg
           >
           <span style="text-align: left;"
-            >This project is securely linked to your registered email. Only you
-            can receive the authorization code to access this portal.</span
+            >Only IRP staff and the email registered to this project can access
+            this page. The login code can only be sent to the email saved on
+            your relocation file.</span
           >
         </div>
       </div>

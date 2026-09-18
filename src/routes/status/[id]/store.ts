@@ -17,6 +17,35 @@ export const isCheckingAuth = writable(true);
 export const authEmail = writable('');
 export const authToken = writable<string | null>(null);
 
+/**
+ * Recover the principal client email from a project id BEFORE authentication,
+ * for the login-gate prefill. This mirrors the server's `resolvePrincipalEmail`
+ * reconstruction: the consultation doc id is the email with `@` and `.` replaced
+ * by underscores, so the last two dot-separated segments are the TLD and domain.
+ *
+ * This reveals nothing new — anyone holding the /status/:id URL can perform the
+ * same reconstruction — it only saves the principal applicant a manual step.
+ * Returns "" when the id can't be parsed into a plausible address.
+ */
+export function reconstructEmailFromProjectId(projectId: string): string {
+  // The consultation doc id is the client email with every `@` and `.` turned
+  // into `_` (server `emailToDocId`). Reverse it by position:
+  //   • last segment            → TLD
+  //   • segment before it       → domain
+  //   • everything before those → the local part, rejoined with `.` (its own
+  //     dots were also serialized as `_`).
+  // e.g. "roxannefleszar_protonmail_com" → "roxannefleszar@protonmail.com"
+  //      "john_doe_gmail_com"             → "john.doe@gmail.com"
+  const segments = String(projectId ?? "").split("_");
+  if (segments.length < 2) return "";
+  const tld = segments.pop()!;
+  const domain = segments.pop()!;
+  if (!tld || !domain) return "";
+  const local = segments.join(".");
+  if (!local) return "";
+  return `${local}@${domain}.${tld}`.toLowerCase().trim();
+}
+
 // We store the token in localStorage with a key specific to client portal
 if (typeof window !== 'undefined') {
   const token = localStorage.getItem('client_token');
