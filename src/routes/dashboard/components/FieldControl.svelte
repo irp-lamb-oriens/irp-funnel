@@ -30,6 +30,7 @@
   import { editField } from '../store.ts';
   import { toasts } from '../toastStore.ts';
   import EditableField from './EditableField.svelte';
+  import FieldValueViewer from './FieldValueViewer.svelte';
   import DateFieldRow from './DateFieldRow.svelte';
 
   /** Consultations doc ID. */
@@ -73,6 +74,10 @@
 
   // ── enum (choice dropdown) ───────────────────────────────────────────────
   $: current = asString(value);
+  // Array-typed values (e.g. `travelers`, `serviceCategories`) are not a natural
+  // fit for the scalar widgets below; delegate them to the recursive viewer so
+  // an operator sees structured data instead of a JSON blob on edit.
+  $: isArrayValue = Array.isArray(value);
   // Never silently drop a stored value that's no longer in the option list —
   // surface it as a selectable (legacy) entry so operators still see it.
   $: enumOptions =
@@ -241,12 +246,19 @@
     {/if}
   </div>
 
-{:else if valueType === 'date' || valueType === 'datetime'}
-  <DateFieldRow {clientId} {path} {value} {label} withTime={valueType === 'datetime'} />
+  {:else if valueType === 'date' || valueType === 'datetime'}
+    <DateFieldRow {clientId} {path} {value} {label} withTime={valueType === 'datetime'} />
 
-{:else}
-  <EditableField {clientId} {path} {value} {label} multiline={valueType === 'text'} {placeholder} />
-{/if}
+  {:else if isArrayValue}
+    <!-- Recursive viewer for list-shaped values. Handles arrays of scalars
+         (rendered as pill chips) and arrays of maps (rendered as numbered cards
+         whose leaf fields recurse into inline edits), so operators never see raw
+         JSON like `[{"name":"…","surname":"…"}]`. -->
+    <FieldValueViewer {clientId} {path} {value} {label} {readonly} depth={0} />
+
+  {:else}
+    <EditableField {clientId} {path} {value} {label} multiline={valueType === 'text'} {placeholder} />
+  {/if}
 
 <style lang="scss">
   // ── enum: styled native <select> ───────────────────────────────────────────
