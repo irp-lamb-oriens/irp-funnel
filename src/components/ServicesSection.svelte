@@ -30,7 +30,7 @@
       icon: 'map',
       accent: '#02b5bb',
       image:
-        'https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&cs=tinysrgb&w=1200',
+        'https://images.pexels.com/photos/14510492/pexels-photo-14510492.jpeg',
       tag: 'On the ground'
     },
     // {
