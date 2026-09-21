@@ -4,6 +4,38 @@
     import ThemeChanger from "../components/ThemeChanger/ThemeChanger.svelte";
     import store from "../components/store.ts";
     import EvoDevSwitcher from "../components/EvoDevSwitcher.svelte";
+    import { page } from "$app/stores";
+    import ImageGrid from "../components/systems/wrappers/ImageGrid/ImageGrid.svelte";
+
+    // Partner logo strip shown on every public page, right below the header.
+    const partnerImages = [
+        "/icons/partners/AAE.webp",
+        "/icons/partners/AAK.svg",
+        "/icons/partners/AAB.svg",
+        "/icons/partners/AAE3.png",
+        "/icons/partners/AAE2.svg",
+        "/icons/partners/AAC.svg",
+        "/icons/partners/AAA.png",
+        "/icons/partners/AAD.svg",
+        "/icons/partners/AAF.svg",
+        "/icons/partners/AAG.svg",
+        "/icons/partners/AAI.svg",
+        "/icons/partners/AAJ.png",
+    ];
+
+    // Routes that render their own full-screen surface (app/dashboard tooling)
+    // skip the strip. Dashboard is the explicit exclusion; the others are
+    // internal tools where the marketing strip would collide with layout.
+    const STRIP_HIDDEN_PREFIXES = [
+        "/dashboard",
+        "/funnel",
+        "/main-funnel",
+        "/agent",
+        "/metrics",
+    ];
+    $: showPartnerStrip = !STRIP_HIDDEN_PREFIXES.some((p) =>
+        $page.url.pathname.startsWith(p),
+    );
     // check if need later
     // import SmoothScrollWrapper from "../components/SmoothScrollWrapper/SmoothScrollWrapper.svelte";
     const MEASUREMENT_ID = "G-3X226YFLE6";
@@ -60,6 +92,9 @@
 <ThemeChanger visible={false} />
 
 <!-- <SmoothScrollWrapper> -->
+    {#if showPartnerStrip}
+        <ImageGrid images={partnerImages} />
+    {/if}
     <slot />
 <!-- </SmoothScrollWrapper> -->
 

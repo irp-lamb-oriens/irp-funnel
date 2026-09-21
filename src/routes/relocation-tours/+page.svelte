@@ -4,7 +4,6 @@
   import ServiceIntakeForm from '../../components/ServiceIntakeForm.svelte';
   import { onMount, onDestroy } from 'svelte';
   import { initLanding, type LandingCleanup } from '../../lib/animations/landing.ts';
-    import ImageGrid from '../../components/systems/wrappers/ImageGrid/ImageGrid.svelte';
 
   type TourWeek = { start: string; end: string };
 
@@ -139,21 +138,6 @@
 <Header />
 
 <main class="tour" bind:this={root}>
-  <ImageGrid images={[
-		"icons/partners/AAE.webp",
-		"icons/partners/AAK.svg",
-		"icons/partners/AAB.svg",
-		"icons/partners/AAE3.png",
-		"icons/partners/AAE2.svg",
-		"icons/partners/AAC.svg",
-		"icons/partners/AAA.png",
-		"icons/partners/AAD.svg",
-		"icons/partners/AAF.svg",
-		"icons/partners/AAG.svg",
-		"icons/partners/AAI.svg",
-		"icons/partners/AAJ.png",
-	]}/>
-
   <!-- ── HERO ─────────────────────────────────────────────────────────── -->
   <section class="tour__hero">
     <div class="tour__hero-media" aria-hidden="true">

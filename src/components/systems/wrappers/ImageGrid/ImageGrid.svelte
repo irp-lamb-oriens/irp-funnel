@@ -10,6 +10,8 @@
   import { activeVariants } from '../../../../lib/evo/client.ts';
   $: evoCopyVariantStr = $activeVariants[EVO_COMPONENT] || useVariant(EVO_COMPONENT);
 
+  const FULL_STARS = [0, 1, 2, 3];
+
   onMount(() => {
     trackExposure(EVO_COMPONENT, evoCopyVariantStr, { variantLabel: evoCopyVariantStr });
   });
@@ -174,7 +176,18 @@
 <div class="image-grid-outer">
   <div class="glass-container">
     <div class="header">
-      <span class="stars">⭐️⭐️⭐️⭐️⭐️</span>
+      <div class="rating" aria-label="Rated 4.8 out of 5 stars">
+        <span class="rating__stars" aria-hidden="true">
+          {#each FULL_STARS as _}
+            <svg class="rating__star" viewBox="0 0 24 24"><path d="M12 2.34l2.91 5.9 6.51.95-4.7 4.6 1.11 6.48L12 17.63l-5.83 3.07 1.11-6.49-4.71-4.59 6.5-.95L12 2.34z"/></svg>
+          {/each}
+          <span class="rating__star--half">
+            <svg class="rating__star-half-base" viewBox="0 0 24 24"><path d="M12 2.34l2.91 5.9 6.51.95-4.7 4.6 1.11 6.48L12 17.63l-5.83 3.07 1.11-6.49-4.71-4.59 6.5-.95L12 2.34z"/></svg>
+            <svg class="rating__star-half-fill" viewBox="0 0 24 24"><path d="M12 2.34l2.91 5.9 6.51.95-4.7 4.6 1.11 6.48L12 17.63l-5.83 3.07 1.11-6.49-4.71-4.59 6.5-.95L12 2.34z"/></svg>
+          </span>
+        </span>
+        <span class="rating__value">4.8</span>
+      </div>
       <h3 class="titles">Partners, Collaborations & Excellent Reviews</h3>
     </div>
 
@@ -259,8 +272,8 @@
   .image-grid-outer {
     position: relative;
     width: 100%;
-    padding: 6rem 0 0;
-    background: linear-gradient(to bottom, #000, #111, #000);
+    padding: 4.5rem 0 0;
+    background: #060606;
     overflow: hidden;
   }
 
@@ -282,24 +295,72 @@
 
   .header {
     text-align: center;
-    
-    .stars {
-      display: block;
-      font-size: 1.2rem;
-      margin-bottom: 0.75rem;
-      letter-spacing: 6px;
-      opacity: 0.9;
+
+    .rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .rating__stars {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .rating__star {
+      width: 19px;
+      height: 19px;
+      fill: #ffc107;
+    }
+
+    // Target the <path> children directly. A global rule in SVG.scss sets
+    // `path { fill: var(--color-foreground) }`, which overrides the inherited
+    // svg-level fill. `!important` pins the star gold so no global fill wins.
+    .rating__star path {
+      fill: #ffc107 !important;
+    }
+
+    .rating__star--half {
+      position: relative;
+      display: inline-block;
+      width: 19px;
+      height: 19px;
+    }
+
+    .rating__star-half-base,
+    .rating__star-half-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 19px;
+      height: 19px;
+    }
+
+    .rating__star-half-base path { fill: rgba(255, 255, 255, 0.2) !important; }
+    .rating__star-half-fill {
+      clip-path: inset(0 50% 0 0);
+    }
+    .rating__star-half-fill path { fill: #ffc107 !important; }
+
+    .rating__value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      line-height: 1;
     }
 
     .titles {
       font-family: var(--font-title, serif);
       font-size: clamp(0.9rem, 2vw, 1.1rem);
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.72);
       letter-spacing: 0.2em;
       text-transform: uppercase;
       margin: 0;
       font-weight: 300;
-      padding: 1rem;
+      padding: 0 1rem 1rem;
     }
   }
 
@@ -325,11 +386,11 @@
       
       &.left {
         left: 0;
-        background: linear-gradient(to right, #080808 0%, transparent 100%);
+        background: linear-gradient(to right, #060606 0%, transparent 100%);
       }
       &.right {
         right: 0;
-        background: linear-gradient(to left, #080808 0%, transparent 100%);
+        background: linear-gradient(to left, #060606 0%, transparent 100%);
       }
     }
   }

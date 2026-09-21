@@ -13,7 +13,6 @@
   import FAQSection from '../components/FAQSection.svelte';
   import ContactSection from '../components/ContactSection.svelte';
   import './+page.scss';
-    import ImageGrid from '../components/systems/wrappers/ImageGrid/ImageGrid.svelte';
     import SoftTitle from '../components/SoftTitle/SoftTitle.svelte';
     import HeroForm from '../components/HeroForm.svelte';
 
@@ -157,20 +156,6 @@
 
 <main id="main-content">
   <Header />
-  <ImageGrid images={[
-		"icons/partners/AAE.webp",
-		"icons/partners/AAK.svg",
-		"icons/partners/AAB.svg",
-		"icons/partners/AAE3.png",
-		"icons/partners/AAE2.svg",
-		"icons/partners/AAC.svg",
-		"icons/partners/AAA.png",
-		"icons/partners/AAD.svg",
-		"icons/partners/AAF.svg",
-		"icons/partners/AAG.svg",
-		"icons/partners/AAI.svg",
-		"icons/partners/AAJ.png",
-	]}/>
 
   <HeroForm />
 

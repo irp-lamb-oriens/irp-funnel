@@ -50,10 +50,10 @@
 
   .reveal-img {
     max-height: 120px;
-    width: 100%;  
+    width: 100%;
     object-fit: contain;
     // Removed grayscale by default to ensure visibility if the user's feedback was about them being too dark
-    filter: grayscale(1); // Force white for black logos on black bg if they aren't SVGs with fill:white
+    filter: grayscale(1);
     opacity: 0.8;
     transition: all 0.4s ease;
 
