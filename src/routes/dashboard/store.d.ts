@@ -1132,6 +1132,14 @@ export declare function fetchQuotes(clientId: string): Promise<Quote[]>;
 export declare function fetchQuote(clientId: string, quoteId: string): Promise<Quote>;
 /** Create a new quote (defaults to status=draft). */
 export declare function createQuote(clientId: string, payload: Partial<Quote>): Promise<Quote>;
+/**
+ * Duplicate an existing quote's editable configuration into a brand-new draft
+ * quote. Copies every field the editor manages so re-quoting a client never
+ * means re-keying line items, groups, providers, margins, or the service scope.
+ * The result is always a fresh `draft`: workflow metadata (status, approvals,
+ * comments, changeLog, client tokens) is intentionally NOT carried over.
+ */
+export declare function duplicateQuote(clientId: string, sourceQuoteId: string): Promise<Quote>;
 /** Partially update a quote. Only supplied fields are changed. */
 export declare function updateQuote(clientId: string, quoteId: string, updates: Partial<Quote>): Promise<{
     success: boolean;

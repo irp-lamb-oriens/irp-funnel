@@ -795,6 +795,8 @@
         </thead>
         <tbody>
           {#each filteredProviders as p (p.id)}
+            {@const originRegions = toRegions(p.originRegions)}
+            {@const destRegions = toRegions(p.destinationRegions)}
             <tr class:inactive={!p.active}>
               <td>
                 <div class="provider-name">{p.name}</div>
@@ -844,30 +846,28 @@
                 </div>
               </td>
               <td>
-                {@const originRegions = toRegions(p.originRegions)}
-                {@const destRegions = toRegions(p.destinationRegions)}
                 {#if originRegions.length > 0}
-                  <div class="provider-meta">
-                    <strong>From:</strong>
-                    {#each originRegions as r}
-                      <span
-                        class="region-tag"
-                        class:region-tag--match={!!filterOriginRegion && r.toLowerCase() === filterOriginRegion.trim().toLowerCase()}
-                      >{r}</span>
-                    {/each}
-                  </div>
-                {/if}
-                {#if destRegions.length > 0}
-                  <div class="provider-meta">
-                    <strong>To:</strong>
-                    {#each destRegions as r}
-                      <span
-                        class="region-tag"
-                        class:region-tag--match={!!filterDestinationRegion && r.toLowerCase() === filterDestinationRegion.trim().toLowerCase()}
-                      >{r}</span>
-                    {/each}
-                  </div>
-                {/if}
+                    <div class="provider-meta">
+                      <strong>From:</strong>
+                      {#each originRegions as r}
+                        <span
+                          class="region-tag"
+                          class:region-tag--match={!!filterOriginRegion && r.toLowerCase() === filterOriginRegion.trim().toLowerCase()}
+                        >{r}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                  {#if destRegions.length > 0}
+                    <div class="provider-meta">
+                      <strong>To:</strong>
+                      {#each destRegions as r}
+                        <span
+                          class="region-tag"
+                          class:region-tag--match={!!filterDestinationRegion && r.toLowerCase() === filterDestinationRegion.trim().toLowerCase()}
+                        >{r}</span>
+                      {/each}
+                    </div>
+                  {/if}
               </td>
               <td>
                 <span class="status-pill" class:active={p.active} class:inactive={!p.active}>
