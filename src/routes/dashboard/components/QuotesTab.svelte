@@ -5,6 +5,7 @@
   import {
     fetchQuotes,
     deleteQuote,
+    duplicateQuote,
     QUOTE_STATUS_LABEL,
     fetchQuoteTemplates,
     inferClientTemplate,
@@ -174,6 +175,24 @@
   function openEdit(quoteId: string) {
     editingQuoteId = quoteId;
     showEditor = true;
+  }
+
+  // ── Duplicate a quote's configuration into a new draft ────────────────────
+  let duplicatingQuoteId: string | null = null;
+
+  async function handleDuplicate(quote: Quote) {
+    if (duplicatingQuoteId) return;
+    duplicatingQuoteId = quote.quoteId;
+    try {
+      const copy = await duplicateQuote(clientId, quote.quoteId);
+      await loadQuotes();
+      // Open the freshly-created copy so the operator can review/adjust it.
+      openEdit(copy.quoteId);
+    } catch (err: any) {
+      alert('Error duplicating: ' + (err?.message ?? err));
+    } finally {
+      duplicatingQuoteId = null;
+    }
   }
 
   async function handleDelete(quote: Quote) {
@@ -425,6 +444,13 @@
                 title="Edit quote"
                 on:click|stopPropagation={() => openEdit(quote.quoteId)}
               >✏️</button>
+              <button
+                class="quotes-tab__action-btn quotes-tab__action-btn--duplicate"
+                title="Duplicate quote"
+                aria-label="Duplicate quote"
+                disabled={duplicatingQuoteId === quote.quoteId}
+                on:click|stopPropagation={() => handleDuplicate(quote)}
+              >{duplicatingQuoteId === quote.quoteId ? '…' : '⧉'}</button>
               <button
                 class="quotes-tab__action-btn quotes-tab__action-btn--delete"
                 title="Delete quote"
@@ -725,7 +751,7 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    padding-right: 64px; /* make room for action buttons */
+    padding-right: 96px; /* make room for the edit / duplicate / delete buttons */
   }
 
   .quotes-tab__item-title {
@@ -814,6 +840,16 @@
     background: #e2e8f0;
     border-color: #cbd5e1;
     transform: scale(1.08);
+  }
+  .quotes-tab__action-btn--duplicate:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+  }
+  .quotes-tab__action-btn--duplicate:disabled {
+    opacity: 0.55;
+    cursor: wait;
+    transform: none;
   }
   .quotes-tab__action-btn--delete:hover {
     background: #fef2f2;

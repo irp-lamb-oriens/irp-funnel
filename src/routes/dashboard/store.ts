@@ -2622,6 +2622,37 @@ export async function createQuote(clientId: string, payload: Partial<Quote>): Pr
   return data.quote as Quote;
 }
 
+/**
+ * Duplicate an existing quote's editable configuration into a brand-new draft
+ * quote. Copies every field the editor manages so re-quoting a client never
+ * means re-keying line items, groups, providers, margins, or the service scope.
+ * The result is always a fresh `draft`: workflow metadata (status, approvals,
+ * comments, changeLog, client tokens) is intentionally NOT carried over.
+ */
+export async function duplicateQuote(clientId: string, sourceQuoteId: string): Promise<Quote> {
+  const source = await fetchQuote(clientId, sourceQuoteId);
+  const payload: Partial<Quote> = {
+    title: `${(source.title ?? '').trim() || 'New Quote'} (copy)`,
+    notes: source.notes ?? null,
+    lineItems: Array.isArray(source.lineItems) ? source.lineItems : [],
+    lineGroups: Array.isArray(source.lineGroups) && source.lineGroups.length > 0
+      ? source.lineGroups
+      : null,
+    currency: source.currency ?? 'USD',
+    providerIds: Array.isArray(source.providerIds) ? [...source.providerIds] : [],
+    providerSnapshots: Array.isArray(source.providerSnapshots) ? [...source.providerSnapshots] : [],
+    serviceType: source.serviceType ?? null,
+    defaultMarginPct: typeof source.defaultMarginPct === 'number' ? source.defaultMarginPct : 20,
+    clientDescription: source.clientDescription ?? null,
+    optionGroupId: source.optionGroupId ?? null,
+    optionLabel: source.optionLabel ?? null,
+    // ── Phase 1 block document ──
+    templateId: source.templateId ?? null,
+    blocks: Array.isArray(source.blocks) ? source.blocks : null,
+  };
+  return createQuote(clientId, payload);
+}
+
 /** Partially update a quote. Only supplied fields are changed. */
 export async function updateQuote(
   clientId: string,

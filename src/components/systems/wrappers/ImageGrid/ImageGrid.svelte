@@ -137,6 +137,12 @@
     const cleanEmail = $formState.email.trim();
     identify(cleanEmail);
     trackInteraction(EVO_COMPONENT, evoCopyVariantStr, 'carrousel_arrow_click', { view: 'static' });
+    // Prevent the browser from turning the press into a scroll/pan gesture, which
+    // would fire `pointercancel` on touch and strand the held-arrow animation.
+    e.preventDefault();
+    if (e.currentTarget instanceof HTMLElement && e.currentTarget.setPointerCapture) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     loopArrowDown(e);
   }
 
@@ -148,13 +154,17 @@
     }
   }
 
-  function onArrowUp() {
-    // velocity = 0;
-    // direction = 0;
+  function onArrowUp(e?: PointerEvent) {
+    if (e && e.currentTarget instanceof HTMLElement && e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
 
     loopArrowUp();
 
-    if (rADs.length) rADs.forEach((rAD) => cancelAnimationFrame(rAD));
+    if (rADs.length) {
+      rADs.forEach((rAD) => cancelAnimationFrame(rAD));
+      rADs = [];
+    }
   }
 
   $: if (tripled.length) {
@@ -186,7 +196,7 @@
             <svg class="rating__star-half-fill" viewBox="0 0 24 24"><path d="M12 2.34l2.91 5.9 6.51.95-4.7 4.6 1.11 6.48L12 17.63l-5.83 3.07 1.11-6.49-4.71-4.59 6.5-.95L12 2.34z"/></svg>
           </span>
         </span>
-        <span class="rating__value">4.8</span>
+        <span class="rating__value">4.8 <span class="rating__source">Google Reviews</span></span>
       </div>
       <h3 class="titles">Partners, Collaborations & Excellent Reviews</h3>
     </div>
@@ -196,10 +206,14 @@
         <button class="arrows__arrow arrow-left" 
         on:pointerdown={onArrowDown}
         on:pointerup={onArrowUp}
+        on:pointercancel={onArrowUp}
+        on:lostpointercapture={onArrowUp}
         >&lt;</button>
         <button class="arrows__arrow arrow-right" 
         on:pointerdown={onArrowDown}
         on:pointerup={onArrowUp}
+        on:pointercancel={onArrowUp}
+        on:lostpointercapture={onArrowUp}
         >&gt;</button>
       </div>  
     {/if}
@@ -252,6 +266,9 @@
       font-size: 1.5rem;
       padding: 0.5rem 1rem 2.55rem;
       cursor: pointer;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
       transition: background 0.3s ease, box-shadow 0.5s ease, color 0.35s ease, border 0.4s ease-out;
       border-radius: 50%;
       width: 3.05rem;
@@ -350,6 +367,11 @@
       color: #fff;
       letter-spacing: 0.02em;
       line-height: 1;
+    }
+
+    .rating__source {
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.72);
     }
 
     .titles {

@@ -127,6 +127,12 @@
   let filterCategory   = '';
   let filterModality   = '';
   let filterActiveOnly = true;
+  // Separate From/To region filters. An empty value leaves that dimension
+  // unconstrained (matches any/whatever the provider has), while a concrete
+  // selection — including a literal region literally named "all" — must match
+  // one of the provider's regions exactly (case-insensitive).
+  let filterOriginRegion      = '';
+  let filterDestinationRegion = '';
 
   // Form state
   let showForm = false;
@@ -222,20 +228,50 @@
 
   // ── Computed ──────────────────────────────────────────────────────────────
 
+  /**
+   * Coerce a provider's region field into a string array. Legacy docs that
+   * predate the array-typed `originRegions`/`destinationRegions` fields may
+   * store a single comma-separated string (or nothing at all). Normalizing
+   * here keeps filtering, tagging and searching uniform regardless of the
+   * on-disk shape, and treating a missing field as empty keeps legacy
+   * providers fully visible when no region filter is active.
+   */
+  function toRegions(value: unknown): string[] {
+    if (Array.isArray(value)) return value.filter((x): x is string => typeof x === 'string');
+    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+    return [];
+  }
+
+  /** Distinct origin/destination region tags, labelled "From"/"To". */
+  $: originRegionOptions = [...new Set(providers.flatMap((p) => toRegions(p.originRegions)))]
+    .filter(Boolean)
+    .sort((a, b) => String(a).localeCompare(String(b)));
+  $: destinationRegionOptions = [...new Set(providers.flatMap((p) => toRegions(p.destinationRegions)))]
+    .filter(Boolean)
+    .sort((a, b) => String(a).localeCompare(String(b)));
+
   $: filteredProviders = (() => {
     const q = searchQuery.trim().toLowerCase();
+    const fromFilter = filterOriginRegion.trim().toLowerCase();
+    const toFilter = filterDestinationRegion.trim().toLowerCase();
     return providers.filter(p => {
       if (filterActiveOnly && !p.active) return false;
       if (filterCategory && !(p.serviceCategories || []).includes(filterCategory)) return false;
       if (filterModality && !(p.shippingModalities || []).includes(filterModality)) return false;
+      // From/To region filters. Blank = no constraint; a concrete selection
+      // must exactly match one of the provider's origin/destination regions.
+      // A region literally named "all" therefore only matches when the filter
+      // is set to that same literal value (not when it is left blank).
+      if (fromFilter && !toRegions(p.originRegions).some((r) => r.toLowerCase() === fromFilter)) return false;
+      if (toFilter && !toRegions(p.destinationRegions).some((r) => r.toLowerCase() === toFilter)) return false;
       if (!q) return true;
       // search across name, email, contactPerson, origin regions, notes and custom-field values
       const haystack = [
         p.name,
         p.email,
         p.contactPerson,
-        ...(p.originRegions ?? []),
-        ...(p.destinationRegions ?? []),
+        ...toRegions(p.originRegions),
+        ...toRegions(p.destinationRegions),
         p.notes,
         ...Object.values(p.customFields ?? {}),
       ].join(' ').toLowerCase();
@@ -389,8 +425,8 @@
       serviceCategories: [...(p.serviceCategories || [])],
 
       shippingModalities: [...(p.shippingModalities || [])],
-      originRegions: (p.originRegions || []).join(', '),
-      destinationRegions: (p.destinationRegions || []).join(', '),
+      originRegions: toRegions(p.originRegions).join(', '),
+      destinationRegions: toRegions(p.destinationRegions).join(', '),
       notes: p.notes || '',
       score: p.score ?? null,
     };
@@ -714,6 +750,20 @@
           <option value={opt.value}>{opt.label}</option>
         {/each}
       </select>
+
+      <select bind:value={filterOriginRegion} aria-label="Filter by origin region (From)">
+        <option value="">All origins (From)</option>
+        {#each originRegionOptions as r}
+          <option value={r}>{r}</option>
+        {/each}
+      </select>
+
+      <select bind:value={filterDestinationRegion} aria-label="Filter by destination region (To)">
+        <option value="">All destinations (To)</option>
+        {#each destinationRegionOptions as r}
+          <option value={r}>{r}</option>
+        {/each}
+      </select>
     </div>
 
     <span class="filter-count">{filteredProviders.length} provider{filteredProviders.length !== 1 ? 's' : ''}</span>
@@ -794,11 +844,29 @@
                 </div>
               </td>
               <td>
-                {#if (p.originRegions || []).length > 0}
-                  <div class="provider-meta"><strong>From:</strong> {p.originRegions?.join(', ')}</div>
+                {@const originRegions = toRegions(p.originRegions)}
+                {@const destRegions = toRegions(p.destinationRegions)}
+                {#if originRegions.length > 0}
+                  <div class="provider-meta">
+                    <strong>From:</strong>
+                    {#each originRegions as r}
+                      <span
+                        class="region-tag"
+                        class:region-tag--match={!!filterOriginRegion && r.toLowerCase() === filterOriginRegion.trim().toLowerCase()}
+                      >{r}</span>
+                    {/each}
+                  </div>
                 {/if}
-                {#if (p.destinationRegions || []).length > 0}
-                  <div class="provider-meta"><strong>To:</strong> {p.destinationRegions?.join(', ')}</div>
+                {#if destRegions.length > 0}
+                  <div class="provider-meta">
+                    <strong>To:</strong>
+                    {#each destRegions as r}
+                      <span
+                        class="region-tag"
+                        class:region-tag--match={!!filterDestinationRegion && r.toLowerCase() === filterDestinationRegion.trim().toLowerCase()}
+                      >{r}</span>
+                    {/each}
+                  </div>
                 {/if}
               </td>
               <td>
@@ -1226,6 +1294,25 @@
     background: #dbeafe;
     color: #1e40af;
     border: 1px solid #bfdbfe;
+  }
+
+  /* ── From/To region tags (highlight the region selected in the filter) ── */
+  .region-tag {
+    display: inline-block;
+    padding: 2px 9px;
+    margin: 1px 2px 1px 0;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    line-height: 1.6;
+  }
+  .region-tag--match {
+    background: rgba(2, 181, 187, 0.12);
+    color: #0b7c80;
+    border-color: rgba(2, 181, 187, 0.35);
   }
 
   /* ── Status pill ─────────────────────────────────────────── */

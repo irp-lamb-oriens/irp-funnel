@@ -176,7 +176,9 @@
         if (!q) return true;
         return (
           p.name?.toLowerCase().includes(q) ||
-          (p.email ?? '').toLowerCase().includes(q)
+          (p.email ?? '').toLowerCase().includes(q) ||
+          toRegions(p.originRegions).some((r) => r.toLowerCase().includes(q)) ||
+          toRegions(p.destinationRegions).some((r) => r.toLowerCase().includes(q))
         );
       })
       .slice(0, 8);
@@ -458,6 +460,31 @@
     selectedIds = selectedIds.filter((x) => x !== id);
   }
 
+  /**
+   * Coerce a provider's region field into a string array. Legacy providers can
+   * store `originRegions`/`destinationRegions` as a single comma-separated
+   * string, so this normalizes before any search/tag logic runs.
+   */
+  function toRegions(value: unknown): string[] {
+    if (Array.isArray(value)) return value.filter((x): x is string => typeof x === 'string');
+    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+    return [];
+  }
+
+  /**
+   * Which origin/destination regions of a provider actually matched the search
+   * text. Returns the labels to display as "From:" / "To:" tags on the result
+   * row; empty arrays when the provider matched by name/email instead.
+   */
+  function regionHits(p: Provider, query: string): { from: string[]; to: string[] } {
+    const q = query.trim().toLowerCase();
+    if (!q) return { from: [], to: [] };
+    return {
+      from: toRegions(p.originRegions).filter((r) => r.toLowerCase().includes(q)),
+      to: toRegions(p.destinationRegions).filter((r) => r.toLowerCase().includes(q)),
+    };
+  }
+
   // ── CC editing ────────────────────────────────────────────────────────────────
   function addCc() {
     const e = ccInput.trim().toLowerCase();
@@ -666,10 +693,17 @@
             {#if providerSearch.trim() && searchResults.length}
               <div class="rfq-results">
                 {#each searchResults as p (p.id)}
+                  {@const hits = regionHits(p, providerSearch)}
                   <button type="button" class="rfq-result" on:click={() => addProvider(p.id)} disabled={!p.email}>
                     <span class="rfq-result__main">
                       <span class="rfq-result__name">{p.name}</span>
                       <span class="rfq-result__email">{p.email ?? 'no email on file'}</span>
+                      {#if hits.from.length || hits.to.length}
+                        <span class="rfq-result__regions">
+                          {#each hits.from as r}<span class="rfq-region">From: {r}</span>{/each}
+                          {#each hits.to as r}<span class="rfq-region rfq-region--to">To: {r}</span>{/each}
+                        </span>
+                      {/if}
                     </span>
                     <span class="rfq-result__meta">
                       <StarRating value={p.score} readonly size={13} />
@@ -1013,6 +1047,14 @@
   .rfq-result__main { display: flex; flex-direction: column; min-width: 0; }
   .rfq-result__name { font-size: 13px; font-weight: 700; color: var(--rfq-text); }
   .rfq-result__email { font-size: 11px; color: var(--rfq-text-dim); }
+  .rfq-result__regions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .rfq-region {
+    display: inline-flex; align-items: center; padding: 1px 7px;
+    background: var(--rfq-surface-2); border: 1px solid var(--rfq-border);
+    border-radius: var(--irp-r-full, 9999px); font-size: 10.5px; font-weight: 700;
+    color: var(--rfq-accent-hover);
+  }
+  .rfq-region--to { color: var(--rfq-text-muted); }
 
   .rfq-lang { position: relative; }
   .rfq-lang__btn {

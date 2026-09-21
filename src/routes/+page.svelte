@@ -8,6 +8,7 @@
   import RelocationPhilosophySection from '../components/RelocationPhilosophySection.svelte';
   import ContactCTASection from '../components/ContactCTASection.svelte';
   import TestimonialsSection from '../components/TestimonialsSection.svelte';
+  import HomeTestimonials from '../components/HomeTestimonials.svelte';
   import MovingProcessSection from '../components/MovingProcessSection.svelte';
   import LatestNewsSection from '../components/LatestNewsSection.svelte';
   import FAQSection from '../components/FAQSection.svelte';
@@ -170,6 +171,8 @@
   <ContactCTASection />
 
   <TestimonialsSection />
+
+  <HomeTestimonials />
 
   <MovingProcessSection />
 

@@ -8,19 +8,26 @@
     import ImageGrid from "../components/systems/wrappers/ImageGrid/ImageGrid.svelte";
 
     // Partner logo strip shown on every public page, right below the header.
+    // Ordered by priority: the five most important partner / media brands.
     const partnerImages = [
         "/icons/partners/AAE.webp",
+
+
+        "/icons/partners/AAE2.svg", // International Living
+        "/icons/partners/AAC.svg",  // Expatsi
+        "/icons/partners/AAJ.png",  // Tico Times
+        "/icons/partners/AAE4.webp", // Live and Invest Overseas
+        "/icons/partners/AAE3.png", // CRCIPI
+
+
         "/icons/partners/AAK.svg",
         "/icons/partners/AAB.svg",
-        "/icons/partners/AAE3.png",
-        "/icons/partners/AAE2.svg",
-        "/icons/partners/AAC.svg",
         "/icons/partners/AAA.png",
         "/icons/partners/AAD.svg",
         "/icons/partners/AAF.svg",
         "/icons/partners/AAG.svg",
         "/icons/partners/AAI.svg",
-        "/icons/partners/AAJ.png",
+
     ];
 
     // Routes that render their own full-screen surface (app/dashboard tooling)
