@@ -259,6 +259,153 @@
   border-radius: $r-md;
 }
 
+/* ── Activity metrics modules (calls + quotes) ──────────────────────────── */
+/* Config-driven segmentation so adding a client list never bloats the view.  */
+
+.metric-module {
+  margin-bottom: $sp-7;
+}
+
+.segment-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $sp-2;
+  align-items: center;
+  margin-bottom: $sp-3;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    color: $text-dim;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-right: $sp-1;
+  }
+
+  input,
+  select {
+    font-family: $font;
+    font-size: 12px;
+    color: $text;
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    padding: $sp-1 $sp-2;
+    outline: none;
+    transition: border-color $t-fast;
+    &:focus { border-color: $border-focus; }
+  }
+}
+
+.period-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: $sp-1;
+  padding: 3px;
+  background: $surface-2;
+  border: 1px solid $border;
+  border-radius: $r-sm;
+
+  button {
+    font-family: $font;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: $text-dim;
+    background: transparent;
+    border: none;
+    border-radius: $r-xs;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all $t-fast;
+
+    &:hover { color: $text; }
+    &.active {
+      background: $accent;
+      color: #fff;
+      box-shadow: 0 1px 3px $accent-glow;
+    }
+  }
+}
+
+.bucket-list {
+  display: flex;
+  flex-direction: column;
+  gap: $sp-1;
+  margin-bottom: $sp-4;
+}
+
+.bucket-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 56px;
+  align-items: center;
+  gap: $sp-3;
+  font-size: 12px;
+
+  &__label {
+    font-weight: 600;
+    color: $text-2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__track {
+    background: $surface-2;
+    height: 8px;
+    border-radius: $r-full;
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    background: linear-gradient(90deg, $accent-hover, $accent);
+    border-radius: $r-full;
+    min-width: 2px;
+    transition: width 0.3s $ease-out;
+  }
+
+  &__value {
+    font-weight: 800;
+    color: $text;
+    text-align: right;
+  }
+}
+
+.client-metric-table {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $r-md;
+  overflow: hidden;
+
+  .breakdown-header,
+  .breakdown-row {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+}
+
+.segment-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $sp-2;
+  margin-bottom: $sp-2;
+}
+
+.show-more {
+  font-family: $font;
+  font-size: 12px;
+  font-weight: 700;
+  color: $accent-hover;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $sp-2;
+  &:hover { text-decoration: underline; }
+}
+
 .monthly-bar {
   flex: 1;
   display: flex;

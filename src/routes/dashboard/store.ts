@@ -264,6 +264,41 @@ export interface Metrics {
   // server from a single pre-aggregated counters doc (running sum/count/avg),
   // so this never requires scanning every consultation.
   stageRatings?: StageRatingsMetric;
+  // Per-client call + quote activity (added for the Metrics page).
+  activity?: ActivityMetric;
+}
+
+/** One client's completed calls, as aggregated by the Metrics backend. */
+export interface CallMetricPerClient {
+  clientId: string;
+  clientName: string;
+  total: number;
+  /** ISO timestamps of this client's completed calls. */
+  dates: string[];
+}
+
+/** One client's quote counts, as aggregated by the Metrics backend. */
+export interface QuoteMetricPerClient {
+  clientId: string;
+  clientName: string;
+  total: number;
+  accepted: number;
+}
+
+/** Per-client call + quote activity, returned under `metrics.activity`. */
+export interface ActivityMetric {
+  calls: {
+    total: number;
+    weekly: Record<string, number>;
+    monthly: Record<string, number>;
+    annually: Record<string, number>;
+    perClient: CallMetricPerClient[];
+  };
+  quotes: {
+    total: number;
+    accepted: number;
+    perClient: QuoteMetricPerClient[];
+  };
 }
 
 /** One journey stage's running satisfaction score. */

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
   import { onMount } from 'svelte';
+  import CallsMetricsModule from './metrics/CallsMetricsModule.svelte';
+  import QuotesMetricsModule from './metrics/QuotesMetricsModule.svelte';
 
   // --- Dynamic Business Intelligence Engine ---
   // Now supports ANY collection, not just clients
@@ -542,6 +544,12 @@
       </div>
       <div class="metric-total">Total Clients: <strong>{$metrics.pipeline.total}</strong></div>
     </div>
+
+    <!-- Call + Quote activity (segmented per-client modules) -->
+    {#if $metrics.activity}
+      <CallsMetricsModule activity={$metrics.activity} />
+      <QuotesMetricsModule activity={$metrics.activity} />
+    {/if}
 
     <!-- Stage Satisfaction (client scoring per journey stage) -->
     {#if $metrics.stageRatings}
