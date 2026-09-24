@@ -127,8 +127,9 @@
     return `https://wa.me/${WHATSAPP_PHONE}?text=${text}`;
   }
 
-  // Once a consultation is booked (form or Lily), hand the client off to Pablo
-  // on WhatsApp with every detail they provided plus the scheduled call time.
+  // Once a consultation is booked (form or Lily), hand the client off to the
+  // sales desk on WhatsApp with every detail they provided plus the scheduled
+  // call time. The destination number lives in lib/whatsapp.ts.
   let salesHandoffSent = false;
   function handoffToSales(source: 'form' | 'lily') {
     if (salesHandoffSent) return;
@@ -372,8 +373,8 @@
       }
     }
 
-    // Lily just closed the booking: hand the client off to Pablo on WhatsApp
-    // after the extracted fields have landed in the store.
+    // Lily just closed the booking: hand the client off to the sales desk on
+    // WhatsApp after the extracted fields have landed in the store.
     if (justBooked) handoffToSales('lily');
   }
 

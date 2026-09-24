@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { writable, get } from 'svelte/store';
   import {
@@ -18,6 +18,7 @@
   import QuoteEditor from './QuoteEditor.svelte';
   import PricingRequestsPanel from './PricingRequestsPanel.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
+  import { buildQuoteContext } from '../utils/quoteContext.ts';
 
 
   export let clientId: string;
@@ -224,10 +225,73 @@
     return token ? `${base}?quoteToken=${token}` : base;
   }
 
-  function copyPortalUrl(token: string | null): void {
-    const url = portalUrl(token);
-    navigator.clipboard?.writeText(url).catch(() => {});
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+  // Which quote was copied last, and in which mode, so the button can flash a
+  // confirmation. Cleared on a timer; the timer is replaced (not stacked) when
+  // the operator copies again before the previous one elapsed.
+  let copiedKey: string | null = null;
+  let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function flagCopied(key: string): void {
+    copiedKey = key;
+    if (copiedTimer) clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => {
+      copiedKey = null;
+      copiedTimer = null;
+    }, 1800);
   }
+
+  /**
+   * `navigator.clipboard` is unavailable outside a secure context and in some
+   * embedded webviews, so fall back to a hidden textarea + execCommand.
+   */
+  async function writeClipboard(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch { /* fall through to the legacy path */ }
+
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function copyPortalUrl(quote: Quote): Promise<void> {
+    const ok = await writeClipboard(portalUrl(quote.clientToken ?? null));
+    if (ok) flagCopied(`link:${quote.quoteId}`);
+  }
+
+  /**
+   * Copy the generated quote link together with the whole overview context:
+   * the client's details, the quote itself, its line items and the providers
+   * behind it. Internal cost/margin is included because this is a staff-only
+   * surface and operators paste it into internal handoffs.
+   */
+  async function copyQuoteContext(quote: Quote): Promise<void> {
+    const text = buildQuoteContext(quote, get(selectedClient), {
+      portalUrl: portalUrl(quote.clientToken ?? null),
+      includeInternalPricing: true,
+    });
+    const ok = await writeClipboard(text);
+    if (ok) flagCopied(`ctx:${quote.quoteId}`);
+  }
+
+  onDestroy(() => {
+    if (copiedTimer) clearTimeout(copiedTimer);
+  });
 
   // ── Create invoice from an accepted quote ─────────────────────────────────
   let creatingInvoice = false;
@@ -415,11 +479,32 @@
                 </a>
                 <button
                   class="quotes-tab__copy-btn"
-                  title="Copy portal link"
-                  on:click|stopPropagation={() => copyPortalUrl(quote.clientToken ?? null)}
-                  aria-label="Copy link"
+                  class:is-copied={copiedKey === `link:${quote.quoteId}`}
+                  title="Copy portal link only"
+                  on:click|stopPropagation={() => copyPortalUrl(quote)}
+                  aria-label="Copy portal link only"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  {#if copiedKey === `link:${quote.quoteId}`}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  {/if}
+                </button>
+                <!-- Link + the whole overview: client details, quote, line
+                     items and providers, ready to paste into a handoff. -->
+                <button
+                  class="quotes-tab__context-btn"
+                  class:is-copied={copiedKey === `ctx:${quote.quoteId}`}
+                  title="Copy the link plus the full client and quote overview"
+                  on:click|stopPropagation={() => copyQuoteContext(quote)}
+                >
+                  {#if copiedKey === `ctx:${quote.quoteId}`}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Copied</span>
+                  {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span>Copy context</span>
+                  {/if}
                 </button>
                 {#if quote.status === 'client_accepted'}
                   <button
@@ -914,6 +999,50 @@
   }
   .quotes-tab__copy-btn:active {
     transform: scale(0.96);
+  }
+  .quotes-tab__copy-btn.is-copied {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+  }
+
+  /* ── Copy-full-context button ────────────────────────────────────────── */
+  .quotes-tab__context-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: #ffffff;
+    border: 1px solid #99f6e4;
+    border-radius: 6px;
+    color: #0d9488;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.14s;
+  }
+  .quotes-tab__context-btn svg { flex-shrink: 0; }
+  .quotes-tab__context-btn:hover {
+    background: #ccfbf1;
+    border-color: #5eead4;
+    transform: translateY(-1px);
+  }
+  .quotes-tab__context-btn:active { transform: translateY(0); }
+  .quotes-tab__context-btn.is-copied {
+    background: #0d9488;
+    border-color: #0d9488;
+    color: #fff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quotes-tab__copy-btn,
+    .quotes-tab__context-btn { transition: none; }
+    .quotes-tab__copy-btn:hover,
+    .quotes-tab__context-btn:hover { transform: none; }
   }
 
   /* ── Create-invoice button (accepted quotes) ─────────────────────────── */

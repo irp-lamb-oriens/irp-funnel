@@ -3,15 +3,18 @@
  *
  * Two distinct destinations exist:
  *  - SUPPORT_WHATSAPP_PHONE: the public "chat with us" number shown in the funnel.
- *  - SALES_WHATSAPP_PHONE: Pablo, who receives the post-booking client handoff.
+ *  - SALES_WHATSAPP_PHONE: the salesperson who receives the post-booking handoff.
  */
 import countries from "../components/systems/inputs/Country/countries.ts";
 import type { FormState } from "../components/systems/inputs/Calendar/formStore.js";
 
 export const SUPPORT_WHATSAPP_PHONE = "+15186227134";
 
-/** Pablo Ernesto Arias Campos — receives booked-consultation handoffs. */
-export const SALES_WHATSAPP_PHONE = "+50671086045";
+/** Display name of whoever currently owns the booked-consultation handoff. */
+export const SALES_CONTACT_NAME = "Erika";
+
+/** Erika — receives booked-consultation handoffs. */
+export const SALES_WHATSAPP_PHONE = "+50672630425";
 
 const CONSULTATION_TIMEZONE = "America/Costa_Rica";
 
@@ -46,8 +49,8 @@ function notesToText(notes: FormState["notes"]): string {
 }
 
 /**
- * Message Pablo receives when a client books a consultation, from either the
- * hero form or the Lily chat. Contains every field the client provided.
+ * Message the salesperson receives when a client books a consultation, from
+ * either the hero form or the Lily chat. Contains every field the client gave.
  */
 export function buildBookedConsultationMessage(
   form: Partial<FormState>,
@@ -59,7 +62,7 @@ export function buildBookedConsultationMessage(
 
   const lines: string[] = [];
   lines.push(
-    `Hi Pablo, I'm a booked a consultation${
+    `Hi ${SALES_CONTACT_NAME}, I booked a consultation${
       opts.source === "lily" ? " through Lily" : " through the website form"
     }.`
   );

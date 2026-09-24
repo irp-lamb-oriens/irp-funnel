@@ -83,7 +83,19 @@
 
   /** Selected provider ids (a Set-like array preserving insertion order). */
   let selectedIds: string[] = [];
+  /** Free-text term — matches a provider's name, email, or either region list. */
   let providerSearch = '';
+  /**
+   * Route filters, applied independently of the free-text term.
+   *
+   * A provider's corridor is two separate lists (`originRegions` /
+   * `destinationRegions`), so "ships OUT of Spain" and "ships INTO Spain" are
+   * different questions. One combined box could not express either, which is
+   * why origin and destination each get their own filter and are ANDed with
+   * the free-text term.
+   */
+  let originFilter = '';
+  let destinationFilter = '';
 
   // ── Language ─────────────────────────────────────────────────────────────────
   let lang: RfqLang = 'en';
@@ -167,11 +179,21 @@
   $: selectedProviders = selectedIds.map((id) => providerById[id]).filter(Boolean) as Provider[];
   $: emailableSelected = selectedProviders.filter((p) => p.email && p.email.includes('@'));
 
+  /** True when at least one of the three inputs has text in it. */
+  $: hasQuery =
+    providerSearch.trim() !== '' ||
+    originFilter.trim() !== '' ||
+    destinationFilter.trim() !== '';
+
   $: searchResults = (() => {
     const q = providerSearch.trim().toLowerCase();
+    const from = originFilter.trim().toLowerCase();
+    const to = destinationFilter.trim().toLowerCase();
     return allProviders
       .filter((p) => !selectedIds.includes(p.id))
       .filter((p) => p.active !== false)
+      // Free-text term keeps its original reach (name, email, either region
+      // list) so an operator who only types one word behaves as before.
       .filter((p) => {
         if (!q) return true;
         return (
@@ -181,6 +203,14 @@
           toRegions(p.destinationRegions).some((r) => r.toLowerCase().includes(q))
         );
       })
+      // Route filters narrow by direction, ANDed with each other and with the
+      // free-text term. An empty filter is a pass, so each one is independent.
+      .filter((p) =>
+        !from || toRegions(p.originRegions).some((r) => r.toLowerCase().includes(from)),
+      )
+      .filter((p) =>
+        !to || toRegions(p.destinationRegions).some((r) => r.toLowerCase().includes(to)),
+      )
       .slice(0, 8);
   })();
 
@@ -310,6 +340,218 @@
     fieldLangCache = {};
     if (!client?.id || typeof localStorage === 'undefined') return;
     try { localStorage.removeItem(fieldCacheKey()); } catch { /* ignore */ }
+  }
+
+  // ── Draft autosave / restore ───────────────────────────────────────────────
+  // An operator who starts composing an RFQ and then switches client, changes
+  // tab, closes the browser, or loses their session used to lose the entire
+  // compose. The draft below survives all of those.
+  //
+  // Three properties matter here:
+  //
+  //  * It stays off the render path. Every write is debounced and then handed
+  //    to requestIdleCallback, so localStorage's synchronous I/O never lands
+  //    inside the frame that is painting a keystroke.
+  //  * It cannot race the seeding path. Writes are gated behind `draftReady`,
+  //    which is only set once mount has finished restoring, so the initial
+  //    seed can never overwrite a stored draft.
+  //  * Stale writes are dropped. Each flush captures the revision it was
+  //    scheduled for and aborts when a newer edit has landed since, so
+  //    out-of-order idle callbacks cannot resurrect older state.
+
+  /** Bump when the stored shape changes so older drafts are ignored. */
+  const DRAFT_VERSION = 1;
+  const DRAFT_DEBOUNCE_MS = 600;
+
+  type RfqDraft = {
+    v: number;
+    savedAt: string;
+    lang: RfqLang;
+    fields: RfqFields;
+    serviceOptionsText: string;
+    selectedIds: string[];
+    cc: string[];
+    editedHtml: string;
+    editedSubject: string;
+    bodyEdited: boolean;
+    subjectEdited: boolean;
+  };
+
+  /** Gates every write, so mount's seeding can never clobber a stored draft. */
+  let draftReady = false;
+  /** ISO time of the draft we restored, which also drives the notice. */
+  let draftRestoredAt = '';
+  /**
+   * The restored selection, held until `loadDefaults` has run. That call
+   * derives `selectedIds` from the client's quotes and would otherwise
+   * overwrite whatever the operator had picked.
+   */
+  let draftSelectedIds: string[] | null = null;
+  /** Monotonic edit counter — the stale-write guard. */
+  let draftRev = 0;
+  /** Last revision actually persisted, so unchanged state writes nothing. */
+  let draftSavedRev = 0;
+  let draftTimer: ReturnType<typeof setTimeout> | null = null;
+  let detachDraftListeners: (() => void) | null = null;
+
+  function draftKey(): string {
+    return `irp_rfq_draft:${client?.id ?? ''}`;
+  }
+
+  /** Run `fn` once the browser is idle, or next macrotask where unsupported. */
+  function whenIdle(fn: () => void) {
+    const ric = (globalThis as any).requestIdleCallback;
+    if (typeof ric === 'function') ric(fn, { timeout: 1000 });
+    else setTimeout(fn, 0);
+  }
+
+  function buildDraft(): RfqDraft {
+    return {
+      v: DRAFT_VERSION,
+      savedAt: new Date().toISOString(),
+      lang,
+      fields,
+      serviceOptionsText,
+      selectedIds,
+      cc,
+      editedHtml,
+      editedSubject,
+      bodyEdited,
+      subjectEdited,
+    };
+  }
+
+  /**
+   * Write the draft synchronously. Only ever reached from an idle callback or
+   * a teardown flush, never from an input handler.
+   */
+  function writeDraftNow(rev: number) {
+    if (!draftReady || !client?.id || typeof localStorage === 'undefined') return;
+    // A newer edit landed while this flush was queued — its own flush wins.
+    if (rev !== draftRev) return;
+    try {
+      localStorage.setItem(draftKey(), JSON.stringify(buildDraft()));
+      draftSavedRev = rev;
+    } catch { /* quota or private mode — composing still works */ }
+  }
+
+  /** Debounce a write, then perform it off the critical path. */
+  function scheduleDraftSave() {
+    if (!draftReady || !client?.id) return;
+    draftRev += 1;
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      draftTimer = null;
+      const rev = draftRev;
+      whenIdle(() => writeDraftNow(rev));
+    }, DRAFT_DEBOUNCE_MS);
+  }
+
+  /**
+   * Persist right now, skipping the debounce. Used when the page is being
+   * hidden or the component torn down, where a pending timer would never fire.
+   */
+  function flushDraft() {
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    if (draftSavedRev === draftRev) return;
+    writeDraftNow(draftRev);
+  }
+
+  function clearDraft() {
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = null; }
+    draftRestoredAt = '';
+    draftSavedRev = draftRev;
+    if (!client?.id || typeof localStorage === 'undefined') return;
+    try { localStorage.removeItem(draftKey()); } catch { /* ignore */ }
+  }
+
+  /**
+   * Apply a stored draft when one exists. Returns true if it did, which tells
+   * mount to skip its own seeding translation.
+   */
+  function restoreDraft(): boolean {
+    if (!client?.id || typeof localStorage === 'undefined') return false;
+    let draft: RfqDraft | null = null;
+    try {
+      const raw = localStorage.getItem(draftKey());
+      if (raw) draft = JSON.parse(raw);
+    } catch { return false; }
+    if (!draft || draft.v !== DRAFT_VERSION || !draft.fields) return false;
+
+    lang = draft.lang ?? 'en';
+    fields = draft.fields;
+    serviceOptionsText = draft.serviceOptionsText ?? '';
+    cc = Array.isArray(draft.cc) && draft.cc.length ? draft.cc : [...DEFAULT_CC];
+    editedHtml = draft.editedHtml ?? '';
+    editedSubject = draft.editedSubject ?? '';
+    bodyEdited = !!draft.bodyEdited;
+    subjectEdited = !!draft.subjectEdited;
+    draftSelectedIds = Array.isArray(draft.selectedIds) ? draft.selectedIds : null;
+    draftRestoredAt = draft.savedAt ?? '';
+    return true;
+  }
+
+  /** Throw the draft away and rebuild a clean compose from the client's data. */
+  function discardDraftAndReseed() {
+    clearDraft();
+    bodyEdited = false;
+    subjectEdited = false;
+    editedHtml = '';
+    editedSubject = '';
+    cc = [...DEFAULT_CC];
+    lang = 'en';
+    fields = buildFieldsFromClient(lang);
+    serviceOptionsText = (fields.serviceOptions ?? []).join('\n');
+    if (editMode === 'visual') mountVisualEditor();
+    void ensureFieldsInLang(lang, currentTranslatableFields());
+  }
+
+  /**
+   * Listen for the page going away. `pagehide` plus a hidden
+   * `visibilitychange` covers mobile and tab-discard, which `beforeunload`
+   * does not fire for.
+   */
+  function attachDraftLifecycleListeners() {
+    if (typeof window === 'undefined') return;
+    const onPageHide = () => flushDraft();
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushDraft();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisibility);
+    detachDraftListeners = () => {
+      window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }
+
+  /** "2 minutes ago" for the restore notice. */
+  function draftAgeLabel(iso: string): string {
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return 'earlier';
+    const mins = Math.round((Date.now() - t) / 60000);
+    if (mins < 1) return 'moments ago';
+    if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+    const days = Math.round(hrs / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
+
+  // Autosave trigger. Reading each field registers it as a dependency, so any
+  // edit schedules a (debounced, idle-time) write. Scheduling a timer is all
+  // that happens synchronously, which keeps this out of the render budget.
+  $: if (draftReady) {
+    void lang;
+    void fields;
+    void serviceOptionsText;
+    void selectedIds;
+    void cc;
+    void editedHtml;
+    void editedSubject;
+    void bodyEdited;
+    void subjectEdited;
+    scheduleDraftSave();
   }
 
   /** The five translatable field values currently in the form. */
@@ -459,6 +701,12 @@
   function removeProvider(id: string) {
     selectedIds = selectedIds.filter((x) => x !== id);
   }
+  /** Reset the free-text term and both route filters in one go. */
+  function clearProviderFilters() {
+    providerSearch = '';
+    originFilter = '';
+    destinationFilter = '';
+  }
 
   /**
    * Coerce a provider's region field into a string array. Legacy providers can
@@ -472,16 +720,25 @@
   }
 
   /**
-   * Which origin/destination regions of a provider actually matched the search
-   * text. Returns the labels to display as "From:" / "To:" tags on the result
-   * row; empty arrays when the provider matched by name/email instead.
+   * Which origin/destination regions of a provider matched what the operator
+   * typed. Returns the labels shown as "From:" / "To:" tags on the result row,
+   * so a hit is always traceable to the corridor that produced it.
+   *
+   * Each direction is matched against its own filter when that filter has text,
+   * and against the free-text term otherwise. A provider that matched only by
+   * name or email yields two empty arrays and renders no tags.
    */
-  function regionHits(p: Provider, query: string): { from: string[]; to: string[] } {
-    const q = query.trim().toLowerCase();
-    if (!q) return { from: [], to: [] };
+  function regionHits(p: Provider): { from: string[]; to: string[] } {
+    const q = providerSearch.trim().toLowerCase();
+    const fromNeedle = originFilter.trim().toLowerCase() || q;
+    const toNeedle = destinationFilter.trim().toLowerCase() || q;
     return {
-      from: toRegions(p.originRegions).filter((r) => r.toLowerCase().includes(q)),
-      to: toRegions(p.destinationRegions).filter((r) => r.toLowerCase().includes(q)),
+      from: fromNeedle
+        ? toRegions(p.originRegions).filter((r) => r.toLowerCase().includes(fromNeedle))
+        : [],
+      to: toNeedle
+        ? toRegions(p.destinationRegions).filter((r) => r.toLowerCase().includes(toNeedle))
+        : [],
     };
   }
 
@@ -566,6 +823,8 @@
       lastResult = result;
       // Reset the per-language field cache — a fresh compose starts clean.
       clearFieldCache();
+      // The compose is done, so the recovery draft has nothing left to recover.
+      clearDraft();
       const c = result.counts;
       toasts.success(
         `RFQ sent — ${c.created} sent, ${c.skipped} skipped${c.failed ? `, ${c.failed} failed` : ''}.`,
@@ -612,17 +871,46 @@
     lang = 'en';
     fields = buildFieldsFromClient(lang);
     serviceOptionsText = (fields.serviceOptions ?? []).join('\n');
-    // The client's project data can be in any language; ensure the seeded
-    // fields read in the selected (recommended) language before send. Cached
-    // per client+language in localStorage, so this only calls the LLM once.
     loadFieldCache();
-    void ensureFieldsInLang(lang, currentTranslatableFields());
+
+    // A stored draft is the operator's own work, so it wins over the freshly
+    // seeded defaults. Its text already reads in its own language, so the
+    // seeding translation is skipped too: that call resolves asynchronously
+    // and would otherwise land on top of the restored fields.
+    const restored = restoreDraft();
+    if (!restored) {
+      // The client's project data can be in any language; ensure the seeded
+      // fields read in the selected (recommended) language before send. Cached
+      // per client+language in localStorage, so this only calls the LLM once.
+      void ensureFieldsInLang(lang, currentTranslatableFields());
+    }
+
     if (client?.id) await loadDefaults();
+
+    // loadDefaults derives selectedIds from the client's quotes, so the draft's
+    // own selection is re-applied here rather than before it. Unknown ids are
+    // dropped, which covers a provider deleted from the registry since.
+    if (draftSelectedIds) {
+      const known = new Set(allProviders.map((p) => p.id));
+      selectedIds = draftSelectedIds.filter((id) => known.has(id));
+      draftSelectedIds = null;
+    }
+
     mounted = true;
+    // Opening the autosave gate last means nothing above this line can write.
+    draftReady = true;
+    attachDraftLifecycleListeners();
   });
 
 
-  onDestroy(() => teardownEditor());
+  onDestroy(() => {
+    teardownEditor();
+    // Unmount covers switching client or leaving the tab, where a debounced
+    // write would never get the chance to fire.
+    flushDraft();
+    detachDraftListeners?.();
+    detachDraftListeners = null;
+  });
 </script>
 
 <div class="rfq">
@@ -659,6 +947,17 @@
       </div>
     </header>
 
+    {#if draftRestoredAt}
+      <div class="rfq-draft" role="status">
+        <span class="rfq-draft__txt">
+          ↻ Picked up your unsaved draft from {draftAgeLabel(draftRestoredAt)}.
+        </span>
+        <button type="button" class="rfq-draft__discard" on:click={discardDraftAndReseed}>
+          Start fresh
+        </button>
+      </div>
+    {/if}
+
     <div class="rfq-grid">
 
       <!-- ── LEFT: recipients + fields ─────────────────────────────────────── -->
@@ -683,6 +982,36 @@
             <p class="rfq-hint">No providers selected yet — search below to add some.</p>
           {/if}
 
+          <div class="rfq-routefilter">
+            <label class="rfq-routefilter__item">
+              <span>From (origin)</span>
+              <input
+                class="rfq-input rfq-input--sm"
+                type="text"
+                placeholder="e.g. Spain"
+                bind:value={originFilter}
+              />
+            </label>
+            <label class="rfq-routefilter__item">
+              <span>To (destination)</span>
+              <input
+                class="rfq-input rfq-input--sm"
+                type="text"
+                placeholder="e.g. Costa Rica"
+                bind:value={destinationFilter}
+              />
+            </label>
+            {#if hasQuery}
+              <button
+                type="button"
+                class="rfq-routefilter__clear"
+                on:click={clearProviderFilters}
+              >
+                Clear
+              </button>
+            {/if}
+          </div>
+
           <div class="rfq-search">
             <input
               class="rfq-input"
@@ -690,10 +1019,10 @@
               placeholder="Search providers by name or email…"
               bind:value={providerSearch}
             />
-            {#if providerSearch.trim() && searchResults.length}
+            {#if hasQuery && searchResults.length}
               <div class="rfq-results">
                 {#each searchResults as p (p.id)}
-                  {@const hits = regionHits(p, providerSearch)}
+                  {@const hits = regionHits(p)}
                   <button type="button" class="rfq-result" on:click={() => addProvider(p.id)} disabled={!p.email}>
                     <span class="rfq-result__main">
                       <span class="rfq-result__name">{p.name}</span>
@@ -713,6 +1042,9 @@
               </div>
             {/if}
           </div>
+          {#if hasQuery && searchResults.length === 0 && !providersLoading && !loadError}
+            <p class="rfq-hint">No active provider matches these filters.</p>
+          {/if}
           {#if providersLoading}<p class="rfq-hint">Loading providers…</p>{/if}
           {#if loadError}<p class="rfq-err">⚠ {loadError}</p>{/if}
         </div>
@@ -1055,6 +1387,41 @@
     color: var(--rfq-accent-hover);
   }
   .rfq-region--to { color: var(--rfq-text-muted); }
+
+  /* Directional route filters — origin and destination are searched separately */
+  .rfq-routefilter {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px;
+    margin-bottom: var(--irp-sp-2, 8px);
+  }
+  .rfq-routefilter__item { flex: 1 1 130px; min-width: 0; }
+  .rfq-routefilter__item > span {
+    display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--rfq-text-muted); margin-bottom: 3px;
+  }
+  .rfq-routefilter__clear {
+    border: 1px solid var(--rfq-border); background: var(--rfq-surface);
+    border-radius: var(--irp-r-full, 9999px); padding: 5px 12px;
+    font-size: 11.5px; font-weight: 700; color: var(--rfq-text-muted);
+    cursor: pointer; transition: border-color var(--rfq-t), color var(--rfq-t);
+  }
+  .rfq-routefilter__clear:hover { border-color: var(--rfq-border-focus); color: var(--rfq-accent-hover); }
+
+  /* Recovered-draft notice */
+  .rfq-draft {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    margin-bottom: var(--irp-sp-4, 16px); padding: 9px 14px;
+    background: var(--rfq-accent-subtle); border: 1px solid var(--rfq-accent-glow);
+    border-radius: var(--irp-r-md, 12px);
+  }
+  .rfq-draft__txt { font-size: 12.5px; font-weight: 600; color: var(--rfq-accent-hover); }
+  .rfq-draft__discard {
+    border: 1px solid var(--rfq-accent-glow); background: var(--rfq-surface);
+    border-radius: var(--irp-r-full, 9999px); padding: 4px 12px;
+    font-size: 11.5px; font-weight: 700; color: var(--rfq-accent-hover);
+    cursor: pointer; transition: background var(--rfq-t);
+  }
+  .rfq-draft__discard:hover { background: var(--rfq-surface-2); }
 
   .rfq-lang { position: relative; }
   .rfq-lang__btn {
