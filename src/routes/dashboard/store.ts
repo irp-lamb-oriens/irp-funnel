@@ -5206,6 +5206,36 @@ export async function setInvoicePaid(id: string, paid: boolean): Promise<Invoice
   return updated;
 }
 
+/**
+ * Download the signed service-agreement PDF for an accepted quote.
+ *
+ * Mirrors downloadInvoicePdf: the server streams the file, the browser saves it.
+ * The endpoint returns 400 until the client has accepted, so the button that
+ * calls this is only shown on an accepted quote.
+ */
+export async function downloadContractPdf(clientId: string, quoteId: string): Promise<void> {
+  const token = get(authToken);
+  const headers: Record<string, string> = {};
+  if (token) headers['x-dashboard-token'] = token;
+  const url =
+    `${getApiUrl()}/api/dashboard/clients/${encodeURIComponent(clientId)}` +
+    `/quotes/${encodeURIComponent(quoteId)}/contract-pdf`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Failed to download the contract (${res.status})`);
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = `contract-${quoteId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export async function downloadInvoicePdf(id: string): Promise<void> {
   const token = get(authToken);
   const headers: Record<string, string> = {};

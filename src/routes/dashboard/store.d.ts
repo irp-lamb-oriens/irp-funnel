@@ -2367,4 +2367,12 @@ export declare function recordInvoicePayment(id: string, payments: InvoicePaymen
  * reads "marked invoice X paid" rather than "recorded 1 payment(s)".
  */
 export declare function setInvoicePaid(id: string, paid: boolean): Promise<Invoice>;
+/**
+ * Download the signed service-agreement PDF for an accepted quote.
+ *
+ * Mirrors downloadInvoicePdf: the server streams the file, the browser saves it.
+ * The endpoint returns 400 until the client has accepted, so the button that
+ * calls this is only shown on an accepted quote.
+ */
+export declare function downloadContractPdf(clientId: string, quoteId: string): Promise<void>;
 export declare function downloadInvoicePdf(id: string): Promise<void>;

@@ -20,6 +20,8 @@
     liveActionPermissions,
     fetchLiveActionPermissions,
     QUOTE_STATUS_LABEL,
+    // ── Signed service agreement (generated when the client accepts) ──
+    downloadContractPdf,
     // ── Margin & insights ──
     extractInsights,
     selectedClient,
@@ -1209,6 +1211,25 @@
     }
   }
 
+  // ── Signed service agreement ───────────────────────────────────────────────
+  // Available once the client accepts. The server rebuilds the PDF from the
+  // contract snapshot stored at acceptance, so this file is the same one the
+  // client and the team were emailed.
+  let downloadingContract = false;
+
+  async function handleDownloadContract() {
+    if (!quote) return;
+    downloadingContract = true;
+    errorMsg = '';
+    try {
+      await downloadContractPdf(clientId, quote.quoteId);
+    } catch (err: any) {
+      errorMsg = err?.message ?? 'Could not download the contract PDF.';
+    } finally {
+      downloadingContract = false;
+    }
+  }
+
   async function handleSendToClient() {
     if (!quote) return;
     saving = true;
@@ -1698,6 +1719,30 @@
             {QUOTE_STATUS_LABEL[quote.status]?.label ?? quote.status}
             {#if quote.status === 'approved'}<span class="check">✓</span>{/if}
           </div>
+
+          <!-- Signed service agreement — the proof-of-contract document a bank
+               asks for. Generated and emailed at acceptance; downloadable here
+               for any accepted quote, including ones accepted before this
+               existed (the server rebuilds those from the quote). -->
+          {#if quote.status === 'client_accepted' || quote.clientAcceptedAt}
+            <div class="contract-section">
+              <div class="contract-section__text">
+                <strong>Service agreement</strong>
+                <span class="contract-section__hint">
+                  Signed by {quote.clientAcceptedBy || 'the client'}{quote.clientAcceptedAt
+                    ? ` on ${new Date(quote.clientAcceptedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                    : ''}.
+                </span>
+              </div>
+              <button
+                class="btn-download-contract"
+                on:click={handleDownloadContract}
+                disabled={downloadingContract}
+              >
+                {downloadingContract ? 'Preparing…' : '📄 Download contract PDF'}
+              </button>
+            </div>
+          {/if}
 
           <!-- Approver actions (only visible to approvers when pending_approval) -->
           <!-- canApproveQuotes: uses live Firestore data when loaded, falls back to static QUOTE_APPROVERS list -->
@@ -2785,6 +2830,54 @@
     border-color: #6ee7b7;
   }
   .check { color: #16a34a; }
+
+  /* ── Signed service agreement (accepted quotes) ──────────────────────────── */
+  .contract-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  .contract-section__text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .contract-section__text strong {
+    font-size: 13.5px;
+    color: #065f46;
+    font-weight: 800;
+  }
+  .contract-section__hint {
+    font-size: 12px;
+    color: #047857;
+    line-height: 1.45;
+  }
+  .btn-download-contract {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(5,150,105,0.22);
+    transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+  .btn-download-contract:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 14px rgba(5,150,105,0.32);
+    transform: translateY(-1px);
+  }
+  .btn-download-contract:disabled { opacity: 0.6; cursor: progress; }
 
   /* Approver actions box */
   .approver-actions {
