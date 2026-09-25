@@ -11,6 +11,7 @@
     inferClientTemplate,
     selectedClient,
     createInvoiceFromQuote,
+    downloadContractPdf,
     type QuoteTemplate,
     type InferTemplateResult,
   } from '../store.ts';
@@ -317,6 +318,24 @@
     }
   }
 
+  // ── Download the signed service agreement (accepted quotes) ───────────────
+  // Tracked per quote id so a row that is downloading never disables the button
+  // on the other accepted quotes in the list.
+  let downloadingContractId: string | null = null;
+
+  async function handleDownloadContract(quote: Quote) {
+    if (downloadingContractId) return;
+    downloadingContractId = quote.quoteId;
+    invoiceMsg = '';
+    try {
+      await downloadContractPdf(clientId, quote.quoteId);
+    } catch (err: any) {
+      invoiceMsg = 'Could not download the contract: ' + (err?.message ?? err);
+    } finally {
+      downloadingContractId = null;
+    }
+  }
+
   // ── Formatting helpers ─────────────────────────────────────────────────────
   function formatTotal(quote: Quote): string {
     const total = quote.total ?? quote.lineItems?.reduce((s, li) => s + (li.amount ?? 0), 0) ?? 0;
@@ -514,6 +533,15 @@
                     disabled={creatingInvoice}
                   >
                     {creatingInvoice ? 'Creating…' : 'Create invoice'}
+                  </button>
+                  <button
+                    class="quotes-tab__contract-btn"
+                    title="Download the signed service agreement for this quote"
+                    on:click|stopPropagation={() => handleDownloadContract(quote)}
+                    disabled={downloadingContractId === quote.quoteId}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>{downloadingContractId === quote.quoteId ? 'Preparing…' : 'Contract PDF'}</span>
                   </button>
                 {/if}
               </div>
@@ -1065,6 +1093,37 @@
     transform: translateY(-1px);
   }
   .quotes-tab__invoice-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  /* ── Contract-download button (accepted quotes) ──────────────────────── */
+  .quotes-tab__contract-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    background: linear-gradient(135deg, #16a34a 0%, #0f7a37 100%);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: filter 0.14s, transform 0.14s;
+  }
+  .quotes-tab__contract-btn:hover:not(:disabled) {
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+  }
+  .quotes-tab__contract-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quotes-tab__invoice-btn,
+    .quotes-tab__contract-btn { transition: none; }
+    .quotes-tab__invoice-btn:hover,
+    .quotes-tab__contract-btn:hover { transform: none; }
+  }
 
   .quotes-tab__invoice-msg {
     margin: 2px 0 0;
