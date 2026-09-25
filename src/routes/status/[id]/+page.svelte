@@ -1351,7 +1351,7 @@
                           <span class="field__label">Origin</span>
                           {#if editingDetails && routeEditable}
                             <div class="field__inline-row">
-                              <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.originCity} />
+                              <input class="field__inline-input" type="text" placeholder="City, State/Province" bind:value={detailsEditForm.originCity} />
                               <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.originCountry} />
                             </div>
                           {:else}
@@ -1371,7 +1371,7 @@
                           <span class="field__label">Destination</span>
                           {#if editingDetails && routeEditable}
                             <div class="field__inline-row">
-                              <input class="field__inline-input" type="text" placeholder="City" bind:value={detailsEditForm.destinationCity} />
+                              <input class="field__inline-input" type="text" placeholder="City, State/Province" bind:value={detailsEditForm.destinationCity} />
                               <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.destinationCountry} />
                             </div>
                           {:else}

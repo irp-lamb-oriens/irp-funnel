@@ -6,6 +6,8 @@
   export let placeholder: string = "";
   export let inputElement: HTMLInputElement | undefined = undefined;
   export let label: string = "";
+  /** Optional clarification text rendered below the label (e.g. "Include state or province"). */
+  export let hint: string = "";
   export let type: "text" | "password" | "email" | "number" | "tel" | "url" = "text"; // Add type prop
 
   // Callback to be invoked when the input changes.
@@ -32,6 +34,7 @@
 
 <div class="text-input-wrapper">
   <label class="input-label">{value ? label || placeholder : label}</label>
+  {#if hint}<span class="input-hint">{hint}</span>{/if}
   <input
     bind:this={inputElement}
     {type}
@@ -52,11 +55,20 @@
   }
 
   .input-label {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.35rem;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.9rem;
     font-weight: 500;
     letter-spacing: 0.02em;
+  }
+
+  .input-hint {
+    display: block;
+    margin-bottom: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
   }
 
   input {

@@ -711,7 +711,7 @@
                 <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} defaultCountryCode={$formState.destinationCountry} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
                 {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
               {/if}
-              <PlainText label="Destination City" placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
+              <PlainText label="Destination City" hint="Include the state or province (e.g. San José, San José Province)" placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
               {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
               <PlainText label="Zip Code (optional)" placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={formNext} bind:inputElement={destinationZipInput} />
               {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
@@ -721,7 +721,7 @@
               <h2>Where are you moving from?</h2>
               <Country onSelect={(code) => updateField(code || '', 'originCountry')} bind:buttonRef={originCountryInput} on:enter={() => {}} />
               {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
-              <PlainText label="Origin City" placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
+              <PlainText label="Origin City" hint="Include the state or province (e.g. Austin, TX)" placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
               <PlainText label="Origin Zip Code" placeholder="Zip Code" bind:value={$formState.originZip} onChange={(val) => updateField(val, 'originZip')} onEnter={formNext} bind:inputElement={originZipInput} />
               {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
