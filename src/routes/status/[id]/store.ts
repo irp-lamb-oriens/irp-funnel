@@ -90,6 +90,18 @@ export interface ClientOffer {
 }
 export const clientOffer = writable<ClientOffer | null>(null);
 
+/**
+ * Dashboard-configured destination-services gate. When non-null, the client's
+ * destination country is in the operator-configured list and the status page
+ * surfaces extra page-level tabs (Relocation tours, Immigration advice,
+ * Intercultural coaching). `null` when disabled/absent so nothing renders —
+ * fully backward compatible.
+ */
+export interface DestinationServices {
+  countries: string[];
+}
+export const destinationServices = writable<DestinationServices | null>(null);
+
 
 
 
@@ -261,6 +273,13 @@ export async function fetchProject(projectId: string) {
     clientOffer.set(
       data.clientOffer && typeof data.clientOffer === 'object' && data.clientOffer.enabled
         ? data.clientOffer
+        : null,
+    );
+    // Destination-services gate: non-null only when the client's destination
+    // country is in the operator-configured list. Absent → null (no tabs).
+    destinationServices.set(
+      data.destinationServices && typeof data.destinationServices === 'object'
+        ? data.destinationServices
         : null,
     );
 

@@ -3852,6 +3852,18 @@ export interface TourScheduleSaveResult extends TourScheduleConfig {
   weeks: TourWeekBlock[];
 }
 
+/**
+ * The single global destination-services gate. When enabled, clients whose
+ * destination country is in `countries` see extra page-level tabs on their
+ * /status page (Relocation tours, Immigration advice, Intercultural coaching).
+ */
+export interface DestinationServicesConfig {
+  enabled: boolean;
+  countries: string[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
 /** Fetch the current tour-schedule config. */
 export async function fetchTourSchedule(): Promise<TourScheduleConfig> {
   const data = await apiFetch('/api/dashboard/tour-schedule');
@@ -3870,6 +3882,23 @@ export async function saveTourSchedule(
     ...(data.schedule as TourScheduleConfig),
     weeks: Array.isArray(data.weeks) ? (data.weeks as TourWeekBlock[]) : [],
   };
+}
+
+/** Fetch the current destination-services config. */
+export async function fetchDestinationServices(): Promise<DestinationServicesConfig> {
+  const data = await apiFetch('/api/dashboard/destination-services');
+  return data.config as DestinationServicesConfig;
+}
+
+/** Save (upsert) the destination-services config. */
+export async function saveDestinationServices(
+  payload: Pick<DestinationServicesConfig, 'enabled' | 'countries'>,
+): Promise<DestinationServicesConfig> {
+  const data = await apiFetch('/api/dashboard/destination-services', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+  return data.config as DestinationServicesConfig;
 }
 
 

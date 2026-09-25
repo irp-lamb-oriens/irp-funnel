@@ -44,6 +44,9 @@
     // ── Client offer popup (dashboard-configured, shown once on access) ──
     clientOffer,
 
+    // ── Destination services gate (country-gated extra tabs) ─────────────
+    destinationServices,
+
     // ── Stage ratings (reused for the overall "move complete" review) ──────
     submitStageRating,
   } from "./store.ts";
@@ -65,6 +68,10 @@
   import ChargesCard from "./ChargesCard.svelte";
   import ClientOfferPopup from "./ClientOfferPopup.svelte";
   import FullRelocationSupport from "./FullRelocationSupport.svelte";
+  import RelocationTours from "./RelocationTours.svelte";
+  import ImmigrationAdvice from "./ImmigrationAdvice.svelte";
+  import InterculturalCoaching from "./InterculturalCoaching.svelte";
+  import VerticalReviewMarquee from "./VerticalReviewMarquee.svelte";
 
 
   import {
@@ -529,6 +536,12 @@
       scrollToSection("cp-quotes");
     } else if (id === "__accept") {
       scrollToSection("cp-accept");
+    } else if (id === "__tours") {
+      scrollToSection("cp-tours");
+    } else if (id === "__immigration") {
+      scrollToSection("cp-immigration");
+    } else if (id === "__coaching") {
+      scrollToSection("cp-coaching");
     } else {
       // Template document section — filter BlockRenderer + scroll to container
       activeSection.set(id);
@@ -621,6 +634,16 @@
     ...(!$irpStaffIsAuthenticated
       ? [{ id: "__support", label: "Full support" }]
       : []),
+    // Destination services — extra page-level tabs surfaced only when the
+    // client's destination country is in the operator-configured list
+    // (e.g. Costa Rica). Shown to both clients and staff (staff preview).
+    ...($destinationServices
+      ? [
+          { id: "__tours", label: "Relocation tours" },
+          { id: "__immigration", label: "Immigration advice" },
+          { id: "__coaching", label: "Intercultural coaching" },
+        ]
+      : []),
     ...(showQuoteSection
       ? [
           // Template-section tabs only when subcollection quotes exist (unchanged).
@@ -653,6 +676,9 @@
     !isCommentsTab && (activePortalTab === "__overview" || !showQuoteSection);
   $: isQuoteTab = showQuoteSection && activePortalTab === "__quotes";
   $: isAcceptTab = showAcceptSection && activePortalTab === "__accept";
+  $: isToursTab = !!$destinationServices && activePortalTab === "__tours";
+  $: isImmigrationTab = !!$destinationServices && activePortalTab === "__immigration";
+  $: isCoachingTab = !!$destinationServices && activePortalTab === "__coaching";
 
 
   $: isProposalTab =
@@ -660,7 +686,10 @@
     !isOverviewTab &&
     !isQuoteTab &&
     !isAcceptTab &&
-    !isCommentsTab;
+    !isCommentsTab &&
+    !isToursTab &&
+    !isImmigrationTab &&
+    !isCoachingTab;
 
   // Always use portal-tabs when the project is loaded so the "Your Move" tab
   // is available even before quotes arrive.
@@ -1617,6 +1646,30 @@
         </div>
       {/if}
 
+      <!-- ══ DESTINATION SERVICES — country-gated extra page-level tabs.
+           Surfaced only when the client's destination country is in the
+           operator-configured list (e.g. Costa Rica). Shown to both clients
+           and staff (staff preview the same tabs the client sees). -->
+      {#if $project && $destinationServices}
+        <div id="cp-tours" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <RelocationTours destinationCountry={$project.destinationCountry ?? ""} />
+          </div>
+        </div>
+
+        <div id="cp-immigration" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <ImmigrationAdvice destinationCountry={$project.destinationCountry ?? ""} />
+          </div>
+        </div>
+
+        <div id="cp-coaching" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <InterculturalCoaching destinationCountry={$project.destinationCountry ?? ""} />
+          </div>
+        </div>
+      {/if}
+
       <!-- ══ COMMENTS — always rendered (single-landing). Visible to both
            clients and signed-in staff so either can leave notes on the move. -->
       <!-- {#if $project}
@@ -1734,6 +1787,17 @@
           {/if}
         </div>
         <!-- /#cp-proposal -->
+      {/if}
+
+      <!-- ══ GOOGLE REVIEWS — vertical alternating-column marquee (desktop) that
+           collapses to a single horizontal marquee on mobile. Placed after the
+           proposal/template section and before the quotes section. -->
+      {#if $project}
+        <div id="cp-reviews" class="cp-section-anchor">
+          <div class="cp-dashboard__full-width-section">
+            <VerticalReviewMarquee />
+          </div>
+        </div>
       {/if}
 
 

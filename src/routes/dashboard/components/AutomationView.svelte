@@ -25,6 +25,9 @@
     saveTourSchedule,
     type TourScheduleConfig,
     type TourWeekBlock,
+    fetchDestinationServices,
+    saveDestinationServices,
+    type DestinationServicesConfig,
     fetchStages,
 
 
@@ -62,7 +65,7 @@
   let templates: EmailTemplateRow[] = [];
   let loading = true;
   let error = '';
-  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' | 'tours' = 'stages';
+  let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' | 'tours' | 'destServices' = 'stages';
 
   let busyId = ''; // id of the row currently saving (disables its controls)
 
@@ -85,6 +88,53 @@
   }
 
 
+
+  // ── Destination services (country-gated extra tabs on the /status page) ────
+  let destServices: DestinationServicesConfig = { enabled: false, countries: [] };
+  let destServicesSaving = false;
+  let destServicesSavedMsg = '';
+  let newDestCountry = '';
+
+  async function loadDestServices() {
+    try {
+      destServices = await fetchDestinationServices();
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to load destination services.';
+    }
+  }
+
+  async function persistDestServices(next: string[]) {
+    destServicesSaving = true;
+    destServicesSavedMsg = '';
+    error = '';
+    try {
+      destServices = await saveDestinationServices({
+        enabled: destServices.enabled,
+        countries: next,
+      });
+      destServicesSavedMsg = '✓ Saved';
+      setTimeout(() => (destServicesSavedMsg = ''), 2500);
+    } catch (e: any) {
+      error = e?.message ?? 'Failed to save destination services.';
+    } finally {
+      destServicesSaving = false;
+    }
+  }
+
+  function addDestCountry() {
+    const name = newDestCountry.trim();
+    if (!name) return;
+    if (destServices.countries.includes(name)) {
+      newDestCountry = '';
+      return;
+    }
+    newDestCountry = '';
+    persistDestServices([...destServices.countries, name]);
+  }
+
+  function removeDestCountry(name: string) {
+    persistDestServices(destServices.countries.filter((c) => c !== name));
+  }
 
   // ── Tour schedule (alternating-week cadence for relocation tours) ──────────
   let tour: TourScheduleConfig = {
@@ -345,6 +395,7 @@
     loadOffer();
     loadApprovers();
     loadTourSchedule();
+    loadDestServices();
 
     // Ensure the Overview Field Registry is loaded so the template editor's
     // merge-field picker (`$mergeFieldOptions`) is populated. Non-blocking and
@@ -735,6 +786,9 @@
     <button class="av-tab" class:av-tab--active={tab === 'tours'} on:click={() => (tab = 'tours')}>
       🗓️ Tour schedule
     </button>
+    <button class="av-tab" class:av-tab--active={tab === 'destServices'} on:click={() => (tab = 'destServices')}>
+      🌍 Destination services
+    </button>
   </div>
 
 
@@ -1056,6 +1110,68 @@
         </div>
       </section>
     {/if}
+
+  {:else if tab === 'destServices'}
+    <!-- ── Destination services (country-gated extra tabs on the /status page) ── -->
+    <p class="av-subtitle" style="margin-bottom:1.1rem">
+      When a client's destination country is in this list, their status page
+      shows three extra tabs: Relocation tours, Immigration advice, and
+      Intercultural coaching. Add or remove countries below — matching is
+      case-insensitive and accepts ISO codes (e.g. "CR").
+    </p>
+
+    <section class="av-card av-offer">
+      <div class="av-offer-head">
+        <label class="av-inline-field av-offer-toggle">
+          <span>{destServices.enabled ? 'Live — tabs are shown' : 'Off — tabs hidden'}</span>
+          <button
+            class="av-switch"
+            class:av-switch--on={destServices.enabled}
+            on:click={() => (destServices.enabled = !destServices.enabled)}
+            aria-label={destServices.enabled ? 'Enabled' : 'Disabled'}
+          >
+            <span class="av-switch__knob"></span>
+          </button>
+        </label>
+      </div>
+
+      <div class="av-approver-add">
+        <label class="av-field" style="flex:1">
+          <span>Add a destination country</span>
+          <input
+            type="text"
+            bind:value={newDestCountry}
+            placeholder="e.g. Costa Rica"
+            on:keydown={(e) => e.key === 'Enter' && addDestCountry()}
+          />
+        </label>
+        <button class="save-btn" on:click={addDestCountry} disabled={destServicesSaving}>
+          {destServicesSaving ? 'Saving…' : '+ Add'}
+        </button>
+      </div>
+
+      {#if destServices.countries.length === 0}
+        <div class="av-empty">No countries configured — the extra tabs are hidden for everyone.</div>
+      {:else}
+        <ul class="av-approver-list">
+          {#each destServices.countries as name (name)}
+            <li class="av-approver-row">
+              <span class="av-approver-email">{name}</span>
+              <button
+                class="remove-btn"
+                on:click={() => removeDestCountry(name)}
+                disabled={destServicesSaving}
+                title="Remove country"
+              >✕</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+
+      {#if destServicesSavedMsg}
+        <div class="av-offer-foot"><span class="av-offer-saved">{destServicesSavedMsg}</span></div>
+      {/if}
+    </section>
 
   {:else if tab === 'stages'}
 

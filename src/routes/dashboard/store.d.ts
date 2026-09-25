@@ -1699,10 +1699,25 @@ export interface TourWeekBlock {
 export interface TourScheduleSaveResult extends TourScheduleConfig {
     weeks: TourWeekBlock[];
 }
+/**
+ * The single global destination-services gate. When enabled, clients whose
+ * destination country is in `countries` see extra page-level tabs on their
+ * /status page (Relocation tours, Immigration advice, Intercultural coaching).
+ */
+export interface DestinationServicesConfig {
+    enabled: boolean;
+    countries: string[];
+    updatedAt?: string | null;
+    updatedBy?: string | null;
+}
 /** Fetch the current tour-schedule config. */
 export declare function fetchTourSchedule(): Promise<TourScheduleConfig>;
 /** Save (upsert) the tour-schedule config; returns config + derived weeks. */
 export declare function saveTourSchedule(payload: Partial<TourScheduleConfig>): Promise<TourScheduleSaveResult>;
+/** Fetch the current destination-services config. */
+export declare function fetchDestinationServices(): Promise<DestinationServicesConfig>;
+/** Save (upsert) the destination-services config. */
+export declare function saveDestinationServices(payload: Pick<DestinationServicesConfig, 'enabled' | 'countries'>): Promise<DestinationServicesConfig>;
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';
