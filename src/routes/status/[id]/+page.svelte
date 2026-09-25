@@ -71,7 +71,7 @@
   import RelocationTours from "./RelocationTours.svelte";
   import ImmigrationAdvice from "./ImmigrationAdvice.svelte";
   import InterculturalCoaching from "./InterculturalCoaching.svelte";
-  import VerticalReviewMarquee from "./VerticalReviewMarquee.svelte";
+  import VerticalReviewMarquee from "../../../components/VerticalReviewMarquee.svelte";
 
 
   import {

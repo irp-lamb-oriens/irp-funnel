@@ -8,7 +8,7 @@
   import RelocationPhilosophySection from '../components/RelocationPhilosophySection.svelte';
   import ContactCTASection from '../components/ContactCTASection.svelte';
   import TestimonialsSection from '../components/TestimonialsSection.svelte';
-  import HomeTestimonials from '../components/HomeTestimonials.svelte';
+  import VerticalReviewMarquee from '../components/VerticalReviewMarquee.svelte';
   import MovingProcessSection from '../components/MovingProcessSection.svelte';
   import LatestNewsSection from '../components/LatestNewsSection.svelte';
   import FAQSection from '../components/FAQSection.svelte';
@@ -172,7 +172,11 @@
 
   <TestimonialsSection />
 
-  <HomeTestimonials />
+  <VerticalReviewMarquee
+    title="What Our Customers Say"
+    subtitle="Real reviews from clients who moved their lives with us."
+    background="#ffffff"
+  />
 
   <MovingProcessSection />
 

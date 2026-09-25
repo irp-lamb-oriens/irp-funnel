@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { googleReviews, type Review } from '../../../lib/reviews.ts';
+  import { googleReviews, type Review } from '../lib/reviews.ts';
 
   // ── Props ────────────────────────────────────────────────────────────────
   export let reviews: Review[] = googleReviews;
@@ -8,6 +8,9 @@
   export let speed = 0.04; // px per ms
   export let gap = 20;
   export let columnHeight = 520;
+  export let title = '';
+  export let subtitle = '';
+  export let background = '#fbfcfc';
 
   const COPIES = 3;
 
@@ -214,7 +217,14 @@
   });
 </script>
 
-<div class="vrm" class:vrm--mobile={isMobile}>
+<div class="vrm" class:vrm--mobile={isMobile} style="background: {background};">
+  {#if title || subtitle}
+    <div class="vrm__head">
+      {#if title}<h2 class="vrm__title">{title}</h2>{/if}
+      {#if subtitle}<p class="vrm__subtitle">{subtitle}</p>{/if}
+    </div>
+  {/if}
+
   {#if isMobile}
     <!-- ── Mobile: single horizontal marquee ─────────────────────────────── -->
     <div
@@ -299,6 +309,27 @@
   .vrm {
     width: 100%;
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+  }
+
+  .vrm__head {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .vrm__title {
+    font-family: var(--font-title, 'Kiona Regular', serif);
+    font-size: clamp(1.8rem, 3.4vw, 2.7rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    color: var(--color-foreground, #181818);
+    margin: 0 0 0.6rem;
+  }
+  .vrm__subtitle {
+    font-size: 1.1rem;
+    line-height: 1.65;
+    color: #475569;
+    max-width: 62ch;
+    margin: 0 auto;
   }
 
   /* ── Desktop columns ─────────────────────────────────────────────────── */

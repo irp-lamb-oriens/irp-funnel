@@ -4,7 +4,7 @@
   import ServiceIntakeForm from '../../components/ServiceIntakeForm.svelte';
   import { onMount, onDestroy } from 'svelte';
   import { initLanding, type LandingCleanup } from '../../lib/animations/landing.ts';
-  import { googleReviews } from '../../lib/reviews.ts';
+  import VerticalReviewMarquee from '../../components/VerticalReviewMarquee.svelte';
 
   type TourWeek = { start: string; end: string };
 
@@ -47,8 +47,6 @@
     const opts: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
     return `${s.toLocaleDateString('en-US', opts)} – ${e.toLocaleDateString('en-US', opts)}`;
   }
-
-  const reviews = googleReviews;
 
   const regions = [
     { name: 'Central Valley & West', towns: 'San José, Escazú, Santa Ana, Heredia, Grecia, San Ramón', image: 'https://images.pexels.com/photos/38991438/pexels-photo-38991438.jpeg?auto=compress&cs=tinysrgb&w=900' },
@@ -130,26 +128,7 @@
       <p class="tour__lead" data-animate="up" data-animate-delay="0.06">
         Real reviews from clients who shipped household goods and vehicles with us.
       </p>
-      <div class="tour__reality-grid">
-        {#each reviews as review (review.link)}
-          <a
-            class="review-card"
-            href={review.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-animate="scale"
-            data-tilt
-            aria-label={`Read ${review.name}'s five-star review`}
-          >
-            <span class="review-card__stars" aria-hidden="true">★★★★★</span>
-            <blockquote class="review-card__quote">{review.quote}</blockquote>
-            <footer class="review-card__meta">
-              <span class="review-card__name">{review.name}</span>
-              <span class="review-card__route">{review.route}</span>
-            </footer>
-          </a>
-        {/each}
-      </div>
+      <VerticalReviewMarquee background="#ffffff" />
     </div>
   </section>
 
@@ -412,61 +391,6 @@
     margin: 0 0 2.5rem;
   }
 
-  /* ── REVIEWS ────────────────────────────────────────────────────── */
-  .tour__reality-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
-  }
-  .review-card {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.6rem;
-    border-radius: 18px;
-    background: #fff;
-    border: 1px solid #e8eef5;
-    box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.45);
-    color: #1a1a2e;
-    text-decoration: none;
-    transform-style: preserve-3d;
-    will-change: transform;
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-  .review-card:hover {
-    border-color: rgba(2, 181, 187, 0.35);
-    box-shadow: 0 26px 54px -28px rgba(15, 23, 42, 0.5);
-  }
-  .review-card__stars {
-    color: #f59e0b;
-    font-size: 0.95rem;
-    letter-spacing: 0.12em;
-  }
-  .review-card__quote {
-    margin: 0;
-    font-size: 0.94rem;
-    line-height: 1.6;
-    color: #475569;
-    flex: 1;
-  }
-  .review-card__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #eef2f6;
-  }
-  .review-card__name {
-    font-family: var(--font-subtitle, 'Spartan Black', sans-serif);
-    font-weight: 700;
-    color: #0f172a;
-    font-size: 0.9rem;
-  }
-  .review-card__route {
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-
   /* ── REGIONS (image bento) ────────────────────────────────────────── */
   .tour__regions {
     background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
@@ -595,7 +519,6 @@
   }
 
   @media (max-width: 900px) {
-    .tour__reality-grid { grid-template-columns: 1fr; }
     .region, .region--wide { grid-column: span 3; }
   }
 
