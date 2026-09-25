@@ -42,8 +42,8 @@
 
   // ── Phase 5 — line-item group selection (status-page packages + add-ons) ──
   //   required groups → ONE is chosen via radio (most expensive auto-selected)
-  //   optional groups → each toggled via checkbox (ALL pre-checked by default;
-  //                     the client can deselect any add-on they don't want)
+  //   optional groups → each toggled via checkbox (UNCHECKED by default; the
+  //                     client ticks only the add-ons they want)
   let selectedRequiredGroupId = '';
   let selectedOptionalGroupIds: Set<string> = new Set();
   let groupSelectionInit = false;
@@ -58,12 +58,13 @@
   $: fixedGroups = groups.filter((g) => g.role === 'fixed');
 
 
-  // Auto-select the MOST EXPENSIVE required group + PRE-CHECK every optional
-  // add-on, exactly once after the quote loads. The client can still switch the
-  // required package and untick any add-on they don't want.
+  // Auto-select the MOST EXPENSIVE required group exactly once after the quote
+  // loads. Optional add-ons start UNCHECKED — the client ticks only the ones
+  // they want, so the running total reflects their real selection rather than
+  // every option pre-billed.
   $: if (hasGroups && !groupSelectionInit) {
     selectedRequiredGroupId = mostExpensiveRequiredGroupId();
-    selectedOptionalGroupIds = new Set(optionalGroups.map((g) => g.groupId));
+    selectedOptionalGroupIds = new Set();
     groupSelectionInit = true;
   }
 

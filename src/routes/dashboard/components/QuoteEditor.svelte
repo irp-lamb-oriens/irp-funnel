@@ -247,7 +247,7 @@
   function makeBlankLine(currency = 'USD'): QuoteLineItem {
     return { lineId: makeLineId(), label: '', amount: 0, marginPct: defaultMarginPct, marginMode: 'pct' as const, marginFlat: null, currency, providerId: null, notes: null };
   }
-  function makeBlankGroup(role: 'required' | 'optional' = 'required', title = ''): EditGroup {
+  function makeBlankGroup(role: 'required' | 'optional' = 'optional', title = ''): EditGroup {
     return { groupId: makeGroupId(), title, labelId: null, role, description: '', lineItems: [makeBlankLine()] };
   }
 
@@ -257,7 +257,7 @@
 
   /** Guarantee at least one group (with one line) always exists. */
   function ensureGroups() {
-    if (lineGroups.length === 0) lineGroups = [makeBlankGroup('required')];
+    if (lineGroups.length === 0) lineGroups = [makeBlankGroup('optional')];
   }
 
   function addGroup(role: 'required' | 'optional' = 'optional') {
@@ -567,9 +567,9 @@
   }
 
   /**
-   * Add a saved line-item template as a NEW group. The first template added to a
-   * fresh quote becomes the base 'required' option; subsequent templates default
-   * to 'optional' add-ons. Staff can flip any group's role afterwards.
+   * Add a saved line-item template as a NEW group. Every template added defaults
+   * to an 'optional' add-on (a checkbox on the status page). Staff can flip any
+   * group's role to 'required' or 'fixed' afterwards.
    */
   function addTemplateAsGroup(templateId: string) {
     const tmpl = lineTemplates.find(t => t.templateId === templateId);
@@ -584,7 +584,7 @@
       groupId: makeGroupId(),
       title: tmpl.name || 'Services',
       labelId: null,
-      role: (lineGroups.length === 0 || onlyBlankStarter) ? 'required' : 'optional',
+      role: 'optional',
       // Prefill the client-visible description from the template so staff can
       // apply a group with its scope blurb already filled in (editable after).
       description: tmpl.description ?? '',
@@ -821,9 +821,10 @@
 
   async function loadQuote() {
     if (!quoteId) {
-      // New quote — start with one empty required group
+      // New quote — start with one empty optional group (a checkbox on the
+      // status page). Staff can flip it to Required or Fixed afterwards.
       quote = null;
-      lineGroups = [makeBlankGroup('required')];
+      lineGroups = [makeBlankGroup('optional')];
       return;
     }
     loadingQuote = true;

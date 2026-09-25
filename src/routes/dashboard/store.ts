@@ -1052,7 +1052,7 @@ export const filteredClients = derived([clients, searchQuery, filters], ([$clien
   const matched = $clients.filter(c => {
     // 1. Text search
     if (q) {
-      const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity}`.toLowerCase();
+      const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity} ${c.originZip} ${c.destinationZip}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
 
