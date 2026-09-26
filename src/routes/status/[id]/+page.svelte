@@ -1682,6 +1682,46 @@
       <!-- We will comment it for now unless the business wants to resucitate it -->
 
 
+      <!-- ══ COVER LETTER — proposal introduction. Rendered right before the
+           proposal document so the client sees a personalized greeting and the
+           "action required" note ahead of the investment breakdown. -->
+      {#if hasQuotes || hasAssignedProposal}
+        <div class="cp-dashboard__full-width-section cp-cover-letter">
+          <div class="cp-cover-letter__inner">
+            <p class="cp-cover-letter__greeting">Dear {$project.name},</p>
+            <p class="cp-cover-letter__body">
+              Thank you for considering our service proposal!
+            </p>
+            <p class="cp-cover-letter__body">
+              This document describes the overall investment and other important
+              considerations for your International Move Project based on the
+              information you provided during the consultation call.
+            </p>
+
+            <div class="cp-cover-letter__callout">
+              <p class="cp-cover-letter__callout-text">
+                <strong>Action Required:</strong> The final quote will include
+                only the services marked on this document; please scroll down to
+                the <strong>PROJECT INVESTMENT</strong> section and mark/unmark
+                accordingly; after this, proceed to book the service.
+              </p>
+            </div>
+
+            <p class="cp-cover-letter__body">
+              Please let us know if you have any questions about the project
+              investment, customs process, or logistics.
+            </p>
+
+            <p class="cp-cover-letter__signoff">
+              Sincerely,<br />
+              <span class="cp-cover-letter__signoff-brand"
+                >International Relocation Partner.</span
+              >
+            </p>
+          </div>
+        </div>
+      {/if}
+
       <!-- ══ PROPOSAL — template document. Rendered right after the overview/
            activity section and before the quote. Shows whenever the client has
            an assigned proposal template (mapped from their destination, or a
@@ -1796,6 +1836,55 @@
         <div id="cp-reviews" class="cp-section-anchor">
           <div class="cp-dashboard__full-width-section">
             <VerticalReviewMarquee />
+          </div>
+        </div>
+      {/if}
+
+      <!-- ══ VIDEO TESTIMONIALS — customer voice section with embedded YouTube
+           testimonials and a highlighted pull-quote. Placed after the reviews
+           marquee and before the quotes section. -->
+      {#if $project}
+        <div class="cp-dashboard__full-width-section cp-video-testimonials">
+          <div class="cp-video-testimonials__inner">
+            <div class="cp-video-testimonials__heading">
+              <h2 class="cp-video-testimonials__title">Our Customers' Voice</h2>
+              <p class="cp-video-testimonials__subtitle">
+                Testimonials from Our Valued Clients
+              </p>
+            </div>
+
+            <div class="cp-video-testimonials__grid">
+              <div class="cp-video-testimonials__card">
+                <div class="cp-video-testimonials__frame">
+                  <iframe
+                    src="https://www.youtube.com/embed/XoYFMUn_6_c"
+                    title="Customer Testimonial 1"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+
+              <div class="cp-video-testimonials__card">
+                <div class="cp-video-testimonials__frame">
+                  <iframe
+                    src="https://www.youtube.com/embed/-tMlb7ZQqyI"
+                    title="Customer Testimonial 2"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+            </div>
+
+            <div class="cp-video-testimonials__quote">
+              <p class="cp-video-testimonials__quote-text">
+                "Go with a moving company that has a well-established reputation
+                for reliability and quality service."
+              </p>
+            </div>
           </div>
         </div>
       {/if}
@@ -2382,6 +2471,150 @@
   :global(.cp-proposal-editbar__msg--ok) { color: #0a7e82; }
   :global(.cp-proposal-editbar__msg--err) { color: #dc2626; }
 
+
+  /* ── Cover letter (proposal introduction) ────────────────────────────── */
+  :global(.cp-cover-letter) {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.08),
+      0 1px 0 rgba(0, 0, 0, 0.04);
+  }
+  :global(.cp-cover-letter__inner) {
+    padding: 40px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+    color: #000000;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  :global(.cp-cover-letter__greeting) {
+    margin: 0 0 20px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #000000;
+  }
+  :global(.cp-cover-letter__body) {
+    margin: 0 0 16px 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #666666;
+  }
+  :global(.cp-cover-letter__callout) {
+    margin: 32px 0;
+    padding: 20px 24px;
+    box-sizing: border-box;
+    border-left: 4px solid #37bcc3;
+    background-color: rgba(55, 188, 195, 0.08);
+    border-radius: 0 8px 8px 0;
+  }
+  :global(.cp-cover-letter__callout-text) {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #000000;
+  }
+  :global(.cp-cover-letter__signoff) {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #000000;
+  }
+  :global(.cp-cover-letter__signoff-brand) {
+    font-weight: 600;
+    color: #37bcc3;
+  }
+  @media (max-width: 520px) {
+    :global(.cp-cover-letter__inner) {
+      padding: 24px 20px;
+    }
+  }
+
+  /* ── Video testimonials (customer voice) ─────────────────────────────── */
+  :global(.cp-video-testimonials) {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.08),
+      0 1px 0 rgba(0, 0, 0, 0.04);
+  }
+  :global(.cp-video-testimonials__inner) {
+    padding: 40px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif;
+    color: #000000;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  :global(.cp-video-testimonials__heading) {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  :global(.cp-video-testimonials__title) {
+    margin: 0 0 8px 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #000000;
+  }
+  :global(.cp-video-testimonials__subtitle) {
+    margin: 0;
+    font-size: 1rem;
+    color: #666666;
+  }
+  :global(.cp-video-testimonials__grid) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  :global(.cp-video-testimonials__card) {
+    flex: 1;
+    min-width: 280px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    background-color: #000;
+  }
+  :global(.cp-video-testimonials__frame) {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    height: 0;
+  }
+  :global(.cp-video-testimonials__frame iframe) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  :global(.cp-video-testimonials__quote) {
+    padding: 24px;
+    background-color: rgba(55, 188, 195, 0.05);
+    border: 1px solid rgba(55, 188, 195, 0.2);
+    border-radius: 12px;
+  }
+  :global(.cp-video-testimonials__quote-text) {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #37bcc3;
+    line-height: 1.5;
+  }
+  @media (max-width: 520px) {
+    :global(.cp-video-testimonials__inner) {
+      padding: 24px 20px;
+    }
+    :global(.cp-video-testimonials__title) {
+      font-size: 1.4rem;
+    }
+  }
 
   /* ── Proposal document section ───────────────────────────────────────── */
   :global(.cp-proposal-section) {
