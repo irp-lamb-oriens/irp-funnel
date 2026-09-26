@@ -140,10 +140,11 @@
 
   .ia__foot {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 1rem;
-    flex-wrap: wrap;
+    text-align: center;
     padding-top: 1.5rem;
     border-top: 1px solid rgba(var(--color-highlight-2-rgb), 0.14);
   }
@@ -151,6 +152,7 @@
     margin: 0;
     color: #475569;
     font-size: 0.95rem;
+    max-width: 52ch;
   }
   .ia__cta {
     display: inline-flex;

@@ -524,8 +524,27 @@
   // handleTabChange is the single entry-point for both user clicks and auto-nav.
   let activePortalTab = "__overview";
 
+  // Destination services are special: they are container-switch tabs, not
+  // scroll-to-section tabs. Selecting one swaps the ENTIRE status page to show
+  // only that service's content; selecting any other tab returns to the normal
+  // single-landing view.
+  let activeDestinationService: 'tours' | 'immigration' | 'coaching' | null = null;
+
   function handleTabChange(id: string) {
     activePortalTab = id;
+    // Destination services swap the whole page instead of scrolling.
+    if (id === "__tours") {
+      activeDestinationService = "tours";
+      return;
+    } else if (id === "__immigration") {
+      activeDestinationService = "immigration";
+      return;
+    } else if (id === "__coaching") {
+      activeDestinationService = "coaching";
+      return;
+    }
+    // Any other tab returns to the normal single-landing view.
+    activeDestinationService = null;
     if (id === "__overview") {
       scrollToSection("cp-overview");
     } else if (id === "__comments") {
@@ -536,12 +555,6 @@
       scrollToSection("cp-quotes");
     } else if (id === "__accept") {
       scrollToSection("cp-accept");
-    } else if (id === "__tours") {
-      scrollToSection("cp-tours");
-    } else if (id === "__immigration") {
-      scrollToSection("cp-immigration");
-    } else if (id === "__coaching") {
-      scrollToSection("cp-coaching");
     } else {
       // Template document section — filter BlockRenderer + scroll to container
       activeSection.set(id);
@@ -625,9 +638,8 @@
   //    before the subcollection quotes appear as 'received'.
   $: proposalTabs = [
     { id: "__overview", label: "Your Move" },
-    // Comments is always available — clients (and staff) can leave a note at
-    // any stage; it lives in its own tab so the overview stays focused.
-    { id: "__comments", label: "Comments" },
+    // Comments tab is disabled for now — the business may resurrect it later.
+    // { id: "__comments", label: "Comments" },
     // Full relocation support — the deep service catalogue (immigration,
     // settling in, vehicle/pet/business) kept inside the portal, never public.
     // Also never shown to staff viewing the portal (internal info).
@@ -1028,6 +1040,22 @@
           </div>
         </div>
       </header>
+
+      <!-- ══ DESTINATION SERVICES — container-swap view. When one of the special
+           destination-service tabs is active, the whole page swaps to show ONLY
+           that service. Otherwise the normal single-landing content below
+           renders. -->
+      {#if activeDestinationService}
+        <div class="cp-dashboard__full-width-section cp-destination-service">
+          {#if activeDestinationService === "tours"}
+            <RelocationTours destinationCountry={$project.destinationCountry ?? ""} />
+          {:else if activeDestinationService === "immigration"}
+            <ImmigrationAdvice destinationCountry={$project.destinationCountry ?? ""} />
+          {:else if activeDestinationService === "coaching"}
+            <InterculturalCoaching destinationCountry={$project.destinationCountry ?? ""} />
+          {/if}
+        </div>
+      {:else}
 
       <!-- ══ YOUR MOVE — always rendered (single-landing). Tabs scroll here. -->
       {#if $project}
@@ -1646,30 +1674,6 @@
         </div>
       {/if}
 
-      <!-- ══ DESTINATION SERVICES — country-gated extra page-level tabs.
-           Surfaced only when the client's destination country is in the
-           operator-configured list (e.g. Costa Rica). Shown to both clients
-           and staff (staff preview the same tabs the client sees). -->
-      {#if $project && $destinationServices}
-        <div id="cp-tours" class="cp-section-anchor">
-          <div class="cp-dashboard__full-width-section">
-            <RelocationTours destinationCountry={$project.destinationCountry ?? ""} />
-          </div>
-        </div>
-
-        <div id="cp-immigration" class="cp-section-anchor">
-          <div class="cp-dashboard__full-width-section">
-            <ImmigrationAdvice destinationCountry={$project.destinationCountry ?? ""} />
-          </div>
-        </div>
-
-        <div id="cp-coaching" class="cp-section-anchor">
-          <div class="cp-dashboard__full-width-section">
-            <InterculturalCoaching destinationCountry={$project.destinationCountry ?? ""} />
-          </div>
-        </div>
-      {/if}
-
       <!-- ══ COMMENTS — always rendered (single-landing). Visible to both
            clients and signed-in staff so either can leave notes on the move. -->
       <!-- {#if $project}
@@ -2013,6 +2017,7 @@
         When ?quoteToken is present, showQuoteSection becomes true, the Quote tab
         is activated automatically, and QuoteView is mounted inside that section.
       -->
+      {/if}
     </div>
     <!-- /.cp-dashboard -->
 
@@ -2471,6 +2476,21 @@
   :global(.cp-proposal-editbar__msg--ok) { color: #0a7e82; }
   :global(.cp-proposal-editbar__msg--err) { color: #dc2626; }
 
+
+  /* ── Destination service (container-swap view) ───────────────────────── */
+  :global(.cp-destination-service) {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.08),
+      0 1px 0 rgba(0, 0, 0, 0.04);
+  }
+  @media (max-width: 520px) {
+    :global(.cp-destination-service) {
+      padding: 1.5rem 1rem;
+    }
+  }
 
   /* ── Cover letter (proposal introduction) ────────────────────────────── */
   :global(.cp-cover-letter) {
