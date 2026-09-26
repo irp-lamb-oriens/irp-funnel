@@ -90,10 +90,21 @@
 
 
   // ── Destination services (country-gated extra tabs on the /status page) ────
-  let destServices: DestinationServicesConfig = { enabled: false, countries: [] };
+  let destServices: DestinationServicesConfig = { enabled: false, countries: [], services: [] };
   let destServicesSaving = false;
   let destServicesSavedMsg = '';
   let newDestCountry = '';
+
+  // The service ids the status page can surface as page-level tabs, in the
+  // order they appear. Mirrors the frontend serviceFunnelRegistry ids.
+  const DEST_SERVICE_OPTIONS: Array<{ id: string; label: string }> = [
+    { id: 'tours', label: 'Relocation tours' },
+    { id: 'immigration', label: 'Immigration advice' },
+    { id: 'coaching', label: 'Intercultural coaching' },
+    { id: 'legal', label: 'Legal & compliance' },
+    { id: 'realty', label: 'Real estate' },
+    { id: 'moving', label: 'International moving' },
+  ];
 
   async function loadDestServices() {
     try {
@@ -103,7 +114,7 @@
     }
   }
 
-  async function persistDestServices(next: string[]) {
+  async function persistDestServices(next: string[], nextServices?: string[]) {
     destServicesSaving = true;
     destServicesSavedMsg = '';
     error = '';
@@ -111,6 +122,7 @@
       destServices = await saveDestinationServices({
         enabled: destServices.enabled,
         countries: next,
+        services: nextServices ?? destServices.services,
       });
       destServicesSavedMsg = '✓ Saved';
       setTimeout(() => (destServicesSavedMsg = ''), 2500);
@@ -134,6 +146,14 @@
 
   function removeDestCountry(name: string) {
     persistDestServices(destServices.countries.filter((c) => c !== name));
+  }
+
+  function toggleDestService(id: string) {
+    const has = destServices.services.includes(id);
+    const next = has
+      ? destServices.services.filter((s) => s !== id)
+      : [...destServices.services, id];
+    persistDestServices(destServices.countries, next);
   }
 
   // ── Tour schedule (alternating-week cadence for relocation tours) ──────────
@@ -1168,6 +1188,27 @@
         </ul>
       {/if}
 
+      <div class="av-dest-services">
+        <h3 class="av-card-title">Tabs shown on the status page</h3>
+        <p class="av-subtitle" style="margin:0 0 0.8rem">
+          Pick which service tabs appear for matching destinations. The order
+          below is the order clients see them.
+        </p>
+        <div class="av-dest-services__grid">
+          {#each DEST_SERVICE_OPTIONS as opt (opt.id)}
+            <label class="av-dest-service">
+              <input
+                type="checkbox"
+                checked={destServices.services.includes(opt.id)}
+                disabled={destServicesSaving}
+                on:change={() => toggleDestService(opt.id)}
+              />
+              <span>{opt.label}</span>
+            </label>
+          {/each}
+        </div>
+      </div>
+
       {#if destServicesSavedMsg}
         <div class="av-offer-foot"><span class="av-offer-saved">{destServicesSavedMsg}</span></div>
       {/if}
@@ -1771,6 +1812,37 @@
   @media (max-width: 700px) {
     .av-offer-cta-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── Destination services (country-gated tabs) ─────────────────────── */
+  .av-dest-services { margin-top: 0.4rem; }
+  .av-dest-services__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+  }
+  .av-dest-service {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 0.8rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #334155;
+    transition: border-color 0.14s, background 0.14s;
+  }
+  .av-dest-service:hover { border-color: rgba(2, 181, 187, 0.4); background: #f0fdfa; }
+  .av-dest-service input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--color-highlight-2, #02b5bb);
+    flex-shrink: 0;
+  }
+  .av-dest-service input:disabled { cursor: wait; opacity: 0.55; }
 
   /* ── Quote approvers editor ─────────────────────────────────────────── */
   .av-approver-add { display: flex; align-items: flex-end; gap: 0.7rem; }

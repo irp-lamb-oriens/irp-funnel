@@ -7,7 +7,14 @@
  * and the chatbot always share one source of truth.
  */
 
-export type ServiceType = "relocation" | "relocation_tour" | "immigration";
+export type ServiceType =
+  | "relocation"
+  | "relocation_tour"
+  | "immigration"
+  // ── Sub-brand funnels (additive — NOT part of the public service slide) ──
+  | "legal"
+  | "realty"
+  | "moving";
 
 export type ServiceFieldType =
   | "text"

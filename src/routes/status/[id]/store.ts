@@ -99,6 +99,8 @@ export const clientOffer = writable<ClientOffer | null>(null);
  */
 export interface DestinationServices {
   countries: string[];
+  /** Ordered service ids the status page surfaces as page-level tabs. */
+  services: string[];
 }
 export const destinationServices = writable<DestinationServices | null>(null);
 

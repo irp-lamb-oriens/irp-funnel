@@ -72,6 +72,7 @@
   import ImmigrationAdvice from "./ImmigrationAdvice.svelte";
   import InterculturalCoaching from "./InterculturalCoaching.svelte";
   import VerticalReviewMarquee from "../../../components/VerticalReviewMarquee.svelte";
+  import { getServiceFunnel } from "../../../lib/serviceFunnelRegistry.ts";
 
 
   import {
@@ -527,20 +528,35 @@
   // Destination services are special: they are container-switch tabs, not
   // scroll-to-section tabs. Selecting one swaps the ENTIRE status page to show
   // only that service's content; selecting any other tab returns to the normal
-  // single-landing view.
-  let activeDestinationService: 'tours' | 'immigration' | 'coaching' | null = null;
+  // single-landing view. The set of services (and their order) is driven by the
+  // server's `destinationServices.services` array, so adding a sub-brand is a
+  // dashboard config change, not a code change.
+  let activeDestinationService: string | null = null;
+
+  // Service id → bespoke renderer. The tab list + container-switch iterate the
+  // server's ordered `services` array and resolve each id through this map, so
+  // the three existing funnels (tours / immigration / coaching) stay the
+  // canonical renderers while the list itself is operator-configurable.
+  const DESTINATION_SERVICE_COMPONENTS: Record<string, any> = {
+    tours: RelocationTours,
+    immigration: ImmigrationAdvice,
+    coaching: InterculturalCoaching,
+  };
+
+  // Ordered destination-service tabs, derived from the server config. Each tab
+  // id is `__<serviceId>`; the label comes from the service-funnel registry
+  // (falling back to the raw id when a service isn't registered yet).
+  $: destinationServiceTabs = ($destinationServices?.services ?? []).map((id) => {
+    const funnel = getServiceFunnel(id);
+    return { id: `__${id}`, label: funnel?.eyebrow ?? id };
+  });
 
   function handleTabChange(id: string) {
     activePortalTab = id;
     // Destination services swap the whole page instead of scrolling.
-    if (id === "__tours") {
-      activeDestinationService = "tours";
-      return;
-    } else if (id === "__immigration") {
-      activeDestinationService = "immigration";
-      return;
-    } else if (id === "__coaching") {
-      activeDestinationService = "coaching";
+    const serviceId = id.startsWith("__") ? id.slice(2) : "";
+    if (serviceId && DESTINATION_SERVICE_COMPONENTS[serviceId]) {
+      activeDestinationService = serviceId;
       return;
     }
     // Any other tab returns to the normal single-landing view.
@@ -649,13 +665,8 @@
     // Destination services — extra page-level tabs surfaced only when the
     // client's destination country is in the operator-configured list
     // (e.g. Costa Rica). Shown to both clients and staff (staff preview).
-    ...($destinationServices
-      ? [
-          { id: "__tours", label: "Relocation tours" },
-          { id: "__immigration", label: "Immigration advice" },
-          { id: "__coaching", label: "Intercultural coaching" },
-        ]
-      : []),
+    // The tab set + order come from the server's `services` array.
+    ...($destinationServices ? destinationServiceTabs : []),
     ...(showQuoteSection
       ? [
           // Template-section tabs only when subcollection quotes exist (unchanged).
@@ -688,9 +699,7 @@
     !isCommentsTab && (activePortalTab === "__overview" || !showQuoteSection);
   $: isQuoteTab = showQuoteSection && activePortalTab === "__quotes";
   $: isAcceptTab = showAcceptSection && activePortalTab === "__accept";
-  $: isToursTab = !!$destinationServices && activePortalTab === "__tours";
-  $: isImmigrationTab = !!$destinationServices && activePortalTab === "__immigration";
-  $: isCoachingTab = !!$destinationServices && activePortalTab === "__coaching";
+  $: isDestinationServiceTab = !!activeDestinationService;
 
 
   $: isProposalTab =
@@ -699,9 +708,7 @@
     !isQuoteTab &&
     !isAcceptTab &&
     !isCommentsTab &&
-    !isToursTab &&
-    !isImmigrationTab &&
-    !isCoachingTab;
+    !isDestinationServiceTab;
 
   // Always use portal-tabs when the project is loaded so the "Your Move" tab
   // is available even before quotes arrive.
@@ -1047,13 +1054,10 @@
            renders. -->
       {#if activeDestinationService}
         <div class="cp-dashboard__full-width-section cp-destination-service">
-          {#if activeDestinationService === "tours"}
-            <RelocationTours destinationCountry={$project.destinationCountry ?? ""} />
-          {:else if activeDestinationService === "immigration"}
-            <ImmigrationAdvice destinationCountry={$project.destinationCountry ?? ""} />
-          {:else if activeDestinationService === "coaching"}
-            <InterculturalCoaching destinationCountry={$project.destinationCountry ?? ""} />
-          {/if}
+          <svelte:component
+            this={DESTINATION_SERVICE_COMPONENTS[activeDestinationService]}
+            destinationCountry={$project.destinationCountry ?? ""}
+          />
         </div>
       {:else}
 

@@ -1707,6 +1707,8 @@ export interface TourScheduleSaveResult extends TourScheduleConfig {
 export interface DestinationServicesConfig {
     enabled: boolean;
     countries: string[];
+    /** Ordered service ids surfaced as page-level tabs on the /status page. */
+    services: string[];
     updatedAt?: string | null;
     updatedBy?: string | null;
 }
@@ -1717,7 +1719,7 @@ export declare function saveTourSchedule(payload: Partial<TourScheduleConfig>): 
 /** Fetch the current destination-services config. */
 export declare function fetchDestinationServices(): Promise<DestinationServicesConfig>;
 /** Save (upsert) the destination-services config. */
-export declare function saveDestinationServices(payload: Pick<DestinationServicesConfig, 'enabled' | 'countries'>): Promise<DestinationServicesConfig>;
+export declare function saveDestinationServices(payload: Pick<DestinationServicesConfig, 'enabled' | 'countries' | 'services'>): Promise<DestinationServicesConfig>;
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';

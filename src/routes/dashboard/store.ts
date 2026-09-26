@@ -3860,6 +3860,8 @@ export interface TourScheduleSaveResult extends TourScheduleConfig {
 export interface DestinationServicesConfig {
   enabled: boolean;
   countries: string[];
+  /** Ordered service ids surfaced as page-level tabs on the /status page. */
+  services: string[];
   updatedAt?: string | null;
   updatedBy?: string | null;
 }
@@ -3892,7 +3894,7 @@ export async function fetchDestinationServices(): Promise<DestinationServicesCon
 
 /** Save (upsert) the destination-services config. */
 export async function saveDestinationServices(
-  payload: Pick<DestinationServicesConfig, 'enabled' | 'countries'>,
+  payload: Pick<DestinationServicesConfig, 'enabled' | 'countries' | 'services'>,
 ): Promise<DestinationServicesConfig> {
   const data = await apiFetch('/api/dashboard/destination-services', {
     method: 'PUT',
