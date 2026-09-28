@@ -1,6 +1,6 @@
 // Centralized, dependency-light GSAP animation engine for the public landing
 // surfaces (relocation-tours, real-estate, homepage ServicesSection, and the
-// gated FullRelocationSupport panel). One vocabulary, reused everywhere, so the
+// destination-service panels). One vocabulary, reused everywhere, so the
 // motion language stays cohesive and page components only add data-attributes.
 //
 // Contract:

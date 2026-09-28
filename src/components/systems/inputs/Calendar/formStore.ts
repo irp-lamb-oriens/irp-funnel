@@ -49,6 +49,23 @@ export type FormState = {
   residencyPathway: string;
   applicantCount: string;
   residencyTimeline: string;
+  // ── Legal-advice fields (additive) ───────────────────────────────
+  legalMatter: string;
+  legalCountry: string;
+  legalUrgency: string;
+  legalNotes: string;
+  // ── Real-estate-assessment fields (additive) ─────────────────────
+  realtyIntent: string;
+  realtyBudget: string;
+  realtyPropertyType: string;
+  realtyTimeline: string;
+  realtyNotes: string;
+  // ── Intercultural-coaching fields (additive) ─────────────────────
+  coachingFocus: string;
+  coachingHouseholdSize: string;
+  coachingDestination: string;
+  coachingTimeline: string;
+  coachingNotes: string;
 };
 
 // Define a store for the form state
@@ -86,6 +103,20 @@ export const formState = writable<FormState>({
   residencyPathway: "",
   applicantCount: "",
   residencyTimeline: "",
+  legalMatter: "",
+  legalCountry: "",
+  legalUrgency: "",
+  legalNotes: "",
+  realtyIntent: "",
+  realtyBudget: "",
+  realtyPropertyType: "",
+  realtyTimeline: "",
+  realtyNotes: "",
+  coachingFocus: "",
+  coachingHouseholdSize: "",
+  coachingDestination: "",
+  coachingTimeline: "",
+  coachingNotes: "",
 });
 
 // Update the form state on input change

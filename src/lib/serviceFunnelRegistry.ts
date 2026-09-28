@@ -50,6 +50,7 @@ export const SUB_BRAND_LABELS: Record<ServiceType, string> = {
   immigration: 'Immigration Partner',
   legal: 'Legal Partner',
   realty: 'Realty Partner',
+  coaching: 'Moving Partner',
   moving: 'Moving Partner',
 };
 
@@ -63,7 +64,7 @@ export const SERVICE_FUNNELS: ServiceFunnelConfig[] = [
     id: 'tours',
     serviceType: 'relocation_tour',
     brand: 'Moving Partner',
-    eyebrow: 'Relocation tours',
+    eyebrow: 'Relocation Tours',
     icon: '📍',
     title: 'See your destination before you commit',
     lead:
@@ -75,7 +76,7 @@ export const SERVICE_FUNNELS: ServiceFunnelConfig[] = [
     id: 'immigration',
     serviceType: 'immigration',
     brand: 'Immigration Partner',
-    eyebrow: 'Immigration advice',
+    eyebrow: 'Immigration Advice',
     icon: '🛂',
     title: 'Your path to residency',
     lead:
@@ -134,9 +135,9 @@ export const SERVICE_FUNNELS: ServiceFunnelConfig[] = [
   },
   {
     id: 'coaching',
-    serviceType: 'moving',
+    serviceType: 'coaching',
     brand: 'Moving Partner',
-    eyebrow: 'Intercultural coaching',
+    eyebrow: 'Intercultural Coaching',
     icon: '🗣️',
     title: 'Settle in, not just move in',
     lead:
@@ -148,7 +149,7 @@ export const SERVICE_FUNNELS: ServiceFunnelConfig[] = [
     id: 'legal',
     serviceType: 'legal',
     brand: 'Legal Partner',
-    eyebrow: 'Legal & compliance',
+    eyebrow: 'Legal Advice',
     icon: '⚖️',
     title: 'Legal support for your move',
     lead:
@@ -160,7 +161,7 @@ export const SERVICE_FUNNELS: ServiceFunnelConfig[] = [
     id: 'realty',
     serviceType: 'realty',
     brand: 'Realty Partner',
-    eyebrow: 'Real estate',
+    eyebrow: 'Real Estate Assessment',
     icon: '🏠',
     title: 'Find the right home',
     lead:

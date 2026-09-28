@@ -250,6 +250,10 @@
       {#if current?.kind === 'field'}
         {@const f = current.field}
 
+        {#if f.serviceLabel}
+          <p class="intake__service-label">{f.serviceLabel}</p>
+        {/if}
+
         {#if f.id === 'originCountry'}
           <h2>{f.label}</h2>
           <Country onSelect={(code) => updateField(code || '', 'originCountry')} bind:buttonRef={originCountryInput} />
@@ -258,9 +262,9 @@
           <h2>{f.label}</h2>
           <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} bind:buttonRef={destinationCountryInput} />
 
-        {:else if f.type === 'country' && f.id === 'nationality'}
+        {:else if f.type === 'country'}
           <h2>{f.label}</h2>
-          <Country onSelect={(code) => updateField(code || '', 'nationality')} defaultCountryCode={$formState.nationality} />
+          <Country onSelect={(code) => updateField(code || '', f.id as any)} defaultCountryCode={String(($formState as any)[f.id] ?? '')} />
 
         {:else if f.type === 'budget'}
           <h2>{f.label}</h2>
@@ -338,7 +342,7 @@
 
         {:else if f.type === 'notes'}
           <h2>{f.label}</h2>
-          <textarea class="intake__notes" placeholder="Add any details…" value={String($formState.notes ?? '')} on:input={(e) => updateField((e.target as HTMLTextAreaElement).value, 'notes')}></textarea>
+          <textarea class="intake__notes" placeholder="Add any details…" value={String(($formState as any)[f.id] ?? '')} on:input={(e) => updateField((e.target as HTMLTextAreaElement).value, f.id as any)}></textarea>
 
         {:else}
           <h2>{f.label}</h2>
@@ -382,6 +386,14 @@
     color: #fff;
   }
   .intake__step { display: flex; flex-direction: column; gap: 1.25rem; }
+  .intake__service-label {
+    margin: 0 0 -0.5rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-highlight-2, #1ccfc9);
+  }
   .intake__back-bar { display: flex; justify-content: flex-start; margin-bottom: 0.25rem; }
   .intake__back {
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);

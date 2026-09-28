@@ -67,10 +67,11 @@
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
   import ChargesCard from "./ChargesCard.svelte";
   import ClientOfferPopup from "./ClientOfferPopup.svelte";
-  import FullRelocationSupport from "./FullRelocationSupport.svelte";
   import RelocationTours from "./RelocationTours.svelte";
   import ImmigrationAdvice from "./ImmigrationAdvice.svelte";
   import InterculturalCoaching from "./InterculturalCoaching.svelte";
+  import LegalAdvice from "./LegalAdvice.svelte";
+  import RealEstateAssessment from "./RealEstateAssessment.svelte";
   import VerticalReviewMarquee from "../../../components/VerticalReviewMarquee.svelte";
   import { getServiceFunnel } from "../../../lib/serviceFunnelRegistry.ts";
 
@@ -541,6 +542,8 @@
     tours: RelocationTours,
     immigration: ImmigrationAdvice,
     coaching: InterculturalCoaching,
+    legal: LegalAdvice,
+    realty: RealEstateAssessment,
   };
 
   // Ordered destination-service tabs, derived from the server config. Each tab
@@ -565,8 +568,6 @@
       scrollToSection("cp-overview");
     } else if (id === "__comments") {
       scrollToSection("cp-comments");
-    } else if (id === "__support") {
-      scrollToSection("cp-support");
     } else if (id === "__quotes") {
       scrollToSection("cp-quotes");
     } else if (id === "__accept") {
@@ -656,12 +657,6 @@
     { id: "__overview", label: "Your Move" },
     // Comments tab is disabled for now — the business may resurrect it later.
     // { id: "__comments", label: "Comments" },
-    // Full relocation support — the deep service catalogue (immigration,
-    // settling in, vehicle/pet/business) kept inside the portal, never public.
-    // Also never shown to staff viewing the portal (internal info).
-    ...(!$irpStaffIsAuthenticated
-      ? [{ id: "__support", label: "Full support" }]
-      : []),
     // Destination services — extra page-level tabs surfaced only when the
     // client's destination country is in the operator-configured list
     // (e.g. Costa Rica). Shown to both clients and staff (staff preview).
@@ -1662,18 +1657,6 @@
           </div>
           <div class="cp-dashboard__full-width-section">
             <ChargesCard />
-          </div>
-        </div>
-      {/if}
-
-      <!-- ══ FULL RELOCATION SUPPORT — the deep service catalogue, gated inside
-           the authenticated portal. This is where immigration, settling in,
-           vehicle/pet/business support live — deliberately NOT on the public
-           site, so IRP does not read as competing with its own partners. -->
-      {#if $project && !$irpStaffIsAuthenticated}
-        <div id="cp-support" class="cp-section-anchor">
-          <div class="cp-dashboard__full-width-section cp-support-section">
-            <FullRelocationSupport />
           </div>
         </div>
       {/if}

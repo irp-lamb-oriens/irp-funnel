@@ -1723,6 +1723,12 @@ export declare function saveDestinationServices(payload: Pick<DestinationService
 export type FieldValueType = 'string' | 'text' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum' | 'email' | 'route' | 'property' | 'vehicles' | 'datetime-list';
 export type FieldScope = 'consultation' | 'root';
 export type FieldSection = 'identity' | 'route' | 'move' | 'logistics' | 'meta' | 'custom';
+/**
+ * Which service a field belongs to, for segmenting the client card's Overview
+ * into collapsible per-service groups. Mirrors the server's `FieldService`.
+ * Unset / "general" = the shared relocation intake.
+ */
+export type FieldService = 'general' | 'relocation_tour' | 'immigration' | 'legal' | 'realty' | 'coaching';
 export interface FieldConfigRow {
     id: string;
     label: string;
@@ -1746,6 +1752,8 @@ export interface FieldConfigRow {
      * absent falls back to the renderer's built-in caption (see COMPOSITE_SUBFIELDS).
      */
     subLabels?: Record<string, string>;
+    /** Service segment for the Overview per-service grouping (mirrors server). */
+    serviceGroup?: FieldService;
     active: boolean;
     isSeed?: boolean;
     updatedBy?: string;

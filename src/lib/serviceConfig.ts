@@ -11,9 +11,9 @@ export type ServiceType =
   | "relocation"
   | "relocation_tour"
   | "immigration"
-  // ── Sub-brand funnels (additive — NOT part of the public service slide) ──
   | "legal"
   | "realty"
+  | "coaching"
   | "moving";
 
 export type ServiceFieldType =
@@ -52,6 +52,12 @@ export interface ServiceFieldDef {
   fields?: ServiceFieldDef[];
   showWhen?: FieldCondition;
   chatbotQuestion: string;
+  /**
+   * The service context this field belongs to (e.g. "Legal advice",
+   * "Real estate assessment"). Set by the server resolver. Drives a slide's
+   * context label and the chatbot's per-question framing.
+   */
+  serviceLabel?: string;
   priority: number;
 }
 
@@ -82,10 +88,20 @@ export const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
   { value: "relocation", label: "International Shipping" },
   { value: "relocation_tour", label: "Relocation tours" },
   { value: "immigration", label: "Immigration consultancy" },
+  { value: "realty", label: "Real estate assessment" },
+  { value: "coaching", label: "Intercultural coaching" },
+  { value: "legal", label: "Legal advice" },
 ];
 
 /** The full additive set, as one toggle. */
-export const ALL_SERVICE_TYPES: readonly ServiceType[] = ["relocation", "relocation_tour", "immigration"];
+export const ALL_SERVICE_TYPES: readonly ServiceType[] = [
+  "relocation",
+  "relocation_tour",
+  "immigration",
+  "realty",
+  "coaching",
+  "legal",
+];
 
 /**
  * Normalize a raw service value from a URL param or legacy string into a

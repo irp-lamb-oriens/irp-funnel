@@ -46,6 +46,20 @@ export type FormState = {
     residencyPathway: string;
     applicantCount: string;
     residencyTimeline: string;
+    legalMatter: string;
+    legalCountry: string;
+    legalUrgency: string;
+    legalNotes: string;
+    realtyIntent: string;
+    realtyBudget: string;
+    realtyPropertyType: string;
+    realtyTimeline: string;
+    realtyNotes: string;
+    coachingFocus: string;
+    coachingHouseholdSize: string;
+    coachingDestination: string;
+    coachingTimeline: string;
+    coachingNotes: string;
 };
 export declare const formState: import("svelte/store").Writable<FormState>;
 export declare function updateField(value: string | string[] | Vehicle[] | Traveler[] | {
