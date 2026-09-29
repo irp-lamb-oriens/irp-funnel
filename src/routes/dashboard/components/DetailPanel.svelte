@@ -31,7 +31,7 @@
   } from '../store.ts';
 
 
-  import type { ClientActionsPayload, ActionArgSchema, FieldConfigRow } from '../store.ts';
+  import type { ClientActionsPayload, ActionArgSchema, FieldConfigRow, FieldService } from '../store.ts';
   import { ADMIN_EMAILS } from '../access.ts';
 
   // CRM admins can see the "ghost" of soft-deleted notes; everyone else never
@@ -263,6 +263,44 @@
   // The list the Overview renders: the live registry when available, else the
   // hardcoded fallback. `$activeFields` is already filtered to active + sorted.
   $: overviewFields = ($activeFields && $activeFields.length) ? $activeFields : FALLBACK_FIELDS;
+
+  // ── Per-service segmentation of the Overview tab ──────────────────────────
+  // Each registry field carries a `serviceGroup` (visible/editable in
+  // Automations → Overview fields). We group the Overview fields under
+  // collapsible-adjacent headers so a lead that spans several services reads as
+  // clearly separated sections rather than one long undifferentiated list.
+  // Fields default to `general`, which renders with no header right after the
+  // service badge / pricing / priority controls. The service groups render in a
+  // stable order with their own named header. Any unrecognised group value
+  // (shouldn't happen after the router whitelist) falls back to `general`.
+  const SERVICE_GROUP_ORDER: FieldService[] = [
+    'general', 'relocation_tour', 'immigration', 'legal', 'realty', 'coaching',
+  ];
+  const SERVICE_GROUP_LABELS: Record<FieldService, string> = {
+    general: 'Overview',
+    relocation_tour: 'Relocation Tours',
+    immigration: 'Immigration Advice',
+    legal: 'Legal Advice',
+    realty: 'Real Estate Assessment',
+    coaching: 'Intercultural Coaching',
+  };
+  $: groupedOverviewFields = (() => {
+    const order = new Set<FieldService>(SERVICE_GROUP_ORDER);
+    const groups: { group: FieldService; label: string; fields: FieldConfigRow[] }[] = [];
+    // Bucket every field into a registered group. Unknown / forward-looking
+    // `serviceGroup` values (a newer server, or a stale field id) collapse to
+    // `general` rather than being dropped, so no Overview field can silently
+    // disappear after a server upgrade or a bad registry row.
+    for (const g of SERVICE_GROUP_ORDER) {
+      groups.push({ group: g, label: SERVICE_GROUP_LABELS[g], fields: [] });
+    }
+    for (const f of overviewFields) {
+      const raw = f.serviceGroup ?? 'general';
+      const g: FieldService = order.has(raw as FieldService) ? (raw as FieldService) : 'general';
+      groups.find((x) => x.group === g)!.fields.push(f);
+    }
+    return groups.filter((x) => x.fields.length > 0);
+  })();
 
   /** Dotted PATCH path for a registry field, honoring its scope. */
   function ovPath(f: FieldConfigRow, idx: number): string {
@@ -870,6 +908,9 @@
     relocation: { label: 'International Shipping', key: 'relocation' },
     relocation_tour: { label: 'Relocation Tour', key: 'relocation_tour' },
     immigration: { label: 'Immigration Consultancy', key: 'immigration' },
+    legal: { label: 'Legal Advice', key: 'legal' },
+    realty: { label: 'Real Estate Assessment', key: 'realty' },
+    coaching: { label: 'Intercultural Coaching', key: 'coaching' },
     both: { label: 'Relocation + Tour', key: 'both' },
   };
   $: serviceTypeMeta = (() => {
@@ -1131,8 +1172,14 @@
                registry resolves, so the panel is never blank. Composite types
                (route / property / vehicles / datetime-list) keep their bespoke
                widgets; scalars use the generic click-to-edit <EditableField>. -->
-          {#each overviewFields as f (f.id)}
-            {@const val = ovValue($selectedClient, f, latestIdx)}
+           {#each groupedOverviewFields as grp (grp.group)}
+             {#if grp.group !== 'general'}
+               <div class="detail-field detail-field--full detail-overview__group">
+                 <span class="detail-overview__group-title">{grp.label}</span>
+               </div>
+             {/if}
+             {#each grp.fields as f (f.id)}
+               {@const val = ovValue($selectedClient, f, latestIdx)}
             <!-- `vehicles` is an in-place editor (add/edit/delete), so it always
                  renders — even empty/non-existent — so an operator can build the
                  list from scratch. Every other field honors its showWhenEmpty. -->
@@ -1291,12 +1338,13 @@
                 {/if}
 
 
-              </div>
-            {/if}
-          {/each}
+               </div>
+             {/if}
+             {/each}
+           {/each}
 
 
-          <!-- ── Shipment & Logistics summary card ── -->
+           <!-- ── Shipment & Logistics summary card ── -->
           <div class="detail-field detail-field--full">
             <ShipmentTrackingCard client={$selectedClient} />
           </div>
@@ -2545,10 +2593,39 @@
     background: rgba(16, 185, 129, 0.12);
     border-color: rgba(16, 185, 129, 0.35);
   }
+  .service-type-badge--legal {
+    color: #7c3aed;
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+  }
+  .service-type-badge--realty {
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  .service-type-badge--coaching {
+    color: #0b7285;
+    background: rgba(2, 181, 187, 0.12);
+    border-color: rgba(2, 181, 187, 0.3);
+  }
   .service-type-badge--multiple {
     color: #0f172a;
     background: rgba(100, 116, 139, 0.12);
     border-color: rgba(100, 116, 139, 0.35);
+  }
+
+  /* ── Per-service Overview group header ──────────────────────────────── */
+  .detail-overview__group {
+    margin-top: 1.1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #eef2f6;
+  }
+  .detail-overview__group-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
   }
 
   /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────

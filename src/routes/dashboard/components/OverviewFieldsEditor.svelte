@@ -38,6 +38,7 @@
     type FieldValueType,
     type FieldSection,
     type FieldScope,
+    type FieldService,
   } from '../store.ts';
 
 
@@ -52,6 +53,7 @@
   let newSection: FieldSection = 'custom';
   let newValueType: FieldValueType = 'string';
   let newScope: FieldScope = 'consultation';
+  let newServiceGroup: FieldService = 'general';
   let newOptions = ''; // comma-separated when valueType === 'enum'
   let creating = false;
 
@@ -82,6 +84,15 @@
   const SCOPES: { value: FieldScope; label: string }[] = [
     { value: 'consultation', label: 'Consultation' },
     { value: 'root', label: 'Client (root)' },
+  ];
+
+  const SERVICE_GROUPS: { value: FieldService; label: string }[] = [
+    { value: 'general', label: 'General (shared)' },
+    { value: 'relocation_tour', label: 'Relocation Tours' },
+    { value: 'immigration', label: 'Immigration Advice' },
+    { value: 'legal', label: 'Legal Advice' },
+    { value: 'realty', label: 'Real Estate Assessment' },
+    { value: 'coaching', label: 'Intercultural Coaching' },
   ];
 
   $: fields = $fieldConfig;
@@ -116,6 +127,7 @@
         section: newSection,
         valueType: newValueType,
         scope: newScope,
+        serviceGroup: newServiceGroup,
         ...(options && options.length ? { options } : {}),
       });
       // Reset the form
@@ -124,6 +136,7 @@
       newValueType = 'string';
       newSection = 'custom';
       newScope = 'consultation';
+      newServiceGroup = 'general';
       showNewForm = false;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to create field.';
@@ -248,6 +261,14 @@
             {/each}
           </select>
         </label>
+        <label class="ofe-field">
+          <span>Service group</span>
+          <select bind:value={newServiceGroup}>
+            {#each SERVICE_GROUPS as g}
+              <option value={g.value}>{g.label}</option>
+            {/each}
+          </select>
+        </label>
       </div>
       {#if newValueType === 'enum'}
         <label class="ofe-field ofe-field--full">
@@ -276,6 +297,7 @@
             <th>Label</th>
             <th>Type</th>
             <th>Section</th>
+            <th>Service group</th>
             <th class="ofe-col-toggle" title="Shown to the client on their status page (“Your details”)">Client Visible</th>
             <th class="ofe-col-toggle" title="Client can edit this field from their status page (requires Client Visible)">Client Editable</th>
             <th class="ofe-col-toggle" title="Shown on the internal Overview tab">Active</th>
@@ -331,6 +353,17 @@
                 >
                   {#each SECTIONS as s}
                     <option value={s.value}>{s.label}</option>
+                  {/each}
+                </select>
+              </td>
+              <td>
+                <select
+                  value={field.serviceGroup ?? 'general'}
+                  disabled={busyId === field.id}
+                  on:change={(e) => patchField(field, { serviceGroup: e.currentTarget.value as FieldService })}
+                >
+                  {#each SERVICE_GROUPS as g}
+                    <option value={g.value}>{g.label}</option>
                   {/each}
                 </select>
               </td>
@@ -391,7 +424,7 @@
             {#if COMPOSITE_SUBFIELDS[field.valueType]}
               <tr class="ofe-sub-row" class:ofe-row--off={field.active === false}>
                 <td></td>
-                <td colspan="7">
+                <td colspan="8">
                   <div class="ofe-sublabels">
                     <span class="ofe-sublabels__hint">Sub-labels — name each input</span>
                     <div class="ofe-sublabels__grid">

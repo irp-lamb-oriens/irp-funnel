@@ -35,6 +35,19 @@
   let serviceTypes: ServiceType[] = [];
   $: serviceTypes = funnel ? [funnel.serviceType] : [];
 
+  // Editorial index for the ghost numeral. The funnel's stable id carries a
+  // zero-padded ordinal via this map, falling back to "00" for unknown ids so
+  // the chrome never renders an empty ghost numeral.
+  const INDEX_BY_ID: Record<string, string> = {
+    tours: '01',
+    immigration: '02',
+    coaching: '03',
+    legal: '04',
+    realty: '05',
+    moving: '06',
+  };
+  $: funnelIndex = INDEX_BY_ID[serviceId] ?? '00';
+
   let formOpen = false;
   function openForm() {
     formOpen = true;
@@ -47,6 +60,8 @@
     title={funnel.title}
     lead={funnel.lead}
     icon={funnel.icon}
+    index={funnelIndex}
+    brand={funnel.brand}
   >
     <slot />
   </ServiceFunnel>
