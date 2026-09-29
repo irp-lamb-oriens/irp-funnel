@@ -2466,12 +2466,8 @@
 
   /* ── Destination service (container-swap view) ───────────────────────── */
   :global(.cp-destination-service) {
-    background: #ffffff;
     border-radius: 16px;
     padding: 2.5rem 2rem;
-    box-shadow:
-      0 10px 40px rgba(0, 0, 0, 0.08),
-      0 1px 0 rgba(0, 0, 0, 0.04);
   }
   @media (max-width: 520px) {
     :global(.cp-destination-service) {
