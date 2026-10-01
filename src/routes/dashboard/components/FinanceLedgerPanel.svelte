@@ -18,6 +18,7 @@
    * can never drift from the server's numbers.
    */
   import { onMount } from 'svelte';
+  import Select, { type SelectOption } from './ui/Select.svelte';
   import {
     financeLedger,
     fetchFinanceLedger,
@@ -32,12 +33,103 @@
     type ProviderPayment,
     type QuoteSettlement,
     type Recurrence,
+    type SettledClientPayment,
   } from '../store.ts';
 
   export let currency = 'USD';
 
-  type Tab = 'settlements' | 'ledger';
+  type Tab = 'settlements' | 'payments' | 'ledger';
   let tab: Tab = 'settlements';
+
+  // ── Client filter + sort (Settlements and Payments share these) ────────────
+  let clientQuery = '';
+  type SortKey = 'name-asc' | 'name-desc' | 'paid-desc' | 'paid-asc' | 'date-desc' | 'date-asc';
+  let sortKey: SortKey = 'name-asc';
+
+  const sortOptions: SelectOption[] = [
+    { value: 'name-asc', label: 'Client A–Z' },
+    { value: 'name-desc', label: 'Client Z–A' },
+    { value: 'paid-desc', label: 'Most paid' },
+    { value: 'paid-asc', label: 'Least paid' },
+    { value: 'date-desc', label: 'Newest first' },
+    { value: 'date-asc', label: 'Oldest first' },
+  ];
+
+  function clientName(s: QuoteSettlement): string {
+    return (s.clientName ?? s.quoteId ?? '').toLowerCase();
+  }
+
+  /** Settlements filtered by the client search and ordered by the sort key. */
+  $: visibleSettlements = (() => {
+    const q = clientQuery.trim().toLowerCase();
+    const list = ($financeLedger?.settlements ?? []).filter((s) =>
+      q ? clientName(s).includes(q) : true,
+    );
+    const dir = sortKey.endsWith('desc') ? -1 : 1;
+    return [...list].sort((a, b) => {
+      switch (sortKey) {
+        case 'name-asc':
+        case 'name-desc':
+          return clientName(a).localeCompare(clientName(b)) * dir;
+        case 'paid-desc':
+        case 'paid-asc':
+          return (a.collected - b.collected) * dir;
+        case 'date-desc':
+        case 'date-asc':
+          return ((a.acceptedAt ?? '').localeCompare(b.acceptedAt ?? '')) * dir;
+        default:
+          return 0;
+      }
+    });
+  })();
+
+  /** One flat row per received payment, for the Payments report. */
+  interface PaymentRow {
+    quoteId: string;
+    clientName: string;
+    payment: SettledClientPayment;
+  }
+
+  $: allPayments = (() => {
+    const rows: PaymentRow[] = [];
+    for (const s of $financeLedger?.settlements ?? []) {
+      for (const p of s.clientPayments ?? []) {
+        if (p.received) rows.push({ quoteId: s.quoteId, clientName: s.clientName ?? s.quoteId, payment: p });
+      }
+    }
+    return rows;
+  })();
+
+  $: visiblePayments = (() => {
+    const q = clientQuery.trim().toLowerCase();
+    const list = allPayments.filter((r) => (q ? r.clientName.toLowerCase().includes(q) : true));
+    const dir = sortKey.endsWith('desc') ? -1 : 1;
+    return [...list].sort((a, b) => {
+      switch (sortKey) {
+        case 'name-asc':
+        case 'name-desc':
+          return a.clientName.toLowerCase().localeCompare(b.clientName.toLowerCase()) * dir;
+        case 'paid-desc':
+        case 'paid-asc':
+          return (a.payment.amount - b.payment.amount) * dir;
+        case 'date-desc':
+        case 'date-asc':
+          return ((a.payment.date ?? '').localeCompare(b.payment.date ?? '')) * dir;
+        default:
+          return 0;
+      }
+    });
+  })();
+
+  $: paymentsTotal = visiblePayments.reduce((s, r) => s + r.payment.amount, 0);
+  $: paymentsClients = new Set(visiblePayments.map((r) => r.clientName)).size;
+
+  // Result counts, so the operator always knows the filter is narrowing the list.
+  $: settlementCount = visibleSettlements.length;
+  $: settlementTotal = $financeLedger?.settlements.length ?? 0;
+  $: paymentCount = visiblePayments.length;
+  $: paymentTotal = allPayments.length;
+  $: isFiltered = clientQuery.trim().length > 0;
 
   let loading = false;
   let errorMsg = '';
@@ -119,6 +211,49 @@
 
   function newId(prefix: string): string {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  /** Escape a cell for CSV and join rows into a downloadable file. */
+  function downloadCsv(filename: string, rows: (string | number)[][]): void {
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Export the currently filtered/ordered settlements as CSV. */
+  function exportSettlements(): void {
+    const header = ['Client', 'Accepted', 'Billed', 'Paid', '%', 'Client owes', 'We owe', 'Net cash'];
+    const rows = visibleSettlements.map((s) => [
+      s.clientName ?? s.quoteId,
+      shortDate(s.acceptedAt),
+      s.billedTotal,
+      s.collected,
+      s.collectedPct ?? '',
+      s.clientOutstanding,
+      s.providerOutstanding,
+      s.netCash,
+    ]);
+    downloadCsv('settlements.csv', [header, ...rows]);
+  }
+
+  /** Export the currently filtered/ordered payments as CSV. */
+  function exportPayments(): void {
+    const header = ['Client', 'Date', 'Amount', 'Method', 'Note'];
+    const rows = visiblePayments.map((r) => [
+      r.clientName,
+      shortDate(r.payment.date),
+      r.payment.amount,
+      r.payment.method ?? '',
+      r.payment.note ?? '',
+    ]);
+    downloadCsv('payments.csv', [header, ...rows]);
   }
 
   /** Open a settlement row, seeding the editor from what the server returned. */
@@ -235,19 +370,38 @@
 </script>
 
 <div class="fl">
-  <nav class="fl__tabs">
-    <button class:active={tab === 'settlements'} on:click={() => (tab = 'settlements')}>
+  <div class="fl__tabs" role="tablist" aria-label="Finance reports">
+    <button
+      role="tab"
+      aria-selected={tab === 'settlements'}
+      class:active={tab === 'settlements'}
+      on:click={() => (tab = 'settlements')}
+    >
       Settlements
       {#if $financeLedger}<span class="fl__count">{$financeLedger.settlementTotals.n}</span>{/if}
     </button>
-    <button class:active={tab === 'ledger'} on:click={() => (tab = 'ledger')}>
+    <button
+      role="tab"
+      aria-selected={tab === 'payments'}
+      class:active={tab === 'payments'}
+      on:click={() => (tab = 'payments')}
+    >
+      Payments
+      {#if $financeLedger}<span class="fl__count">{allPayments.length}</span>{/if}
+    </button>
+    <button
+      role="tab"
+      aria-selected={tab === 'ledger'}
+      class:active={tab === 'ledger'}
+      on:click={() => (tab = 'ledger')}
+    >
       Ledger
       {#if $financeLedger}<span class="fl__count">{$financeLedger.entries.length}</span>{/if}
     </button>
     <button class="fl__reload" on:click={load} disabled={loading}>
       {loading ? 'Loading…' : 'Refresh'}
     </button>
-  </nav>
+  </div>
 
   {#if errorMsg}
     <p class="fl__error">{errorMsg}</p>
@@ -256,6 +410,31 @@
   {#if !$financeLedger}
     <p class="fl__empty">{loading ? 'Reading the accepted quotes…' : 'No data yet.'}</p>
   {:else if tab === 'settlements'}
+    <div class="fl__filters">
+      <input
+        class="fl__search"
+        type="search"
+        placeholder="Search client…"
+        aria-label="Search settlements by client"
+        bind:value={clientQuery}
+      />
+      <div class="fl__sort-wrap">
+        <Select
+          options={sortOptions}
+          bind:value={sortKey}
+          ariaLabel="Sort settlements"
+          size="sm"
+        />
+      </div>
+      {#if isFiltered}
+        <button class="fl__clear" on:click={() => (clientQuery = '')}>Clear</button>
+      {/if}
+      <button class="fl__export" on:click={exportSettlements}>Export CSV</button>
+    </div>
+    <p class="fl__meta" aria-live="polite">
+      {settlementCount} of {settlementTotal} quotes
+      {#if isFiltered} matching “{clientQuery}”{/if}
+    </p>
     {@const t = $financeLedger.settlementTotals}
     <section class="fl__cards">
       <article class="c c--in">
@@ -299,7 +478,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each $financeLedger.settlements as s (s.quoteId)}
+            {#each visibleSettlements as s (s.quoteId)}
               <tr class:settled={s.fullySettled}>
                 <td class="fl__name">{s.clientName ?? s.quoteId}</td>
                 <td>{shortDate(s.acceptedAt)}</td>
@@ -315,7 +494,11 @@
                 <td class:owing={s.providerOutstanding > 0}>{money(s.providerOutstanding)}</td>
                 <td class:negative={s.netCash < 0}>{money(s.netCash)}</td>
                 <td>
-                  <button class="fl__link" on:click={() => toggleRow(s)}>
+                  <button
+                    class="fl__link"
+                    aria-expanded={openQuoteId === s.quoteId}
+                    on:click={() => toggleRow(s)}
+                  >
                     {openQuoteId === s.quoteId ? 'Close' : 'Payments'}
                   </button>
                 </td>
@@ -339,7 +522,7 @@
                             <input type="number" placeholder="%" bind:value={p.percent} />
                             <input type="text" placeholder="Method" bind:value={p.method} />
                             <label><input type="checkbox" bind:checked={p.received} /> received</label>
-                            <button class="ed__x" on:click={() => removeRow(s.quoteId, 'clientPayments', p.id)}>✕</button>
+                            <button class="ed__x" aria-label="Remove payment" on:click={() => removeRow(s.quoteId, 'clientPayments', p.id)}>✕</button>
                           </div>
                         {/each}
                         <button class="ed__add" on:click={() => addClientPayment(s.quoteId)}>+ Payment</button>
@@ -357,7 +540,7 @@
                             <input type="text" placeholder="Provider" bind:value={p.providerName} />
                             <input type="number" placeholder="Amount" bind:value={p.amount} />
                             <label><input type="checkbox" bind:checked={p.paid} /> paid</label>
-                            <button class="ed__x" on:click={() => removeRow(s.quoteId, 'providerPayments', p.id)}>✕</button>
+                            <button class="ed__x" aria-label="Remove bill" on:click={() => removeRow(s.quoteId, 'providerPayments', p.id)}>✕</button>
                           </div>
                         {/each}
                         <button class="ed__add" on:click={() => addProviderPayment(s.quoteId)}>+ Bill</button>
@@ -375,7 +558,7 @@
                             <input type="text" placeholder="Description" bind:value={e.description} />
                             <input type="number" placeholder="Charged" bind:value={e.amount} />
                             <input type="number" placeholder="Our cost" bind:value={e.cost} />
-                            <button class="ed__x" on:click={() => removeRow(s.quoteId, 'extraCharges', e.id)}>✕</button>
+                            <button class="ed__x" aria-label="Remove charge" on:click={() => removeRow(s.quoteId, 'extraCharges', e.id)}>✕</button>
                           </div>
                         {/each}
                         <button class="ed__add" on:click={() => addExtraCharge(s.quoteId)}>+ Charge</button>
@@ -396,6 +579,80 @@
               {/if}
             {/each}
           </tbody>
+        </table>
+      {/if}
+    </div>
+  {:else if tab === 'payments'}
+    <div class="fl__filters">
+      <input
+        class="fl__search"
+        type="search"
+        placeholder="Search client…"
+        aria-label="Search payments by client"
+        bind:value={clientQuery}
+      />
+      <div class="fl__sort-wrap">
+        <Select
+          options={sortOptions}
+          bind:value={sortKey}
+          ariaLabel="Sort payments"
+          size="sm"
+        />
+      </div>
+      {#if isFiltered}
+        <button class="fl__clear" on:click={() => (clientQuery = '')}>Clear</button>
+      {/if}
+      <button class="fl__export" on:click={exportPayments}>Export CSV</button>
+    </div>
+    <p class="fl__meta" aria-live="polite">
+      {paymentCount} of {paymentTotal} payments
+      {#if isFiltered} matching “{clientQuery}”{/if}
+    </p>
+    <section class="fl__cards">
+      <article class="c c--in">
+        <h4>Payments received</h4>
+        <p class="c__big">{money(paymentsTotal)}</p>
+        <span>{visiblePayments.length} payment{visiblePayments.length === 1 ? '' : 's'}</span>
+      </article>
+      <article class="c c--cash">
+        <h4>Clients</h4>
+        <p class="c__big">{paymentsClients}</p>
+        <span>with at least one received payment</span>
+      </article>
+    </section>
+
+    <div class="fl__panel">
+      {#if visiblePayments.length === 0}
+        <p class="fl__empty">No received payments match this filter.</p>
+      {:else}
+        <table class="fl__table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each visiblePayments as row (row.payment.id)}
+              <tr>
+                <td class="fl__name">{row.clientName}</td>
+                <td>{shortDate(row.payment.date)}</td>
+                <td>{money(row.payment.amount)}</td>
+                <td>{row.payment.method ?? '—'}</td>
+                <td>{row.payment.note ?? '—'}</td>
+              </tr>
+            {/each}
+          </tbody>
+          <tfoot>
+            <tr class="fl__total-row">
+              <td colspan="2">Total</td>
+              <td>{money(paymentsTotal)}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
         </table>
       {/if}
     </div>
@@ -499,7 +756,7 @@
                     />
                   {:else}—{/if}
                 </td>
-                <td><button class="ed__x" on:click={() => removeEntry(e.id)}>✕</button></td>
+                <td><button class="ed__x" aria-label="Delete entry" on:click={() => removeEntry(e.id)}>✕</button></td>
               </tr>
             {/each}
           </tbody>
@@ -596,6 +853,69 @@
   }
 
   .fl__reload { margin-left: 0.5rem; color: #94a3b8; }
+
+  .fl__filters {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .fl__search {
+    flex: 1;
+    max-width: 320px;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.84rem;
+    transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fl__search:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
+  }
+
+  .fl__sort-wrap {
+    width: 180px;
+    flex-shrink: 0;
+  }
+
+  .fl__clear,
+  .fl__export {
+    padding: 0.5rem 1.1rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #475569;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fl__clear:hover,
+  .fl__export:hover { background: #f1f5f9; color: #1e293b; }
+
+  .fl__export { margin-left: auto; }
+
+  .fl__meta {
+    margin: -0.5rem 0 1rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+
+  .fl__total-row td {
+    border-top: 2px solid #e2e8f0;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f8fafc;
+  }
 
   .fl__error {
     padding: 0.6rem 1rem;

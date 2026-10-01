@@ -2052,6 +2052,19 @@ export interface ClientPayment {
     /** False for an instalment that is scheduled but has not arrived. */
     received?: boolean;
 }
+/**
+ * A client payment with `percent` already resolved to a concrete `amount`
+ * against the contract value. The server is the only place money arithmetic
+ * happens, so this mirror just carries the resolved figure the report returns.
+ */
+export interface SettledClientPayment {
+    id: string;
+    date?: string | null;
+    amount: number;
+    method?: string | null;
+    note?: string | null;
+    received: boolean;
+}
 export interface ProviderPayment {
     id: string;
     providerId?: string | null;
@@ -2082,6 +2095,8 @@ export interface QuoteSettlement {
     collected: number;
     collectedPct: number | null;
     clientOutstanding: number;
+    /** Every client payment, `percent` resolved to its dollar amount. */
+    clientPayments: SettledClientPayment[];
     providerCost: number;
     providerPaid: number;
     providerOutstanding: number;
