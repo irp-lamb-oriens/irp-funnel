@@ -90,6 +90,13 @@
     payment: SettledClientPayment;
   }
 
+  /** The received payments for one settlement, oldest → newest by date. */
+  function receivedPayments(s: QuoteSettlement): SettledClientPayment[] {
+    return (s.clientPayments ?? [])
+      .filter((p) => p.received)
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  }
+
   $: allPayments = (() => {
     const rows: PaymentRow[] = [];
     for (const s of $financeLedger?.settlements ?? []) {
@@ -483,7 +490,15 @@
                 <td class="fl__name">{s.clientName ?? s.quoteId}</td>
                 <td>{shortDate(s.acceptedAt)}</td>
                 <td>{money(s.billedTotal)}</td>
-                <td>{money(s.collected)}</td>
+                <td>
+                  {money(s.collected)}
+                  {#if receivedPayments(s).length > 0}
+                    <div class="fl__sub">
+                      {receivedPayments(s).length} payment{receivedPayments(s).length === 1 ? '' : 's'}
+                      · last {shortDate(receivedPayments(s).at(-1)?.date)}
+                    </div>
+                  {/if}
+                </td>
                 <td>
                   <span class="bar" title="{pct(s.collectedPct)} collected">
                     <span class="bar__fill" style="width: {Math.min(100, s.collectedPct ?? 0)}%"></span>
@@ -850,6 +865,13 @@
     font-size: 0.68rem;
     font-weight: 800;
     padding: 0.1em 0.55em;
+  }
+
+  .fl__sub {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    margin-top: 2px;
   }
 
   .fl__reload { margin-left: 0.5rem; color: #94a3b8; }
