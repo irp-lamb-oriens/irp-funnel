@@ -8,7 +8,7 @@ This file tracks all modularized UI components, their purpose, and their import 
 
 - **PrimaryButton**
   - Path: `src/components/ui/PrimaryButton.svelte`
-  - Usage: Main CTAs, e.g., "Schedule Consultation"
+  - Usage: Main CTAs, e.g., "Book a consultation"
 - **SecondaryButton**
   - Path: `src/components/ui/SecondaryButton.svelte`
   - Usage: Outlined/secondary actions

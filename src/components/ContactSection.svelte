@@ -110,7 +110,7 @@
       </p>
       <div class="contact-button-row">
         <div class="contact-btn contact-btn--primary">
-          <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
+          <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
         </div>
         <div class="contact-btn contact-btn--secondary">
           <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary-inverted" target="_blank" />

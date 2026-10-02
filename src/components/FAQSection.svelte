@@ -146,7 +146,7 @@
         </div>
       {/if}
       <div class="button-row faq-button-row">
-        <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
+        <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
       </div>
     </div>
   </div>

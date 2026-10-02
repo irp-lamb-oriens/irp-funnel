@@ -23,7 +23,7 @@
       <img class="relocation-philosophy__signature" src="/sign-itp.jpg" width="184" height="81" alt="Signature" />
       <p class="relocation-philosophy__desc">IRP, Chief Executive Officer</p>
       <div class="button-row">
-        <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
+        <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
         <CTAButton label="Download Consulting Checklist" href="/free-resources/" variant="secondary" target="_blank" />
       </div>
     </div>

@@ -56,21 +56,21 @@
       title: 'Ready to start your<br/>international journey?',
       sub: "Speak with our virtual assistant, fill out a quick form, or connect with us on WhatsApp.",
       btnIcon: '',
-      btnText: 'Get personalized relocation assistance',
+      btnText: 'Book a consultation',
     },
     'v2-warm-copy': {
       eyebrow: '14+ years helping families move abroad without the stress',
       title: "Let's make your move<br/>feel simple.",
       sub: "Tell us where you're going — we'll map the path. Chat with our team, fill out a quick form, or message us on WhatsApp.",
       btnIcon: '',
-      btnText: 'Talk to an expert',
+      btnText: 'Book a consultation',
     },
     'v3-urgent-copy': {
       eyebrow: 'Dates are booking fast — secure your relocation strategy now',
       title: 'Your move shouldn’t wait.<br/>Act now.',
       sub: "Lock in your personalized relocation plan today — chat with our team, fill out a quick form, or WhatsApp us.",
       btnIcon: '',
-      btnText: 'Book Your Consultation Call',
+      btnText: 'Book a consultation',
     },
   };
   $: evoCopy = EVO_COPY[evoCopyVariantStr] ?? EVO_COPY['v1-baseline'];

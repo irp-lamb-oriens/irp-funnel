@@ -193,13 +193,13 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="scm-overlay" on:click={handleOverlayClick} role="presentation">
-  <div class="scm" role="dialog" aria-modal="true" aria-label={mode === 'reschedule' ? 'Reschedule consultation call' : 'Create new client'}>
+  <div class="scm" role="dialog" aria-modal="true" aria-label={mode === 'reschedule' ? 'ReBook a consultation call' : 'Create new client'}>
     <!-- Header -->
     <div class="scm__header">
       <div class="scm__header-icon">{mode === 'reschedule' ? '📅' : '➕'}</div>
       <div class="scm__header-text">
         <h2 class="scm__title">
-          {mode === 'reschedule' ? 'Reschedule Consultation' : 'Create New Client'}
+          {mode === 'reschedule' ? 'ReBook a consultation' : 'Create New Client'}
         </h2>
         <p class="scm__subtitle">
           {#if mode === 'reschedule'}

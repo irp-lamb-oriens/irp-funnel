@@ -58,7 +58,7 @@
     { label: "News", href: "/news-updates" },
     { label: "Contact", href: "/contact-us" },
   ];
-  const cta = { label: "Schedule Consultation", href: "/consultation" };
+  const cta = { label: "Book a consultation", href: "/consultation" };
   const destinations: Destination[] = [
     { label: "Costa Rica", href: "/costa-rica", icon: "https://img.icons8.com/color/48/null/costa-rica.png" },
     { label: "Panama",     href: "/panama",     icon: "https://img.icons8.com/color/48/null/panama.png" },

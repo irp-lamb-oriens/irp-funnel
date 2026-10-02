@@ -11,7 +11,7 @@
       <h2>Contact us & Get a free project consultation</h2>
     </div>
     <div class="col col-buttons">
-      <CTAButton trigger={true} label="Schedule Consultation" href="/consultation/" variant="primary" />
+      <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
       <CTAButton label="Contact Us" href="/contact-us/" variant="secondary-inverted" />
     </div>
   </div>
