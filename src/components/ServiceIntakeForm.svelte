@@ -11,6 +11,7 @@
   import ImmigrationStatus from './systems/inputs/ImmigrationStatus/ImmigrationStatus.svelte';
   import IconGridSelector from './systems/selectors/IconGridSelector/IconGridSelector.svelte';
   import Vehicles from './systems/inputs/Vehicles/Vehicles.svelte';
+  import StepperIndicator from './StepperIndicator.svelte';
   import store from './store.js';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
@@ -21,6 +22,8 @@
     fetchServiceConfig,
     deriveServiceCategory,
     evaluateCondition,
+    FIELD_EQUIVALENCE_GROUPS,
+    equivalentFieldIds,
     type ServiceConfig,
     type ServiceFieldDef,
     type ServiceType,
@@ -59,6 +62,70 @@
   let immigrationInput: HTMLButtonElement;
 
   $: current = steps[stepIndex];
+
+  // ─── Two-level stepper derivation ────────────────────────────────────────
+  // Level 1: the ordered, unique service labels present in the live config
+  // (e.g. ["International Shipping", "Legal advice"]) so multi-service leads
+  // can tell which questionnaire is on screen.
+  // Level 2: the step counter is section-scoped. "Step X of Y" counts only the
+  // steps inside the current service's questionnaire, not across every chosen
+  // service. Y is inferred by grouping the flat step list by serviceLabel, so
+  // the user sees a small, honest number instead of "3 of 46".
+  $: serviceLabels = deriveServiceLabels();
+  $: activeServiceIndex = deriveActiveServiceIndex();
+
+  // Indices of `steps` that belong to the current step's service section.
+  $: sectionStepIndices = steps
+    .map((s, i) => (stepLabel(s) === stepLabel(current) ? i : -1))
+    .filter((i) => i >= 0);
+  // 1-based position within the current section, plus the section's size.
+  $: sectionPosition = sectionStepIndices.indexOf(stepIndex) + 1;
+  $: sectionSize = sectionStepIndices.length;
+
+  // Shared identity and scheduling fields carry no serviceLabel (the backend
+  // marks them as cross-service), so give them a stable section name of their
+  // own. This keeps the level-1 stepper coherent instead of silently grouping
+  // every shared field into an empty phantom section.
+  const IDENTITY_IDS = new Set(['name', 'surname', 'email', 'phone']);
+  const IDENTITY_SECTION = 'Your details';
+  const SCHEDULE_SECTION = 'Schedule call';
+
+  function sectionLabelForField(f: ServiceFieldDef): string {
+    if (f.serviceLabel) return f.serviceLabel;
+    if (IDENTITY_IDS.has(f.id)) return IDENTITY_SECTION;
+    if (f.type === 'calendar') return SCHEDULE_SECTION;
+    return '';
+  }
+
+  function stepLabel(step: Step | undefined): string {
+    if (!step) return '';
+    if (step.kind === 'field' && step.field) return sectionLabelForField(step.field);
+    if (step.kind === 'person') {
+      const pf = visibleFields().find((f) => f.type === 'people');
+      return pf ? sectionLabelForField(pf) : '';
+    }
+    if (step.kind === 'calendar') {
+      const cf = visibleFields().find((f) => f.type === 'calendar');
+      return cf ? sectionLabelForField(cf) : SCHEDULE_SECTION;
+    }
+    return '';
+  }
+
+  function deriveServiceLabels(): string[] {
+    const labels: string[] = [];
+    for (const f of visibleFields()) {
+      const l = sectionLabelForField(f);
+      if (l && !labels.includes(l)) labels.push(l);
+    }
+    return labels;
+  }
+
+  function deriveActiveServiceIndex(): number {
+    const label = stepLabel(current);
+    if (!label) return 0;
+    const idx = serviceLabels.indexOf(label);
+    return idx >= 0 ? idx : 0;
+  }
 
   // ─── Early opt-in lead capture ──────────────────────────────────────────
   // Mirrors HeroForm: as soon as identity (name + surname + email) is complete,
@@ -106,10 +173,44 @@
     unsubImmigration();
   });
 
+  function hasValue(v: unknown): boolean {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'string') return v.trim() !== '';
+    if (Array.isArray(v)) return v.length > 0;
+    return true;
+  }
+
+  /**
+   * A field is skipped when a *sibling* in its equivalence group already holds
+   * a value (e.g. destinationCountry filled ⇒ coachingDestination not asked).
+   * The field itself is never dropped by this check.
+   */
+  function isEquivalentFilled(id: string): boolean {
+    const group = equivalentFieldIds(id);
+    if (group.length <= 1) return false;
+    return group.some((gid) => gid !== id && hasValue(($formState as any)[gid]));
+  }
+
+  /** Mirror a filled equivalence-group member into its still-empty siblings. */
+  function mirrorEquivalentFields() {
+    for (const group of FIELD_EQUIVALENCE_GROUPS) {
+      const filledId = group.find((gid) => hasValue(($formState as any)[gid]));
+      if (!filledId) continue;
+      const filledValue = ($formState as any)[filledId];
+      for (const gid of group) {
+        if (!hasValue(($formState as any)[gid])) {
+          updateField(filledValue, gid as any);
+        }
+      }
+    }
+  }
+
   function visibleFields(): ServiceFieldDef[] {
     if (!config) return [];
-    return config.fields.filter((f) =>
-      evaluateCondition(f.showWhen, $formState as unknown as Record<string, any>),
+    return config.fields.filter(
+      (f) =>
+        evaluateCondition(f.showWhen, $formState as unknown as Record<string, any>) &&
+        !isEquivalentFilled(f.id),
     );
   }
 
@@ -162,6 +263,10 @@
     if (step?.kind === 'field') {
       const v = ($formState as any)[step.field.id];
       if (step.field.required && !String(v || '').trim()) return;
+      // The field is committed: propagate it to its equivalence siblings so a
+      // later question in the same group (e.g. coachingDestination) gets the
+      // value without being re-asked.
+      mirrorEquivalentFields();
     }
     if (step?.kind === 'person') {
       const t = $formState.travelers?.[step.idx];
@@ -213,6 +318,10 @@
       updateField([...serviceTypes], 'serviceCategories');
       updateField(deriveServiceCategory(serviceTypes), 'serviceCategory');
       ensureTravelers(Math.max(1, Math.min(3, Number($formState.partySize) || 1)));
+      // Pre-filled values (e.g. destinationCountry set by HeroForm before this
+      // component mounts) must propagate to equivalence siblings so those
+      // questions are dropped from the step list on the first build.
+      mirrorEquivalentFields();
       rebuildSteps();
     } catch (e: any) {
       loadError = e?.message || 'Unable to load the form.';
@@ -241,6 +350,13 @@
     </div>
   {:else}
     <div class="intake__step">
+      <StepperIndicator
+        {serviceLabels}
+        {activeServiceIndex}
+        stepIndex={Math.max(sectionPosition - 1, 0)}
+        stepCount={sectionSize}
+      />
+
       {#if stepIndex > 0 || onBack}
         <div class="intake__back-bar">
           <button class="intake__back" on:click={back}>← Back</button>
@@ -249,10 +365,6 @@
 
       {#if current?.kind === 'field'}
         {@const f = current.field}
-
-        {#if f.serviceLabel}
-          <p class="intake__service-label">{f.serviceLabel}</p>
-        {/if}
 
         {#if f.id === 'originCountry'}
           <h2>{f.label}</h2>
@@ -386,14 +498,6 @@
     color: #fff;
   }
   .intake__step { display: flex; flex-direction: column; gap: 1.25rem; }
-  .intake__service-label {
-    margin: 0 0 -0.5rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-highlight-2, #1ccfc9);
-  }
   .intake__back-bar { display: flex; justify-content: flex-start; margin-bottom: 0.25rem; }
   .intake__back {
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);

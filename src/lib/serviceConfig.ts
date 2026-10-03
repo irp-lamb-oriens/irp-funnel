@@ -80,6 +80,33 @@ export function evaluateCondition(
 }
 
 /**
+ * Fields that capture the same value under different ids across services, so
+ * the intake never asks the same thing twice. Each inner array is an
+ * equivalence group: when any member already carries a value in the form
+ * state, every other member in the group is skipped.
+ *
+ * Groups are the objectively-tied pairs only, to avoid wrongly dropping a
+ * question when two fields merely look similar but serve different purposes:
+ *   - destinationCountry (relocation) ≡ coachingDestination (coaching)
+ *     both ask "which country are you moving to".
+ *   - moveTimeline / residencyTimeline / coachingTimeline / realtyTimeline
+ *     all ask for the target date ("when are you planning to...?").
+ *   - notes / legalNotes / realtyNotes / coachingNotes
+ *     all are the free-text "anything else?" catch-all.
+ */
+export const FIELD_EQUIVALENCE_GROUPS: readonly (readonly string[])[] = [
+  ["destinationCountry", "coachingDestination"],
+  ["moveTimeline", "residencyTimeline", "coachingTimeline", "realtyTimeline"],
+  ["notes", "legalNotes", "realtyNotes", "coachingNotes"],
+];
+
+/** All ids in the same equivalence group as `id` (always includes `id`). */
+export function equivalentFieldIds(id: string): readonly string[] {
+  const group = FIELD_EQUIVALENCE_GROUPS.find((g) => g.includes(id));
+  return group ?? [id];
+}
+
+/**
  * The three selectable services, in display order, for the service slide.
  * Selection is additive; "All of the above" is a master toggle rendered by the
  * slide, not a persisted value.

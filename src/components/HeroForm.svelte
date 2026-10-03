@@ -861,11 +861,22 @@
   }
 
   .form-steps { position: relative; z-index: 1; }
+
+  /* The shared input components inherit --color-foreground (#181818) for their
+     labels, which is unreadable on this dark glass surface. Force white for
+     every input label rendered inside the hero form, without touching the
+     shared components themselves (they still need dark text on light surfaces
+     like the dashboard and status portal). */
+  .form-steps :global(.input-label),
+  .form-steps :global(.language-select-label) {
+    color: #fff;
+  }
+
   .form-frame { display: flex; flex-direction: column; gap: 1.5rem; opacity: 0; pointer-events: none; transform: translateY(16px); transition: opacity 0.5s cubic-bezier(0.23,1,0.32,1), transform 0.5s cubic-bezier(0.23,1,0.32,1); }
   .form-frame.active { opacity: 1; pointer-events: all; transform: translate(0,0); }
 
   h2 { font-size: 1.75rem; font-family: var(--font-title); font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: -0.02em; background: linear-gradient(to right, #fff, rgba(255,255,255,0.7)); -webkit-background-clip: text; }
-  h6 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-highlight-2); margin-bottom: -0.5rem; }
+  h6 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #fff; margin-bottom: -0.5rem; }
   .sub-heading { font-size: 1rem; color: rgba(255,255,255,0.6); line-height: 1.5; margin-top: -0.5rem; }
 
   .button-wrapper { display: flex; justify-content: flex-end; margin-top: 1.5rem; position: relative; z-index: 10; }
@@ -907,7 +918,7 @@
     padding: 0.4rem 0.9rem; border-radius: 0.75rem; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.25s ease;
     &:hover { background: rgba(255,255,255,0.1); color: #fff; }
   }
-  .switch-btn { color: var(--color-highlight-2, #1ccfc9); border-color: rgba(28,207,201,0.2); &:hover { border-color: rgba(28,207,201,0.5); } }
+  .switch-btn { color: #fff; border-color: rgba(255,255,255,0.3); &:hover { border-color: rgba(255,255,255,0.6); } }
 
   /* ═══ CTA Hero ═══ */
   .cta-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem;
@@ -936,34 +947,34 @@
       &:active { transform: translateY(-1px) scale(1.01); }
 
       &--v1-baseline {
-        background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 40%, #076f72 100%);
+        background: linear-gradient(135deg, #c62326 0%, #9c1b1e 40%, #701416 100%);
         box-shadow:
-          0 8px 28px rgba(99, 102, 241, 0.45),
-          0 16px 48px rgba(139, 92, 246, 0.25),
-          0 0 0 0 rgba(99, 102, 241, 0);
+          0 8px 28px rgba(198, 35, 38, 0.45),
+          0 16px 48px rgba(156, 27, 30, 0.25),
+          0 0 0 0 rgba(198, 35, 38, 0);
         animation: ctaPulseGlowBaseline 2.5s ease-in-out infinite;
         &:hover {
           box-shadow:
-            0 12px 36px rgba(99, 102, 241, 0.55),
-            0 24px 60px rgba(139, 92, 246, 0.3),
-            0 0 60px rgba(168, 85, 247, 0.2);
-          background: linear-gradient(135deg, #7c7cf7 0%, #9b6ff8 40%, #b86eff 100%);
+            0 12px 36px rgba(198, 35, 38, 0.55),
+            0 24px 60px rgba(156, 27, 30, 0.3),
+            0 0 60px rgba(112, 20, 22, 0.2);
+          background: linear-gradient(135deg, #d32f32 0%, #c62326 40%, #9c1b1e 100%);
         }
       }
 
       &--v2-red {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 40%, #b91c1c 100%);
+        background: linear-gradient(135deg, #c62326 0%, #9c1b1e 40%, #701416 100%);
         box-shadow:
-          0 8px 28px rgba(239, 68, 68, 0.45),
-          0 16px 48px rgba(220, 38, 38, 0.25),
-          0 0 0 0 rgba(239, 68, 68, 0);
+          0 8px 28px rgba(198, 35, 38, 0.45),
+          0 16px 48px rgba(156, 27, 30, 0.25),
+          0 0 0 0 rgba(198, 35, 38, 0);
         animation: ctaPulseGlowRed 2.5s ease-in-out infinite;
         &:hover {
           box-shadow:
-            0 12px 36px rgba(239, 68, 68, 0.55),
-            0 24px 60px rgba(220, 38, 38, 0.3),
-            0 0 60px rgba(185, 28, 28, 0.2);
-          background: linear-gradient(135deg, #f87171 0%, #ef4444 40%, #dc2626 100%);
+            0 12px 36px rgba(198, 35, 38, 0.55),
+            0 24px 60px rgba(156, 27, 30, 0.3),
+            0 0 60px rgba(112, 20, 22, 0.2);
+          background: linear-gradient(135deg, #d32f32 0%, #c62326 40%, #9c1b1e 100%);
         }
       }
     }
@@ -988,30 +999,30 @@
   @keyframes ctaPulseGlowBaseline {
     0%, 100% {
       box-shadow:
-        0 8px 28px rgba(99, 102, 241, 0.45),
-        0 16px 48px rgba(139, 92, 246, 0.25),
-        0 0 0 0 rgba(99, 102, 241, 0);
+        0 8px 28px rgba(198, 35, 38, 0.45),
+        0 16px 48px rgba(156, 27, 30, 0.25),
+        0 0 0 0 rgba(198, 35, 38, 0);
     }
     50% {
       box-shadow:
-        0 10px 36px rgba(99, 102, 241, 0.55),
-        0 20px 56px rgba(139, 92, 246, 0.35),
-        0 0 80px rgba(168, 85, 247, 0.12);
+        0 10px 36px rgba(198, 35, 38, 0.55),
+        0 20px 56px rgba(156, 27, 30, 0.35),
+        0 0 80px rgba(112, 20, 22, 0.12);
     }
   }
 
   @keyframes ctaPulseGlowRed {
     0%, 100% {
       box-shadow:
-        0 8px 28px rgba(239, 68, 68, 0.45),
-        0 16px 48px rgba(220, 38, 38, 0.25),
-        0 0 0 0 rgba(239, 68, 68, 0);
+        0 8px 28px rgba(198, 35, 38, 0.45),
+        0 16px 48px rgba(156, 27, 30, 0.25),
+        0 0 0 0 rgba(198, 35, 38, 0);
     }
     50% {
       box-shadow:
-        0 10px 36px rgba(239, 68, 68, 0.55),
-        0 20px 56px rgba(220, 38, 38, 0.35),
-        0 0 80px rgba(185, 28, 28, 0.12);
+        0 10px 36px rgba(198, 35, 38, 0.55),
+        0 20px 56px rgba(156, 27, 30, 0.35),
+        0 0 80px rgba(112, 20, 22, 0.12);
     }
   }
 
@@ -1122,7 +1133,7 @@
   /* ═══ Thank You ═══ */
   .thank-you { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem;
     &__icon { font-size: 3rem; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-    &__link { color: var(--color-highlight-2, #1ccfc9); text-decoration: underline; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s; &:hover { opacity: 0.8; } }
+    &__link { color: #fff; text-decoration: underline; font-weight: 600; font-size: 0.95rem; transition: opacity 0.2s; &:hover { opacity: 0.8; } }
   }
 
   /* ═══ Responsive ═══ */

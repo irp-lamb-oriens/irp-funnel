@@ -281,21 +281,21 @@
   
     /* PRIMARY */
     .cta-primary {
-      background: linear-gradient(135deg, var(--color-highlight-1) 0%, #1e90ff 100%);
+      background: linear-gradient(135deg, #c62326 0%, #8f191b 100%);
       color: #fff;
-      box-shadow: 
+      box-shadow:
         0 4px 14px 0 rgba(0, 0, 0, 0.2),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
       overflow: hidden;
-      --glow-color: rgba(30, 144, 255, 0.4);
+      --glow-color: rgba(198, 35, 38, 0.4);
       border: none;
     }
     .cta-primary:hover {
-            box-shadow: 
+      box-shadow:
         0 8px 25px 0 rgba(0, 0, 0, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.2) inset,
         0 0 20px var(--glow-color);
-      background: linear-gradient(135deg, #1e90ff 0%, var(--color-highlight-1) 100%);
+      background: linear-gradient(135deg, #a01a1d 0%, #c62326 100%);
     }
 
     /* PRIMARY INVERTED */
