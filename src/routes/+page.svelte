@@ -16,6 +16,7 @@
   import './+page.scss';
     import SoftTitle from '../components/SoftTitle/SoftTitle.svelte';
     import HeroForm from '../components/HeroForm.svelte';
+    import PersonalityShowcase from '../components/PersonalityShowcase/PersonalityShowcase.svelte';
 
   // FAQ data
   const moreFaqs = [
@@ -157,6 +158,8 @@
 
 <main id="main-content">
   <Header />
+
+  <PersonalityShowcase />
 
   <HeroForm />
 
