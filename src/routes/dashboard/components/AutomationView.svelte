@@ -1859,7 +1859,6 @@
   /* ── Recipients whitelist (list of lists) ──────────────────────────── */
   .av-recip-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1rem;
     align-items: start;
   }

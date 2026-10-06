@@ -45,6 +45,10 @@
   let payDate = new Date().toISOString().slice(0, 10);
   let payOpenId = '';
 
+  // Invoice whose received payments are expanded into a per-payment list.
+  // Read-only: recording a payment still goes through the "Pay" form.
+  let paymentsOpenId = '';
+
   async function load(): Promise<void> {
     loading = true;
     errorMsg = '';
@@ -85,6 +89,18 @@
     partially_paid: 'Partially paid',
     paid: 'Paid',
   };
+
+  /**
+   * The received payments for one invoice, oldest → newest by date.
+   * `received !== false` matches the server's `receivedTotal`: legacy payment
+   * rows saved before the `received` flag existed count as received rather
+   * than silently dropping out of the breakdown.
+   */
+  function receivedPayments(inv: Invoice): InvoicePayment[] {
+    return (inv.payments ?? [])
+      .filter((p) => p.received !== false)
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  }
 
   async function openEdit(inv: Invoice): Promise<void> {
     errorMsg = '';
@@ -241,7 +257,14 @@
                 <td>{shortDate(inv.date)}</td>
                 <td>{shortDate(inv.dueDate)}</td>
                 <td>{money(inv.total)}</td>
-                <td>{money(inv.received)}</td>
+                <td>
+                  {money(inv.received)}
+                  {#if receivedPayments(inv).length > 0}
+                    <div class="ip__sub">
+                      {receivedPayments(inv).length} payment{receivedPayments(inv).length === 1 ? '' : 's'}
+                    </div>
+                  {/if}
+                </td>
                 <td class:owing={inv.balanceDue > 0}>{money(inv.balanceDue)}</td>
                 <td>
                   <span class="ip__status ip__status--{inv.status}">
@@ -254,6 +277,15 @@
                     <button class="ip__link" on:click={() => doDownload(inv)}>PDF</button>
                     <button class="ip__link" on:click={() => { sendOpenId = inv.id; payOpenId = ''; sendEmail = inv.clientEmail || ''; }}>Send</button>
                     <button class="ip__link" on:click={() => { payOpenId = inv.id; sendOpenId = ''; payAmount = String(inv.balanceDue > 0 ? inv.balanceDue : ''); payMethod = ''; }}>Pay</button>
+                    {#if receivedPayments(inv).length > 0}
+                      <button
+                        class="ip__link"
+                        aria-expanded={paymentsOpenId === inv.id}
+                        on:click={() => (paymentsOpenId = paymentsOpenId === inv.id ? '' : inv.id)}
+                      >
+                        {paymentsOpenId === inv.id ? 'Hide payments' : 'Payments'}
+                      </button>
+                    {/if}
                     <button class="ip__link ip__link--danger" on:click={() => doDelete(inv)}>Delete</button>
                   </div>
                 </td>
@@ -296,6 +328,40 @@
                         {payingId === inv.id ? 'Saving…' : 'Record payment'}
                       </button>
                       <button class="ip__ghost" on:click={() => (payOpenId = '')}>Cancel</button>
+                    </div>
+                  </td>
+                </tr>
+              {/if}
+
+              {#if paymentsOpenId === inv.id}
+                <tr class="ip__action-row ip__payments-row">
+                  <td colspan="9">
+                    <div class="ip__payments">
+                      <h4>Payments received</h4>
+                      {#if receivedPayments(inv).length === 0}
+                        <p class="ip__empty">No received payments recorded.</p>
+                      {:else}
+                        <table class="ip__payments-table">
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th>Method</th>
+                              <th>Amount</th>
+                              <th>Note</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {#each receivedPayments(inv) as p (p.id)}
+                              <tr>
+                                <td>{shortDate(p.date)}</td>
+                                <td>{p.method ?? '—'}</td>
+                                <td>{money(p.amount)}</td>
+                                <td>{p.note ?? '—'}</td>
+                              </tr>
+                            {/each}
+                          </tbody>
+                        </table>
+                      {/if}
                     </div>
                   </td>
                 </tr>
@@ -454,6 +520,60 @@
     display: flex;
     gap: 0.5rem;
   }
+
+  .ip__sub {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .ip__payments-row td { background: #f8fafc; white-space: normal; }
+
+  .ip__payments {
+    padding: 0.25rem 0;
+  }
+
+  .ip__payments h4 {
+    margin: 0 0 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #94a3b8;
+  }
+
+  .ip__payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .ip__payments-table th {
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    color: #94a3b8;
+    font-size: 0.64rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .ip__payments-table td {
+    padding: 0.5rem 0.7rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ip__payments-table tbody tr:last-child td { border-bottom: none; }
 
   .ip__link {
     background: none;

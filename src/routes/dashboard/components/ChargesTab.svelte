@@ -26,6 +26,7 @@
     fetchQuotes,
     summarizeQuoteBilling,
     type Invoice,
+    type InvoicePayment,
     type Quote,
     type QuoteBillingSummary,
   } from '../store.ts';
@@ -37,6 +38,8 @@
   let errorMsg = '';
   /** Invoice id currently being toggled, so only its own row shows a wait state. */
   let togglingId = '';
+  /** Invoice whose received payments are expanded into a per-payment list. */
+  let paymentsOpenId = '';
 
   async function load(): Promise<void> {
     if (!clientId) return;
@@ -124,6 +127,18 @@
     partially_paid: 'Partially paid',
     paid: 'Paid',
   };
+
+  /**
+   * The received payments for one invoice, oldest → newest by date.
+   * `received !== false` matches the server's `receivedTotal`: legacy payment
+   * rows saved before the `received` flag existed count as received rather
+   * than silently dropping out of the breakdown.
+   */
+  function receivedPayments(inv: Invoice): InvoicePayment[] {
+    return (inv.payments ?? [])
+      .filter((p) => p.received !== false)
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  }
 
   async function togglePaid(inv: Invoice, paid: boolean): Promise<void> {
     togglingId = inv.id;
@@ -281,7 +296,14 @@
                   </td>
                   <td>{shortDate(inv.date)}</td>
                   <td>{money(inv.total)}</td>
-                  <td>{money(inv.received)}</td>
+                  <td>
+                    {money(inv.received)}
+                    {#if receivedPayments(inv).length > 0}
+                      <div class="ct__sub">
+                        {receivedPayments(inv).length} payment{receivedPayments(inv).length === 1 ? '' : 's'}
+                      </div>
+                    {/if}
+                  </td>
                   <td class:ct__owing={inv.balanceDue > 0}>{money(inv.balanceDue)}</td>
                   <td>
                     <span class="ct__status ct__status--{inv.status}">
@@ -299,9 +321,54 @@
                     </label>
                   </td>
                   <td>
-                    <button class="ct__link" on:click={() => doDownload(inv)}>PDF</button>
+                    <div class="ct__row-actions">
+                      {#if receivedPayments(inv).length > 0}
+                        <button
+                          class="ct__link"
+                          aria-expanded={paymentsOpenId === inv.id}
+                          on:click={() => (paymentsOpenId = paymentsOpenId === inv.id ? '' : inv.id)}
+                        >
+                          {paymentsOpenId === inv.id ? 'Hide payments' : 'Payments'}
+                        </button>
+                      {/if}
+                      <button class="ct__link" on:click={() => doDownload(inv)}>PDF</button>
+                    </div>
                   </td>
                 </tr>
+
+                {#if paymentsOpenId === inv.id}
+                  <tr class="ct__payments-row">
+                    <td colspan="9">
+                      <div class="ct__payments">
+                        <h5>Payments received</h5>
+                        {#if receivedPayments(inv).length === 0}
+                          <p class="ct__empty">No received payments recorded.</p>
+                        {:else}
+                          <table class="ct__payments-table">
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Note</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {#each receivedPayments(inv) as p (p.id)}
+                                <tr>
+                                  <td>{shortDate(p.date)}</td>
+                                  <td>{p.method ?? '—'}</td>
+                                  <td>{money(p.amount)}</td>
+                                  <td>{p.note ?? '—'}</td>
+                                </tr>
+                              {/each}
+                            </tbody>
+                          </table>
+                        {/if}
+                      </div>
+                    </td>
+                  </tr>
+                {/if}
               {/each}
             </tbody>
           </table>
@@ -662,6 +729,68 @@
   }
 
   .ct__link:hover { text-decoration: underline; }
+
+  .ct__sub {
+    font-size: 0.66rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .ct__row-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .ct__payments-row td {
+    background: #f8fafc;
+    white-space: normal;
+  }
+
+  .ct__payments {
+    padding: 0.25rem 0;
+  }
+
+  .ct__payments h5 {
+    margin: 0 0 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #94a3b8;
+  }
+
+  .ct__payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .ct__payments-table th {
+    text-align: left;
+    padding: 0.45rem 0.7rem;
+    color: #94a3b8;
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .ct__payments-table td {
+    padding: 0.45rem 0.7rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ct__payments-table tbody tr:last-child td { border-bottom: none; }
 
   @media (max-width: 768px) {
     .ct__totals { grid-template-columns: 1fr 1fr; }
