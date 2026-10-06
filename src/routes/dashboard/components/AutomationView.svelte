@@ -267,6 +267,12 @@
   let teamRecipients: TeamRecipient[] = [];
   let recipientMap: Record<string, Set<string>> = {};
   let recipientBusy = ''; // `${emailType}::${email}` while a toggle is saving
+  // Per-recipient "add email type" draft (whitelist view).
+  let recipientAddDraft: Record<string, string> = {};
+  // Recipient email-preview modal state.
+  let recipientPreviewType = '';
+  let recipientPreviewHtml = '';
+  let recipientPreviewLoading = false;
 
 
   // ── Stage configuration state ───────────────────────────────────────────
@@ -355,15 +361,17 @@
   }
 
   /**
-   * Toggle whether `email` is excluded from `emailType`'s team CC/BCC, then
-   * persist the new exclusion set. Optimistic: the checkbox flips immediately.
+   * Set whether `email` RECEIVES `emailType` (whitelist semantics). The store
+   * still persists exclusions, so "receives" is the inverse: included means the
+   * address is NOT in `excludedRecipients`. Optimistic: the checkbox flips
+   * immediately, then the saved set is re-applied.
    */
-  async function toggleExclusion(emailType: string, email: string) {
+  async function setIncluded(emailType: string, email: string, included: boolean) {
     const key = `${emailType}::${email}`;
     recipientBusy = key;
     error = '';
     const current = new Set(recipientMap[emailType] ?? []);
-    if (current.has(email)) current.delete(email);
+    if (included) current.delete(email);
     else current.add(email);
     try {
       const saved = await saveRecipientRule(emailType, [...current]);
@@ -375,9 +383,43 @@
     }
   }
 
+  /** Add `emailType` back to `email`'s whitelist (remove the exclusion). */
+  async function includeType(email: string, emailType: string) {
+    await setIncluded(emailType, email, true);
+  }
+
   /** True when `email` is currently excluded from `emailType`. */
   function isExcluded(emailType: string, email: string): boolean {
     return recipientMap[emailType]?.has(email) ?? false;
+  }
+
+  /** True when `email` currently RECEIVES `emailType` (whitelist view). */
+  function isIncluded(emailType: string, email: string): boolean {
+    return !isExcluded(emailType, email);
+  }
+
+  /** The email types a given recipient currently receives. */
+  function includedTypesFor(email: string): EmailTemplateRow[] {
+    return templates.filter((t) => isIncluded(t.emailType, email));
+  }
+
+  /** Open the read-only preview modal for one email type. */
+  async function openRecipientPreview(emailType: string) {
+    recipientPreviewType = emailType;
+    recipientPreviewHtml = '';
+    recipientPreviewLoading = true;
+    try {
+      recipientPreviewHtml = await previewAutomationTemplate(emailType);
+    } catch {
+      recipientPreviewHtml = '<p style="color:#c62426">Preview unavailable.</p>';
+    } finally {
+      recipientPreviewLoading = false;
+    }
+  }
+
+  function closeRecipientPreview() {
+    recipientPreviewType = '';
+    recipientPreviewHtml = '';
   }
 
   // ── Client offer popup ─────────────────────────────────────────────────────
@@ -877,50 +919,68 @@
       <OverviewFieldsEditor />
     </section>
   {:else if tab === 'recipients'}
-    <!-- ── Per-email-type team CC/BCC exclusions ──────────────────────── -->
+    <!-- ── Per-recipient whitelist (inverse rendering of the exclusion store) ── -->
     <p class="av-subtitle" style="margin-bottom:1.1rem">
-      Every automated client email is, by default, copied to the internal team
-      (CC/BCC). Tick a box to <strong>exclude</strong> that teammate from a
-      specific email — e.g. keep the pre-call shipping guide off the pricing
-      desk. Unticked = they still receive it. Changes save instantly.
+      Each teammate below has their own list of the automated emails they
+      receive. Uncheck an email to stop sending it to them (it disappears from
+      their list on reload), or add one back from the dropdown. Changes save
+      instantly.
     </p>
 
     {#if templates.length === 0 || teamRecipients.length === 0}
       <div class="av-empty">No email types or team recipients to configure.</div>
     {:else}
-      <section class="av-card">
-        <div class="av-table-wrap">
-          <table class="av-table av-recip-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                {#each teamRecipients as tr (tr.email)}
-                  <th class="av-recip-col" title={tr.email}>{tr.label}</th>
+      <div class="av-recip-list">
+        {#each teamRecipients as tr (tr.email)}
+          <section class="av-card av-recip-card">
+            <header class="av-recip-card__head">
+              <div>
+                <h3 class="av-recip-card__name">{tr.label}</h3>
+                <code class="av-recip-card__email">{tr.email}</code>
+              </div>
+              <span class="av-recip-card__count">{includedTypesFor(tr.email).length} emails</span>
+            </header>
+
+            <div class="av-recip-card__add">
+              <select bind:value={recipientAddDraft[tr.email]}>
+                <option value="">+ Add an email…</option>
+                {#each templates.filter((t) => !isIncluded(t.emailType, tr.email)) as t (t.emailType)}
+                  <option value={t.emailType}>{t.label}</option>
                 {/each}
-              </tr>
-            </thead>
-            <tbody>
-              {#each templates as t (t.emailType)}
-                <tr>
-                  <td class="av-email-cell">{t.label}<div class="av-type">{t.emailType}</div></td>
-                  {#each teamRecipients as tr (tr.email)}
-                    <td class="av-recip-cell">
-                      <label class="av-recip-check" title={`Exclude ${tr.label} from "${t.label}"`}>
-                        <input
-                          type="checkbox"
-                          checked={isExcluded(t.emailType, tr.email)}
-                          disabled={recipientBusy === `${t.emailType}::${tr.email}`}
-                          on:change={() => toggleExclusion(t.emailType, tr.email)}
-                        />
-                      </label>
-                    </td>
-                  {/each}
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </select>
+              <button
+                class="save-btn"
+                disabled={!recipientAddDraft[tr.email] || recipientBusy === `${recipientAddDraft[tr.email]}::${tr.email}`}
+                on:click={() => { const et = recipientAddDraft[tr.email]; if (et) { includeType(tr.email, et); recipientAddDraft[tr.email] = ''; } }}
+              >Add</button>
+            </div>
+
+            {#if includedTypesFor(tr.email).length === 0}
+              <div class="av-stage-norules">This teammate receives no automated emails yet.</div>
+            {:else}
+              <ul class="av-recip-card__list">
+                {#each includedTypesFor(tr.email) as t (t.emailType)}
+                  <li class="av-recip-card__row">
+                    <label class="av-recip-card__check" title={`${tr.label} receives "${t.label}"`}>
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        disabled={recipientBusy === `${t.emailType}::${tr.email}`}
+                        on:change={() => setIncluded(t.emailType, tr.email, false)}
+                      />
+                    </label>
+                    <div class="av-recip-card__label">
+                      <span class="av-recip-card__tlabel">{t.label}</span>
+                      <span class="av-type">{t.emailType}</span>
+                    </div>
+                    <button class="av-link" on:click={() => openRecipientPreview(t.emailType)}>Preview</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </section>
+        {/each}
+      </div>
     {/if}
   {:else if tab === 'offer'}
     <!-- ── Client offer popup (single global message on the /status page) ── -->
@@ -1574,6 +1634,27 @@
   />
 {/if}
 
+<!-- ── Recipient email preview modal ─────────────────────────────────── -->
+{#if recipientPreviewType}
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="av-modal-backdrop" on:click={closeRecipientPreview} role="presentation">
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <div class="av-modal av-modal--preview" on:click|stopPropagation role="dialog" aria-modal="true" tabindex="-1">
+      <header class="av-drawer__head">
+        <h3>Preview — {emailTypeLabel(recipientPreviewType)}</h3>
+        <button class="av-close" on:click={closeRecipientPreview} aria-label="Close">✕</button>
+      </header>
+      <div class="av-modal__body av-modal__body--preview">
+        {#if recipientPreviewLoading}
+          <div class="av-loading">Rendering preview…</div>
+        {:else}
+          <div class="av-preview-frame">{@html recipientPreviewHtml}</div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style lang="scss">
 
   /* Cohesive with the IRP dashboard admin surfaces + global style bible:
@@ -1775,18 +1856,56 @@
   .av-type { color: #94a3b8; font-size: 0.7rem; margin-top: 0.1rem; }
   .av-subject { color: #475569; font-size: 0.82rem; }
 
-  /* ── Recipients matrix ──────────────────────────────────────────────── */
-  .av-recip-table th.av-recip-col,
-  .av-recip-table td.av-recip-cell { text-overflow: ellipsis; width: 100%; text-align: center; white-space: nowrap; }
-  .av-recip-col { max-width: 120px; }
-  .av-recip-check {
-    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  /* ── Recipients whitelist (list of lists) ──────────────────────────── */
+  .av-recip-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    align-items: start;
   }
-  .av-recip-check input {
+  .av-recip-card { margin-bottom: 0; }
+  .av-recip-card__head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 0.7rem;
+    margin-bottom: 0.9rem;
+  }
+  .av-recip-card__name { margin: 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+  .av-recip-card__email {
+    display: inline-block; margin-top: 0.2rem;
+    font-size: 0.7rem; color: #94a3b8; background: #f1f5f9;
+    border-radius: 4px; padding: 0.05rem 0.4rem;
+    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  }
+  .av-recip-card__count {
+    font-size: 0.68rem; font-weight: 800; color: #02999e;
+    background: rgba(2, 181, 187, 0.08); border: 1px solid rgba(2, 181, 187, 0.2);
+    border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap;
+  }
+  .av-recip-card__add {
+    display: flex; gap: 0.5rem; margin-bottom: 0.8rem;
+  }
+  .av-recip-card__add select {
+    flex: 1; padding: 0.45rem 0.55rem; border: 1px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.82rem; font-family: inherit; color: #0f172a; background: #f8fafc;
+  }
+  .av-recip-card__add select:focus {
+    outline: none; border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.10); background: #fff;
+  }
+  .av-recip-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .av-recip-card__row {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 0.6rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+  }
+  .av-recip-card__check { display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; }
+  .av-recip-card__check input {
     width: 17px; height: 17px; cursor: pointer;
-    accent-color: #c62426; /* red = "excluded" — matches the destructive palette */
+    accent-color: var(--color-highlight-2, #02b5bb);
   }
-  .av-recip-check input:disabled { cursor: wait; opacity: 0.55; }
+  .av-recip-card__check input:disabled { cursor: wait; opacity: 0.55; }
+  .av-recip-card__label { flex: 1; min-width: 0; }
+  .av-recip-card__tlabel { display: block; font-size: 0.84rem; font-weight: 600; color: #0f172a; }
+  .av-modal--preview { width: min(720px, 94vw); }
+  .av-modal__body--preview { max-height: 70vh; overflow: auto; }
 
   /* ── Client offer editor ────────────────────────────────────────────── */
   .av-offer { display: flex; flex-direction: column; gap: 1.1rem; }

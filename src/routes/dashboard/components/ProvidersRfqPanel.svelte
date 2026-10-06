@@ -24,7 +24,7 @@
    */
 
   import { onMount, onDestroy, tick } from 'svelte';
-  import { authToken, fetchQuotes, sendProviderRfq, translateRfqEdit, translateRfqFields } from '../store.ts';
+  import { authToken, fetchQuotes, sendProviderRfq, translateRfqEdit, translateRfqFields, fetchRfqCc, RFQ_CC_POOL } from '../store.ts';
   import type { SendRfqResult, RfqTranslatableFields } from '../store.ts';
 
 
@@ -59,10 +59,10 @@
   export let client: any = null;
 
   // ── Default CC recipients (always CC'd on the RFQ) ───────────────────────────
-  const DEFAULT_CC = [
-    'support2@internationalrelocationpartner.com',
-    'pricing2@internationalrelocationpartner.com',
-  ];
+  // The authoritative pool now lives in the store (RFQ_CC_POOL) and is resolved
+  // from the dashboard Recipients tab's inverse-exclusion rules via fetchRfqCc().
+  // This local constant is only the first-paint fallback before the fetch lands.
+  const DEFAULT_CC = [...RFQ_CC_POOL];
 
   // ── Provider registry ────────────────────────────────────────────────────────
   type Provider = {
@@ -886,6 +886,16 @@
     }
 
     if (client?.id) await loadDefaults();
+
+    // Resolve the RFQ CC list from the dashboard Recipients tab (inverse
+    // exclusion). Only applied when no draft was restored, so an operator's
+    // own saved CC edits are never overwritten by the live config.
+    if (!restored) {
+      try {
+        const resolved = await fetchRfqCc();
+        if (resolved.length) cc = resolved;
+      } catch { /* keep DEFAULT_CC fallback */ }
+    }
 
     // loadDefaults derives selectedIds from the client's quotes, so the draft's
     // own selection is re-applied here rather than before it. Unknown ids are

@@ -3660,6 +3660,35 @@ export async function fetchRecipientRules(): Promise<{
 }
 
 /**
+ * The default provider-RFQ CC pool: support2@ + pricing2@ + Erika's irp@.
+ * Mirrors `resolveRfqCc()` in the server's `recipientRules.ts`. The dashboard
+ * Recipients tab can exclude any of these from the `provider_rfq` email type,
+ * and the inverse (non-excluded) set is what the Providers RFQ panel CCs.
+ */
+export const RFQ_CC_POOL = [
+  'support2@internationalrelocationpartner.com',
+  'pricing2@internationalrelocationpartner.com',
+  'irp@internationalrelocationpartner.com',
+];
+
+/**
+ * Resolve the provider-RFQ CC list from the dashboard recipient rules
+ * (inverse exclusion). Returns `RFQ_CC_POOL` minus whatever the operator
+ * excluded from the `provider_rfq` email type. Falls back to the full pool
+ * when the fetch fails or no rule exists yet.
+ */
+export async function fetchRfqCc(): Promise<string[]> {
+  try {
+    const { rules } = await fetchRecipientRules();
+    const rule = rules.find((r) => r.emailType === 'provider_rfq');
+    const excluded = new Set((rule?.excludedRecipients ?? []).map((e) => e.toLowerCase()));
+    return RFQ_CC_POOL.filter((e) => !excluded.has(e.toLowerCase()));
+  } catch {
+    return [...RFQ_CC_POOL];
+  }
+}
+
+/**
  * Upsert the exclusion set for one email type. Passing an empty array clears
  * every exclusion (⇒ that email type resumes the full default team CC/BCC).
  */
