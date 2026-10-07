@@ -2626,6 +2626,15 @@ export interface Quote {
   /** Ordered array of content blocks for Qwilr-style proposal rendering on the status page.
    *  When absent/empty, QuoteView falls back to the legacy line-items table. */
   blocks?: QuoteBlock[] | null;
+  // ── Recorded client selection (Phase 5 — present after acceptance) ──
+  /** Which line-item groups (packages/add-ons/fixed) the client agreed to. */
+  selectedGroupIds?: string[] | null;
+  /** Which flat line items the client agreed to (legacy flat quotes). */
+  selectedLineItemIds?: string[] | null;
+  /** Actual amount the client agreed to (the accepted option's billed total). */
+  finalBilledTotal?: number | null;
+  /** Ordered installment schedule in percent (e.g. [35, 65]). Defaults to 35/65. */
+  paymentSchedule?: number[] | null;
 }
 
 export const QUOTE_STATUS_LABEL: Record<Quote['status'], { label: string; color: string }> = {
@@ -5044,7 +5053,9 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
   if (allGroups.length) {
     const hasSelection = Array.isArray(quote.selectedGroupIds) && quote.selectedGroupIds.length > 0;
     const selected = new Set<string>([
-      ...(hasSelection ? quote.selectedGroupIds : allGroups.map((g) => g.groupId)),
+      ...(hasSelection && Array.isArray(quote.selectedGroupIds)
+        ? quote.selectedGroupIds
+        : allGroups.map((g) => g.groupId)),
       ...allGroups.filter((g) => g.role === 'fixed').map((g) => g.groupId),
     ]);
     return allGroups

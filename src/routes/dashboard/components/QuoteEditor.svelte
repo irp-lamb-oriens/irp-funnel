@@ -124,6 +124,21 @@
   let insightsHint = '';
   let defaultMarginPct = 20;
   let clientDescription = '';
+  // ── Payment schedule (ordered percent segments, e.g. [35, 65]) ────────────
+  // The FIRST segment is the reservation / initial payment. Add/remove segments
+  // inline; the running sum is capped at 100% (over-100 is blocked on save AND
+  // server-side). Snapshotted into the signed contract + client email.
+  let paymentSchedule: number[] = [35, 65];
+  $: scheduleSum = paymentSchedule.reduce((s, p) => s + (Number(p) || 0), 0);
+  $: scheduleOver = scheduleSum > 100.001;
+
+  function addScheduleSegment() {
+    paymentSchedule = [...paymentSchedule, 0];
+  }
+  function removeScheduleSegment(i: number) {
+    if (paymentSchedule.length <= 1) return;
+    paymentSchedule = paymentSchedule.filter((_, idx) => idx !== i);
+  }
 
   // ── Custom service types (dashboard-managed extras) ─────────────────────────
   // Merged ON TOP of the built-in PACKING_TIER_LABEL entries so operators can
@@ -454,10 +469,10 @@
   let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   function draftCore(): string {
-    return JSON.stringify({ title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots });
+    return JSON.stringify({ title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots, paymentSchedule });
   }
   function draftPayload() {
-    return { v: 1, savedAt: new Date().toISOString(), title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots, titleTouched };
+    return { v: 1, savedAt: new Date().toISOString(), title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots, paymentSchedule, titleTouched };
   }
   function saveDraftNow() {
     if (!browser || hydrating) return;
@@ -492,6 +507,9 @@
     if (typeof d.serviceType === 'string') serviceType = d.serviceType;
     if (typeof d.defaultMarginPct === 'number') defaultMarginPct = d.defaultMarginPct;
     if (typeof d.clientDescription === 'string') clientDescription = d.clientDescription;
+    if (Array.isArray(d.paymentSchedule)) {
+      paymentSchedule = d.paymentSchedule.map((p: any) => Number(p) || 0);
+    }
     if (Array.isArray(d.lineGroups) && d.lineGroups.length > 0) {
       lineGroups = d.lineGroups.map((g: any) => ({
         groupId: g.groupId || makeGroupId(),
@@ -517,7 +535,7 @@
   }
 
   // Debounced autosave — fires on any edit once hydration is complete.
-  $: draftDeps = [title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots];
+  $: draftDeps = [title, notes, serviceType, defaultMarginPct, clientDescription, lineGroups, providerSnapshots, paymentSchedule];
   $: if (browser && !hydrating && draftDeps) scheduleDraftSave();
 
   onDestroy(() => {
@@ -796,6 +814,12 @@
     serviceType = q.serviceType ?? '';
     defaultMarginPct = typeof q.defaultMarginPct === 'number' ? q.defaultMarginPct : 20;
     clientDescription = q.clientDescription ?? '';
+    const savedSchedule = Array.isArray((q as any).paymentSchedule) ? (q as any).paymentSchedule : null;
+    if (savedSchedule && savedSchedule.length > 0) {
+      paymentSchedule = savedSchedule.map((p: any) => Number(p) || 0);
+    } else {
+      paymentSchedule = [35, 65];
+    }
     const savedGroups = Array.isArray((q as any).lineGroups) ? (q as any).lineGroups : null;
     if (savedGroups && savedGroups.length > 0) {
       // Grouped quote — hydrate the groups directly.
@@ -1025,6 +1049,7 @@
       serviceType,
       defaultMarginPct,
       clientDescription: clientDescription.trim() || null,
+      paymentSchedule: paymentSchedule.map((p) => Number(p) || 0),
       currency: totalBuckets.length === 1 ? totalBuckets[0].currency : (totalBuckets[0]?.currency ?? 'USD'),
     };
   }
@@ -1664,6 +1689,73 @@
           <span class="qe-finance-label">Earnings</span>
           <span class="qe-finance-value qe-finance-value--earn">{earnings.toFixed(2)}</span>
           <span class="qe-finance-hint">IRP margin</span>
+        </div>
+      </div>
+
+      <!-- Payment schedule — installment segments in percent of the agreed total.
+           Defaults to 35/65; the first segment is the reservation payment. Add or
+           remove segments inline. The sum is capped at 100%. Snapshotted into the
+           signed contract PDF (the page finance reconciles against) and the client
+           email. -->
+      <div class="qe-field">
+        <div class="qe-lines-head">
+          <label class="qe-label" for="qe-schedule">Payment schedule</label>
+          <span class="qe-label-badge">contract · finance</span>
+        </div>
+
+        <div class="qe-schedule">
+          <div class="qe-schedule__rows">
+            {#each paymentSchedule as pct, i (i)}
+              <div class="qe-schedule__row">
+                <span class="qe-schedule__idx">{i + 1}</span>
+                <span class="qe-schedule__role">{i === 0 ? 'Reservation' : 'Installment'}</span>
+                <div class="qe-pct-wrap">
+                  <input
+                    class="qe-input qe-input--sm qe-input--num qe-schedule__input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={pct}
+                    on:input={(e) => {
+                      paymentSchedule[i] = parseFloat((e.target as HTMLInputElement).value) || 0;
+                      paymentSchedule = paymentSchedule;
+                    }}
+                  />
+                  <span class="qe-pct-sym">%</span>
+                </div>
+                <span class="qe-schedule__amt">
+                  {formatTotal((clientTotal * (Number(pct) || 0)) / 100)}
+                </span>
+                <button
+                  type="button"
+                  class="qe-schedule__del"
+                  title="Remove segment"
+                  aria-label="Remove segment"
+                  disabled={paymentSchedule.length <= 1}
+                  on:click={() => removeScheduleSegment(i)}
+                >✕</button>
+              </div>
+            {/each}
+          </div>
+
+          <div class="qe-schedule__foot">
+            <button type="button" class="qe-schedule__add" on:click={addScheduleSegment}>
+              + Add segment
+            </button>
+            <span class="qe-schedule__sum" class:qe-schedule__sum--over={scheduleOver}>
+              Total: {scheduleSum.toFixed(0)}%
+            </span>
+          </div>
+
+          {#if scheduleOver}
+            <p class="qe-field-error">⚠ Segments must total no more than 100%.</p>
+          {:else}
+            <p class="qe-field-hint">
+              The first segment is the reservation. The split above is recorded in the signed
+              contract and used by finance to reconcile payments.
+            </p>
+          {/if}
         </div>
       </div>
 
@@ -3336,6 +3428,110 @@
   .qe-finance-value--accent { color: #02b5bb; }
   .qe-finance-value--earn   { color: #22c55e; }
   .qe-finance-hint { font-size: 10px; color: #94a3b8; font-weight: 500; }
+
+  /* ── Payment schedule editor (installment segments, ≤100%) ───────────── */
+  .qe-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 12px;
+  }
+  .qe-schedule__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .qe-schedule__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .qe-schedule__idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(2,181,187,0.12);
+    color: #02999e;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .qe-schedule__role {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    min-width: 92px;
+  }
+  .qe-schedule__input { width: 64px !important; max-width: 64px; }
+  .qe-schedule__amt {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+  .qe-schedule__del {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+    border-radius: 6px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .qe-schedule__del:hover:not(:disabled) {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+  }
+  .qe-schedule__del:disabled { opacity: 0.4; cursor: not-allowed; }
+  .qe-schedule__foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-top: 1px solid #eef2f7;
+    padding-top: 10px;
+  }
+  .qe-schedule__add {
+    background: rgba(2,181,187,0.08);
+    border: 1px dashed rgba(2,181,187,0.3);
+    color: #02999e;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.14s, border-color 0.14s;
+  }
+  .qe-schedule__add:hover {
+    background: rgba(2,181,187,0.14);
+    border-color: rgba(2,181,187,0.5);
+  }
+  .qe-schedule__sum {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 800;
+    color: #02b5bb;
+    font-variant-numeric: tabular-nums;
+  }
+  .qe-schedule__sum--over { color: #dc2626; }
 
   /* ── Client description badge ───────────────────────────────────────────── */
   .qe-label-badge {
