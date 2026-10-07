@@ -335,6 +335,55 @@
   /** Known staff list derived from the access map for the user picker. */
   $: staffList = [...accessMap.keys()].sort();
 
+  // ─── Access list search + grouping (backward compatible: no new data) ──────
+  let accessSearch = '';
+  let collapsedAccess: Record<string, boolean> = {};
+  $: filteredAccessEntries = [...accessMap.entries()].filter(([email]) =>
+    !accessSearch.trim() || email.toLowerCase().includes(accessSearch.trim().toLowerCase()),
+  );
+  // Two collapsible buckets: Admins (the two pinned super-admins) and Staff.
+  $: accessGroups = [
+    {
+      key: 'admins',
+      label: 'Admins',
+      items: filteredAccessEntries.filter(([email]) =>
+        email === 'luisarmando@internationalrelocationpartner.com' || email === 'pablo@internationalrelocationpartner.com',
+      ),
+    },
+    {
+      key: 'staff',
+      label: 'Staff',
+      items: filteredAccessEntries.filter(([email]) =>
+        email !== 'luisarmando@internationalrelocationpartner.com' && email !== 'pablo@internationalrelocationpartner.com',
+      ),
+    },
+  ].filter((g) => g.items.length > 0);
+
+  // ─── Collaborators search + grouping (group by shared `function`) ─────────
+  let collabSearch = '';
+  let collapsedCollabs: Record<string, boolean> = {};
+  $: filteredCollaborators = collaborators.filter((c) => {
+    const q = collabSearch.trim().toLowerCase();
+    if (!q) return true;
+    return `${c.name} ${c.email} ${c.function}`.toLowerCase().includes(q);
+  });
+  // Group by normalized `function`; unlabeled rows land in "Unassigned".
+  $: collabGroups = (() => {
+    const groups: Record<string, Collaborator[]> = {};
+    const order: string[] = [];
+    for (const c of filteredCollaborators) {
+      const fn = (c.function || '').trim();
+      const key = fn || '__unassigned';
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(c);
+    }
+    return order.map((key) => ({
+      key,
+      label: key === '__unassigned' ? 'Unassigned' : key,
+      items: groups[key],
+    }));
+  })();
+
   async function loadActivity(email: string) {
     if (!email) return;
     activityUser = email;
@@ -497,65 +546,91 @@
           <span class="config-source__note">Changes take effect immediately for all staff — no deploy needed.</span>
         </div>
 
-        <!-- Access grid -->
-        <div class="access-grid-wrapper">
-          <table class="access-grid">
-            <thead>
-              <tr>
-                <th class="access-grid__email-col">Staff Email</th>
-                {#each GRID_VIEWS as view}
-                  <th class="access-grid__view-col">{VIEW_LABELS[view]}</th>
-                {/each}
-                <th class="access-grid__action-col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each [...accessMap.entries()] as [email, viewSet] (email)}
-                {@const isSuperAdmin = email === 'luisarmando@internationalrelocationpartner.com' || email === 'pablo@internationalrelocationpartner.com'}
-                {@const isSelf = email === $authEmail}
-                <tr
-                  class="access-row"
-                  class:access-row--admin={isSuperAdmin}
-                  class:access-row--self={isSelf}
-                  title={isSelf ? 'You cannot change your own access' : undefined}
-                >
-                  <td class="access-grid__email-cell">
-                    <span class="email-tag" title={email}>
-                      {email.split('@')[0]}
-                      <span class="email-tag__domain">@irp</span>
-                    </span>
-                    {#if isSuperAdmin}<span class="admin-badge">admin</span>{/if}
-                    {#if isSelf}<span class="self-badge" title="This is you — your own access cannot be modified">🔒 you</span>{/if}
-                  </td>
-                  {#each GRID_VIEWS as view}
-                    <td class="access-grid__check-cell">
-                      <button
-                        class="view-toggle"
-                        class:view-toggle--on={viewSet.has(view)}
-                        class:view-toggle--locked={isSelf}
-                        on:click={() => toggleView(email, view)}
-                        disabled={isSelf}
-                        title={isSelf ? 'Cannot change your own access' : `${viewSet.has(view) ? 'Revoke' : 'Grant'} ${VIEW_LABELS[view]} access for ${email}`}
-                        aria-label="{VIEW_LABELS[view]}: {viewSet.has(view) ? 'granted' : 'revoked'}{isSelf ? ' (locked)' : ''}"
-                      >
-                        {#if isSelf}
-                          {viewSet.has(view) ? '✓' : '—'}
-                        {:else}
-                          {viewSet.has(view) ? '✓' : '—'}
-                        {/if}
-                      </button>
-                    </td>
-                  {/each}
-                  <td class="access-grid__action-cell">
-                    {#if !isSuperAdmin && !isSelf}
-                      <button class="remove-btn" on:click={() => removeStaffMember(email)} title="Remove {email}">✕</button>
-                    {/if}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+        <!-- Access search -->
+        <div class="admin-group-search">
+          <input
+            class="admin-group-search__input"
+            type="search"
+            bind:value={accessSearch}
+            placeholder="Search staff by email…"
+            aria-label="Search staff"
+          />
+          <button class="reload-btn" on:click={() => (collapsedAccess = {})} title="Expand all">Expand all</button>
         </div>
+
+        {#if accessGroups.length === 0}
+          <div class="admin-empty">No staff match your search.</div>
+        {:else}
+          {#each accessGroups as group (group.key)}
+            <section class="admin-group">
+              <button
+                class="admin-group__head"
+                on:click={() => (collapsedAccess = { ...collapsedAccess, [group.key]: !collapsedAccess[group.key] })}
+                aria-expanded={!collapsedAccess[group.key]}
+              >
+                <span class="admin-group__toggle">{collapsedAccess[group.key] ? '▸' : '▾'}</span>
+                <span class="admin-group__title">{group.label}</span>
+                <span class="admin-group__count">{group.items.length}</span>
+              </button>
+              {#if !collapsedAccess[group.key]}
+                <div class="access-grid-wrapper admin-group__body">
+                  <table class="access-grid">
+                    <thead>
+                      <tr>
+                        <th class="access-grid__email-col">Staff Email</th>
+                        {#each GRID_VIEWS as view}
+                          <th class="access-grid__view-col">{VIEW_LABELS[view]}</th>
+                        {/each}
+                        <th class="access-grid__action-col"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {#each group.items as [email, viewSet] (email)}
+                        {@const isSuperAdmin = email === 'luisarmando@internationalrelocationpartner.com' || email === 'pablo@internationalrelocationpartner.com'}
+                        {@const isSelf = email === $authEmail}
+                        <tr
+                          class="access-row"
+                          class:access-row--admin={isSuperAdmin}
+                          class:access-row--self={isSelf}
+                          title={isSelf ? 'You cannot change your own access' : undefined}
+                        >
+                          <td class="access-grid__email-cell">
+                            <span class="email-tag" title={email}>
+                              {email.split('@')[0]}
+                              <span class="email-tag__domain">@irp</span>
+                            </span>
+                            {#if isSuperAdmin}<span class="admin-badge">admin</span>{/if}
+                            {#if isSelf}<span class="self-badge" title="This is you — your own access cannot be modified">🔒 you</span>{/if}
+                          </td>
+                          {#each GRID_VIEWS as view}
+                            <td class="access-grid__check-cell">
+                              <button
+                                class="view-toggle"
+                                class:view-toggle--on={viewSet.has(view)}
+                                class:view-toggle--locked={isSelf}
+                                on:click={() => toggleView(email, view)}
+                                disabled={isSelf}
+                                title={isSelf ? 'Cannot change your own access' : `${viewSet.has(view) ? 'Revoke' : 'Grant'} ${VIEW_LABELS[view]} access for ${email}`}
+                                aria-label="{VIEW_LABELS[view]}: {viewSet.has(view) ? 'granted' : 'revoked'}{isSelf ? ' (locked)' : ''}"
+                              >
+                                {viewSet.has(view) ? '✓' : '—'}
+                              </button>
+                            </td>
+                          {/each}
+                          <td class="access-grid__action-cell">
+                            {#if !isSuperAdmin && !isSelf}
+                              <button class="remove-btn" on:click={() => removeStaffMember(email)} title="Remove {email}">✕</button>
+                            {/if}
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+              {/if}
+            </section>
+          {/each}
+        {/if}
 
         <!-- Add staff member -->
         <div class="add-staff">
@@ -779,38 +854,68 @@
           </span>
         </div>
 
-        <div class="collab-list">
-          {#each collaborators as collab, i (i)}
-            <div class="collab-row">
-              <div class="collab-fields">
-                <input
-                  type="email"
-                  class="collab-input"
-                  placeholder="email@internationalrelocationpartner.com"
-                  bind:value={collab.email}
-                />
-                <input
-                  type="text"
-                  class="collab-input"
-                  placeholder="Full name"
-                  bind:value={collab.name}
-                />
-                <textarea
-                  class="collab-input collab-input--fn"
-                  rows="2"
-                  placeholder="What this person handles (e.g. pricing questions, scheduling, immigration paperwork)…"
-                  bind:value={collab.function}
-                ></textarea>
-                <label class="collab-broadcast" title="CC this teammate on every Posts email broadcast">
-                  <input type="checkbox" bind:checked={collab.notifyOnBroadcast} />
-                  <span>📣 Notify on broadcasts</span>
-                </label>
-              </div>
-
-              <button class="remove-btn" on:click={() => removeCollaborator(i)} title="Remove">✕</button>
-            </div>
-          {/each}
+        <div class="admin-group-search">
+          <input
+            class="admin-group-search__input"
+            type="search"
+            bind:value={collabSearch}
+            placeholder="Search collaborators by name, email, or function…"
+            aria-label="Search collaborators"
+          />
+          <button class="reload-btn" on:click={() => (collapsedCollabs = {})} title="Expand all">Expand all</button>
         </div>
+
+        {#if collabGroups.length === 0}
+          <div class="admin-empty">No collaborators match your search.</div>
+        {:else}
+          {#each collabGroups as group (group.key)}
+            <section class="admin-group">
+              <button
+                class="admin-group__head"
+                on:click={() => (collapsedCollabs = { ...collapsedCollabs, [group.key]: !collapsedCollabs[group.key] })}
+                aria-expanded={!collapsedCollabs[group.key]}
+              >
+                <span class="admin-group__toggle">{collapsedCollabs[group.key] ? '▸' : '▾'}</span>
+                <span class="admin-group__title">{group.label}</span>
+                <span class="admin-group__count">{group.items.length}</span>
+              </button>
+              {#if !collapsedCollabs[group.key]}
+                <div class="collab-list admin-group__body">
+                  {#each group.items as collab, i (i)}
+                    <div class="collab-row">
+                      <div class="collab-fields">
+                        <input
+                          type="email"
+                          class="collab-input"
+                          placeholder="email@internationalrelocationpartner.com"
+                          bind:value={collab.email}
+                        />
+                        <input
+                          type="text"
+                          class="collab-input"
+                          placeholder="Full name"
+                          bind:value={collab.name}
+                        />
+                        <textarea
+                          class="collab-input collab-input--fn"
+                          rows="2"
+                          placeholder="What this person handles (e.g. pricing questions, scheduling, immigration paperwork)…"
+                          bind:value={collab.function}
+                        ></textarea>
+                        <label class="collab-broadcast" title="CC this teammate on every Posts email broadcast">
+                          <input type="checkbox" bind:checked={collab.notifyOnBroadcast} />
+                          <span>📣 Notify on broadcasts</span>
+                        </label>
+                      </div>
+
+                      <button class="remove-btn" on:click={() => removeCollaborator(i)} title="Remove">✕</button>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </section>
+          {/each}
+        {/if}
 
         <div class="add-staff">
           <button class="add-staff__btn" on:click={addCollaborator}>+ Add Collaborator</button>
@@ -1037,6 +1142,84 @@
     padding: 3rem;
     font-size: 0.88rem;
     letter-spacing: 0.02em;
+  }
+
+  /* ─── Grouped accordion + search (access + collaborators) ────────────────── */
+  .admin-group-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .admin-group-search__input {
+    flex: 1;
+    max-width: 460px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1), background 0.14s;
+  }
+  .admin-group-search__input:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.10);
+    background: #fff;
+  }
+  .admin-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 0.9rem;
+    overflow: hidden;
+    background: #ffffff;
+  }
+  .admin-group__head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.85rem 1.15rem;
+    background: #f8fafc;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .admin-group__head:hover { background: #f1f5f9; }
+  .admin-group__toggle {
+    width: 1.1rem;
+    color: #02999e;
+    font-size: 0.85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .admin-group__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+  .admin-group__count {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #02999e;
+    background: rgba(2, 181, 187, 0.08);
+    border: 1px solid rgba(2, 181, 187, 0.2);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+  .admin-group__body {
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
   }
 
   /* ─── Config source indicator ────────────────────────────────────────────── */

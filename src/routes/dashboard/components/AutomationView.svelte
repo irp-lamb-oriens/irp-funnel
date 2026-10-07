@@ -67,6 +67,33 @@
   let error = '';
   let tab: 'stages' | 'templates' | 'fields' | 'recipients' | 'offer' | 'approvers' | 'tours' | 'destServices' = 'stages';
 
+  // ── Template grouping + search (category accordion) ─────────────────────
+  let templateSearch = '';
+  let collapsedCats: Record<string, boolean> = {};
+  const TEMPLATE_CATEGORY_ORDER: Array<EmailTemplateRow['category']> = ['sales', 'ops', 'followup'];
+  const TEMPLATE_CATEGORY_LABEL: Record<EmailTemplateRow['category'], string> = {
+    sales: 'Sales', ops: 'Operations', followup: 'Follow-up',
+  };
+  $: filteredTemplates = templates.filter((t) => {
+    const q = templateSearch.trim().toLowerCase();
+    if (!q) return true;
+    return `${t.label} ${t.emailType} ${t.subject}`.toLowerCase().includes(q);
+  });
+  // Group by the existing `category` field, plus an "Other" bucket for any row
+  // whose category is missing/unknown (never loses a row, fully backward compatible).
+  $: templatesByCategory = [
+    ...TEMPLATE_CATEGORY_ORDER.map((cat) => ({
+      cat: cat as string,
+      label: TEMPLATE_CATEGORY_LABEL[cat],
+      items: filteredTemplates.filter((t) => t.category === cat),
+    })),
+    {
+      cat: '__other',
+      label: 'Other',
+      items: filteredTemplates.filter((t) => !TEMPLATE_CATEGORY_ORDER.includes(t.category)),
+    },
+  ].filter((g) => g.items.length > 0);
+
   let busyId = ''; // id of the row currently saving (disables its controls)
 
   // ── Client offer popup (single global message shown on the /status page) ──
@@ -269,6 +296,13 @@
   let recipientBusy = ''; // `${emailType}::${email}` while a toggle is saving
   // Per-recipient "add email type" draft (whitelist view).
   let recipientAddDraft: Record<string, string> = {};
+  // Recipient search (filters the teammate cards by label or email).
+  let recipientSearch = '';
+  $: filteredTeamRecipients = teamRecipients.filter((tr) => {
+    const q = recipientSearch.trim().toLowerCase();
+    if (!q) return true;
+    return `${tr.label} ${tr.email}`.toLowerCase().includes(q);
+  });
   // Recipient email-preview modal state.
   let recipientPreviewType = '';
   let recipientPreviewHtml = '';
@@ -859,59 +893,91 @@
   {#if loading}
     <div class="av-loading">Loading automation config…</div>
   {:else if tab === 'templates'}
-    <!-- ── Templates ─────────────────────────────────────────────────── -->
+    <!-- ── Templates (grouped by category, searchable) ────────────────── -->
     {#if templates.length === 0}
       <div class="av-empty">No email templates found.</div>
     {:else}
-      <section class="av-card">
-        <div class="av-table-wrap">
-          <table class="av-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>On</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each templates as t (t.emailType)}
-                <tr class:av-row--off={!t.enabled}>
-                  <td class="av-email-cell">{t.label}<div class="av-type">{t.emailType}</div></td>
-                  <td class="av-subject">{t.subject || '—'}</td>
-                  <td>
-                    {#if t.isCustom}
-                      <span class="av-badge av-badge--custom">custom</span>
-                    {:else if t.hasOverride}
-                      <span class="av-badge av-badge--override">edited</span>
-                    {:else}
-                      <span class="av-badge">default</span>
-                    {/if}
-                  </td>
-                  <td>
-                    <button
-                      class="av-switch"
-                      class:av-switch--on={t.enabled}
-                      on:click={() => toggleTemplate(t)}
-                      disabled={busyId === t.emailType}
-                      aria-label={t.enabled ? 'Enabled' : 'Disabled'}
-                    >
-                      <span class="av-switch__knob"></span>
-                    </button>
-                  </td>
-                  <td class="av-actions">
-                    <button class="av-link" on:click={() => openTemplate(t)}>Edit</button>
-                    {#if t.hasOverride && !t.isCustom}
-                      <button class="av-link av-link--danger" on:click={() => revertTemplate(t)}>Revert</button>
-                    {/if}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div class="av-group-search">
+        <input
+          class="av-group-search__input"
+          type="search"
+          bind:value={templateSearch}
+          placeholder="Search templates by name, type, or subject…"
+          aria-label="Search templates"
+        />
+        <button
+          class="reload-btn"
+          on:click={() => (collapsedCats = {})}
+          title="Expand all groups"
+        >Expand all</button>
+      </div>
+
+      {#if templatesByCategory.length === 0}
+        <div class="av-empty">No templates match your search.</div>
+      {:else}
+        {#each templatesByCategory as group (group.cat)}
+          <section class="av-card av-group">
+            <button
+              class="av-group__head"
+              on:click={() => (collapsedCats = { ...collapsedCats, [group.cat]: !collapsedCats[group.cat] })}
+              aria-expanded={!collapsedCats[group.cat]}
+            >
+              <span class="av-group__toggle">{collapsedCats[group.cat] ? '▸' : '▾'}</span>
+              <span class="av-group__title">{group.label}</span>
+              <span class="av-recip-card__count">{group.items.length}</span>
+            </button>
+            {#if !collapsedCats[group.cat]}
+              <div class="av-table-wrap">
+                <table class="av-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Subject</th>
+                      <th>Status</th>
+                      <th>On</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each group.items as t (t.emailType)}
+                      <tr class:av-row--off={!t.enabled}>
+                        <td class="av-email-cell">{t.label}<div class="av-type">{t.emailType}</div></td>
+                        <td class="av-subject">{t.subject || '—'}</td>
+                        <td>
+                          {#if t.isCustom}
+                            <span class="av-badge av-badge--custom">custom</span>
+                          {:else if t.hasOverride}
+                            <span class="av-badge av-badge--override">edited</span>
+                          {:else}
+                            <span class="av-badge">default</span>
+                          {/if}
+                        </td>
+                        <td>
+                          <button
+                            class="av-switch"
+                            class:av-switch--on={t.enabled}
+                            on:click={() => toggleTemplate(t)}
+                            disabled={busyId === t.emailType}
+                            aria-label={t.enabled ? 'Enabled' : 'Disabled'}
+                          >
+                            <span class="av-switch__knob"></span>
+                          </button>
+                        </td>
+                        <td class="av-actions">
+                          <button class="av-link" on:click={() => openTemplate(t)}>Edit</button>
+                          {#if t.hasOverride && !t.isCustom}
+                            <button class="av-link av-link--danger" on:click={() => revertTemplate(t)}>Revert</button>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </section>
+        {/each}
+      {/if}
     {/if}
   {:else if tab === 'fields'}
     <!-- ── Overview-field registry (centralized, DB-backed; advisory/additive) ── -->
@@ -930,8 +996,21 @@
     {#if templates.length === 0 || teamRecipients.length === 0}
       <div class="av-empty">No email types or team recipients to configure.</div>
     {:else}
+      <div class="av-group-search">
+        <input
+          class="av-group-search__input"
+          type="search"
+          bind:value={recipientSearch}
+          placeholder="Search teammates by name or email…"
+          aria-label="Search recipients"
+        />
+      </div>
+
+      {#if filteredTeamRecipients.length === 0}
+        <div class="av-empty">No teammates match your search.</div>
+      {:else}
       <div class="av-recip-list">
-        {#each teamRecipients as tr (tr.email)}
+        {#each filteredTeamRecipients as tr (tr.email)}
           <section class="av-card av-recip-card">
             <header class="av-recip-card__head">
               <div>
@@ -981,6 +1060,7 @@
           </section>
         {/each}
       </div>
+      {/if}
     {/if}
   {:else if tab === 'offer'}
     <!-- ── Client offer popup (single global message on the /status page) ── -->
@@ -1855,6 +1935,62 @@
   .av-unit { color: #94a3b8; font-size: 0.75rem; margin-left: 0.25rem; }
   .av-type { color: #94a3b8; font-size: 0.7rem; margin-top: 0.1rem; }
   .av-subject { color: #475569; font-size: 0.82rem; }
+
+  /* ── Category grouping accordion + search (templates + recipients) ─── */
+  .av-group-search {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .av-group-search__input {
+    flex: 1;
+    max-width: 460px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: border-color 0.14s, box-shadow 0.14s, background 0.14s;
+  }
+  .av-group-search__input:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.10);
+    background: #fff;
+  }
+  .av-group { padding: 0; overflow: hidden; }
+  .av-group__head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    background: #f8fafc;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: background 0.14s;
+  }
+  .av-group__head:hover { background: #f1f5f9; }
+  .av-group__toggle {
+    width: 1.1rem;
+    color: #02999e;
+    font-size: 0.85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .av-group__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+  .av-group .av-table-wrap { border: none; border-radius: 0; }
 
   /* ── Recipients whitelist (list of lists) ──────────────────────────── */
   .av-recip-list {
