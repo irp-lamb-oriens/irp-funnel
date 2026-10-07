@@ -855,7 +855,7 @@ export const filters = writable<Filters>({
   serviceCategory: '',
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance' | 'salesReport'>('board');
 
 
 /**
@@ -4853,6 +4853,68 @@ export async function fetchFinanceLedger(currency = 'USD'): Promise<FinanceLedge
   );
   if (ticket === financeLedgerSeq) financeLedger.set(data as FinanceLedgerReport);
   return data as FinanceLedgerReport;
+}
+
+// ─── Sales report: monthly payment-funnel (chronological macro view) ─────────
+// Mirrors irp-funnel-server/API/finance/salesReport.ts. Read-only: the server
+// reads invoices, consultations, quotes and payment_counters and returns the
+// already-aggregated funnel, segmented by year with a monthly breakdown.
+
+export interface SalesMonth {
+  month: string;
+  leadsEntered: number;
+  invoicesEntered: number;
+  quotesEntered: number;
+  invoicesStarted: number;
+  invoicesSent: number;
+  clientsStartedPayment: number;
+  invoicePaymentsRecorded: number;
+  clientsPaymentConfirmed: number;
+  counterBumps: number;
+}
+
+export interface SalesYear {
+  year: string;
+  months: SalesMonth[];
+  totals: SalesMonth;
+}
+
+export interface ProjectCompletion {
+  kind: 'quote' | 'consultation' | 'invoice';
+  id: string;
+  label: string;
+  completedAt: string | null;
+  source: string;
+}
+
+export interface FunnelPct {
+  numerator: number;
+  denominator: number;
+  pct: number | null;
+}
+
+export interface SalesReport {
+  generatedAt: string;
+  years: string[];
+  byYear: SalesYear[];
+  totals: SalesMonth;
+  funnel: {
+    startedOfEntered: { invoice: FunnelPct; client: FunnelPct; quote: FunnelPct };
+    recordedOfEntered: { invoice: FunnelPct; client: FunnelPct };
+    recordedOfStarted: { invoice: FunnelPct; client: FunnelPct };
+  };
+  projects: ProjectCompletion[];
+}
+
+export const salesReport = writable<SalesReport | null>(null);
+
+let salesReportSeq = 0;
+
+export async function fetchSalesReport(): Promise<SalesReport> {
+  const ticket = ++salesReportSeq;
+  const data = await apiFetch('/api/dashboard/sales-report');
+  if (ticket === salesReportSeq) salesReport.set(data as SalesReport);
+  return data as SalesReport;
 }
 
 /**

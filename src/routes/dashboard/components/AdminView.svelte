@@ -26,9 +26,10 @@
   let activeTab: 'access' | 'sessions' | 'activity' | 'permissions' | 'collaborators' = 'access';
 
   // ─── Displayable view names (no 'admin' shown in the grid) ───────────────
-  const GRID_VIEWS: DashView[] = ['board', 'list', 'metrics', 'finance', 'evo', 'providers', 'posts', 'templates', 'automations'];
+  const GRID_VIEWS: DashView[] = ['board', 'list', 'metrics', 'finance', 'salesReport', 'evo', 'providers', 'posts', 'templates', 'automations'];
   const VIEW_LABELS: Record<DashView, string> = {
     board: 'Board', list: 'List', metrics: 'Metrics', finance: 'Finance',
+    salesReport: 'Sales Report',
     evo: 'Evo', providers: 'Providers', posts: 'Posts', admin: 'Admin', templates: 'Templates',
     automations: 'Automations',
   };

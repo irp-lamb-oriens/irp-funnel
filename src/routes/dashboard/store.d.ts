@@ -389,7 +389,7 @@ export interface Filters {
     serviceCategory?: string;
 }
 export declare const filters: import("svelte/store").Writable<Filters>;
-export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance">;
+export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance" | "salesReport">;
 /**
  * Stages hidden from the board/list UI. The three "private feedback" columns
  * were retired: their emails are now sent automatically by the Stage Email
@@ -1152,6 +1152,14 @@ export interface Quote {
     /** Ordered array of content blocks for Qwilr-style proposal rendering on the status page.
      *  When absent/empty, QuoteView falls back to the legacy line-items table. */
     blocks?: QuoteBlock[] | null;
+    /** Which line-item groups (packages/add-ons/fixed) the client agreed to. */
+    selectedGroupIds?: string[] | null;
+    /** Which flat line items the client agreed to (legacy flat quotes). */
+    selectedLineItemIds?: string[] | null;
+    /** Actual amount the client agreed to (the accepted option's billed total). */
+    finalBilledTotal?: number | null;
+    /** Ordered installment schedule in percent (e.g. [35, 65]). Defaults to 35/65. */
+    paymentSchedule?: number[] | null;
 }
 export declare const QUOTE_STATUS_LABEL: Record<Quote['status'], {
     label: string;
@@ -1628,6 +1636,20 @@ export declare function fetchRecipientRules(): Promise<{
     rules: EmailRecipientRule[];
     teamRecipients: TeamRecipient[];
 }>;
+/**
+ * The default provider-RFQ CC pool: support2@ + pricing2@ + Erika's irp@.
+ * Mirrors `resolveRfqCc()` in the server's `recipientRules.ts`. The dashboard
+ * Recipients tab can exclude any of these from the `provider_rfq` email type,
+ * and the inverse (non-excluded) set is what the Providers RFQ panel CCs.
+ */
+export declare const RFQ_CC_POOL: string[];
+/**
+ * Resolve the provider-RFQ CC list from the dashboard recipient rules
+ * (inverse exclusion). Returns `RFQ_CC_POOL` minus whatever the operator
+ * excluded from the `provider_rfq` email type. Falls back to the full pool
+ * when the fetch fails or no rule exists yet.
+ */
+export declare function fetchRfqCc(): Promise<string[]>;
 /**
  * Upsert the exclusion set for one email type. Passing an empty array clears
  * every exclusion (⇒ that email type resumes the full default team CC/BCC).
@@ -2210,6 +2232,59 @@ export declare class TaxonomyConflict extends Error {
  */
 export declare function saveMoveTaxonomy(taxonomy: MoveTaxonomy): Promise<MoveTaxonomy>;
 export declare function fetchFinanceLedger(currency?: string): Promise<FinanceLedgerReport>;
+export interface SalesMonth {
+    month: string;
+    leadsEntered: number;
+    invoicesEntered: number;
+    quotesEntered: number;
+    invoicesStarted: number;
+    invoicesSent: number;
+    clientsStartedPayment: number;
+    invoicePaymentsRecorded: number;
+    clientsPaymentConfirmed: number;
+    counterBumps: number;
+}
+export interface SalesYear {
+    year: string;
+    months: SalesMonth[];
+    totals: SalesMonth;
+}
+export interface ProjectCompletion {
+    kind: 'quote' | 'consultation' | 'invoice';
+    id: string;
+    label: string;
+    completedAt: string | null;
+    source: string;
+}
+export interface FunnelPct {
+    numerator: number;
+    denominator: number;
+    pct: number | null;
+}
+export interface SalesReport {
+    generatedAt: string;
+    years: string[];
+    byYear: SalesYear[];
+    totals: SalesMonth;
+    funnel: {
+        startedOfEntered: {
+            invoice: FunnelPct;
+            client: FunnelPct;
+            quote: FunnelPct;
+        };
+        recordedOfEntered: {
+            invoice: FunnelPct;
+            client: FunnelPct;
+        };
+        recordedOfStarted: {
+            invoice: FunnelPct;
+            client: FunnelPct;
+        };
+    };
+    projects: ProjectCompletion[];
+}
+export declare const salesReport: import("svelte/store").Writable<SalesReport | null>;
+export declare function fetchSalesReport(): Promise<SalesReport>;
 /**
  * Replace the payment rows of one accepted quote. The server recomputes every
  * derived figure, so the caller reloads the report rather than patching totals

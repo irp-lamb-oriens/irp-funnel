@@ -29,6 +29,12 @@
   let loading = false;
   let errorMsg = '';
 
+  // List search + pagination (the invoice list is the payment data source, so
+  // it grows unbounded and needs both).
+  let listSearch = '';
+  let listPage = 1;
+  const LIST_PAGE_SIZE = 25;
+
   // Editor state
   let editing: Invoice | null = null;
   let creating = false;
@@ -180,6 +186,18 @@
       errorMsg = err?.message ?? 'Could not download the PDF.';
     }
   }
+
+  // Search + pagination over the invoice list.
+  $: filteredInvoices = (() => {
+    const q = listSearch.toLowerCase().trim();
+    const all = $invoices ?? [];
+    if (!q) return all;
+    return all.filter((inv) =>
+      `${inv.invoiceNumber} ${inv.clientName} ${inv.clientEmail}`.toLowerCase().includes(q),
+    );
+  })();
+  $: pagedInvoices = filteredInvoices.slice(0, listPage * LIST_PAGE_SIZE);
+  $: hasMoreInvoices = filteredInvoices.length > listPage * LIST_PAGE_SIZE;
 </script>
 
 <div class="ip">
@@ -234,6 +252,14 @@
     {:else if $invoices.length === 0}
       <p class="ip__empty">No invoices yet. Create one from an accepted quote.</p>
     {:else}
+      <div class="ip__search">
+        <input
+          type="text"
+          placeholder="Search invoices…"
+          bind:value={listSearch}
+          on:input={() => (listPage = 1)}
+        />
+      </div>
       <div class="ip__panel">
         <table class="ip__table">
           <thead>
@@ -250,7 +276,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each $invoices as inv (inv.id)}
+            {#each pagedInvoices as inv (inv.id)}
               <tr>
                 <td class="ip__num">{inv.invoiceNumber}</td>
                 <td class="ip__name">{inv.clientName || '—'}</td>
@@ -370,6 +396,11 @@
           </tbody>
         </table>
       </div>
+      {#if hasMoreInvoices}
+        <button class="ip__more" on:click={() => (listPage += 1)}>
+          Load more ({filteredInvoices.length - pagedInvoices.length} remaining)
+        </button>
+      {/if}
     {/if}
   {/if}
 </div>
@@ -456,6 +487,41 @@
     font-style: italic;
     padding: 0.5rem 0;
   }
+
+  .ip__search {
+    margin-bottom: 0.8rem;
+  }
+  .ip__search input {
+    width: 100%;
+    max-width: 360px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    font-family: inherit;
+    font-size: 0.82rem;
+    transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ip__search input:focus {
+    outline: none;
+    border-color: rgba(2, 181, 187, 0.48);
+    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
+  }
+
+  .ip__more {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.1rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #02999e;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .ip__more:hover { background: #f1f5f9; }
 
   .ip__panel {
     padding: 1.5rem;
