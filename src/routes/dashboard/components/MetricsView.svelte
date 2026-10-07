@@ -855,6 +855,35 @@
         </div>
       </div>
     {/if}
+
+    <!-- Monthly Quote Approvals -->
+    {#if $metrics.monthlyApprovals && Object.keys($metrics.monthlyApprovals).length > 0}
+      <div class="metrics-section">
+        <h2>✅ Monthly Quote Approvals</h2>
+        <p class="metrics-subtle">
+          Approval decisions per month, keyed by the date each approver decided.
+        </p>
+        <div class="metrics-grid metrics-grid--small">
+          <div class="metric-card" style="border-left: 4px solid #f59e0b">
+            <div class="metric-card__value">{Object.values($metrics.monthlyApprovals).reduce((a, b) => a + b, 0)}</div>
+            <div class="metric-card__label">Total Approval Decisions</div>
+          </div>
+          <div class="metric-card" style="border-left: 4px solid #16a34a">
+            <div class="metric-card__value">{Object.values($metrics.monthlyApprovedQuotes || {}).reduce((a, b) => a + b, 0)}</div>
+            <div class="metric-card__label">Quotes Approved</div>
+          </div>
+        </div>
+        <div class="monthly-chart">
+          {#each Object.entries($metrics.monthlyApprovals).sort() as [month, count]}
+            <div class="monthly-bar">
+              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyApprovals))) * 100)}%; background: linear-gradient(180deg, #f59e0b, #d97706);"></div>
+              <span class="monthly-bar__count">{count}</span>
+              <span class="monthly-bar__label">{month}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   {:else}
     <div class="dashboard__loading">
       <div class="spinner"></div>

@@ -217,6 +217,10 @@ export interface Metrics {
     };
     monthlyLeads: Record<string, number>;
     monthlyPaidUsers: Record<string, number>;
+    /** Quote approval decisions per month (YYYY-MM), keyed by `decidedAt`. */
+    monthlyApprovals: Record<string, number>;
+    /** Quotes that reached an "approved" decision per month (YYYY-MM). */
+    monthlyApprovedQuotes: Record<string, number>;
     sourceBreakdown: Record<string, number>;
     countryBreakdown: Record<string, number>;
     channelBreakdown: Record<string, number>;
@@ -2243,11 +2247,25 @@ export interface SalesMonth {
     invoicePaymentsRecorded: number;
     clientsPaymentConfirmed: number;
     counterBumps: number;
+    invoiced: number;
+    collected: number;
+    outstanding: number;
+    margin: number;
+    cost: number;
 }
 export interface SalesYear {
     year: string;
     months: SalesMonth[];
     totals: SalesMonth;
+}
+export interface SalesBucket {
+    key: string;
+    label: string;
+    n: number;
+    invoiced: number;
+    collected: number;
+    outstanding: number;
+    margin: number;
 }
 export interface ProjectCompletion {
     kind: 'quote' | 'consultation' | 'invoice';
@@ -2255,6 +2273,10 @@ export interface ProjectCompletion {
     label: string;
     completedAt: string | null;
     source: string;
+    contractValue: number;
+    collected: number;
+    outstanding: number;
+    margin: number;
 }
 export interface FunnelPct {
     numerator: number;
@@ -2281,6 +2303,12 @@ export interface SalesReport {
             client: FunnelPct;
         };
     };
+    collectionRate: FunnelPct;
+    byRoute: SalesBucket[];
+    byService: SalesBucket[];
+    byProvider: SalesBucket[];
+    byCurrency: SalesBucket[];
+    byPaymentMethod: SalesBucket[];
     projects: ProjectCompletion[];
 }
 export declare const salesReport: import("svelte/store").Writable<SalesReport | null>;

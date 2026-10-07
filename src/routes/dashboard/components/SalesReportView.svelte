@@ -4,16 +4,19 @@
    *
    * Read-only. Everything comes from GET /api/dashboard/sales-report, which
    * reads invoices, consultations, quotes and payment_counters and returns the
-   * already-aggregated funnel segmented by year. This component only formats
-   * and filters, so there is no client-side arithmetic to drift from the server.
-   *
-   * The funnel is exposed three ways (invoice / client / quote) because the
-   * same business event is recorded in several places and each reading is
-   * legitimate. Nothing is summed across them: they sit side by side so a
-   * figure that looks low can be explained rather than silently folded in.
+   * already-aggregated funnel segmented by year, plus the money behind each
+   * reading and cross-cutting buckets. This component only formats and filters,
+   * so there is no client-side arithmetic to drift from the server.
    */
   import { onMount } from 'svelte';
-  import { salesReport, fetchSalesReport, type SalesMonth, type SalesYear, type ProjectCompletion } from '../store.ts';
+  import {
+    salesReport,
+    fetchSalesReport,
+    type SalesMonth,
+    type SalesYear,
+    type SalesBucket,
+    type ProjectCompletion,
+  } from '../store.ts';
   import Select, { type SelectOption } from './ui/Select.svelte';
 
   let loading = false;
@@ -62,7 +65,6 @@
     const r = $salesReport;
     if (!r) return [];
     if (selectedYear === 'all') {
-      // Flatten every year's months into one chronological list.
       return r.byYear.flatMap((y) => y.months).sort((a, b) => a.month.localeCompare(b.month));
     }
     const year = r.byYear.find((y) => y.year === selectedYear);
@@ -94,6 +96,16 @@
     return typeof n === 'number' ? `${n.toFixed(1)}%` : '—';
   }
 
+  function money(n: number | null | undefined): string {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return '—';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(n);
+  }
+
   function shortDate(iso: string | null | undefined): string {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -109,7 +121,7 @@
   };
 
   // Column definitions for the monthly table, so the markup stays a single loop.
-  const MONTH_COLUMNS: Array<{ key: keyof SalesMonth; label: string; group: string }> = [
+  const MONTH_COLUMNS: Array<{ key: keyof SalesMonth; label: string; group: string; money?: boolean }> = [
     { key: 'leadsEntered', label: 'Leads', group: 'Entered' },
     { key: 'invoicesEntered', label: 'Invoices', group: 'Entered' },
     { key: 'quotesEntered', label: 'Quotes', group: 'Entered' },
@@ -119,14 +131,34 @@
     { key: 'invoicePaymentsRecorded', label: 'Invoice payments', group: 'Recorded' },
     { key: 'clientsPaymentConfirmed', label: 'Clients confirmed', group: 'Recorded' },
     { key: 'counterBumps', label: 'Counter bumps', group: 'Recorded' },
+    { key: 'invoiced', label: 'Invoiced', group: 'Money', money: true },
+    { key: 'collected', label: 'Collected', group: 'Money', money: true },
+    { key: 'outstanding', label: 'Outstanding', group: 'Money', money: true },
+    { key: 'margin', label: 'Margin', group: 'Money', money: true },
+    { key: 'cost', label: 'Cost', group: 'Money', money: true },
   ];
+
+  // Bucket tables: one per cross-cutting dimension.
+  const BUCKET_TABLES: Array<{ key: 'byRoute' | 'byService' | 'byProvider' | 'byCurrency' | 'byPaymentMethod'; title: string }> = [
+    { key: 'byRoute', title: 'By route' },
+    { key: 'byService', title: 'By service' },
+    { key: 'byProvider', title: 'By provider' },
+    { key: 'byCurrency', title: 'By currency' },
+    { key: 'byPaymentMethod', title: 'By payment method' },
+  ];
+
+  function bucketRows(key: string): SalesBucket[] {
+    const r = $salesReport;
+    if (!r) return [];
+    return (r as any)[key] ?? [];
+  }
 </script>
 
 <div class="sr">
   <header class="sr__head">
     <div>
       <h3>Sales report</h3>
-      <p>Monthly payment funnel, segmented by year, across invoices, clients and quotes.</p>
+      <p>Monthly payment funnel, segmented by year, with the money behind each reading.</p>
     </div>
     <div class="sr__head-actions">
       <button class="sr__reload" on:click={load} disabled={loading}>
@@ -199,6 +231,15 @@
             <span class="sr__funnel-sub">{$salesReport.funnel.recordedOfStarted.client.numerator} / {$salesReport.funnel.recordedOfStarted.client.denominator}</span>
           </div>
         </div>
+
+        <div class="sr__funnel-group sr__funnel-group--rate">
+          <span class="sr__funnel-title">Collection rate</span>
+          <div class="sr__funnel-row">
+            <span class="sr__funnel-label">Collected ÷ invoiced</span>
+            <span class="sr__funnel-value">{pct($salesReport.collectionRate.pct)}</span>
+            <span class="sr__funnel-sub">{$salesReport.collectionRate.numerator} / {$salesReport.collectionRate.denominator}</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -209,7 +250,7 @@
         <div class="sr__totals">
           <span class="sr__totals-label">Totals</span>
           {#each MONTH_COLUMNS as col}
-            <span class="sr__totals-cell">{selectedTotals[col.key]}</span>
+            <span class="sr__totals-cell">{col.money ? money(selectedTotals[col.key] as number) : selectedTotals[col.key]}</span>
           {/each}
         </div>
       {/if}
@@ -228,7 +269,7 @@
               <tr>
                 <td class="sr__month">{m.month}</td>
                 {#each MONTH_COLUMNS as col}
-                  <td>{m[col.key]}</td>
+                  <td>{col.money ? money(m[col.key] as number) : m[col.key]}</td>
                 {/each}
               </tr>
             {/each}
@@ -237,6 +278,48 @@
             {/if}
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- ── Cross-cutting money buckets ────────────────────────────────── -->
+    <section class="sr__section">
+      <h4>Money by segment</h4>
+      <div class="sr__buckets">
+        {#each BUCKET_TABLES as bt}
+          <div class="sr__bucket">
+            <span class="sr__bucket-title">{bt.title}</span>
+            {#if bucketRows(bt.key).length === 0}
+              <p class="sr__empty">No data.</p>
+            {:else}
+              <div class="sr__table-wrap">
+                <table class="sr__table">
+                  <thead>
+                    <tr>
+                      <th>Segment</th>
+                      <th>#</th>
+                      <th>Invoiced</th>
+                      <th>Collected</th>
+                      <th>Outstanding</th>
+                      <th>Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each bucketRows(bt.key) as b (b.key)}
+                      <tr>
+                        <td class="sr__proj">{b.label}</td>
+                        <td>{b.n}</td>
+                        <td>{money(b.invoiced)}</td>
+                        <td>{money(b.collected)}</td>
+                        <td>{money(b.outstanding)}</td>
+                        <td>{money(b.margin)}</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </div>
+        {/each}
       </div>
     </section>
 
@@ -264,6 +347,10 @@
               <th>Type</th>
               <th>Project</th>
               <th>Completed</th>
+              <th>Contract</th>
+              <th>Collected</th>
+              <th>Outstanding</th>
+              <th>Margin</th>
               <th>Source</th>
             </tr>
           </thead>
@@ -273,11 +360,15 @@
                 <td><span class="sr__kind sr__kind--{p.kind}">{KIND_LABEL[p.kind]}</span></td>
                 <td class="sr__proj" title={p.id}>{p.label}</td>
                 <td class:sr__done={!!p.completedAt}>{shortDate(p.completedAt)}</td>
+                <td>{money(p.contractValue)}</td>
+                <td>{money(p.collected)}</td>
+                <td>{money(p.outstanding)}</td>
+                <td>{money(p.margin)}</td>
                 <td class="sr__source">{p.source}</td>
               </tr>
             {/each}
             {#if pagedProjects.length === 0}
-              <tr><td colspan="4" class="sr__empty">No projects match.</td></tr>
+              <tr><td colspan="8" class="sr__empty">No projects match.</td></tr>
             {/if}
           </tbody>
         </table>
@@ -394,6 +485,7 @@
     border-radius: 12px;
     padding: 0.9rem 1rem;
   }
+  .sr__funnel-group--rate { background: rgba(2, 181, 187, 0.05); border-color: rgba(2, 181, 187, 0.2); }
   .sr__funnel-title { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
   .sr__funnel-row { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0; }
   .sr__funnel-label { font-size: 0.8rem; font-weight: 600; color: #334155; min-width: 60px; }
@@ -414,6 +506,10 @@
   }
   .sr__totals-label { font-weight: 800; color: #0f172a; }
   .sr__totals-cell { font-variant-numeric: tabular-nums; color: #334155; }
+
+  .sr__buckets { display: flex; flex-direction: column; gap: 1rem; }
+  .sr__bucket { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; }
+  .sr__bucket-title { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
 
   .sr__table-wrap { overflow-x: auto; }
   .sr__table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
