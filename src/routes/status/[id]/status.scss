@@ -554,6 +554,21 @@
         grid-column: 1 / -1;
       }
 
+      // Route path field: the RoutePath component supplies its own card
+      // chrome, so strip the default .field--card surface here.
+      &--route {
+        display: block;
+        background: transparent;
+        border: none;
+        padding: 0;
+        border-radius: 0;
+
+        &:hover {
+          background: transparent;
+          border-color: transparent;
+        }
+      }
+
       &__icon {
         font-size: 1.5rem;
         line-height: 1;

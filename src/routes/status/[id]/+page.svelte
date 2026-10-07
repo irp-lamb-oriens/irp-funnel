@@ -66,6 +66,7 @@
   import RegulationsLanding from "./RegulationsLanding.svelte";
   import ClientFieldsCard from "./ClientFieldsCard.svelte";
   import ChargesCard from "./ChargesCard.svelte";
+  import RoutePath from "./RoutePath.svelte";
   import ClientOfferPopup from "./ClientOfferPopup.svelte";
   import RelocationTours from "./RelocationTours.svelte";
   import ImmigrationAdvice from "./ImmigrationAdvice.svelte";
@@ -1354,7 +1355,12 @@
             </div>
           </div>
 
-          <!-- Project Details collapsible ───────────────────────────────── -->
+          <!-- Project Details collapsible ─────────────────────────────────
+               Hidden from end-customers: these internal intake facts (shipment
+               size, vehicles, property, high-value items) were being read by
+               clients as the agreed contract and caused disputes. Staff keep
+               seeing them here for review; clients see only what they accept. -->
+          {#if $irpStaffIsAuthenticated}
           <div class="cp-collapsible">
             <!-- Trigger is a <div role="button"> (NOT a <button>) because it nests
                  the "Edit" <button> below. A <button> may not contain another
@@ -1399,43 +1405,17 @@
                     </h3>
                     <div class="field-grid">
 
-                      <!-- ── Origin ── (registry: route) -->
+                      <!-- ── Route: animated origin → destination flight path ── -->
                       {#if routeVisible}
-                      <div class="field field--card" class:field--editable={editingDetails && routeEditable}>
-                        <span class="field__icon">🌍</span>
-                        <div class="field__content">
-                          <span class="field__label">Origin</span>
-                          {#if editingDetails && routeEditable}
-                            <div class="field__inline-row">
-                              <input class="field__inline-input" type="text" placeholder="City, State/Province" bind:value={detailsEditForm.originCity} />
-                              <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.originCountry} />
-                            </div>
-                          {:else}
-                            <span class="field__value">
-                              {[$project.originCity, $project.originCountry].filter(Boolean).join(', ') || '—'}
-                            </span>
-                          {/if}
-                        </div>
-                      </div>
-                      {/if}
-
-                      <!-- ── Destination ── (registry: route) -->
-                      {#if routeVisible}
-                      <div class="field field--card" class:field--editable={editingDetails && routeEditable}>
-                        <span class="field__icon">📍</span>
-                        <div class="field__content">
-                          <span class="field__label">Destination</span>
-                          {#if editingDetails && routeEditable}
-                            <div class="field__inline-row">
-                              <input class="field__inline-input" type="text" placeholder="City, State/Province" bind:value={detailsEditForm.destinationCity} />
-                              <input class="field__inline-input" type="text" placeholder="Country" bind:value={detailsEditForm.destinationCountry} />
-                            </div>
-                          {:else}
-                            <span class="field__value">
-                              {[$project.destinationCity, $project.destinationCountry].filter(Boolean).join(', ') || '—'}
-                            </span>
-                          {/if}
-                        </div>
+                      <div class="field field--full field--route">
+                        <RoutePath
+                          originCity={$project.originCity ?? ''}
+                          originCountry={$project.originCountry ?? ''}
+                          destinationCity={$project.destinationCity ?? ''}
+                          destinationCountry={$project.destinationCountry ?? ''}
+                          editing={editingDetails}
+                          editable={routeEditable}
+                        />
                       </div>
                       {/if}
 
@@ -1446,21 +1426,6 @@
                           <div class="field__content">
                             <span class="field__label">Estimated Budget</span>
                             <span class="field__value field__value--highlight">{$project.budget}</span>
-                          </div>
-                        </div>
-                      {/if}
-
-                      <!-- ── Move Size ── (registry: size) -->
-                      {#if sizeVisible && ($project.size || (editingDetails && sizeEditable))}
-                        <div class="field field--card" class:field--editable={editingDetails && sizeEditable}>
-                          <span class="field__icon">📦</span>
-                          <div class="field__content">
-                            <span class="field__label">Move Size</span>
-                            {#if editingDetails && sizeEditable}
-                              <input class="field__inline-input" type="text" placeholder="e.g. 40ft container" bind:value={detailsEditForm.size} />
-                            {:else}
-                              <span class="field__value">{$project.size}</span>
-                            {/if}
                           </div>
                         </div>
                       {/if}
@@ -1572,6 +1537,7 @@
               </div><!-- /details inner -->
             </div><!-- /details body -->
           </div><!-- /details collapsible -->
+          {/if}
 
           <!-- Activity Log collapsible ──────────────────────────────────── -->
           <div class="cp-collapsible">
