@@ -229,18 +229,21 @@ export interface StatusQuoteBalance {
   date: string | null;
   currency: string;
   quoteTotal: number;
-  invoiced: number;
-  remaining: number;
+  /** How much of this accepted quote has been paid against its invoices. */
+  paid: number;
+  /** quoteTotal minus paid, floored at zero. */
+  balance: number;
 }
 
 export interface StatusCharges {
   charges: StatusCharge[];
   quoteBalances: StatusQuoteBalance[];
   totals: {
+    /** Sum of every accepted quote's total (what was agreed). */
+    accepted: number;
     charged: number;
     received: number;
     balanceDue: number;
-    notYetInvoiced: number;
   };
 }
 
@@ -251,7 +254,7 @@ export async function fetchCharges(projectId: string): Promise<StatusCharges> {
   const result: StatusCharges = {
     charges: Array.isArray(data.charges) ? data.charges : [],
     quoteBalances: Array.isArray(data.quoteBalances) ? data.quoteBalances : [],
-    totals: data.totals ?? { charged: 0, received: 0, balanceDue: 0, notYetInvoiced: 0 },
+    totals: data.totals ?? { accepted: 0, charged: 0, received: 0, balanceDue: 0 },
   };
   charges.set(result);
   return result;

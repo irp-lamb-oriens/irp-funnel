@@ -481,7 +481,7 @@
             class="qv-name-input"
             type="text"
             bind:value={acceptedBy}
-            placeholder="Your full legal name"
+            placeholder="Write Your Full Legal Name Here"
             autocomplete="name"
           />
           <label class="qv-consent" class:qv-consent--checked={consent}>

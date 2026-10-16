@@ -2,9 +2,9 @@
   /**
    * ChargesCard.svelte — "Your charges" on the client status page.
    * ────────────────────────────────────────────────────────────────────────
-   * Shows the client's own billing statement: each invoice we've sent them
-   * (total, received, balance due, line items) and, alongside it, how much of
-   * each accepted quote is still waiting to be billed. Draft invoices never
+   * Shows the client's own billing statement: the total they accepted, how much
+   * of it has been paid, and (alongside it) each invoice we've sent them with
+   * the balance still outstanding per accepted quote. Draft invoices never
    * appear — a draft is finance's working copy.
    *
    * Self-contained: reads the projectId from the route params, fetches via the
@@ -85,8 +85,8 @@
     {#if $charges}
       <div class="cc__totals">
         <div class="cc__stat">
-          <span class="cc__stat-label">Invoiced to date</span>
-          <strong>{money($charges.totals.charged)}</strong>
+          <span class="cc__stat-label">Accepted total</span>
+          <strong>{money($charges.totals.accepted)}</strong>
         </div>
         <div class="cc__stat">
           <span class="cc__stat-label">Paid</span>
@@ -96,12 +96,6 @@
           <span class="cc__stat-label">Balance due</span>
           <strong class:cc__owing={$charges.totals.balanceDue > 0}>{money($charges.totals.balanceDue)}</strong>
         </div>
-        {#if $charges.totals.notYetInvoiced > 0}
-          <div class="cc__stat">
-            <span class="cc__stat-label">Quoted, not yet invoiced</span>
-            <strong class="cc__owing">{money($charges.totals.notYetInvoiced)}</strong>
-          </div>
-        {/if}
       </div>
     {/if}
 
@@ -118,10 +112,12 @@
               <div class="cc__quote-row cc__quote-row--meta">
                 <span>Accepted {shortDate(q.acceptedAt)}</span>
                 <span>
-                  {#if q.remaining > 0}
-                    <span class="cc__quote-remaining">{money(q.remaining)} remaining to invoice</span>
+                  {#if q.balance > 0}
+                    <span class="cc__quote-remaining">
+                      {money(q.paid)} paid · {money(q.balance)} remaining
+                    </span>
                   {:else}
-                    <span class="cc__quote-ok">Fully invoiced</span>
+                    <span class="cc__quote-ok">Fully paid</span>
                   {/if}
                 </span>
               </div>

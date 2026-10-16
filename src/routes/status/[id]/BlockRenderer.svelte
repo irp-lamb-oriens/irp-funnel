@@ -285,7 +285,7 @@
               class="br-name-input"
               type="text"
               bind:value={acceptedByInput}
-              placeholder="Your full legal name"
+              placeholder="Write Your Full Legal Name Here"
               autocomplete="name"
             />
             <label class="br-consent" class:br-consent--checked={consentChecked}>
