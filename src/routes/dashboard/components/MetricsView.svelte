@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import CallsMetricsModule from './metrics/CallsMetricsModule.svelte';
   import QuotesMetricsModule from './metrics/QuotesMetricsModule.svelte';
+  import AttributionMetricsModule from './metrics/AttributionMetricsModule.svelte';
 
   // --- Dynamic Business Intelligence Engine ---
   // Now supports ANY collection, not just clients
@@ -544,6 +545,9 @@
       </div>
       <div class="metric-total">Total Clients: <strong>{$metrics.pipeline.total}</strong></div>
     </div>
+
+    <!-- Attribution: tagged link (UTM / refer) → lead → call → paid → revenue -->
+    <AttributionMetricsModule attribution={$metrics.attribution} />
 
     <!-- Call + Quote activity (segmented per-client modules) -->
     {#if $metrics.activity}

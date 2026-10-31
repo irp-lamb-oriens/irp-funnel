@@ -5,6 +5,7 @@
   import { formState } from './systems/inputs/Calendar/formStore.js';
     import countries from "./systems/inputs/Country/countries.ts";
   import { useVariant, trackExposure, trackInteraction } from '../lib/evo/index.ts';
+  import { getAttribution } from '../lib/attribution.ts';
 
   export let initialContext: any = {};
   export let onBackToForm: () => void;
@@ -123,7 +124,8 @@
           message: `[SYSTEM COMMAND] Introduce yourself as Lili from IRP and welcome the user. If they have provided their name (${fs.name}), use it. Acknowledge what we know so far (${JSON.stringify(fs)}), and then ask the first missing PRIORITY question to continue. ${evoGreetingHint} RESPOND ONLY IN THE LANGUAGE CODE: ${preferredLanguage}. Stay completely natural.`,
           context: initialContext,
           preferredLanguage,
-          evoPersonaVariant
+          evoPersonaVariant,
+          attribution: getAttribution()
         })
       });
 
@@ -179,7 +181,8 @@
           message: userMsg,
           context: initialContext,
           preferredLanguage,
-          evoPersonaVariant
+          evoPersonaVariant,
+          attribution: getAttribution()
         })
       });
 

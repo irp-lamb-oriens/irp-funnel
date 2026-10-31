@@ -443,3 +443,198 @@
   }
 }
 
+
+/* ── Attribution module (UTM / refer → money) ───────────────────────────── */
+/* Built on the shared module primitives above (segment-bar, period-tabs,
+   metric-card, bucket-row, breakdown-*) — only the deltas live here.       */
+
+.attribution-module {
+  p.metrics-subtle {
+    font-size: 13px;
+    line-height: 1.5;
+    color: $text-dim;
+    margin: 0 0 $sp-4;
+    max-width: 680px;
+  }
+
+  .metrics-subtle code,
+  .attribution-footnote code {
+    font-family: $mono;
+    font-size: 11px;
+    background: $surface-2;
+    border: 1px solid $border;
+    border-radius: $r-xs;
+    padding: 0 4px;
+  }
+
+  .metrics-grid { margin-bottom: $sp-4; }
+  .metric-card__value.attribution-money { font-size: 26px; }
+}
+
+.attribution-empty {
+  font-size: 12px;
+  color: $text-dim;
+  margin: 0 0 $sp-3;
+}
+
+.attribution-journey {
+  margin: 0 0 $sp-4;
+  font-size: 13px;
+  strong { font-size: 15px; }
+}
+
+.attribution-subhead { margin-top: $sp-2; }
+
+.attribution-buckets .bucket-row {
+  grid-template-columns: minmax(0, 2fr) minmax(48px, 5fr) auto;
+}
+
+.bucket-row--muted {
+  .bucket-row__label { color: $text-dim; font-style: italic; }
+  .bucket-row__fill { background: $surface-4; }
+}
+
+.attribution-footnote {
+  font-size: 12px;
+  color: $text-dim;
+  font-weight: 500;
+}
+
+/* Funnel table — 8 columns, horizontally scrollable on narrow screens. */
+.attribution-table {
+  overflow-x: auto;
+  margin-bottom: $sp-4;
+
+  .breakdown-header,
+  .breakdown-row {
+    grid-template-columns: minmax(160px, 2.2fr) repeat(4, minmax(64px, 0.8fr)) minmax(56px, 0.7fr) minmax(90px, 1fr) minmax(80px, 0.8fr);
+    min-width: 760px;
+    gap: $sp-2;
+  }
+}
+
+.attribution-row {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba($border, 0.3);
+  background: transparent;
+  font-family: $font;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid $border-focus; outline-offset: -2px; }
+  &--open { background: $surface-2; }
+
+  &--untagged .breakdown-row__model {
+    color: $text-dim;
+    font-style: italic;
+  }
+}
+
+.attribution-caret {
+  display: inline-block;
+  width: 14px;
+  color: $text-dim;
+  font-size: 10px;
+}
+
+.attribution-noshow {
+  font-style: normal;
+  font-size: 11px;
+  color: $danger;
+}
+
+.attribution-leads {
+  background: $surface-2;
+  border-bottom: 1px solid $border;
+  padding: $sp-1 $sp-4 $sp-2 ($sp-4 + 14px);
+  min-width: 760px;
+}
+
+.attribution-lead {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.6fr) 80px minmax(140px, 1.6fr) auto 90px;
+  gap: $sp-3;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 12px;
+  color: $text-2;
+  border-bottom: 1px dashed rgba($border, 0.6);
+  &:last-child { border-bottom: none; }
+
+  &__name { font-weight: 600; color: $text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__date { color: $text-dim; }
+  &__path { color: $text-muted; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__money { font-family: $mono; font-weight: 700; color: $warning; text-align: right; }
+
+  &__steps {
+    display: inline-flex;
+    gap: $sp-1;
+    i {
+      font-style: normal;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 2px 6px;
+      border-radius: $r-full;
+      color: $text-dim;
+      background: $surface-3;
+      &.on { color: #fff; background: $accent; }
+      &.off { color: #fff; background: $danger; }
+    }
+  }
+
+  &--more { display: block; color: $text-dim; font-style: italic; }
+}
+
+.attribution-builder {
+  margin-top: $sp-3;
+  border-top: 1px solid $border;
+  padding-top: $sp-2;
+
+  &__toggle { padding-left: 0; }
+
+  &__fields {
+    margin-top: $sp-2;
+    input { min-width: 120px; }
+  }
+
+  &__base { flex: 1 1 320px; }
+
+  &__out {
+    display: flex;
+    align-items: center;
+    gap: $sp-2;
+    background: $surface;
+    border: 1px solid $border;
+    border-radius: $r-sm;
+    padding: $sp-2 $sp-3;
+    min-height: 40px;
+
+    > code {
+      flex: 1;
+      font-family: $mono;
+      font-size: 12px;
+      color: $text;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+
+  &__copy {
+    font-family: $font;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #fff;
+    background: $accent;
+    border: none;
+    border-radius: $r-xs;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background $t-fast;
+    &:hover { background: $accent-hover; }
+  }
+}

@@ -5,6 +5,7 @@
     import SubmitButton from '../../buttons/SubmitButton/SubmitButton.svelte';
     import MarkdownText from '../../texts/MarkdownText/MarkdownText.svelte';
     import { browser } from '$app/environment';
+    import { getAttribution } from '../../../../lib/attribution.ts';
     import countries from '../../inputs/Country/countries.ts';
 
     let isLoading = false;
@@ -38,6 +39,7 @@
 
         const payload = {
             ...storeData,
+            attribution: getAttribution(),
             // Add any additional properties needed for submission
             // For example, if there's a specific API endpoint or additional data
             // submit: {

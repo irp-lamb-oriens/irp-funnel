@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { writable } from "svelte/store";
+  import { getAttribution } from "../lib/attribution.ts";
 
   // State management for form inputs
   const email = writable("");
@@ -22,6 +23,7 @@
       name: $name,
       topCountries: $topCountries,
       funnelType: $funnelType,
+      attribution: getAttribution(),
     };
 
     try {

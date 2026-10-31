@@ -4,6 +4,7 @@
   import Email from "./systems/inputs/Email/Email.svelte";
   import SubmitButton from "./systems/buttons/SubmitButton/SubmitButton.svelte";
   import store from "./store.js";
+  import { getAttribution } from "../lib/attribution.ts";
 
   export let show = false;
   export let destinationCountry = "";
@@ -37,7 +38,8 @@
           name: nameValue.trim(),
           topCountries: destinationCountry ? [destinationCountry, "Unknown", "Unknown"] : ["Unknown", "Unknown", "Unknown"],
           funnelType: "country-guide-gate",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          attribution: getAttribution(),
         })
       });
 

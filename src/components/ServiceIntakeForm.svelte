@@ -15,6 +15,7 @@
   import store from './store.js';
   import { formState, updateField } from './systems/inputs/Calendar/formStore.js';
   import { submitScheduling } from './systems/inputs/Calendar/submitSchedule.js';
+  import { getAttribution } from '../lib/attribution.ts';
   import { budgetStore } from './systems/inputs/Budget/store.js';
   import { moveSizeStore } from './systems/inputs/MoveSize/store.js';
   import { immigrationStatusStore } from './systems/inputs/ImmigrationStatus/store.js';
@@ -150,6 +151,7 @@
           serviceCategory: deriveServiceCategory(serviceTypes),
           source: 'relocation-tours-email-capture',
           timestamp: new Date().toISOString(),
+          attribution: getAttribution(),
         }),
       });
     } catch (err) {

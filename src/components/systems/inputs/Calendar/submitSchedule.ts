@@ -2,6 +2,7 @@ import { get } from "svelte/store";
 import { formState, type FormState } from "./formStore.js";
 import store from "../../../store.js";
 import { getClientTimezone } from "../../../../lib/timezone.ts";
+import { getAttribution } from "../../../../lib/attribution.ts";
 
 export async function submitScheduling() {
   const formData = get(formState);
@@ -46,6 +47,8 @@ export async function submitScheduling() {
     notes: normalisedNotes,
     events: schedulingData,
     clientTimeZone: getClientTimezone(),
+    // UTM / refer / click-id touches (first + last + journey) — see lib/attribution.ts
+    attribution: getAttribution(),
   };
 
 

@@ -226,6 +226,8 @@ export interface Metrics {
     channelBreakdown: Record<string, number>;
     stageRatings?: StageRatingsMetric;
     activity?: ActivityMetric;
+    // Marketing attribution (UTM / refer / self-reported) per lead.
+    attribution?: AttributionMetric | null;
 }
 /** One client's completed calls, as aggregated by the Metrics backend. */
 export interface CallMetricPerClient {
@@ -243,6 +245,43 @@ export interface QuoteMetricPerClient {
     accepted: number;
 }
 /** Per-client call + quote activity, returned under `metrics.activity`. */
+/** Compact touch: s=source m=medium c=campaign t=term ct=content r=refer */
+export interface AttributionTouch {
+  s: string; m: string; c: string; t: string; ct: string; r: string;
+}
+
+/** One row per lead — the Attribution module aggregates client-side. */
+export interface AttributionLead {
+  id: string;
+  name: string;
+  at: string;
+  first: AttributionTouch | null;
+  last: AttributionTouch | null;
+  self: string;
+  touches: number;
+  devices: number;
+  booked: boolean;
+  attended: boolean;
+  noShow: boolean;
+  paid: boolean;
+  revenue: number;
+  currency: string;
+}
+
+export interface AttributionVisit {
+  key: string;
+  touch: AttributionTouch;
+  total: number;
+  daily: Record<string, number>;
+}
+
+/** UTM / refer attribution, returned under `metrics.attribution`. */
+export interface AttributionMetric {
+  leads: AttributionLead[];
+  visits: AttributionVisit[];
+  trackingSince: string | null;
+}
+
 export interface ActivityMetric {
     calls: {
         total: number;

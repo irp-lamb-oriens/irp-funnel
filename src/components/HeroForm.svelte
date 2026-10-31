@@ -40,6 +40,7 @@
   // Subscribe reactively so the button color updates instantly when the store changes
   let evoColorVariantStr = 'v1-baseline';
   import { activeVariants } from '../lib/evo/client.ts';
+  import { getAttribution, getReferTag } from '../lib/attribution.ts';
   $: evoColorVariantStr = $activeVariants[EVO_COLOR_COMPONENT] || useVariant(EVO_COLOR_COMPONENT);
   $: evoCopyVariantStr = $activeVariants[EVO_COMPONENT] || useVariant(EVO_COMPONENT);
 
@@ -160,7 +161,9 @@
   // ─── OnMount ──────────────────────────────────────────────────────────────
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const referrer = urlParams.get('refer');
+    // URL tag first, else the tag remembered from an earlier landing page
+    // (e.g. arrived on /costa-rica?refer=x, booked from the home page).
+    const referrer = getReferTag();
     if (!referrer || referrer.trim() === '') {
       showReferrerStep = true;
     } else {
@@ -220,6 +223,7 @@
           name: '', surname: '',
           source: 'hero-form-email-capture',
           timestamp: new Date().toISOString(),
+          attribution: getAttribution(),
         }),
       });
     } catch (err) { console.error('Email capture failed:', err); }

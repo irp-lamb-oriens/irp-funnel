@@ -6,6 +6,7 @@
     import EvoDevSwitcher from "../components/EvoDevSwitcher.svelte";
     import { page } from "$app/stores";
     import ImageGrid from "../components/systems/wrappers/ImageGrid/ImageGrid.svelte";
+    import { captureAttribution, getAttribution } from "$lib/attribution.ts";
 
     // Partner logo strip shown on every public page, right below the header.
     // Ordered by priority: the five most important partner / media brands.
@@ -56,43 +57,46 @@
         gtag("config", MEASUREMENT_ID, {
             anonymize_ip: true,
         });
+        // ── Attribution (UTM / refer / click ids) ─────────────────────────
+        // Records the touch in localStorage so every later lead submission
+        // (capture, booking, Lily) carries it — see $lib/attribution.ts.
+        const touch = captureAttribution();
+
+        // Legacy click counter (`referrals` collection) — now also fires for
+        // UTM-tagged links so the dashboard can show visits per campaign.
+        if (touch && !touch.inferred) {
+            const referralData = {
+                // Stable key per tagged link: the refer tag, or the UTM tuple.
+                text: touch.refer || ["utm", touch.source, touch.medium, touch.campaign, touch.content, touch.term].join("|"),
+                trafficSource: document.referrer,
+                geographicData: navigator.language,
+                deviceType: navigator.userAgent,
+                completeUrl: window.location.href,
+                utm: {
+                    source: touch.source,
+                    medium: touch.medium,
+                    campaign: touch.campaign,
+                    term: touch.term,
+                    content: touch.content,
+                    refer: touch.refer,
+                },
+                visitorId: getAttribution().visitorId,
+            };
+            fetch($store.apiURL() + "/api/referrals", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(referralData),
+            }).catch(error => console.error("Error sending referral:", error));
+        }
+
         afterNavigate(({ to }) => {
             if (to && to.url) { // Add null check for 'to' and 'to.url'
                 gtag("config", MEASUREMENT_ID, { page_path: to.url.pathname });
+                // Client-side navigations can carry tags too (e.g. an internal
+                // link with ?utm_…). Idempotent — re-landing is de-duplicated.
+                captureAttribution(to.url.href);
             }
         });
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const referer = urlParams.get("refer");
-
-        if (referer) {
-            const trafficSource = document.referrer;
-            const geographicData = navigator.language;
-            const deviceType = navigator.userAgent;
-            const completeUrl = window.location.href;
-
-            const referralData = {
-                text: referer,
-                trafficSource,
-                geographicData,
-                deviceType,
-                completeUrl,
-            };
-            
-            console.log(`Referer found: ${referer}. Sending to server.`);
-            fetch($store.apiURL() + "/api/referrals", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(referralData),
-            })
-            .then(response => response.json())
-            .then(data => console.log("Referral API response:", data))
-            .catch(error => console.error("Error sending referral:", error));
-        } else {
-            console.log("No referer found in URL.");
-        }
     });
 </script>
 
