@@ -4908,6 +4908,7 @@ export interface SalesMonth {
   leadsEntered: number;
   invoicesEntered: number;
   quotesEntered: number;
+  quotesAccepted: number;
   invoicesStarted: number;
   invoicesSent: number;
   clientsStartedPayment: number;

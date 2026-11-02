@@ -125,6 +125,7 @@
     { key: 'leadsEntered', label: 'Leads', group: 'Entered' },
     { key: 'invoicesEntered', label: 'Invoices', group: 'Entered' },
     { key: 'quotesEntered', label: 'Quotes', group: 'Entered' },
+    { key: 'quotesAccepted', label: 'Quotes accepted', group: 'Recorded' },
     { key: 'invoicesStarted', label: 'Invoices created', group: 'Started' },
     { key: 'invoicesSent', label: 'Invoices sent', group: 'Started' },
     { key: 'clientsStartedPayment', label: 'Clients in payment', group: 'Started' },
@@ -147,18 +148,23 @@
     { key: 'byPaymentMethod', title: 'By payment method' },
   ];
 
-  function bucketRows(key: string): SalesBucket[] {
+  // Reactive so a Refresh re-renders the segment tables (a plain function
+  // call in the template has no store dependency to track).
+  $: bucketMap = (() => {
     const r = $salesReport;
-    if (!r) return [];
-    return (r as any)[key] ?? [];
-  }
+    const out: Record<string, SalesBucket[]> = {};
+    for (const bt of BUCKET_TABLES) out[bt.key] = r ? ((r as any)[bt.key] ?? []) : [];
+    return out;
+  })();
 </script>
 
 <div class="sr">
   <header class="sr__head">
     <div>
       <h3>Sales report</h3>
-      <p>Monthly payment funnel, segmented by year, with the money behind each reading.</p>
+      <p>Monthly payment funnel, segmented by year, with the money behind each reading.
+        {#if $salesReport?.generatedAt}<span class="sr__updated">Updated {shortDate($salesReport.generatedAt)} {new Date($salesReport.generatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>{/if}
+      </p>
     </div>
     <div class="sr__head-actions">
       <button class="sr__reload" on:click={load} disabled={loading}>
@@ -183,7 +189,7 @@
 
     <!-- ── Funnel percentages ─────────────────────────────────────────── -->
     <section class="sr__section">
-      <h4>Funnel</h4>
+      <h4>Funnel <span class="sr__scope">All time</span></h4>
       <div class="sr__funnel">
         <div class="sr__funnel-group">
           <span class="sr__funnel-title">Started ÷ entered</span>
@@ -198,7 +204,7 @@
             <span class="sr__funnel-sub">{$salesReport.funnel.startedOfEntered.client.numerator} / {$salesReport.funnel.startedOfEntered.client.denominator}</span>
           </div>
           <div class="sr__funnel-row">
-            <span class="sr__funnel-label">Quote</span>
+            <span class="sr__funnel-label" title="Quotes accepted by the client ÷ quotes created">Quote accepted</span>
             <span class="sr__funnel-value">{pct($salesReport.funnel.startedOfEntered.quote.pct)}</span>
             <span class="sr__funnel-sub">{$salesReport.funnel.startedOfEntered.quote.numerator} / {$salesReport.funnel.startedOfEntered.quote.denominator}</span>
           </div>
@@ -237,7 +243,7 @@
           <div class="sr__funnel-row">
             <span class="sr__funnel-label">Collected ÷ invoiced</span>
             <span class="sr__funnel-value">{pct($salesReport.collectionRate.pct)}</span>
-            <span class="sr__funnel-sub">{$salesReport.collectionRate.numerator} / {$salesReport.collectionRate.denominator}</span>
+            <span class="sr__funnel-sub">{money($salesReport.collectionRate.numerator)} / {money($salesReport.collectionRate.denominator)}</span>
           </div>
         </div>
       </div>
@@ -283,12 +289,12 @@
 
     <!-- ── Cross-cutting money buckets ────────────────────────────────── -->
     <section class="sr__section">
-      <h4>Money by segment</h4>
+      <h4>Money by segment <span class="sr__scope">All time · sent &amp; paid invoices</span></h4>
       <div class="sr__buckets">
         {#each BUCKET_TABLES as bt}
           <div class="sr__bucket">
             <span class="sr__bucket-title">{bt.title}</span>
-            {#if bucketRows(bt.key).length === 0}
+            {#if bucketMap[bt.key].length === 0}
               <p class="sr__empty">No data.</p>
             {:else}
               <div class="sr__table-wrap">
@@ -304,7 +310,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {#each bucketRows(bt.key) as b (b.key)}
+                    {#each bucketMap[bt.key] as b (b.key)}
                       <tr>
                         <td class="sr__proj">{b.label}</td>
                         <td>{b.n}</td>
@@ -475,6 +481,19 @@
     letter-spacing: 0.09em;
     color: #94a3b8;
   }
+
+  .sr__scope {
+    margin-left: 0.5rem;
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    font-weight: 700;
+  }
+  .sr__updated { margin-left: 0.4rem; color: #94a3b8; }
 
   .sr__funnel { display: flex; flex-wrap: wrap; gap: 1.25rem; }
   .sr__funnel-group {
