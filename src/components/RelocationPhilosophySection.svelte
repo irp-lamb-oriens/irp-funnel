@@ -4,23 +4,22 @@
   import GroupImageMagnifier from "./GroupImageMagnifier.svelte";
 </script>
 
-<section class="relocation-philosophy">
+<section class="relocation-philosophy" aria-labelledby="relocation-philosophy-title">
   <div class="row">
     <div class="col col-left">
-      <h4 class="relocation-philosophy__h4">How international consulting should be!</h4>
-      <h2 class="relocation-philosophy__h2">Every successful project is a well-planned project</h2>
+      <p class="relocation-philosophy__h4">How international consulting should be</p>
+      <h2 class="relocation-philosophy__h2" id="relocation-philosophy-title">Every successful project is a well-planned project</h2>
       <p class="relocation-philosophy__desc">We have developed a system to ensure our customers have a complete overview of their project journey, from our initial consultation to the final delivery of all required documentation.</p>
-      <p class="relocation-philosophy__desc">Our goal is to make the journey of thousands of expatriates easier and enjoyable by providing useful information and specialized services, such as:</p>
-      <p class="relocation-philosophy__desc"></p>
+      <p class="relocation-philosophy__desc">Our goal is to make the journey of thousands of expatriates easier and more enjoyable by providing useful information and specialized services, such as:</p>
       <ul class="relocation-philosophy__list">
         <li class="service">International Consulting Services</li>
         <li class="service">Documentation Assistance</li>
         <li class="service">International Advisory</li>
       </ul>
       <p class="relocation-philosophy__desc">Our services are aimed at providing the highest quality with a software designed to show our clients the progress of their entire project in a visual timeline, enabling them to better prepare for their travel arrangements, the immigration process, and some other relevant processes.</p>
-      <p class="relocation-philosophy__desc">​Every day we strive to provide the best customer experience and first-class consulting services.</p>
-      <p class="relocation-philosophy__desc">Sincerely</p>
-      <img class="relocation-philosophy__signature" src="/sign-itp.jpg" width="184" height="81" alt="Signature" />
+      <p class="relocation-philosophy__desc">Every day we strive to provide the best customer experience and first-class consulting services.</p>
+      <p class="relocation-philosophy__desc">Sincerely,</p>
+      <img class="relocation-philosophy__signature" src="/sign-itp.jpg" width="184" height="81" alt="Handwritten signature of IRP's Chief Executive Officer" loading="lazy" decoding="async" />
       <p class="relocation-philosophy__desc">IRP, Chief Executive Officer</p>
       <div class="button-row">
         <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
@@ -33,7 +32,7 @@
       </blockquote>
       <GroupImageMagnifier
         src="/1.png"
-        alt="Group Picture"
+        alt="The IRP team together"
         width="900"
         height="600"
       />
@@ -64,18 +63,6 @@
 }
 
 .col-left {
-  h4 {
-    color: var(--color-highlight-2);
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 0.7rem;
-  }
-  h2 {
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 1rem;
-    color: #222;
-  }
   ul {
     margin-bottom: 1rem;
     li {
@@ -136,9 +123,13 @@
 }
 
 .relocation-philosophy__list {
-  margin-bottom: 1rem;
-  padding-left: 1.2rem;
-  list-style: disc inside;
+  margin: 0 0 1rem;
+  padding-left: 1.3rem;
+  list-style: disc outside;
+  color: #333;
+  li::marker {
+    color: var(--color-highlight-2);
+  }
 }
 
 .relocation-philosophy__signature {

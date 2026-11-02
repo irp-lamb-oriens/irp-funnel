@@ -81,6 +81,8 @@
 
   onMount(() => {
     if (window.location.hash === '#hero-form') return;
+    // Never auto-scroll visitors who asked the OS for reduced motion.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const el = document.getElementById('hero-form-container');
     if (!el) return;
 

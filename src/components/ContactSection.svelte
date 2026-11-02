@@ -25,7 +25,8 @@
           address: "175 SW 7th Street STE 1517 - 559<br>MIAMI FLORIDA 33130",
           email: "unitedstates@internationalrelocationpartner.com",
           imgAlt: "US Map",
-          extra: "Please email unitedstates@internationalrelocationpartner.com or schedule a consultation call with a United States expert."
+          emailHref: "mailto:unitedstates@internationalrelocationpartner.com",
+          extra: "Please email <a href=\"mailto:unitedstates@internationalrelocationpartner.com\">unitedstates@internationalrelocationpartner.com</a> or schedule a consultation call with a United States expert."
         }
       ]
     },
@@ -83,7 +84,7 @@
         },
         {
           label: "Boquete",
-          address: "Coming soom to Boquete, Chiriqui, Panama",
+          address: "Coming soon to Boquete, Chiriquí, Panama",
           email: "panama@internationalrelocationpartner.com",
           imgAlt: "Panama Map",
           extra: "Please email panama@internationalrelocationpartner.com or schedule a consultation call with a Panama expert."
@@ -99,11 +100,11 @@
   }
 </script>
 
-<section class="contact-section">
-  <div class="contact-bg-overlay"></div>
+<section class="contact-section" id="contact" aria-labelledby="contact-section-title">
+  <div class="contact-bg-overlay" aria-hidden="true"></div>
   <div class="contact-row">
     <div class="contact-col contact-col--info">
-      <h2 class="contact-title">Contact Us</h2>
+      <h2 class="contact-title" id="contact-section-title">Contact us</h2>
       <p class="contact-description">
         Living abroad is a unique experience for everybody, with different motives, family sizes, and needs.
         Learning about you and your specific needs, allows us to give you useful advice and relevant information for you to plan your international project.
@@ -118,7 +119,7 @@
       </div>
     </div>
     <div class="contact-col contact-col--locations">
-      <h2 class="contact-title">Location</h2>
+      <h2 class="contact-title">Our offices</h2>
       <div class="location-cards-container">
         <div class="location-grid">
           {#each locations as loc, idx}
@@ -141,7 +142,7 @@
   position: relative;
   color: #fff;
   overflow: hidden;
-  background-image: url('https://images.pexels.com/photos/21014/pexels-photo.jpg?w=2000');
+  background-image: url('https://images.pexels.com/photos/21014/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1920');
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
@@ -223,6 +224,13 @@
   }
 }
 
+
+/* Fixed backgrounds jank on touch devices and are ignored by iOS. */
+@media (hover: none), (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .contact-section {
+    background-attachment: scroll;
+  }
+}
 
 /* Remove border from last card */
 .location-card:last-child {

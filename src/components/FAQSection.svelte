@@ -14,7 +14,28 @@
   faqOpen[0] = true;
   let showMore = false;
   let searchTerm = "";
-  let hovered = null;
+
+  // Respect reduced motion in the JS-driven Svelte transitions below.
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // SSR-safe tag stripper (the DOM-based helper below only works in-browser).
+  const toPlainText = (html: string) =>
+    html.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+
+  // FAQPage structured data — eligible for rich results and part of the
+  // semantics/SEO line on the Developer Award sheet. `<` is escaped so the
+  // JSON can never close the script tag.
+  $: faqJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: allFaqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: toPlainText(f.answer) },
+    })),
+  }).replace(/</g, "\\u003c");
   function toggleFaq(idx: number) {
     const wasOpen = faqOpen[idx];
     faqOpen = faqOpen.map(() => false);
@@ -50,24 +71,19 @@
   function toggleShowMore() {
     showMore = !showMore;
   }
-  function setHovered(idx: number | null) {
-    hovered = idx;
-  }
   $: filteredFaqs = allFaqs.filter(
     (faq) =>
       faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
+      toPlainText(faq.answer).toLowerCase().includes(searchTerm.toLowerCase())
   );
   // Custom transition for FAQ card
-  import { crossfade } from "svelte/transition";
-    import LetterByLetter from "./LetterByLetter.svelte";
   function faqCardTransition(
     node: HTMLElement,
     { delay = 0, direction = 1 }: { delay?: number; direction?: number }
   ) {
     return {
-      delay,
-      duration: 400,
+      delay: reduceMotion ? 0 : delay,
+      duration: reduceMotion ? 0 : 400,
       easing: direction > 0 ? cubicOut : cubicIn,
       css: (t: number) =>
         `
@@ -83,7 +99,7 @@
   ) {
     return {
       delay,
-      duration: 350,
+      duration: reduceMotion ? 0 : 350,
       easing: cubicOut,
       css: (t: number) => `
         opacity: ${t};
@@ -94,55 +110,84 @@
   }
 </script>
 
-<section class="faq-section">
+<svelte:head>
+  <!-- Split tag so preprocessors never mistake this for a component script. -->
+  {@html '<scr' + 'ipt type="application/ld+json">' + faqJsonLd + '</scr' + 'ipt>'}
+</svelte:head>
+
+<section class="faq-section" id="faq" aria-labelledby="faq-title">
   <div class="row faq-row">
     <div class="col col-image faq-col-image">
-      <img src="/FAQs.jpg" alt="FAQs" width="400" height="565" class="faq-image" />
+      <img src="/FAQs.jpg" alt="" width="400" height="565" class="faq-image" loading="lazy" decoding="async" />
     </div>
     <div class="col col-faq faq-col-faq">
-      <h2 class="faq-title">Frequently Asked Questions</h2>
+      <h2 class="faq-title" id="faq-title">Frequently asked questions</h2>
       <p class="faq-description">
         We want to offer you a better experience by sweeping away all of your concerns and save you time to focus on your relocation, that’s why we came up with this organized collection of valuable information about our products and services.
       </p>
       <div class="faq-search-row">
+        <label class="faq-sr" for="faq-search">Search frequently asked questions</label>
         <input
-          type="text"
+          id="faq-search"
+          type="search"
           class="faq-search-input"
           placeholder="Search FAQs..."
+          autocomplete="off"
           bind:value={searchTerm}
         />
+        <p class="faq-sr" aria-live="polite">
+          {#if searchTerm}{filteredFaqs.length} {filteredFaqs.length === 1 ? 'question matches' : 'questions match'}{/if}
+        </p>
       </div>
+      <!-- Accordion pattern: the <button> is the only control (aria-expanded +
+           aria-controls). Previously the card div also had a click handler and
+           the button had an Enter keydown, so Enter toggled twice = no-op. -->
       <div class="faq-list">
         {#each filteredFaqs.slice(0, showMore ? filteredFaqs.length : 4) as faq, i (faq.idx)}
           <div
             class="faq-item"
             class:open={faqOpen[faq.idx]}
-            on:mouseenter={() => setHovered(faq.idx)}
-            on:mouseleave={() => setHovered(null)}
             transition:faqCardTransition={{ delay: i * 60, direction: faqOpen[faq.idx] ? 1 : -1 }}
-            on:click={() => toggleFaq(faq.idx)}
           >
-            <button
-              class="faq-question"
-              class:active={faqOpen[faq.idx]}
-              type="button"
-              on:keydown={(e) => e.key === 'Enter' && toggleFaq(faq.idx)}
-            >
-              {faq.question}
-            </button>
+            <h3 class="faq-question-heading">
+              <button
+                class="faq-question"
+                class:active={faqOpen[faq.idx]}
+                type="button"
+                id="faq-q-{faq.idx}"
+                aria-expanded={faqOpen[faq.idx]}
+                aria-controls="faq-a-{faq.idx}"
+                on:click={() => toggleFaq(faq.idx)}
+              >
+                <span>{faq.question}</span>
+                <span class="faq-chevron" aria-hidden="true"></span>
+              </button>
+            </h3>
             {#if faqOpen[faq.idx]}
-              <div class="faq-answer" transition:faqAnswerTransition={{}}>
-                <LetterByLetter text={allFaqs[faq.idx].answer} />
+              <!-- Answers are trusted, authored constants: render their HTML
+                   (bold, line breaks) instead of a letter-by-letter strip. -->
+              <div
+                class="faq-answer"
+                id="faq-a-{faq.idx}"
+                role="region"
+                aria-labelledby="faq-q-{faq.idx}"
+                transition:faqAnswerTransition={{}}
+              >
+                {@html allFaqs[faq.idx].answer}
               </div>
             {/if}
           </div>
+        {:else}
+          <p class="faq-empty">
+            No questions match “{searchTerm}”. Ask us directly in your free consultation.
+          </p>
         {/each}
       </div>
       {#if filteredFaqs.length > 4}
         <div class="faq-show-more">
-          <a href="#" class="show-more-toggle" on:click|preventDefault={toggleShowMore}>
-            {showMore ? 'Show Less' : 'Show More'}
-          </a>
+          <button type="button" class="show-more-toggle" aria-expanded={showMore} on:click={toggleShowMore}>
+            {showMore ? 'Show fewer questions' : `Show all ${filteredFaqs.length} questions`}
+          </button>
         </div>
       {/if}
       <div class="button-row faq-button-row">
@@ -211,12 +256,15 @@
       flex-direction: column;
       gap: 0.7rem;
     }
+    .faq-question-heading {
+      margin: 0;
+      font: inherit;
+    }
     .faq-item {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(30,144,255,0.05);
       padding: 1rem;
-      cursor: pointer;
       transition:
         box-shadow 0.25s cubic-bezier(0.4,0,0.2,1),
         transform 0.35s cubic-bezier(0.4,0,0.2,1);
@@ -231,6 +279,10 @@
         border: 1.5px solid var(--color-highlight-1);
       }
       .faq-question {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
         background: none;
         border: none;
         padding: 0;
@@ -247,6 +299,23 @@
           color: #156dc1;
           text-shadow: 0 2px 8px rgba(30,144,255,0.08);
         }
+        &:focus-visible {
+          outline: 2px solid var(--color-highlight-1);
+          outline-offset: 4px;
+          border-radius: 4px;
+        }
+      }
+      .faq-chevron {
+        flex: 0 0 auto;
+        width: 0.6rem;
+        height: 0.6rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform 0.25s ease;
+      }
+      .faq-question.active .faq-chevron {
+        transform: rotate(-135deg);
       }
       .faq-answer {
         margin-top: 0.5rem;
@@ -259,9 +328,28 @@
         will-change: opacity, height;
       }
     }
+    .faq-empty {
+      color: #555;
+      font-size: 1rem;
+    }
+    .faq-sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     .faq-show-more {
       margin: 1rem 0;
       .show-more-toggle {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
         color: var(--color-highlight-1);
         font-weight: 600;
         text-decoration: underline;
@@ -289,6 +377,16 @@
     flex: 1 1 100%;
     min-width: 0;
     text-align: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-section .faq-col-faq .faq-item,
+  .faq-section .faq-col-faq .faq-item .faq-chevron {
+    transition: none;
+  }
+  .faq-section .faq-col-faq .faq-item:hover,
+  .faq-section .faq-col-faq .faq-item.open {
+    transform: none;
   }
 }
 @media (max-width: 700px) {

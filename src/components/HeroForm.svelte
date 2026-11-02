@@ -518,6 +518,12 @@
                 </button>
               </div>
               <p class="cta-hero__sub">{evoCopy.sub}</p>
+              <!-- Proof next to the decision. Identical across Evo variants, so
+                   it shifts every arm equally (Evo segments by commit hash). -->
+              <a class="cta-hero__proof" href="#reviews">
+                <span class="cta-hero__proof-stars" aria-hidden="true">★★★★★</span>
+                Read real Google reviews from families we've moved
+              </a>
             </div>
           </div>
         {/if}
@@ -529,7 +535,7 @@
             <h2>Enter your email to get started</h2>
             <p class="sub-heading">We'll use this to send you personalized relocation insights.</p>
             <Email label="Your email address" placeholder="john.doe@email.com" bind:value={$formState.email} onEnter={handleEmailSubmit} bind:inputElement={emailInput} bind:valid={isEmailValid} />
-            {#if emailError}<span class="error">{emailError}</span>{/if}
+            {#if emailError}<span class="error" role="alert">{emailError}</span>{/if}
             <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={handleEmailSubmit} loading={isLoading} /></div>
           </div>
         {/if}
@@ -545,9 +551,9 @@
             </div>
             <h2>What's your name?</h2>
             <PlainText label="First name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
-            {#if errors.name}<span class="error">{errors.name}</span>{/if}
+            {#if errors.name}<span class="error" role="alert">{errors.name}</span>{/if}
             <PlainText label="Last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={handleNameSubmit} bind:inputElement={surnameInput} />
-            {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
+            {#if errors.surname}<span class="error" role="alert">{errors.surname}</span>{/if}
             <div class="button-wrapper">
               <IconButton src="./icons/right-arrow.svg" callback={handleNameSubmit} loading={isLoading} />
             </div>
@@ -567,7 +573,7 @@
             <h2>Where are you moving to?</h2>
             <p class="sub-heading">Select the country you're relocating to.</p>
             <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} defaultCountryCode={$formState.destinationCountry} bind:buttonRef={destinationStepCountryInput} on:enter={() => {}} />
-            {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+            {#if errors.destinationCountry}<span class="error" role="alert">{errors.destinationCountry}</span>{/if}
             <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={handleDestinationSubmit} loading={isLoading} /></div>
           </div>
         {/if}
@@ -702,9 +708,9 @@
             {#if formStep === 0}
               <h2>What's your name?</h2>
               <PlainText label="First name" placeholder="John" bind:value={$formState.name} onChange={(val) => updateField(val, 'name')} onEnter={() => surnameInput?.focus()} bind:inputElement={nameInput} />
-              {#if errors.name}<span class="error">{errors.name}</span>{/if}
+              {#if errors.name}<span class="error" role="alert">{errors.name}</span>{/if}
               <PlainText label="Last name" placeholder="Doe" bind:value={$formState.surname} onChange={(val) => updateField(val, 'surname')} onEnter={formNext} bind:inputElement={surnameInput} />
-              {#if errors.surname}<span class="error">{errors.surname}</span>{/if}
+              {#if errors.surname}<span class="error" role="alert">{errors.surname}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 1}
@@ -713,34 +719,34 @@
               {:else}
                 <h2>Where are you moving to?</h2>
                 <Country onSelect={(code) => updateField(code || '', 'destinationCountry')} defaultCountryCode={$formState.destinationCountry} bind:buttonRef={destinationCountryInput} on:enter={() => {}} />
-                {#if errors.destinationCountry}<span class="error">{errors.destinationCountry}</span>{/if}
+                {#if errors.destinationCountry}<span class="error" role="alert">{errors.destinationCountry}</span>{/if}
               {/if}
               <PlainText label="Destination City" hint="Include the state or province (e.g. San José, San José Province)" placeholder="City" bind:value={$formState.destinationCity} onChange={(val) => updateField(val, 'destinationCity')} onEnter={() => destinationZipInput?.focus()} bind:inputElement={destinationCityInput} />
-              {#if errors.destinationCity}<span class="error">{errors.destinationCity}</span>{/if}
+              {#if errors.destinationCity}<span class="error" role="alert">{errors.destinationCity}</span>{/if}
               <PlainText label="Zip Code (optional)" placeholder="Zip Code" bind:value={$formState.destinationZip} onChange={(val) => updateField(val, 'destinationZip')} onEnter={formNext} bind:inputElement={destinationZipInput} />
-              {#if errors.destinationZip}<span class="error">{errors.destinationZip}</span>{/if}
+              {#if errors.destinationZip}<span class="error" role="alert">{errors.destinationZip}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 2}
               <h2>Where are you moving from?</h2>
               <Country onSelect={(code) => updateField(code || '', 'originCountry')} bind:buttonRef={originCountryInput} on:enter={() => {}} />
-              {#if errors.originCountry}<span class="error">{errors.originCountry}</span>{/if}
+              {#if errors.originCountry}<span class="error" role="alert">{errors.originCountry}</span>{/if}
               <PlainText label="Origin City" hint="Include the state or province (e.g. Austin, TX)" placeholder="City" bind:value={$formState.originCity} onChange={(val) => updateField(val, 'originCity')} onEnter={() => originZipInput?.focus()} bind:inputElement={originCityInput} />
               <PlainText label="Origin Zip Code" placeholder="Zip Code" bind:value={$formState.originZip} onChange={(val) => updateField(val, 'originZip')} onEnter={formNext} bind:inputElement={originZipInput} />
-              {#if errors.originZip}<span class="error">{errors.originZip}</span>{/if}
+              {#if errors.originZip}<span class="error" role="alert">{errors.originZip}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 3}
               <h2>Your phone number</h2>
               <p class="sub-heading">So we can contact you directly <span class="optional-label">(optional)</span></p>
               <Phone bind:value={$formState.phone} onUpdate={(val) => updateField(val, 'phone')} onEnter={formNext} bind:inputElement={phoneInput} bind:isValid={isPhoneValid} />
-              {#if errors.phone}<span class="error">{errors.phone}</span>{/if}
+              {#if errors.phone}<span class="error" role="alert">{errors.phone}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 4}
               <h2>What is your budget?</h2>
               <Budget bind:buttonRef={budgetInput} />
-              {#if errors.budget}<span class="error">{errors.budget}</span>{/if}
+              {#if errors.budget}<span class="error" role="alert">{errors.budget}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 5}
@@ -751,7 +757,7 @@
                 { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]} bind:selectedValue={$formState.propertyTypeFrom} on:update={(e) => updateField(e.detail, 'propertyTypeFrom')} />
-              {#if errors.propertyTypeFrom}<span class="error">{errors.propertyTypeFrom}</span>{/if}
+              {#if errors.propertyTypeFrom}<span class="error" role="alert">{errors.propertyTypeFrom}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 6}
@@ -762,13 +768,13 @@
                 { value: 'house', label: 'House', iconSrc: '/icons/house.svg' },
                 { value: 'storage', label: 'Storage', iconSrc: '/icons/storage.svg' }
               ]} bind:selectedValue={$formState.propertyTypeTo} on:update={(e) => updateField(e.detail, 'propertyTypeTo')} />
-              {#if errors.propertyTypeTo}<span class="error">{errors.propertyTypeTo}</span>{/if}
+              {#if errors.propertyTypeTo}<span class="error" role="alert">{errors.propertyTypeTo}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 7}
               <h2>Move size</h2>
               <MoveSize bind:buttonRef={sizeInput} />
-              {#if errors.size}<span class="error">{errors.size}</span>{/if}
+              {#if errors.size}<span class="error" role="alert">{errors.size}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 8}
@@ -783,7 +789,7 @@
             {:else if formStep === 9}
               <h2>Immigration Status</h2>
               <ImmigrationStatus bind:buttonRef={immigrationStatusInput} />
-              {#if errors.immigrationStatus}<span class="error">{errors.immigrationStatus}</span>{/if}
+              {#if errors.immigrationStatus}<span class="error" role="alert">{errors.immigrationStatus}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 10}
@@ -795,7 +801,7 @@
             {:else if formStep === 11}
               <h2>Desired call date</h2>
               <Calendar />
-              {#if errors.movingDate}<span class="error">{errors.movingDate}</span>{/if}
+              {#if errors.movingDate}<span class="error" role="alert">{errors.movingDate}</span>{/if}
               <div class="button-wrapper"><IconButton src="./icons/right-arrow.svg" callback={formNext} loading={isLoading} /></div>
 
             {:else if formStep === 12 && showReferrerStep}
@@ -993,6 +999,29 @@
     &__btn-text { position: relative; z-index: 3; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
     &__btn-arrow { font-size: 1.4rem; font-weight: 700; color: #fff; position: relative; z-index: 3; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
     &__btn:hover &__btn-arrow { transform: translateX(6px); }
+    &__btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+    &__proof {
+      display: inline-flex; align-items: center; gap: 0.55rem;
+      font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.85);
+      text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35);
+      text-underline-offset: 4px;
+      &:hover { color: #fff; text-decoration-color: #fff; }
+      &:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
+    }
+    &__proof-stars { color: #fbbf24; letter-spacing: 0.1em; text-decoration: none; }
+  }
+
+  /* Reduced motion: the CTA stays bold and red but stops pulsing/shimmering,
+     and step changes cross-fade without sliding. */
+  @media (prefers-reduced-motion: reduce) {
+    .cta-hero__btn,
+    .cta-hero__btn-shimmer { animation: none !important; }
+    .cta-hero__btn-shimmer { display: none; }
+    .cta-hero__btn:hover,
+    .cta-hero__btn:active { transform: none; }
+    .cta-hero__btn:hover .cta-hero__btn-arrow { transform: none; }
+    .form-frame { transform: none; transition: opacity 0.2s linear; }
+    .form-container { transition: none; }
   }
 
   @keyframes shimmerSweep {

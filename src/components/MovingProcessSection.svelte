@@ -75,11 +75,22 @@
   let currentStepKey = '';
   $: currentStepKey = `${$currentStep}-${Date.now()}`;
 
-  // GSAP animation for fade-in words
+  // Motion preference + visibility drive both the word reveal and the videos.
+  let reduceMotion = false;
+  let inView = false;
+  let videoEls: (HTMLVideoElement | null)[] = [];
+
+  // GSAP animation for fade-in words — runs only when the step actually
+  // changes, and is scoped to this section (it used to query the whole
+  // document after every component update).
+  let lastAnimatedStep = -1;
   afterUpdate(() => {
+    if ($currentStep === lastAnimatedStep) return;
+    lastAnimatedStep = $currentStep;
+    if (reduceMotion) return;
     // Timeout to ensure DOM is updated
     setTimeout(() => {
-      const fadeWords = document.querySelectorAll('.moving-process-intro-sticky .fade-word');
+      const fadeWords = stickyRef?.querySelectorAll('.fade-word') ?? [];
       if (fadeWords.length) {
         gsap.set(fadeWords, { opacity: 0, textShadow: "0 0 10px #fff", filter: "blur(8px)" });
         gsap.to(fadeWords, {
@@ -96,19 +107,43 @@
 
   // For CSS animation trigger
   let stickyRef: HTMLElement | null = null;
-  // No animateClass, inView, or lastStep logic needed
-  // Intersection Observer for sticky container (still used for stickyRef, but not for animation)
+
+  // Background videos: previously all four autoplayed (and downloaded) at
+  // once on page load. Now nothing loads until the section is near the
+  // viewport, and only the active step's video plays. Reduced motion: a still
+  // first frame instead of playback.
   onMount(() => {
-    let observer: IntersectionObserver | null = null;
-    if (stickyRef) {
-      observer = new window.IntersectionObserver(
-        () => {},
-        { threshold: 0.2 }
-      );
-      observer.observe(stickyRef);
+    reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!('IntersectionObserver' in window) || !section) {
+      inView = true;
+      return;
     }
-    return () => observer && observer.disconnect();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+      },
+      { rootMargin: '200px 0px' }
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
   });
+
+  function syncVideos(step: number, visible: boolean) {
+    videoEls.forEach((v, i) => {
+      if (!v) return;
+      if (visible && i === step) {
+        if (reduceMotion) {
+          if (v.preload === 'none') v.preload = 'metadata';
+          return;
+        }
+        if (v.preload !== 'auto') v.preload = 'auto';
+        v.play().catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+  }
+  $: syncVideos($currentStep, inView);
 
   // For staggered delay offset between cards
   let currentParagraphs: string[] = [];
@@ -135,7 +170,9 @@
     const offsetScrollY = window.scrollY - sectionY;
     const normalizedScrollY = offsetScrollY / (section?.clientHeight ?? 0);
     const scaledScrollY = Math.round(normalizedScrollY * cardRefs.length);
-    const boundedScrollY = Math.max(0, Math.min(cardRefs.length, scaledScrollY));
+    // Clamp to the last step (was cardRefs.length, which produced "5 / 4" and
+    // an empty narrative at the bottom of the section).
+    const boundedScrollY = Math.max(0, Math.min(finalSteps.length - 1, scaledScrollY));
     const cardIndex = boundedScrollY;
 
     return cardIndex;
@@ -163,14 +200,15 @@
   });
 </script>
 
-<section bind:this={section} class="moving-process-section">
+<section bind:this={section} class="moving-process-section" aria-label="How our consulting process works">
   <!-- Video Backgrounds (absolute, only inside section, does not take up space) -->
   <div class="moving-process-video-bg-wrapper">
     {#each finalSteps as step, idx}
       <video
         class="moving-process-video-bg {($currentStep === idx) ? 'active' : ''}"
-        src={step.videoUrl}
-        autoplay
+        bind:this={videoEls[idx]}
+        src={`${step.videoUrl}#t=0.1`}
+        preload="none"
         muted
         loop
         playsinline
@@ -185,7 +223,7 @@
     <div class="moving-process-intro-sticky" bind:this={stickyRef}>
       <section bind:this={sectionRef} class="moving-process-section-ref">
         {#key currentStepKey}
-          <div class="moving-process-progress-indicator">
+          <div class="moving-process-progress-indicator" aria-live="polite">
             {($currentStep + 1)} / {finalSteps.length}
           </div>
           <div class="moving-process-card-group">
@@ -216,10 +254,10 @@
             aria-current={$currentStep === i ? "step" : undefined}
           >
             <div class="moving-process-icon-circle">
-              <img class="moving-process-icon" src={step.icon} alt={step.title} />
+              <img class="moving-process-icon" src={step.icon} alt="" loading="lazy" decoding="async" />
             </div>
             <div class="moving-process-step-title moving-process-step-title-mobile">
-              <h5 class="moving-process-step-heading">{step.rightTitle}</h5>
+              <h3 class="moving-process-step-heading">{step.rightTitle}</h3>
             </div>
             <div class="moving-process-card-group moving-process-card-group-mobile">
               {#each step.narrative as para}
@@ -238,7 +276,7 @@
     <div class="moving-process-steps">
       {#each finalSteps as step, i}
         <div class="moving-process-step-title">
-          <h5 class="moving-process-step-heading">{step.rightTitle}</h5>
+          <h3 class="moving-process-step-heading">{step.rightTitle}</h3>
         </div>
       {/each}
     </div>
@@ -256,10 +294,11 @@
 
 <style lang="scss">
 .moving-process-section {
-  /* Remove static background, let video show through */
-  background: transparent;
+  /* Dark fallback so the white copy stays readable before a video has
+     loaded (videos now load lazily) or if one fails to load. */
+  background: #0b1220;
   color: #fff;
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
   position: relative;
   padding: 3rem 0 2rem 0;
 }
@@ -336,6 +375,16 @@
   text-shadow: 0 0 10px #fff;
   filter: blur(8px);
   /* fallback for initial state if JS fails */
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-word {
+    opacity: 1;
+    filter: none;
+    text-shadow: none;
+  }
+  .moving-process-video-bg {
+    transition: none;
+  }
 }
 
 .moving-process-title {

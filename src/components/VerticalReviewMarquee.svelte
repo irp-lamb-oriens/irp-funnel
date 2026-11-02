@@ -11,6 +11,8 @@
   export let title = '';
   export let subtitle = '';
   export let background = '#fbfcfc';
+  /** Anchor id (the homepage HeroForm links to #reviews as its proof point). */
+  export let id = 'reviews';
 
   const COPIES = 3;
 
@@ -33,6 +35,26 @@
   let isMobile = false;
   let reducedMotion = false;
   let mq: MediaQueryList | null = null;
+  let onMqChange: ((e: MediaQueryListEvent) => void) | null = null;
+
+  // ── Pause state (WCAG 2.2.2: moving content needs a pause control) ───────
+  // `paused` is the visitor's explicit choice; `hoverPause` pauses while the
+  // pointer or keyboard focus is inside so a review can actually be read.
+  let paused = false;
+  let hoverPause = false;
+  let rootEl: HTMLElement;
+  let io: IntersectionObserver | null = null;
+
+  // A drag that moves the track should not also open the review link.
+  let dragDistance = 0;
+  let suppressClick = false;
+  const CLICK_SLOP = 6;
+  function onClickCapture(e: MouseEvent) {
+    if (!suppressClick) return;
+    e.preventDefault();
+    e.stopPropagation();
+    suppressClick = false;
+  }
 
   // ── Vertical column state ────────────────────────────────────────────────
   let colEls: HTMLDivElement[] = [];
@@ -104,9 +126,11 @@
     const now = performance.now();
     const dt = now - prev;
 
+    const autoMove = !reducedMotion && !paused && !hoverPause && speed !== 0;
+
     if (isMobile) {
       let delta = 0;
-      if (!hDrag.active && !reducedMotion && speed !== 0) delta += -speed * dt;
+      if (!hDrag.active && autoMove) delta += -speed * dt;
       if (!hDrag.active && Math.abs(hVel) > 0.01) {
         delta += hVel * dt;
         hVel *= Math.pow(0.95, dt / 16);
@@ -116,7 +140,7 @@
       for (let i = 0; i < columns; i++) {
         const dir = i % 2 === 0 ? -1 : 1;
         let delta = 0;
-        if (!drag[i]?.active && !reducedMotion && speed !== 0) {
+        if (!drag[i]?.active && autoMove) {
           delta += dir * speed * dt;
         }
         if (!drag[i]?.active && Math.abs(vel[i]) > 0.01) {
@@ -130,12 +154,25 @@
     rAF = requestAnimationFrame(() => loop(now));
   }
 
+  // Only spend frames while the marquee is on screen.
+  function start() {
+    if (rAF == null) rAF = requestAnimationFrame(() => loop());
+  }
+  function stop() {
+    if (rAF != null) {
+      cancelAnimationFrame(rAF);
+      rAF = null;
+    }
+  }
+
   // ── Vertical drag handlers ───────────────────────────────────────────────
   function vDown(i: number, e: PointerEvent) {
     if (drag[i].active) return;
     colEls[i]?.setPointerCapture(e.pointerId);
     drag[i] = { active: true, id: e.pointerId, lastY: e.clientY, lastT: performance.now() };
     vel[i] = 0;
+    dragDistance = 0;
+    suppressClick = false;
   }
   function vMove(i: number, e: PointerEvent) {
     if (!drag[i].active || e.pointerId !== drag[i].id) return;
@@ -143,6 +180,8 @@
     const dy = e.clientY - drag[i].lastY;
     const dt = Math.max(1, now - drag[i].lastT);
     vel[i] = dy / dt;
+    dragDistance += Math.abs(dy);
+    if (dragDistance > CLICK_SLOP) suppressClick = true;
     drag[i].lastY = e.clientY;
     drag[i].lastT = now;
     pos[i] = wrap(pos[i] + dy, seg[i]);
@@ -161,6 +200,8 @@
     hEl?.setPointerCapture(e.pointerId);
     hDrag = { active: true, id: e.pointerId, lastX: e.clientX, lastT: performance.now() };
     hVel = 0;
+    dragDistance = 0;
+    suppressClick = false;
   }
   function hMove(e: PointerEvent) {
     if (!hDrag.active || e.pointerId !== hDrag.id) return;
@@ -168,6 +209,8 @@
     const dx = e.clientX - hDrag.lastX;
     const dt = Math.max(1, now - hDrag.lastT);
     hVel = dx / dt;
+    dragDistance += Math.abs(dx);
+    if (dragDistance > CLICK_SLOP) suppressClick = true;
     hDrag.lastX = e.clientX;
     hDrag.lastT = now;
     hPos = wrap(hPos + dx, hSeg);
@@ -197,31 +240,80 @@
 
     mq = window.matchMedia('(max-width: 768px)');
     isMobile = mq.matches;
-    mq.addEventListener('change', (e) => {
+    onMqChange = (e) => {
       isMobile = e.matches;
       measure();
-    });
+    };
+    mq.addEventListener('change', onMqChange);
 
     ro = new ResizeObserver(() => measure());
     if (hTrack) ro.observe(hTrack);
     colTracks.forEach((t) => t && ro!.observe(t));
 
     measure();
-    rAF = requestAnimationFrame(() => loop());
+
+    if ('IntersectionObserver' in window && rootEl) {
+      io = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) start();
+        else stop();
+      });
+      io.observe(rootEl);
+    } else {
+      start();
+    }
   });
 
   onDestroy(() => {
-    if (rAF != null) cancelAnimationFrame(rAF);
+    stop();
     ro?.disconnect();
-    mq?.removeEventListener('change', () => {});
+    io?.disconnect();
+    if (mq && onMqChange) mq.removeEventListener('change', onMqChange);
   });
 </script>
 
-<div class="vrm" class:vrm--mobile={isMobile} style="background: {background};">
+<!-- Pointer/focus listeners only pause the auto-scroll while someone is reading;
+     the click-capture only cancels a link click that was really a drag. Neither
+     is a control in its own right, so the section stays non-interactive. -->
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+<section
+  {id}
+  class="vrm"
+  class:vrm--mobile={isMobile}
+  style="--vrm-bg: {background}; background: {background};"
+  aria-labelledby={title ? `${id}-title` : undefined}
+  aria-label={title ? undefined : 'Customer reviews'}
+  bind:this={rootEl}
+  on:pointerenter={() => (hoverPause = true)}
+  on:pointerleave={() => (hoverPause = false)}
+  on:focusin={() => (hoverPause = true)}
+  on:focusout={(e) => {
+    if (!rootEl.contains(e.relatedTarget as Node)) hoverPause = false;
+  }}
+  on:click|capture={onClickCapture}
+>
   {#if title || subtitle}
     <div class="vrm__head">
-      {#if title}<h2 class="vrm__title">{title}</h2>{/if}
+      {#if title}<h2 class="vrm__title" id="{id}-title">{title}</h2>{/if}
       {#if subtitle}<p class="vrm__subtitle">{subtitle}</p>{/if}
+    </div>
+  {/if}
+
+  {#if !reducedMotion && speed !== 0}
+    <div class="vrm__controls">
+      <button
+        type="button"
+        class="vrm__pause"
+        aria-pressed={paused}
+        on:click={() => (paused = !paused)}
+      >
+        {#if paused}
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+          Play reviews
+        {:else}
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /></svg>
+          Pause reviews
+        {/if}
+      </button>
     </div>
   {/if}
 
@@ -244,19 +336,22 @@
         style="transform: translate3d({hPos}px, 0, 0); gap: {gap}px;"
       >
         {#each tripledAll as r, i (i + '-' + r.name)}
+          {@const isCopy = i >= reviews.length}
           <a
             class="vrm__card"
             href={r.link}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Read ${r.name}'s Google review`}
+            aria-label={`Read ${r.name}'s Google review (opens in a new tab)`}
+            aria-hidden={isCopy ? 'true' : undefined}
+            tabindex={isCopy ? -1 : undefined}
           >
             <span class="vrm__stars" aria-hidden="true">★★★★★</span>
             <blockquote class="vrm__quote">{r.quote}</blockquote>
-            <footer class="vrm__meta">
+            <span class="vrm__meta">
               <span class="vrm__name">{r.name}</span>
               <span class="vrm__route">{r.route}</span>
-            </footer>
+            </span>
           </a>
         {/each}
       </div>
@@ -283,19 +378,22 @@
             style="transform: translate3d(0, {pos[i] ?? 0}px, 0); gap: {gap}px;"
           >
             {#each tripledSets[i] as r, j (j + '-' + r.name)}
+              {@const isCopy = j >= set.length}
               <a
                 class="vrm__card"
                 href={r.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`Read ${r.name}'s Google review`}
+                aria-label={`Read ${r.name}'s Google review (opens in a new tab)`}
+                aria-hidden={isCopy ? 'true' : undefined}
+                tabindex={isCopy ? -1 : undefined}
               >
                 <span class="vrm__stars" aria-hidden="true">★★★★★</span>
                 <blockquote class="vrm__quote">{r.quote}</blockquote>
-                <footer class="vrm__meta">
+                <span class="vrm__meta">
                   <span class="vrm__name">{r.name}</span>
                   <span class="vrm__route">{r.route}</span>
-                </footer>
+                </span>
               </a>
             {/each}
           </div>
@@ -303,17 +401,59 @@
       {/each}
     </div>
   {/if}
-</div>
+</section>
 
 <style lang="scss">
   .vrm {
     width: 100%;
+    box-sizing: border-box;
+    /* Side gutter so cards and the pause control never touch the viewport. */
+    padding-inline: clamp(1rem, 3vw, 2rem);
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
+  }
+  /* Mobile marquee stays edge-to-edge (the fades handle the edges). */
+  .vrm--mobile .vrm__h {
+    margin-inline: calc(-1 * clamp(1rem, 3vw, 2rem));
+    width: auto;
   }
 
   .vrm__head {
     text-align: center;
     margin-bottom: 2rem;
+  }
+
+  .vrm__controls {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.75rem 0 0.75rem;
+  }
+  .vrm__pause {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #d5dde6;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+    &:hover {
+      border-color: var(--color-highlight-2, #02b5bb);
+      color: #0f172a;
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-highlight-2, #02b5bb);
+      outline-offset: 2px;
+    }
   }
   .vrm__title {
     font-family: var(--font-title, 'Kiona Regular', serif);
@@ -361,13 +501,15 @@
     z-index: 10;
     pointer-events: none;
 
+    /* Fades match whatever background the page passes in (was hard-coded
+       #fbfcfc, which showed as grey bands on the homepage's white). */
     &--t {
       top: 0;
-      background: linear-gradient(to bottom, #fbfcfc 0%, transparent 100%);
+      background: linear-gradient(to bottom, var(--vrm-bg, #fbfcfc) 0%, transparent 100%);
     }
     &--b {
       bottom: 0;
-      background: linear-gradient(to top, #fbfcfc 0%, transparent 100%);
+      background: linear-gradient(to top, var(--vrm-bg, #fbfcfc) 0%, transparent 100%);
     }
   }
 
@@ -405,11 +547,11 @@
 
     &--l {
       left: 0;
-      background: linear-gradient(to right, #fbfcfc 0%, transparent 100%);
+      background: linear-gradient(to right, var(--vrm-bg, #fbfcfc) 0%, transparent 100%);
     }
     &--r {
       right: 0;
-      background: linear-gradient(to left, #fbfcfc 0%, transparent 100%);
+      background: linear-gradient(to left, var(--vrm-bg, #fbfcfc) 0%, transparent 100%);
     }
   }
 
@@ -442,6 +584,10 @@
     &:hover {
       border-color: rgba(2, 181, 187, 0.35);
       box-shadow: 0 26px 54px -28px rgba(15, 23, 42, 0.5);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-highlight-2, #02b5bb);
+      outline-offset: -2px;
     }
   }
 

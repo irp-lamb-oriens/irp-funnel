@@ -75,21 +75,46 @@
   onMount(() => {
     if (mode !== 'website') return; // scroll hide only for website nav
 
-    const handleScroll = () => {
+    // rAF-throttled, with a small delta dead-zone so trackpad jitter doesn't
+    // flicker the pill in and out. Hide-on-scroll-down / reveal-on-scroll-up.
+    const DEAD_ZONE = 6;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
       const currentScrollY = window.scrollY;
       scrolled = currentScrollY > 20;
-      hidden = currentScrollY > lastScrollY && currentScrollY > 100;
+      const delta = currentScrollY - lastScrollY;
+      if (Math.abs(delta) < DEAD_ZONE) return;
+      hidden = delta > 0 && currentScrollY > 100;
       lastScrollY = currentScrollY;
+    };
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   });
+
+  // Skip link: jump keyboard/screen-reader users past the nav. Works on every
+  // page — targets #main-content when present, else the first <main>.
+  function skipToMain(e: MouseEvent) {
+    const target =
+      document.getElementById("main-content") ?? document.querySelector("main");
+    if (!target) return;
+    e.preventDefault();
+    if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+    (target as HTMLElement).focus();
+    target.scrollIntoView({ block: "start" });
+  }
 </script>
 
 <!-- ════════════════════════════════════════════════════════════════════ -->
 <!-- WEBSITE MODE — original floating pill nav (all public pages)        -->
 <!-- ════════════════════════════════════════════════════════════════════ -->
 {#if mode === 'website'}
+  <a class="skip-link" href="#main-content" on:click={skipToMain}>Skip to content</a>
   <div class="header-space"></div>
   <header
     class="header-section"
@@ -183,6 +208,42 @@
   }
   .header-section.is-hidden {
     transform: translateY(-120%);
+  }
+  /* Never hide the nav while a keyboard user is inside it. */
+  .header-section.is-hidden:focus-within {
+    transform: none;
+  }
+
+  /* Skip link — off-screen until focused (WCAG 2.4.1 Bypass Blocks). */
+  .skip-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 10020;
+    padding: 0.75rem 1.1rem;
+    border-radius: 12px;
+    background: #0f172a;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-200%);
+    transition: transform 0.2s ease;
+  }
+  .skip-link:focus-visible {
+    transform: none;
+    outline: 2px solid var(--color-highlight-2, #02b5bb);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .header-section,
+    .logo-col,
+    .skip-link {
+      transition: none;
+    }
+    .logo-col:hover {
+      transform: none;
+    }
   }
 
   .header-row {

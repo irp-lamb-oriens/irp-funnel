@@ -3,12 +3,12 @@
   import CTAButton from "./Header/CTAButton.svelte";
 </script>
 
-<section class="contact-cta">
-  <div class="cta-bg-overlay"></div>
+<section class="contact-cta" aria-labelledby="contact-cta-title">
+  <div class="cta-bg-overlay" aria-hidden="true"></div>
   <div class="row">
     <div class="col col-large">
-      <h6>Choose the best consulting partner for your international project</h6>
-      <h2>Contact us & Get a free project consultation</h2>
+      <p class="contact-cta__eyebrow">Choose the best consulting partner for your international project</p>
+      <h2 id="contact-cta-title">Contact us and get a free project consultation</h2>
     </div>
     <div class="col col-buttons">
       <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
@@ -23,7 +23,7 @@
   color: #fff;
   padding: 2rem 0;
   overflow: hidden;
-  background-image: url('https://images.pexels.com/photos/21014/pexels-photo.jpg?w=2000');
+  background-image: url('https://images.pexels.com/photos/21014/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1920');
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
@@ -41,7 +41,7 @@
     z-index: 2;
     align-items: center;
   }
-  h6 {
+  .contact-cta__eyebrow {
     font-size: 1.1rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
@@ -58,6 +58,12 @@
     flex-direction: column;
     gap: 1rem;
     align-items: flex-end;
+  }
+}
+/* Fixed backgrounds jank on touch devices and are ignored by iOS. */
+@media (hover: none), (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .contact-cta {
+    background-attachment: scroll;
   }
 }
 @media (max-width: 1200px) {

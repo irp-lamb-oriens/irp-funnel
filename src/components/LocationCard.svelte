@@ -36,7 +36,12 @@
   role="button"
   aria-expanded={open}
   on:click={onToggle}
-  on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
+  on:keydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault(); // stop Space from also scrolling the page
+      onToggle();
+    }
+  }}
 >
   <!-- Multi-layered animated shadows for hover/focus, using Svelte {#each} -->
   {#each shadowConfigs as [bg, duration], i}

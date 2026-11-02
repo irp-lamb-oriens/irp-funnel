@@ -1,25 +1,29 @@
 <script lang="ts">
   import CountryButton from './CountryButton.svelte';
+  import CTAButton from './Header/CTAButton.svelte';
   // No props for now, but could be made data-driven if needed
 </script>
 
-<section class="specialization">
-  <div class="specialization-bg"></div>
+<section class="specialization" aria-label="Who we serve and where">
+  <div class="specialization-bg" aria-hidden="true"></div>
   <div class="row">
     <div class="col col-content">
       <h2 class="specialization-title">We specialize in serving:</h2>
       <ul class="specialization-list specialization-list--audience">
-        <li class="specialization-list-item specialization-list-item--audience">Expats Retirees</li>
+        <li class="specialization-list-item specialization-list-item--audience">Expats and retirees</li>
         <li class="specialization-list-item specialization-list-item--audience">Digital nomads</li>
         <li class="specialization-list-item specialization-list-item--audience">Private individuals looking for international opportunities</li>
         <li class="specialization-list-item specialization-list-item--audience">Returning citizens to their origin country</li>
       </ul>
-      <h3 class="specialization-subtitle">Schedule your 60 minutes consultation call</h3>
-      <p class="specialization-description">Every relocation process is different, rules and regulations may vary depending on your immigration status, relocation description, location, and several factors. This quick call can help us review these rules and give you the proper advice depending on your specific case.</p>
+      <h3 class="specialization-subtitle">Schedule your 60-minute consultation call</h3>
+      <p class="specialization-description">Every relocation is different. Rules and regulations vary with your immigration status, your destination and several other factors. This call lets us review the rules that apply to you and give you advice for your specific case.</p>
+      <div class="specialization-cta">
+        <CTAButton trigger={true} label="Book a consultation" href="/consultation/" variant="primary" />
+      </div>
     </div>
     <div class="col col-locations">
-      <h2 class="specialization-title">Countries We Serve:</h2>
-      <ul class="specialization-list specialization-list--countries">
+      <h2 class="specialization-title" id="countries-we-serve">Countries we serve:</h2>
+      <ul class="specialization-list specialization-list--countries" aria-labelledby="countries-we-serve">
         <li class="specialization-list-item specialization-list-item--country"><CountryButton text="Costa Rica" url="/costa-rica/" /></li>
         <li class="specialization-list-item specialization-list-item--country"><CountryButton text="Panama" url="/panama/" /></li>
         <li class="specialization-list-item specialization-list-item--country"><CountryButton text="Mexico" url="/mexico/" /></li>
@@ -41,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
   letter-spacing: 0.01em;
   text-align: left;
   z-index: 1;
@@ -58,6 +62,16 @@
   background-position: center;
   background-attachment: fixed;
   opacity: 1;
+}
+/* Fixed backgrounds are ignored on iOS and force full repaints on Android;
+   scroll normally on touch devices and for reduced-motion users. */
+@media (hover: none), (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .specialization-bg {
+    background-attachment: scroll;
+  }
+}
+.specialization-cta {
+  margin-top: -1rem;
 }
 .specialization-bg::after {
   content: '';
@@ -163,11 +177,7 @@
   line-height: 1.6;
   color: #fff;
   font-weight: 500;
-  transition: color 0.18s;
   text-align: left;
-  &:hover {
-    color: var(--color-highlight-2);
-  }
 }
 
 /* Audience list: solid red circle with white checkmark */
@@ -188,7 +198,7 @@
     left: 0.3em;
     top: 50%;
     transform: translateY(-50%);
-    box-shadow: 0 1px 8px #e5393555;
+    box-shadow: 0 1px 8px rgba(var(--color-highlight-2-rgb), 0.35);
     border: 2px solid #fff;
     z-index: 1;
   }

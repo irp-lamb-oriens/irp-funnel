@@ -1,41 +1,50 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-    import { writable, type Writable } from 'svelte/store';
+
   let sectionEl: HTMLElement;
   let videoEl: HTMLVideoElement;
-  let unfolded: Writable<boolean> = writable(false);
-
-  function handleScroll() {
-    if (!sectionEl) return;
-    const rect = sectionEl.getBoundingClientRect();
-    // Unfold when the top of the section is below the top of the viewport
-    unfolded.set(Math.abs(rect.y) < sectionEl.clientHeight);
-    console.log($unfolded)
-  }
+  // Unfold the video once it enters the viewport. IntersectionObserver
+  // replaces the old per-frame scroll listener (which also console.logged on
+  // every scroll event).
+  let unfolded = false;
 
   onMount(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
-    // Initial check in case already in view
-    handleScroll();
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-    };
+    if (!('IntersectionObserver' in window)) {
+      unfolded = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        // Unfold once and stay open, so a playing video never folds away.
+        if (entry.isIntersecting) {
+          unfolded = true;
+          io.disconnect();
+        }
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(sectionEl);
+    return () => io.disconnect();
   });
 </script>
 
-<section class="testimonials" bind:this={sectionEl}>
+<section class="testimonials" bind:this={sectionEl} aria-labelledby="testimonials-title">
   <div class="row">
     <div class="col">
-      <h2>What Our Customers Say…</h2>
+      <p class="testimonials__eyebrow">Client story</p>
+      <h2 id="testimonials-title">Jill Reed on moving abroad with IRP</h2>
+      <!-- preload="metadata": fetch only duration/first frame until the visitor
+           presses play, instead of downloading the whole MP4 on page load. -->
       <video
         controls
+        playsinline
+        preload="metadata"
         width="100%"
         bind:this={videoEl}
-        class:unfolded={$unfolded}
+        class:unfolded
+        aria-label="Video testimonial from IRP client Jill Reed"
       >
-        <source type="video/mp4" src="https://storage.googleapis.com/videos-irp-funnels/Copia-de-Jill-Reed-International-Relocation-Partner%20(1).mp4" />
+        <source type="video/mp4" src="https://storage.googleapis.com/videos-irp-funnels/Copia-de-Jill-Reed-International-Relocation-Partner%20(1).mp4#t=0.1" />
         Your browser does not support the video tag.
       </video>
     </div>
@@ -46,6 +55,14 @@
 .testimonials {
   background: #fff;
   padding: 2.5rem 0;
+  .testimonials__eyebrow {
+    margin: 0 0 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-highlight-2);
+  }
   h2 {
     color: var(--color-highlight-1);
     font-size: 2rem;
@@ -76,6 +93,14 @@
 @media (max-width: 700px) {
   .testimonials {
     padding: 1.2rem 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .testimonials video,
+  .testimonials video.unfolded {
+    clip-path: none;
+    opacity: 1;
+    transition: none;
   }
 }
 </style>

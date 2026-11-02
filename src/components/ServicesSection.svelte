@@ -30,7 +30,7 @@
       icon: 'map',
       accent: '#02b5bb',
       image:
-        'https://images.pexels.com/photos/14510492/pexels-photo-14510492.jpeg',
+        'https://images.pexels.com/photos/14510492/pexels-photo-14510492.jpeg?auto=compress&cs=tinysrgb&w=1600',
       tag: 'On the ground'
     },
     // {
@@ -70,13 +70,13 @@
   onDestroy(() => cleanup?.());
 </script>
 
-<section id="services" class="services" bind:this={root}>
+<section id="services" class="services" bind:this={root} aria-labelledby="services-title">
   <div class="services__glow" data-parallax="0.12" aria-hidden="true"></div>
 
   <div class="services__inner">
     <div class="services__head">
       <p class="services__eyebrow" data-animate="up">What we actually do</p>
-      <h2 class="services__title" data-animate="up" data-animate-delay="0.05">
+      <h2 class="services__title" id="services-title" data-animate="up" data-animate-delay="0.05">
         Specialized relocation services
       </h2>
       <p class="services__sub" data-animate="up" data-animate-delay="0.1">
@@ -97,7 +97,7 @@
           data-tilt
         >
           <span class="scard__media" aria-hidden="true">
-            <img src={s.image} alt="" loading="lazy" />
+            <img src={s.image} alt="" loading="lazy" decoding="async" width="1200" height="800" />
             <span class="scard__scrim"></span>
           </span>
 
@@ -242,6 +242,24 @@
     grid-row: span 2;
     min-height: 100%;
   }
+  /* With only two services live, the second card would sit in row 1 and leave
+     an empty cell under it. Let it run the full height beside the feature. */
+  .scard:nth-child(2):last-child {
+    grid-row: span 2;
+  }
+
+  /* Keyboard parity: everything hover reveals, focus reveals too. */
+  .scard:focus-visible {
+    outline: 3px solid var(--card-accent);
+    outline-offset: 4px;
+  }
+  .scard:focus-visible .scard__media img { transform: scale(1.14); }
+  .scard:focus-visible .scard__desc {
+    max-height: 8rem;
+    opacity: 1;
+    margin-top: 0.1rem;
+  }
+  .scard:focus-visible .scard__arrow { transform: translateX(5px); }
 
   .scard__media {
     position: absolute;
@@ -349,7 +367,8 @@
   @media (max-width: 900px) {
     .services__grid { grid-template-columns: 1fr; }
     .scard { min-height: 300px; }
-    .scard--feature { grid-column: auto; grid-row: auto; }
+    .scard--feature,
+    .scard:nth-child(2):last-child { grid-column: auto; grid-row: auto; }
     .scard__desc { max-height: 8rem; opacity: 1; } // reveal on touch
   }
 
@@ -360,5 +379,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .scard, .scard__media img, .scard__desc, .scard__arrow { transition: none; }
+    .scard:hover .scard__media img,
+    .scard:focus-visible .scard__media img { transform: scale(1.08); }
+    .scard:hover .scard__arrow,
+    .scard:focus-visible .scard__arrow { transform: none; }
   }
 </style>

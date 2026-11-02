@@ -107,4 +107,15 @@
   color: #fff;
   text-decoration: none;
 }
+/* outline:none above removed the only keyboard cue; restore a visible ring. */
+.country-btn:focus-visible {
+  outline: 2px solid var(--color-highlight-2, #02b5bb);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .country-btn__shadow,
+  .country-btn__shadow.show {
+    transition: none !important;
+  }
+}
 </style>

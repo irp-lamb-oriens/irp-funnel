@@ -23,7 +23,11 @@
   }
 </script>
 
-<span aria-label={text} style="display: inline-block;">
+<!-- Screen readers get the whole phrase once (visually hidden); the animated
+     letters are presentation only. aria-label on a role-less <span> is not
+     announced reliably, which is why the text lives in real DOM here. -->
+<span class="lbl-sr">{stripHTML(text)}</span>
+<span aria-hidden="true" style="display: inline-block;">
   {#each words as letters, wordIdx}
     <span class="word" style="white-space: nowrap;">
       {#each letters as letter, letterIdx}
@@ -39,6 +43,17 @@
 </span>
 
 <style>
+.lbl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .word {
   display: inline-block;
   white-space: nowrap;
@@ -57,6 +72,13 @@
 }
 @keyframes appear {
   to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .letter {
+    animation: none;
     opacity: 1;
     transform: none;
   }

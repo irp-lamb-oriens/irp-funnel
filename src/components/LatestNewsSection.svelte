@@ -5,15 +5,26 @@
 
   let blogs: any[] = [];
   let loading = true;
+  let failed = false;
+  let sectionEl: HTMLElement;
 
   // Fetch latest 3 blogs from CosmicJS API
   async function fetchLatestBlogs() {
     loading = true;
+    failed = false;
     const apiUrl = 'https://api.cosmicjs.com/v3/buckets/funnel-irp-production/objects?pretty=true&query=%7B%22type%22:%22blogs%22%7D&limit=3&skip=0&read_key=M0RpfpaHXuCGwLPMvDLrJukQRNA1MujReoOjIud8NP7EYGsV0c&depth=1&props=slug,title,metadata,type';
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    blogs = data.objects || [];
-    loading = false;
+    try {
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error(`CMS responded ${res.status}`);
+      const data = await res.json();
+      blogs = data.objects || [];
+      failed = blogs.length === 0;
+    } catch (err) {
+      console.error('Latest news fetch failed:', err);
+      failed = true;
+    } finally {
+      loading = false;
+    }
   }
 
   function getExcerpt(html: string, maxLength = 140) {
@@ -26,16 +37,46 @@
     return text.slice(0, cut > 0 ? cut : maxLength) + '...';
   }
 
-  onMount(fetchLatestBlogs);
+  // This section sits near the bottom of the homepage, so defer the CMS call
+  // until the visitor scrolls close to it (keeps it off the critical path).
+  onMount(() => {
+    if (!('IntersectionObserver' in window)) {
+      fetchLatestBlogs();
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          io.disconnect();
+          fetchLatestBlogs();
+        }
+      },
+      { rootMargin: '600px 0px' }
+    );
+    io.observe(sectionEl);
+    return () => io.disconnect();
+  });
 </script>
 
-<section class="latest-news">
+<section class="latest-news" bind:this={sectionEl} aria-labelledby="latest-news-title" aria-busy={loading}>
   <div class="row">
     <div class="col">
-      <h2 class="latest-news-title">Latest News</h2>
+      <h2 class="latest-news-title" id="latest-news-title">Latest news</h2>
       <div class="news-grid">
         {#if loading}
-          <div>Loading...</div>
+          {#each [0, 1, 2] as i (i)}
+            <div class="news-skeleton" aria-hidden="true">
+              <span class="news-skeleton__img"></span>
+              <span class="news-skeleton__line"></span>
+              <span class="news-skeleton__line news-skeleton__line--short"></span>
+            </div>
+          {/each}
+          <span class="news-sr">Loading the latest articles…</span>
+        {:else if failed}
+          <p class="news-fallback">
+            We couldn't load the latest articles right now. You can still
+            <a href="/news-updates">browse every article</a>.
+          </p>
         {:else}
           {#each blogs as blog (blog.slug)}
             <NewsCard
@@ -50,7 +91,7 @@
         {/if}
       </div>
       <div class="button-row">
-        <CtaButton label="View All Blog" href="/news-updates" variant="primary" />
+        <CtaButton label="Read all articles" href="/news-updates" variant="secondary" />
       </div>
     </div>
   </div>
@@ -205,6 +246,52 @@
     opacity 1.25s cubic-bezier(.22,-.61,.36,1) 0.13s;
   will-change: transform, opacity;
   cursor: pointer;
+}
+
+// Loading skeletons (same footprint as a card, so nothing jumps when data lands)
+.news-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+  align-self: stretch;
+}
+.news-skeleton__img,
+.news-skeleton__line {
+  display: block;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eceff3 0%, #f6f7f9 50%, #eceff3 100%);
+  background-size: 200% 100%;
+  animation: newsShimmer 1.4s ease-in-out infinite;
+}
+.news-skeleton__img { height: 220px; }
+.news-skeleton__line { height: 1rem; width: 85%; }
+.news-skeleton__line--short { width: 55%; }
+@keyframes newsShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-skeleton__img,
+  .news-skeleton__line { animation: none; }
+}
+.news-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.news-fallback {
+  grid-column: 1 / -1;
+  color: #475569;
+  font-size: 1.05rem;
+  text-align: center;
+  a {
+    color: var(--color-highlight-1);
+    font-weight: 700;
+  }
 }
 
 // Button row

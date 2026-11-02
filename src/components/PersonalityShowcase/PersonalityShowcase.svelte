@@ -4,16 +4,30 @@
   const { title, subtitle, subBaja } = copy;
 </script>
 
-<section class="personality-showcase">
+<!-- First paint of the homepage: this portrait is the likely LCP element, so it
+     is fetched at high priority with explicit dimensions (no layout shift). -->
+<section class="personality-showcase" aria-labelledby="personality-showcase-title">
   <div class="personality-showcase__grid">
     <figure class="personality-showcase__media">
-      <img src="/assets/pablo.png" alt="Pablo" />
+      <img
+        src="/assets/pablo.png"
+        alt="Portrait of {title}"
+        width="402"
+        height="402"
+        fetchpriority="high"
+        decoding="async"
+      />
     </figure>
 
     <div class="personality-showcase__copy">
-      <h2 class="personality-showcase__title">{title}</h2>
+      <h2 class="personality-showcase__title" id="personality-showcase-title">{title}</h2>
       <p class="personality-showcase__subtitle">{subtitle}</p>
       <p class="personality-showcase__sub-baja">{subBaja}</p>
+      <!-- One gesture to the conversion path: the booking form sits right below. -->
+      <a class="personality-showcase__next" href="#hero-form">
+        Plan your move with Pablo's team
+        <span aria-hidden="true">↓</span>
+      </a>
     </div>
   </div>
 </section>
@@ -88,7 +102,47 @@
     font-size: 0.95rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: rgba(2, 13, 16, 0.7);
+    color: rgba(2, 13, 16, 0.78);
+  }
+
+  .personality-showcase__next {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 999px;
+    border: 1.5px solid rgba(2, 13, 16, 0.85);
+    color: #020d10;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    span {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    &:hover {
+      background: #020d10;
+      color: #fff;
+    }
+    &:hover span {
+      transform: translateY(3px);
+    }
+    &:focus-visible {
+      outline: 2px solid #020d10;
+      outline-offset: 3px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .personality-showcase__next,
+    .personality-showcase__next span {
+      transition: none;
+    }
+    .personality-showcase__next:hover span {
+      transform: none;
+    }
   }
 
   @media (max-width: 768px) {

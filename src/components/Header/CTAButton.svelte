@@ -46,7 +46,7 @@
     <a
       class="cta-btn {variantClass} {className} {fullWidth ? 'is-block' : ''}"
       href={href!}
-      aria-label={ariaLabel || label}
+      aria-label={ariaLabel || undefined}
       aria-busy={loading ? "true" : "false"}
       data-disabled="false"
       target={target}
@@ -73,7 +73,7 @@
     <button
       class="cta-btn {variantClass} {className} {fullWidth ? 'is-block' : ''}"
       type="button"
-      aria-label={ariaLabel || label}
+      aria-label={ariaLabel || undefined}
       aria-busy={loading ? "true" : "false"}
       {disabled}
       on:click={onClick}
@@ -371,5 +371,34 @@
     }
     .cta-link:active {
       transform: translateX(2px) scale(0.98);
+    }
+
+    /* Reduced motion: keep colour/shadow feedback, drop movement, glint and
+       the infinite hue-rotate border. The button still reads as interactive. */
+    @media (prefers-reduced-motion: reduce) {
+      .cta-btn,
+      .cta-btn::after {
+        transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .cta-btn:hover,
+      .cta-btn:active,
+      .cta-primary-scaled:hover,
+      .cta-link:hover,
+      .cta-link:active {
+        transform: none;
+      }
+      .cta-btn:hover::before {
+        animation: none;
+      }
+      .cta-btn:hover::after {
+        left: -100%;
+      }
+      .ultra-modern-loader .neon-trail {
+        animation-duration: 1.6s;
+      }
+      .ultra-modern-loader .magnetic-orb .inner-core,
+      .ultra-modern-loader .magnetic-orb .pulse-ring {
+        animation: none;
+      }
     }
   </style>

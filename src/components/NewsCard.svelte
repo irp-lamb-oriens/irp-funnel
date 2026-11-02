@@ -10,12 +10,12 @@
 <a href={link}>
     <article class="news-item">
       <div class="news-item-image-wrapper">
-        <img class="news-item-image" src={imageSrc} alt={imageAlt} />
+        <img class="news-item-image" src={imageSrc} alt={imageAlt} loading="lazy" decoding="async" />
       </div>
       <div class="news-item-card">
         <span class="news-item-link">
           <div class="news-item-texts">
-            <h5 class="news-item-title">{title}</h5>
+            <h3 class="news-item-title">{title}</h3>
             <p class="news-item-desc">{excerpt}</p>
             <span class="more-link">{readMoreText}</span>
           </div>
