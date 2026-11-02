@@ -724,7 +724,7 @@
             <button class:active={$activeView === 'salesReport'} on:click={() => switchView('salesReport')} title="Monthly sales and payment funnel">Sales Report</button>
           {/if}
           {#if allowedViews.includes('evo')}
-            <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Evolutionary UI sales attribution">Evo</button>
+            <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Experiments: what's winning and what to do next">Evo Lab</button>
           {/if}
           {#if allowedViews.includes('providers')}
             <button class:active={$activeView === 'providers'} on:click={() => switchView('providers')} title="Shipping & relocation provider registry">Providers</button>

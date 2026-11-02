@@ -16,6 +16,11 @@ import { browser } from '$app/environment';
 const VISITOR_KEY = 'evoVisitorId';
 const ASSIGNMENTS_KEY = 'evoAssignments';
 const EMAIL_KEY = 'userEmail'; // reused — already set across the funnel
+const ASSIGN_LOGGED_KEY = 'evoAssignLogged'; // components whose assignment event was sent
+const FORCED_KEY = 'evoForced'; // components force-assigned by the dev switcher
+
+/** True when this page load created the visitor id (a first-time visitor). */
+let createdThisLoad = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Visitor ID — stable per browser, created lazily on first access.
@@ -30,6 +35,7 @@ export function getVisitorId(): string {
         ? crypto.randomUUID()
         : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     id = `evo_${rnd}`;
+    createdThisLoad = true;
     try {
       localStorage.setItem(VISITOR_KEY, id);
     } catch {
@@ -107,4 +113,54 @@ export function clearAssignments(): void {
   try {
     localStorage.removeItem(ASSIGNMENTS_KEY);
   } catch {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Evo Lab (Phase 0) — assignment bookkeeping.
+// ─────────────────────────────────────────────────────────────────────────────
+function readList(key: string): string[] {
+  if (!browser) return [];
+  try {
+    const raw = localStorage.getItem(key);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function addToList(key: string, value: string): void {
+  if (!browser) return;
+  try {
+    const arr = readList(key);
+    if (!arr.includes(value)) {
+      arr.push(value);
+      localStorage.setItem(key, JSON.stringify(arr));
+    }
+  } catch {}
+}
+
+/** Has this browser already sent the `assignment` event for the component? */
+export function isAssignmentLogged(componentKey: string): boolean {
+  return readList(ASSIGN_LOGGED_KEY).includes(componentKey);
+}
+
+export function markAssignmentLogged(componentKey: string): void {
+  addToList(ASSIGN_LOGGED_KEY, componentKey);
+}
+
+/** Components force-assigned by the dev switcher (excluded from analysis). */
+export function isForced(componentKey: string): boolean {
+  return readList(FORCED_KEY).includes(componentKey);
+}
+
+export function markForced(componentKey: string): void {
+  addToList(FORCED_KEY, componentKey);
+}
+
+/** A visitor id existed before this page load. */
+export function isReturningVisitor(): boolean {
+  if (!browser) return false;
+  getVisitorId();
+  return !createdThisLoad;
 }

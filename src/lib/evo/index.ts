@@ -14,6 +14,7 @@ export {
   trackExposure,
   trackInteraction,
   identify,
+  getEvoContext,
 } from './client.ts';
 export type { EvoEventPayload, EvoEventType } from './client.ts';
 

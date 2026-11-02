@@ -5,6 +5,10 @@
  */
 
 export const METRICS_CUBE_SCHEMA_VERSION = 1;
+/** Fields are added without a version bump, so accept this version or newer. */
+export function cubeSchemaOk(v: unknown): boolean {
+  return typeof v === 'number' && v >= METRICS_CUBE_SCHEMA_VERSION;
+}
 
 export interface LedgerCell { booked: number; margin: number; invoiced: number; cash: number }
 export interface Receivable { d0_30: number; d31_60: number; d61_90: number; d90p: number }
@@ -63,6 +67,15 @@ export interface LeadFact {
   noShow: boolean;
   callOutcome: string;
   multiTouch: boolean;
+  // ── sales-book-v3 §4.2 — optional: an older server leaves them out ──
+  acceptedAt?: string | null;
+  firstQuoteAt?: string | null;
+  paidAt?: string | null;
+  invoicedAt?: string | null;
+  clientKey?: string | null;
+  payments?: Array<{ at: string | null; amount: number; cur: string; method: string }>;
+  bookedAt?: Array<{ at: string | null; amount: number; margin: number; cur: string }>;
+  invoicedAtList?: Array<{ at: string | null; amount: number; cur: string }>;
 }
 
 export interface MetricsCube {
@@ -86,4 +99,11 @@ export interface Ctx {
   allTime: boolean;
   currency: string;
   nowMonth: string;
+  /**
+   * Day-level window (Costa Rica calendar dates, inclusive), used only for a
+   * fair comparison of a partial month (sales-book-v3 §5.3). When set, period
+   * measures that are `dayComparable` count events by their ISO date instead
+   * of their month; the others return null.
+   */
+  dayCut?: { from: string; to: string } | null;
 }

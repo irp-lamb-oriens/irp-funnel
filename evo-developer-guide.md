@@ -1,166 +1,139 @@
-# Evo System Architecture & Developer Guide
+# Evo — Developer Guide
 
-Evo is our full-stack, evolutionary UI split-testing and sales attribution engine. It automatically assigns users to variants (UI copy, chatbot personas, email templates, or pricing), tracks their exposures and interactions, and mathematically ties those frontend experiences directly to backend CRM revenue. 
+Evo is IRP's experiment system. The site, the chatbot and the drip emails each show one of two variants of a component (copy, colour, greeting, persona, subject, body). Evo records which variant each visitor was **assigned**, what they did next, and joins that to leads and won deals so the dashboard can say which variant works.
 
-When a variant performs statistically significantly better than the baseline, the "Traffic Cop" automatically assigns it 90% of new traffic.
+Design spec: `irp-funnel-server/docs/designs/evo-lab.md`. This guide covers what a developer needs day to day.
 
-## Core Concepts
+## Core concepts
 
-- **Component:** The logical feature being tested (e.g., `HeroForm`, `ChatbotPersona`, `EmailDripSubject`).
-- **Variant:** The specific flavor of the component (e.g., `v1-baseline`, `v2-urgent-copy`).
-- **Exposure:** The moment a user *sees* or *loads* a variant (e.g., component mounts, email is opened).
-- **Interaction:** The moment a user *engages* with a variant (e.g., clicks the CTA, sends a chat message, clicks an email link).
-- **Attribution:** The system retroactively links an anonymous `visitorId` to a known `email` when the user submits a form. If that user ever schedules and pays for a consultation, Evo credits every variant they were exposed to *prior* to paying with that revenue.
+| Term | Meaning |
+|---|---|
+| **Experiment / component** | One tested UI unit (`HeroForm`, `ChatbotPersona`, `EmailDripSubject` …). |
+| **Variant (arm)** | One version of it (`v1-baseline`, `v3-urgent-copy`). One is the declared **control**. |
+| **Assignment** | The moment a visitor is placed in an arm. Logged once as an `assignment` event with `meta.evo = { source, p }`. This is the denominator of every rate. |
+| **Exposure** | The visitor saw the variant (one per component × variant × page view). |
+| **Interaction** | The visitor did something (`cta_click`, `email_submit`, `first_user_message`, `email_click` …). The subtype names are the step metrics. |
+| **Allocation** | Fixed traffic split per experiment (equal by default). No adaptive bandit while traffic is low (spec §5.8, §6.9). |
 
----
+## 1. Register or change an experiment
 
-## 1. How to Register a New Component & Variant
+The **server registry is the source of truth**: `irp-funnel-server/API/evo/registry.ts` (`EVO_REGISTRY`). Each entry declares:
 
-Variants must be registered in **both** the client and the server so the dashboard can render labels and the Traffic Cop knows what's valid.
-
-### Step A: Client-Side Registry
-Open `irp-funnel/src/lib/evo/config.ts`. Add your component to the `EVO_COMPONENTS` record:
-
-```typescript
-  MyNewButton: {
-    key: 'MyNewButton',
-    variants: [
-      {
-        key: 'v1-baseline',
-        label: 'Blue Button',
-        hypothesis: 'Current production blue button.',
-      },
-      {
-        key: 'v2-red',
-        label: 'Red Button',
-        hypothesis: 'Red implies urgency, hoping for higher CTR.',
-      },
-    ],
-  },
+```ts
+MyButton: {
+  componentKey: "MyButton",
+  title: "Hero button text",
+  surface: "web",                 // web | chat | email
+  control: "v1-baseline",
+  primaryMetric: "step:cta_click", // what decides the test
+  guardrails: ["lead"],           // what must not get worse
+  status: "running",
+  startedAt: "2026-12-01T06:00:00.000Z", // assignments before this are ignored
+  variants: [
+    { key: "v1-baseline", label: "Blue", hypothesis: "Current production." },
+    { key: "v2-red", label: "Red", hypothesis: "Red reads as urgent." },
+  ],
+},
 ```
 
-### Step B: Server-Side Registry
-Open `irp-funnel-server/API/evo/registry.ts`. Add the exact same configuration to `EVO_REGISTRY`.
-*(Note: When the server restarts, `syncRegistry()` will automatically push these to Firestore so the Dashboard can see them).*
+Then mirror the keys, labels, `retiredIn` and `allocation` in the browser config `irp-funnel/src/lib/evo/config.ts` (`EVO_COMPONENTS`), and run:
 
----
+```sh
+cd irp-funnel-server && deno run -A scripts/test-evo-registry-parity.ts
+```
 
-## 2. How to Instrument a Component in Svelte
+It fails if the two drift, if the control is not an active arm, or if an experiment does not have exactly two active arms.
 
-Once registered, you use the Evo client library to assign a variant to the user and track their behavior. Evo handles fetching the Multi-Armed Bandit (MAB) weights from the server and ensuring sticky assignments.
+Rules:
+- **Never rename a variant key.** Retire it (`retiredIn: "<reason or commit>"`) and add a new one. Visitors holding a retired arm are reassigned automatically (logged with `reassignedFrom`).
+- **Changing `primaryMetric` requires a new `startedAt`.** Deciding on a different metric halfway through a test is a forking path.
+- **Keep two arms** unless traffic grows: a third arm roughly doubles the time to a decision at IRP's volume.
+- **Ending a test** is a code change: retire the losing arm(s) and set `status: "ended"`.
 
-Open your `.svelte` component:
+## 2. Instrument a Svelte component
 
 ```svelte
 <script lang="ts">
   import { onMount } from 'svelte';
   import { useVariant, trackExposure, trackInteraction } from '../lib/evo/index.ts';
 
-  const EVO_COMPONENT = 'MyNewButton';
-  
-  // 1. Get the variant assignment. 
-  // If this is the user's first time, Evo asks the Traffic Cop for weights.
-  // If they've been here before, Evo remembers their sticky assignment.
-  const myVariant = useVariant(EVO_COMPONENT);
+  const EVO_COMPONENT = 'MyButton';
+  // Sticky, synchronous: drawn from the bundled allocation on first use and
+  // logged once as an `assignment` event with its probability and the
+  // page's pre-treatment context (device, language, landing source …).
+  const variant = useVariant(EVO_COMPONENT);
 
-  onMount(() => {
-    // 2. Track Exposure. Fire this ONLY when the component is actually visible on screen.
-    trackExposure(EVO_COMPONENT, myVariant, { optionalMeta: 'info' });
-  });
+  onMount(() => trackExposure(EVO_COMPONENT, variant));
 
   function handleClick() {
-    // 3. Track Interaction. 
-    trackInteraction(EVO_COMPONENT, myVariant, 'btn_click', { timeSpent: 42 });
-    
-    // ... proceed with business logic
+    trackInteraction(EVO_COMPONENT, variant, 'cta_click');
   }
 </script>
 
-<!-- 4. Render conditionally based on the variant -->
-{#if myVariant === 'v1-baseline'}
+{#if variant === 'v2-red'}
+  <button class="bg-red" on:click={handleClick}>Act now</button>
+{:else}
   <button class="bg-blue" on:click={handleClick}>Submit</button>
-{:else if myVariant === 'v2-red'}
-  <button class="bg-red" on:click={handleClick}>Act Now</button>
 {/if}
 ```
 
-### The Identity Handoff (Crucial)
-For sales attribution to work, Evo must learn who the anonymous visitor is. Whenever your app captures an email address (e.g. in the Hero Form or Chatbot), you **must** call `identify()`:
+Or wrap markup in `<EvoVariant component="MyButton" let:variant>` from the same index.
 
-```typescript
-import { identify } from '../lib/evo/index.ts';
+Call `useVariant` **before** the component renders (top of the script), so the visitor's first render already shows their arm.
 
-// When user submits their email:
-identify("user@example.com");
+### Identity
+
+When the app learns the visitor's email (hero form, chatbot), call `identify(email)`. It links the anonymous `visitorId` to the email. The response carries the person's existing arms from other devices, and the client adopts them for components it has not assigned yet, so a returning person keeps their variant.
+
+Leads are joined to visitors mainly through `consultations.attribution.visitorIds`, which `lib/attribution.ts` already sends on every capture and booking. Keep sending `attribution: getAttribution()` on any new lead path.
+
+## 3. Chatbot persona
+
+The client passes its assigned persona with each message (`evoPersonaVariant` in the `/api/chatbot/message` body), and `chatbotRouter.ts` injects the persona hint into the agent prompt. Add new personas in the registry, the client config and the hint switch in `chatbotRouter.ts`.
+
+## 4. Email drip experiments
+
+- An email experiment declares `appliesTo: ['nurture_feedback']` (the queue item types it changes). Only those types get a variant, its content and tracking. Every other type stores `null`.
+- Assignment is **sticky per consultation**. On the first applicable enqueue, `helper/emailQueue.ts` draws once, stores `consultations/{id}.evoDrip = { subject, body, assignedAt, p }`, logs one `assignment` event per experiment (visitorId `email-<sha256>`), and reuses it for every later email.
+- Variant content is applied in `jobs/processEmailQueue.ts` (`getEmailContent` for the body, the subject switch for the subject).
+- Tracking: one pixel per email and **one** signed hop per link. URLs carry the queue item id (`q`) and email type (`t`), never the email address:
+
+  ```
+  /api/evo/track/pixel?q=<queueItemId>&t=<type>&s=<sig>
+  /api/evo/track/link?q=<queueItemId>&t=<type>&url=<target>&s=<sig>
+  ```
+
+  The server resolves `q` to the queue item, so the variant comes from our own record. A pixel logs `email_open`; a click logs `email_click`. Opens are inflated by Apple Mail Privacy Protection, so they are never a primary metric.
+
+Environment:
+
+| Var | Effect |
+|---|---|
+| `EVO_TRACK_SECRET` | HMAC key for `s`. When set, events with a missing or invalid signature are not recorded. |
+| `EVO_TRACK_ENFORCE=on` | Unsigned links redirect only to allow-listed hosts (else the site home). Leave off for ~30 days after deploy so links in already-sent emails keep working, and audit the Firestore-stored templates' link hosts first. |
+| `EVO_TRACK_ALLOWED_HOSTS` | Extra comma-separated hosts for the allow-list (`API/evo/trackSign.ts`). |
+
+Links in emails sent before this change (`e/c/v` URLs) still redirect, but no longer record events.
+
+## 5. Pricing experiments
+
+Not live. A price test would follow the chatbot pattern: the client sends its assigned variant with the booking request, and the server maps it to the price. It must declare a guardrail on won deals, because a cheaper price can raise conversions while lowering revenue.
+
+## 6. Allocation (the "Traffic Cop")
+
+`GET /api/evo/weights` returns each running experiment's **fixed** allocation plus a `_meta` key (`{ computedAt, mode }`) that readers skip. The browser does **not** wait for this endpoint: it draws from the allocation bundled in `config.ts`.
+
+The legacy adaptive bandit (Thompson sampling on paid conversions, auto 90 % takeover) is kept only behind `EVO_BANDIT=on` and must not be re-enabled without the rework in spec §6.9. Re-enabling it while experiments run would also make their results unreadable.
+
+## 7. Dev switcher and test traffic
+
+`EvoDevSwitcher` (dev builds only) calls `forceVariant`. Forced components are recorded (`source: 'forced'`, `meta.evo.forced`) and excluded from analysis. Events from dev builds or localhost carry `meta.ctx.env = 'dev'` and are excluded too. Remove `E2E_Test_Comp_*` components with `scripts/cleanup-e2e-components.ts` after e2e runs.
+
+## 8. Checks
+
+```sh
+cd irp-funnel-server
+deno run -A scripts/test-evo-registry-parity.ts   # registry client/server parity
+deno run -A scripts/test-evo-tracking.ts          # signing, redirects, ingest, allocation
+deno run -A scripts/evo-data-probe.ts             # READ-ONLY: is data arriving? (production)
 ```
-
----
-
-## 3. How to A/B Test Chatbot Personas
-
-Because the Chatbot is powered by the server-side `ThinkingAgent`, Evo must pass the variant assignment from the client *into* the backend API call.
-
-1. **Client Side (`Chatbot.svelte`):**
-   ```typescript
-   const personaVariant = useVariant('ChatbotPersona');
-   trackExposure('ChatbotPersona', personaVariant);
-   
-   // Pass it in the payload to the server
-   await fetch('/api/chatbot/message', {
-     body: JSON.stringify({ message, evoPersonaVariant: personaVariant })
-   });
-   ```
-
-2. **Server Side (`chatbotRouter.ts`):**
-   ```typescript
-   const evoPersonaVariant = req.body.evoPersonaVariant;
-   let evoPersonaHint = "";
-   if (evoPersonaVariant === "v2-closer") {
-     evoPersonaHint = "Aggressive Closer Persona: Push hard for the calendar booking.";
-   }
-   
-   // Inject into Thinking Agent
-   await runThinkingAgent(..., evoPersonaHint);
-   ```
-
----
-
-## 4. How to A/B Test Email Drip Campaigns
-
-Emails don't run Svelte, so Evo handles variant assignment dynamically as the emails are queued.
-
-1. The `emailQueue.ts` worker asks the Traffic Cop for the latest MAB weights.
-2. It assigns an `evoSubjectVariant` and `evoBodyVariant` to the pending email document.
-3. When `processEmailQueue.ts` runs, it evaluates the variants and injects tracking pixels.
-
-To track opens and clicks inside emails, Evo exposes two REST endpoints. `processEmailQueue` injects these automatically:
-
-- **Open Tracking (Pixel):** 
-  `<img src="https://api.com/api/evo/track/pixel?e=user@mail.com&c=EmailDripSubject&v=v2-urgent" width="1" height="1" />`
-- **Click Tracking (Link wrapper):** 
-  `<a href="https://api.com/api/evo/track/link?url=https://target.com&e=user@mail.com&c=EmailDripBody&v=v2-story">Click here</a>`
-
----
-
-## 5. How to A/B Test Pricing
-
-Dynamic pricing tests both conversion rate AND total revenue elasticity. 
-
-1. Create a `ConsultationPrice` component in the registry (`v1-baseline-250`, `v2-discount-199`).
-2. Client-side, call `useVariant('ConsultationPrice')`.
-3. Pass that variant to the CRM API endpoint (`/api/send-hero-consultation`).
-4. The server's `consultationRouter.ts` translates the variant into a real USD integer and saves it to the CRM payload as `quotedPriceUsd`.
-5. The Evo Dashboard automatically sorts by the `revenueUsd` column, showing you if the $199 discount variant makes up for the lower margin by converting 3x as many leads.
-
----
-
-## 6. How the Traffic Cop (MAB) Works
-
-You do not need to manually turn off losing variants. The system is self-healing.
-
-1. The client requests weights from `/api/evo/weights`.
-2. The server (`trafficCop.ts`) looks at the last 90 days of attribution data.
-3. It models the conversion rate of every variant using **Thompson Sampling** (a Beta distribution of Visitors vs Paid Conversions).
-4. If it detects a **Confirmed Winner** (p-value < .01 and n >= 300), it hard-codes that variant to receive **90%** of all traffic. 
-5. The remaining variants split the remaining 10% of traffic to ensure continuous exploration (in case seasonality or market conditions change the winning dynamic).
-6. **Cohort Degradation:** If a user pays, but later asks for a refund (entering the `refunded` or `cancelled` CRM stage), their revenue is dynamically deducted from that variant's scorecard, ensuring we don't optimize for variants that trick users into buying but result in high churn.

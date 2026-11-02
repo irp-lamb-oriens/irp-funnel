@@ -7,46 +7,66 @@ import { derived, get, writable } from 'svelte/store';
 import type { Filter, MetricsCube } from '../engine/types.ts';
 
 export const hubCube = writable<MetricsCube | null>(null);
-export const hubFilters = writable<Filter[]>([]);
 
-const history = writable<Filter[][]>([]);
-export const canUndo = derived(history, (h) => h.length > 0);
+/**
+ * A set of filter chips with an undo stack. The Hub uses one instance; the
+ * Sales Book creates its own, so the two tabs never share filter state
+ * (sales-book-v3 §5.6).
+ */
+export function createFilterState() {
+  const filters = writable<Filter[]>([]);
+  const history = writable<Filter[][]>([]);
+  const canUndo = derived(history, (h) => h.length > 0);
+  function commit(next: Filter[]) {
+    history.update((h) => [...h.slice(-19), get(filters)]);
+    filters.set(next);
+  }
+  return {
+    filters,
+    canUndo,
+    /** Add (or replace) the filter for a dimension. */
+    addFilter(f: Filter): void {
+      if (!f.values.length) return;
+      const cur = get(filters);
+      const same = cur.find((x) => x.dim === f.dim && !!x.exclude === !!f.exclude);
+      if (same && same.values.length === f.values.length && same.values.every((v) => f.values.includes(v))) return;
+      commit([...cur.filter((x) => x.dim !== f.dim), { ...f }]);
+    },
+    addFilters(fs: Filter[]): void {
+      const cur = get(filters);
+      const dims = new Set(fs.map((f) => f.dim));
+      commit([...cur.filter((x) => !dims.has(x.dim)), ...fs.map((f) => ({ ...f }))]);
+    },
+    removeFilter(index: number): void {
+      commit(get(filters).filter((_, i) => i !== index));
+    },
+    clearFilters(): void {
+      if (get(filters).length) commit([]);
+    },
+    undoFilters(): void {
+      const h = get(history);
+      if (!h.length) return;
+      filters.set(h[h.length - 1]);
+      history.set(h.slice(0, -1));
+    },
+    /** Replace without recording history (URL restore). */
+    setFiltersSilently(fs: Filter[]): void {
+      filters.set(fs);
+    },
+  };
+}
+export type FilterState = ReturnType<typeof createFilterState>;
 
-function commit(next: Filter[]) {
-  history.update((h) => [...h.slice(-19), get(hubFilters)]);
-  hubFilters.set(next);
-}
-
-/** Add (or replace) the filter for a dimension. */
-export function addFilter(f: Filter): void {
-  if (!f.values.length) return;
-  const cur = get(hubFilters);
-  const same = cur.find((x) => x.dim === f.dim && !!x.exclude === !!f.exclude);
-  if (same && same.values.length === f.values.length && same.values.every((v) => f.values.includes(v))) return;
-  commit([...cur.filter((x) => x.dim !== f.dim), { ...f }]);
-}
-export function addFilters(fs: Filter[]): void {
-  const cur = get(hubFilters);
-  const dims = new Set(fs.map((f) => f.dim));
-  commit([...cur.filter((x) => !dims.has(x.dim)), ...fs.map((f) => ({ ...f }))]);
-}
-export function removeFilter(index: number): void {
-  const cur = get(hubFilters);
-  commit(cur.filter((_, i) => i !== index));
-}
-export function clearFilters(): void {
-  if (get(hubFilters).length) commit([]);
-}
-export function undoFilters(): void {
-  const h = get(history);
-  if (!h.length) return;
-  hubFilters.set(h[h.length - 1]);
-  history.set(h.slice(0, -1));
-}
-/** Replace without recording history (URL restore). */
-export function setFiltersSilently(fs: Filter[]): void {
-  hubFilters.set(fs);
-}
+// The Metrics Hub's instance (existing imports keep working).
+const hub = createFilterState();
+export const hubFilters = hub.filters;
+export const canUndo = hub.canUndo;
+export const addFilter = hub.addFilter;
+export const addFilters = hub.addFilters;
+export const removeFilter = hub.removeFilter;
+export const clearFilters = hub.clearFilters;
+export const undoFilters = hub.undoFilters;
+export const setFiltersSilently = hub.setFiltersSilently;
 
 // ── URL encoding of filters: dim:v1|v2,!dim:v ────────────────────────────────
 export function encodeFilters(fs: Filter[]): string {

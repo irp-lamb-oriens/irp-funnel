@@ -11,6 +11,7 @@
  */
 import type { Ctx, LeadFact } from './types.ts';
 import { median } from './stats.ts';
+import { inDayWindow } from './period.ts';
 
 // ── Dimensions ───────────────────────────────────────────────────────────────
 
@@ -94,13 +95,23 @@ function inPeriod(m: string | null, ctx: Ctx, undatedInAll = false): boolean {
   if (!m) return undatedInAll && ctx.allTime;
   return ctx.allTime || monthSet(ctx).has(m);
 }
+/**
+ * An event in the period: by its month, or — under a day cut (fair
+ * comparison of a partial month, sales-book-v3 §5.3) — by its ISO date.
+ */
+function inPeriodAt(m: string | null, iso: string | null | undefined, ctx: Ctx, undatedInAll = false): boolean {
+  if (ctx.dayCut) return inDayWindow(iso, ctx.dayCut);
+  return inPeriod(m, ctx, undatedInAll);
+}
 /** Cohort: leads created in the period (All time: every lead, dated or not). */
 export function inCohort(r: LeadFact, ctx: Ctx): boolean {
   if (!r.isLead) return false;
+  if (ctx.dayCut) return inDayWindow(r.leadAt, ctx.dayCut);
   if (ctx.allTime) return true;
   return !!r.leadMonth && monthSet(ctx).has(r.leadMonth);
 }
 function sumMoney(rows: LeadFact[], ctx: Ctx, f: 'booked' | 'cash' | 'invoiced' | 'margin', only?: (r: LeadFact) => boolean): number {
+  if (ctx.dayCut) return sumMoneyByDay(rows, ctx, f, only);
   const set = monthSet(ctx);
   let s = 0;
   for (const r of rows) {
@@ -108,6 +119,18 @@ function sumMoney(rows: LeadFact[], ctx: Ctx, f: 'booked' | 'cash' | 'invoiced' 
     const m = r.money[ctx.currency];
     if (!m) continue;
     for (const [k, c] of Object.entries(m.byMonth)) if (k !== 'undated' && (ctx.allTime || set.has(k))) s += c[f];
+  }
+  return Math.round(s * 100) / 100;
+}
+/** Same sums from the ISO-dated event lists (sales-book-v3 §4.2). */
+function sumMoneyByDay(rows: LeadFact[], ctx: Ctx, f: 'booked' | 'cash' | 'invoiced' | 'margin', only?: (r: LeadFact) => boolean): number {
+  const w = ctx.dayCut!;
+  let s = 0;
+  for (const r of rows) {
+    if (only && !only(r)) continue;
+    if (f === 'cash') { for (const p of r.payments ?? []) if (p.cur === ctx.currency && inDayWindow(p.at, w)) s += p.amount; }
+    else if (f === 'invoiced') { for (const p of r.invoicedAtList ?? []) if (p.cur === ctx.currency && inDayWindow(p.at, w)) s += p.amount; }
+    else for (const b of r.bookedAt ?? []) if (b.cur === ctx.currency && inDayWindow(b.at, w)) s += f === 'booked' ? b.amount : b.margin;
   }
   return Math.round(s * 100) / 100;
 }
@@ -143,6 +166,11 @@ export interface Measure {
   /** Which dimension phases this measure may be split by in the finder. */
   phases?: Phase[];
   def: string;
+  /**
+   * Can be counted by calendar day (needed for a fair partial-month Δ).
+   * False when the cube has no per-event date for it. Default true.
+   */
+  dayComparable?: boolean;
   compute: (rows: LeadFact[], ctx: Ctx) => MeasureValue;
 }
 
@@ -220,19 +248,19 @@ export const MEASURES: Measure[] = [
   // ── Period counts ──
   { key: 'leads', label: 'Leads', basis: 'period', kind: 'count', better: true,
     def: 'New leads (consultation records) created in the period, by their earliest entry date in Costa Rica time. Same as the Sales Report.',
-    compute: (rows, ctx) => { const n = rows.filter((r) => r.isLead && inPeriod(r.leadMonth, ctx, true)).length; return { value: n, n }; } },
+    compute: (rows, ctx) => { const n = rows.filter((r) => r.isLead && inPeriodAt(r.leadMonth, r.leadAt, ctx, true)).length; return { value: n, n }; } },
   { key: 'quotedLeads', label: 'Quoted leads', basis: 'period', kind: 'count', better: true,
     def: 'Leads whose first quote reached the client in the period.',
-    compute: (rows, ctx) => { const n = rows.filter((r) => r.isLead && inPeriod(r.quoteSentMonth, ctx)).length; return { value: n, n }; } },
-  { key: 'quotesSent', label: 'Quotes sent', basis: 'period', kind: 'count', better: true,
+    compute: (rows, ctx) => { const n = rows.filter((r) => r.isLead && inPeriodAt(r.quoteSentMonth, r.firstQuoteAt, ctx)).length; return { value: n, n }; } },
+  { key: 'quotesSent', label: 'Quotes sent', basis: 'period', kind: 'count', better: true, dayComparable: false,
     def: 'Every quote sent to a client in the period (a lead can get several). Same as the Sales Report "Quotes sent".',
-    compute: (rows, ctx) => { let n = 0; const s = monthSet(ctx); for (const r of rows) for (const [m, c] of Object.entries(r.quoteSentMonths)) if (ctx.allTime || s.has(m)) n += c; return { value: n, n }; } },
+    compute: (rows, ctx) => { if (ctx.dayCut) return { value: null, n: 0 }; let n = 0; const s = monthSet(ctx); for (const r of rows) for (const [m, c] of Object.entries(r.quoteSentMonths)) if (ctx.allTime || s.has(m)) n += c; return { value: n, n }; } },
   { key: 'won', label: 'Won deals', basis: 'period', kind: 'count', better: true,
     def: 'Deals whose first client acceptance happened in the period. Same as the Sales Report "Won".',
-    compute: (rows, ctx) => { const n = rows.filter((r) => r.won && inPeriod(r.wonMonth, ctx, true)).length; return { value: n, n }; } },
+    compute: (rows, ctx) => { const n = rows.filter((r) => r.won && inPeriodAt(r.wonMonth, r.acceptedAt, ctx, true)).length; return { value: n, n }; } },
   { key: 'paid', label: 'Paid clients', basis: 'period', kind: 'count', better: true,
     def: 'Clients whose first received payment landed in the period (invoice or Finance).',
-    compute: (rows, ctx) => { const n = rows.filter((r) => r.paid && inPeriod(r.paidMonth, ctx)).length; return { value: n, n }; } },
+    compute: (rows, ctx) => { const n = rows.filter((r) => r.paid && inPeriodAt(r.paidMonth, r.paidAt, ctx)).length; return { value: n, n }; } },
   // ── Period money ──
   { key: 'booked', label: 'Booked', basis: 'period', kind: 'money', better: true,
     def: 'Value of quotes the client accepted in the period, plus extra charges. Selected currency only; never converted.',
@@ -257,7 +285,7 @@ export const MEASURES: Measure[] = [
     def: 'Booked ÷ won deals that have a booked value, both by acceptance month (Sales Report rule).',
     compute: (rows, ctx) => {
       const b = sumMoney(rows, ctx, 'booked');
-      const n = rows.filter((r) => r.won && inPeriod(r.wonMonth, ctx) && (r.money[ctx.currency]?.booked ?? 0) > 0).length;
+      const n = rows.filter((r) => r.won && inPeriodAt(r.wonMonth, r.acceptedAt, ctx) && (r.money[ctx.currency]?.booked ?? 0) > 0).length;
       return { value: n ? b / n : null, n };
     } },
   // ── Cohort rates ──

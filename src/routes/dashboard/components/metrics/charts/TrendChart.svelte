@@ -25,6 +25,8 @@
   export let selectable = false;
   /** Index to emphasise (e.g. the current month). */
   export let highlight: number | null = null;
+  /** Inclusive index range to shade (e.g. the selected period over a full history). */
+  export let highlightRange: [number, number] | null = null;
 
   const dispatch = createEventDispatcher<{ select: { index: number; label: string } }>();
 
@@ -109,7 +111,7 @@
 
       {#each labels as l, i}
         {@const cx = M.left + band * i + band / 2}
-        {#if highlight === i}
+        {#if highlight === i || (highlightRange && i >= highlightRange[0] && i <= highlightRange[1])}
           <rect x={M.left + band * i} y={M.top} width={band} height={innerH} class="tc-now" />
         {/if}
         {#if stacked}

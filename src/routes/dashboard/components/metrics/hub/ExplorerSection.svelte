@@ -5,7 +5,11 @@
    *          dimension, which turns it into a heatmap of the first measure).
    *   Combination finder: every single segment and every pair of segments
    *          tested against the rest, false-discovery controlled.
-   * Explorer settings live in the URL (mh_x) so a view can be shared.
+   * The parent keeps the settings in its URL (Hub: mh_x, Sales Book: sr_x).
+   *
+   * Reusable (sales-book-v3 §5.6): `measures` limits the measure list, `finder`
+   * hides the combination finder, and clicks are reported as a `filter` event
+   * (Filter[]) so each tab applies them to its own filter state.
    */
   import { createEventDispatcher, onDestroy } from 'svelte';
   import BarList from '../charts/BarList.svelte';
@@ -15,23 +19,31 @@
   import { crossTab, csvEscape, groupBy } from '../engine/cube.ts';
   import { fmtMeasure, pct } from '../engine/format.ts';
   import { findCombosAsync, type ComboResult } from '../engine/combos.ts';
-  import type { Ctx, LeadFact } from '../engine/types.ts';
-  import { addFilter, addFilters } from './hubState.ts';
+  import type { Ctx, Filter, LeadFact } from '../engine/types.ts';
 
   export let rows: LeadFact[] = [];
   export let ctx: Ctx;
   export let filterKey = '';
   export let state = { m: ['leads', 'winRate', 'bookedPerLead'], r: 'destination', c: '', n: 12, v: 'chart' as 'chart' | 'table' };
+  /** Measure keys offered in the pickers (default: every measure). */
+  export let measures: string[] | null = null;
+  /** Show the combination finder (binomial rates only). */
+  export let finder = true;
+  /** File-name prefix for the CSV export. */
+  export let exportName = 'metrics';
 
-  const dispatch = createEventDispatcher<{ state: typeof state }>();
+  const dispatch = createEventDispatcher<{ state: typeof state; filter: Filter[] }>();
   $: dispatch('state', state);
+  const addFilter = (f: Filter) => dispatch('filter', [f]);
+  const addFilters = (fs: Filter[]) => dispatch('filter', fs);
 
   const groups = ['Marketing', 'Move', 'Lead', 'Time', 'Sales'] as const;
-  const measureGroups = [
-    { label: 'In the period', items: MEASURES.filter((m) => m.basis === 'period') },
-    { label: 'Leads of the period, to today', items: MEASURES.filter((m) => m.basis === 'cohort') },
-    { label: 'As of today', items: MEASURES.filter((m) => m.basis === 'asOf') },
-  ];
+  $: offered = measures ? MEASURES.filter((m) => measures!.includes(m.key)) : MEASURES;
+  $: measureGroups = [
+    { label: 'In the period', items: offered.filter((m) => m.basis === 'period') },
+    { label: 'Leads of the period, to today', items: offered.filter((m) => m.basis === 'cohort') },
+    { label: 'As of today', items: offered.filter((m) => m.basis === 'asOf') },
+  ].filter((g) => g.items.length);
 
   $: ms = state.m.filter((k) => MEASURE[k]);
   $: grouped = state.r ? groupBy(rows, state.r, ms, ctx, { top: state.n }) : [];
@@ -52,7 +64,7 @@
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `metrics-${state.r}-${ctx.months[0] ?? 'all'}-${ctx.months[ctx.months.length - 1] ?? ''}.csv`;
+    a.download = `${exportName}-${state.r}-${ctx.months[0] ?? 'all'}-${ctx.months[ctx.months.length - 1] ?? ''}.csv`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
@@ -81,7 +93,7 @@
     combo = res;
     running = false;
   }
-  $: run(`${filterKey}|${rows.length}|${comboMeasure}|${pairs}`, rows, comboMeasure, pairs);
+  $: if (finder) run(`${filterKey}|${rows.length}|${comboMeasure}|${pairs}`, rows, comboMeasure, pairs);
   onDestroy(() => (token.cancelled = true));
 </script>
 
@@ -146,6 +158,7 @@
   </div>
 {/if}
 
+{#if finder}
 <div class="ex-combo">
   <div class="ex-combo__head">
     <div>
@@ -194,6 +207,7 @@
     </div>
   {/if}
 </div>
+{/if}
 
 <style>
   .ex-controls { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: flex-end; margin-bottom: 0.4rem; }

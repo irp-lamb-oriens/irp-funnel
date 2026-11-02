@@ -5,10 +5,14 @@
  * declares its `variants` here. Variants are an arbitrary-length array; add
  * or retire them without changing the Evo runtime itself.
  *
- * The same registry is mirrored on the server (see
- * `irp-funnel-server/API/evo/registry.ts`) — keep them in sync when shipping
- * new variants. The server doc is the source of truth consumed by the
- * dashboard; this file is what the funnel uses at runtime.
+ * SOURCE OF TRUTH: `irp-funnel-server/API/evo/registry.ts` (control,
+ * primary metric, guardrails, start date live there). This file mirrors only
+ * what the browser needs to assign: component keys, variant keys/labels,
+ * `retiredIn` and the fixed `allocation`. Keys, active variants and
+ * allocations must match the server — `deno run scripts/test-evo-registry-parity.ts`
+ * in irp-funnel-server fails when they drift.
+ *
+ * Evo Lab restart (Phase 0): every experiment restarted with two arms.
  */
 
 export interface EvoVariant {
@@ -29,7 +33,11 @@ export interface EvoComponentConfig {
   key: string;
   /** Non-agnostic, arbitrary-length list of variants. */
   variants: EvoVariant[];
+  /** Fixed traffic split over ACTIVE variants. Omitted = equal split. */
+  allocation?: Record<string, number>;
 }
+
+const RESTART = 'evo-lab-restart';
 
 /**
  * Registered components. Edit this file to add/retire variants.
@@ -41,12 +49,12 @@ export const EVO_COMPONENTS: Record<string, EvoComponentConfig> = {
     variants: [
       {
         key: 'v1-collaborations',
-        label: 'Baseline Rotating Collaborations',
+        label: 'Rotating carousel',
         hypothesis: 'Rotating carousel of partner logos may capture more attention and build more trust.',
       },
       {
         key: 'v2-collaborations',
-        label: 'Static Collaborations',
+        label: 'Static logos',
         hypothesis: 'Static logos of partner companies to build trust.',
       }
     ]
@@ -62,6 +70,7 @@ export const EVO_COMPONENTS: Record<string, EvoComponentConfig> = {
       {
         key: 'v2-warm-copy',
         label: 'Warm copy CTA',
+        retiredIn: RESTART,
         hypothesis: 'Warmer, less transactional copy may improve first-click rate.',
       },
       {
@@ -127,6 +136,7 @@ export const EVO_COMPONENTS: Record<string, EvoComponentConfig> = {
       {
         key: 'v2-urgent',
         label: 'Urgent Subject',
+        retiredIn: RESTART,
         hypothesis: 'Action required: Finalize your move',
       },
       {
@@ -157,8 +167,31 @@ export function getComponentConfig(key: string): EvoComponentConfig | null {
   return EVO_COMPONENTS[key] ?? null;
 }
 
-/** 
- * Type for weights fetched from server via MAB endpoint.
- * E.g., { "HeroForm": { "v1-baseline": 0.9, "v2-warm-copy": 0.1 } }
+/** Active (non-retired) variants, in registry order. */
+export function activeVariantsOf(cfg: EvoComponentConfig): EvoVariant[] {
+  return cfg.variants.filter((v) => !v.retiredIn);
+}
+
+/**
+ * Fixed allocation over active variants, normalised to sum to 1; invalid or
+ * missing entries fall back to an equal split. Mirrors `allocationOf` in the
+ * server registry exactly (the parity test compares the outputs).
  */
-export type EvoWeightsMap = Record<string, Record<string, number>>;
+export function allocationOf(cfg: EvoComponentConfig): Record<string, number> {
+  const act = activeVariantsOf(cfg);
+  const out: Record<string, number> = {};
+  if (!act.length) return out;
+  let total = 0;
+  for (const v of act) {
+    const w = cfg.allocation?.[v.key];
+    const ok = typeof w === 'number' && isFinite(w) && w > 0;
+    out[v.key] = ok ? (w as number) : 0;
+    total += out[v.key];
+  }
+  if (total <= 0 || act.some((v) => out[v.key] <= 0)) {
+    for (const v of act) out[v.key] = 1 / act.length;
+    return out;
+  }
+  for (const v of act) out[v.key] = out[v.key] / total;
+  return out;
+}

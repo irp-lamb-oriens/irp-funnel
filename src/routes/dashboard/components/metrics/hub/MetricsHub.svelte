@@ -15,11 +15,11 @@
    */
   import { onDestroy, onMount, tick } from 'svelte';
   import { metrics, activeView, salesReportPrefill, fetchClientDetail, fetchMetricsCube } from '../../../store.ts';
-  import { METRICS_CUBE_SCHEMA_VERSION, type Ctx, type LeadFact, type MetricsCube } from '../engine/types.ts';
+  import { cubeSchemaOk, type Ctx, type LeadFact, type MetricsCube } from '../engine/types.ts';
   import { PRESETS, VALID_MONTH, compareMonths, firstMonthOf, monthLabel, monthRange, rangeFor, rangeLabel, shiftMonth, type Compare, type Preset } from '../engine/period.ts';
   import { filterRows } from '../engine/cube.ts';
   import { DIM, dimLabel } from '../engine/registry.ts';
-  import { canUndo, clearFilters, decodeFilters, encodeFilters, hubCube, hubFilters, removeFilter, setFiltersSilently, undoFilters } from './hubState.ts';
+  import { addFilters, canUndo, clearFilters, decodeFilters, encodeFilters, hubCube, hubFilters, removeFilter, setFiltersSilently, undoFilters } from './hubState.ts';
   import FilterPicker from './FilterPicker.svelte';
   import PulseTiles from './PulseTiles.svelte';
   import InsightsPanel from './InsightsPanel.svelte';
@@ -46,7 +46,8 @@
   let custom = { from: '', to: '' };
   let compare: Compare = 'prev';
   let currency = 'USD';
-  let excludeTest = false;
+  /** Test records are hidden by default, as on the Sales Book (sales-book-v3 §4.4, C1). */
+  let excludeTest = true;
   let pulseView: PulseView = 'leadership';
   let explorer = { m: ['leads', 'winRate', 'bookedPerLead'], r: 'destination', c: '', n: 12, v: 'chart' as 'chart' | 'table' };
   let segDim = 'channel';
@@ -69,7 +70,8 @@
       if (c === 'prev' || c === 'yoy' || c === 'none') compare = c;
       const cur = q.get('mh_cur');
       if (cur && /^[A-Z]{3}$/.test(cur)) currency = cur;
-      if (q.get('mh_test') === '0') excludeTest = true;
+      // mh_test=1 shows test records; a legacy mh_test=0 still means hide (the default now).
+      if (q.get('mh_test') === '1') excludeTest = false;
       setFiltersSilently(decodeFilters(q.get('mh_f')).filter((x) => DIM[x.dim]));
       const x = q.get('mh_x');
       if (x) { const [m, r, cc, n, v] = x.split('~'); explorer = { m: m ? m.split('.') : explorer.m, r: DIM[r] ? r : explorer.r, c: DIM[cc] ? cc : '', n: Number(n) || 12, v: v === 'table' ? 'table' : 'chart' }; }
@@ -87,7 +89,7 @@
       set('mh_to', preset === 'custom' ? custom.to : null);
       set('mh_cmp', compare === 'prev' ? null : compare);
       set('mh_cur', currency === 'USD' ? null : currency);
-      set('mh_test', excludeTest ? '0' : null);
+      set('mh_test', excludeTest ? null : '1');
       set('mh_f', $hubFilters.length ? encodeFilters($hubFilters) : null);
       set('mh_x', `${explorer.m.join('.')}~${explorer.r}~${explorer.c}~${explorer.n}~${explorer.v}`);
       window.history.replaceState(window.history.state, '', url);
@@ -106,7 +108,7 @@
     try {
       const data = (await fetchMetricsCube({ fresh })) as MetricsCube;
       if (t !== ticket) return;
-      if (!data || !Array.isArray(data.rows) || (data.schemaVersion ?? 0) !== METRICS_CUBE_SCHEMA_VERSION) { schemaError = true; return; }
+      if (!data || !Array.isArray(data.rows) || !cubeSchemaOk(data.schemaVersion)) { schemaError = true; return; }
       hubCube.set(data);
       if (!data.currencies.includes(currency) && data.currencies.length) currency = data.currencies[0];
     } catch (err: any) {
@@ -244,8 +246,8 @@
       </div>
     </div>
     {#if testCount}
-      <label class="mh-toggle" title="Leads with test emails or names (heuristic). Counted by default so totals match the Sales Report.">
-        <input type="checkbox" bind:checked={excludeTest} /> Hide test leads ({testCount})
+      <label class="mh-toggle" title="Test / internal records (one rule shared with the Sales Book). Hidden by default on both tabs, so totals match.">
+        <input type="checkbox" bind:checked={excludeTest} /> Hide test records ({testCount})
       </label>
     {/if}
     <span class="mh-live" aria-live="polite">{liveText}</span>
@@ -321,7 +323,7 @@
 
     <section id="mh-explorer" class="mh-section" aria-labelledby="mh-ex-h">
       <div class="mh-section__head"><div class="mh-section__title"><h3 id="mh-ex-h" class="mh-h" tabindex="-1">Explorer</h3><p class="mh-hint">Any measure, by any one or two dimensions</p></div></div>
-      <ExplorerSection {rows} {ctx} {filterKey} state={explorer} on:state={(e) => (explorer = e.detail)} />
+      <ExplorerSection {rows} {ctx} {filterKey} state={explorer} on:state={(e) => (explorer = e.detail)} on:filter={(e) => addFilters(e.detail)} />
     </section>
 
     {#if cube.warnings.length}

@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EVO LAB — the Evo tab (irp-funnel-server/docs/designs/evo-lab.md §7).
+   Builds on the Metrics Hub classes (.mh, .mh-section, .mh-table …) and adds
+   only what experiments need: verdict chips, experiment cards, the
+   scorecard, tabs, locked panels and the decision dialog.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.evo-lab {
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  // ── Verdict chips ──────────────────────────────────────────────────────────
+  .evo-state {
+    display: inline-flex; align-items: center; padding: 0.18rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800;
+    letter-spacing: 0.02em; white-space: nowrap; border: 1px solid;
+    &--good { color: var(--mh-good); background: var(--mh-good-bg); border-color: #a7f3d0; }
+    &--bad { color: var(--mh-bad); background: var(--mh-bad-bg); border-color: #fecaca; }
+    &--watch { color: var(--mh-watch); background: var(--mh-watch-bg); border-color: #fde68a; }
+    &--info { color: #475569; background: #f1f5f9; border-color: #e2e8f0; }
+  }
+
+  // ── Health strip ───────────────────────────────────────────────────────────
+  .evo-health {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.55rem 0.9rem; border-radius: 12px; margin-bottom: 0.9rem;
+    font-size: 0.82rem; border: 1px solid;
+    &__dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+    &__text { flex: 1 1 260px; color: var(--mh-body); }
+    &--good { color: var(--mh-good); background: var(--mh-good-bg); border-color: #a7f3d0; }
+    &--watch { color: var(--mh-watch); background: var(--mh-watch-bg); border-color: #fde68a; }
+    &--bad { color: var(--mh-bad); background: var(--mh-bad-bg); border-color: #fecaca; }
+  }
+
+  // ── Pulse tiles (same look as the Hub's PulseTiles) ────────────────────────
+  .evo-pulse { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.7rem; margin-bottom: 1rem; }
+  .pt-tile {
+    position: relative; padding: 0.85rem 0.95rem 0.8rem; background: #fff; border: 1px solid var(--mh-line); border-radius: 14px;
+    border-left: 4px solid $accent; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); min-width: 0; display: flex; flex-direction: column;
+  }
+  .evo-tile--good { border-left-color: var(--mh-good); }
+  .evo-tile--bad { border-left-color: var(--mh-bad); }
+  .evo-tile--watch { border-left-color: #f59e0b; }
+  .pt-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
+  .pt-label { margin: 0; font-size: 0.68rem; font-weight: 800; color: var(--mh-muted); text-transform: uppercase; letter-spacing: 0.07em; overflow: hidden; text-overflow: ellipsis; }
+  .pt-info { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--mh-line); background: var(--mh-soft); color: var(--mh-muted); font: italic 700 0.68rem/1 Georgia, serif; cursor: pointer; padding: 0; }
+  .pt-value { margin-top: 0.3rem; font-size: 1.45rem; font-weight: 800; color: var(--mh-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+  .pt-def { margin: 0.5rem 0 0; padding: 0.5rem 0.6rem; background: var(--mh-soft); border-radius: 8px; font-size: 0.74rem; line-height: 1.4; color: var(--mh-body); }
+  .evo-tile__sub { margin-top: 0.2rem; font-size: 0.72rem; color: var(--mh-muted); line-height: 1.35; }
+  .evo-tile__more { margin-top: 0.4rem; font-size: 0.72rem; align-self: flex-start; }
+
+  // ── Decision cards ─────────────────────────────────────────────────────────
+  .evo-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; }
+  .evo-decision {
+    padding: 0.9rem 1rem; border: 1px solid var(--mh-line); border-radius: 14px; background: #fff; border-top: 4px solid #cbd5e1;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    &--good { border-top-color: var(--mh-good); }
+    &--bad { border-top-color: var(--mh-bad); }
+    &--watch { border-top-color: #f59e0b; }
+    &__top { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    p { margin: 0; font-size: 0.82rem; line-height: 1.45; color: var(--mh-body); }
+    &__reason { font-weight: 700; color: var(--mh-ink) !important; }
+    &__ev { color: var(--mh-muted) !important; }
+    &__warn { color: var(--mh-watch) !important; font-size: 0.76rem !important; }
+    &__btns { display: flex; gap: 0.4rem; margin-top: auto; padding-top: 0.3rem; }
+  }
+
+  // ── Portfolio ──────────────────────────────────────────────────────────────
+  .evo-portfolio { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.85rem; }
+  .evo-card {
+    position: relative; padding: 0.9rem 1rem; border: 1px solid var(--mh-line); border-radius: 14px; background: var(--mh-soft);
+    display: flex; flex-direction: column; gap: 0.55rem; min-width: 0; transition: border-color $t-fast, box-shadow $t-fast;
+    &:hover { border-color: rgba(2, 181, 187, 0.45); }
+    &--selected { border-color: $accent; box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.14); background: #fff; }
+    &__hit { position: absolute; inset: 0; z-index: 1; border: none; background: none; border-radius: 14px; cursor: pointer;
+      &:focus-visible { outline: 2px solid $accent; outline-offset: 2px; } }
+    &__head { display: flex; justify-content: space-between; gap: 0.6rem; align-items: flex-start;
+      p { margin: 0.15rem 0 0; } }
+    &__title { margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--mh-ink); }
+    &__line { margin: 0; font-size: 0.8rem; color: var(--mh-body); line-height: 1.45; }
+    &__forecast { margin: 0; font-size: 0.76rem; color: var(--mh-accent-ink); font-weight: 700; }
+    &__counts { background: #fff; border-radius: 8px; }
+    .mh-muted { margin: 0; }
+    > * { min-width: 0; }
+  }
+
+  // ── Experiment detail ──────────────────────────────────────────────────────
+  .evo-detail .mh-sub { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .evo-evidence { margin: 0 0 0.8rem; font-size: 0.9rem; color: var(--mh-ink); font-weight: 600; line-height: 1.45; }
+  .evo-subset-note { margin: 0 0 0.4rem; font-size: 0.74rem; color: #075985; font-weight: 700; }
+  .evo-tabs {
+    display: flex; gap: 0.2rem; border-bottom: 1px solid var(--mh-line); margin-bottom: 0.9rem; overflow-x: auto;
+    button {
+      padding: 0.5rem 0.85rem; border: none; background: none; font: inherit; font-size: 0.8rem; font-weight: 700; color: var(--mh-muted);
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
+      &[aria-selected='true'] { color: var(--mh-accent-ink); border-bottom-color: $accent; }
+      &:hover { color: var(--mh-ink); }
+    }
+  }
+  .evo-tabs-select { display: none; margin-bottom: 0.8rem; }
+  .evo-panel:focus { outline: none; }
+  .evo-panel:focus-visible { outline: 2px solid rgba(2, 181, 187, 0.4); outline-offset: 4px; border-radius: 8px; }
+
+  // ── Scorecard ──────────────────────────────────────────────────────────────
+  .evo-score {
+    th[scope='row'] { min-width: 180px; vertical-align: top; }
+    &__group th { background: var(--mh-soft); font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mh-faint); padding-top: 0.6rem; }
+    &__verb, &__note { display: block; font-weight: 500; font-size: 0.7rem; color: var(--mh-faint); }
+    &__note { font-style: italic; }
+    &__cell { vertical-align: top; }
+    &__val { all: unset; cursor: pointer; font-size: 1rem; font-weight: 800; color: var(--mh-ink); border-bottom: 1px dashed transparent;
+      &:hover, &:focus-visible { border-bottom-color: $accent; } }
+    &__n, &__mat, &__ci, &__p, &__chg { display: block; font-size: 0.7rem; }
+    &__n { color: var(--mh-faint); }
+    &__mat { color: var(--mh-watch); }
+    &__ci { color: var(--mh-muted); }
+    &__p { color: var(--mh-ink); font-weight: 700; }
+  }
+  .evo-howto { margin-top: 0.5rem; padding: 0.7rem 0.85rem; background: var(--mh-soft); border-radius: 10px; font-size: 0.78rem; line-height: 1.5; color: var(--mh-body);
+    p { margin: 0 0 0.4rem; } }
+
+  // ── Misc ───────────────────────────────────────────────────────────────────
+  .evo-big { margin: 0; font-size: 1.6rem; font-weight: 800; color: var(--mh-ink); span { font-size: 0.78rem; font-weight: 600; color: var(--mh-muted); } }
+  .evo-list { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.8rem; color: var(--mh-body); line-height: 1.55; }
+  .evo-reverted { opacity: 0.55; text-decoration: line-through; }
+  .evo-combo { margin-bottom: 0.7rem; display: grid; gap: 0.6rem; }
+  .evo-alloc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.8rem; p { margin: 0 0 0.3rem; font-size: 0.8rem; } }
+  code { font-family: $mono; font-size: 0.85em; background: #f1f5f9; padding: 0.05em 0.3em; border-radius: 4px; }
+
+  // ── Locked panels ──────────────────────────────────────────────────────────
+  .evo-locked {
+    display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.8rem 0.95rem; border: 1px dashed #cbd5e1; border-radius: 12px; background: #fcfdfe; margin-bottom: 0.6rem;
+    &__icon { font-size: 1.1rem; line-height: 1.2; }
+    &__body { flex: 1; min-width: 0; p { margin: 0 0 0.25rem; } }
+    &__bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin: 0.35rem 0 0.2rem; max-width: 320px;
+      span { display: block; height: 100%; background: $accent; border-radius: 3px; } }
+  }
+
+  // ── Ask Evo ────────────────────────────────────────────────────────────────
+  .evo-ask { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; input { flex: 1; min-width: 0; font-size: 0.9rem; padding: 0.55rem 0.75rem; } }
+  .evo-ask__examples { margin-bottom: 0.8rem; }
+  .evo-answer { margin-bottom: 0.6rem; p { margin: 0 0 0.3rem; font-size: 0.84rem; } }
+
+  // ── Decision dialog ────────────────────────────────────────────────────────
+  .evo-modal {
+    position: fixed; inset: 0; z-index: 60; background: rgba(15, 23, 42, 0.38); display: grid; place-items: center; padding: 1rem;
+    &__box { width: min(520px, 100%); background: #fff; border-radius: 16px; padding: 1.2rem 1.3rem; display: grid; gap: 0.75rem; box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
+      h3 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--mh-ink); }
+      textarea { resize: vertical; font: inherit; } }
+    &__note { margin: 0; padding: 0.5rem 0.65rem; border-radius: 8px; background: var(--mh-watch-bg); color: #92400e; font-size: 0.78rem; }
+    &__btns { display: flex; justify-content: flex-end; gap: 0.5rem; }
+  }
+
+  .mh-table-wrap, .evo-detail, .mh-section { max-width: 100%; }
+
+  @media (max-width: 640px) {
+    .evo-head-actions { width: 100%; }
+    .evo-portfolio, .evo-cards { grid-template-columns: minmax(0, 1fr); }
+    .evo-tabs { display: none; }
+    .evo-tabs-select { display: block; width: 100%; }
+    .evo-score th[scope='row'] { min-width: 96px; }
+    .evo-score__verb, .evo-score__note { display: none; }
+    .evo-score td, .evo-score th { padding-left: 0.35rem; padding-right: 0.35rem; }
+    .evo-score__group th { text-align: left; }
+    .evo-pulse { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pt-value { font-size: 1.2rem; }
+  }
+}

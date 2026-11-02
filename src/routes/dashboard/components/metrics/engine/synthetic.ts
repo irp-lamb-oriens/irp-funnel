@@ -75,6 +75,19 @@ export function syntheticRows(n = 1000, nowMonth = '2026-11', seed = 7): LeadFac
       callBooked: r() < 0.7, callAttended: false, noShow: false, callOutcome: '(none)', multiTouch: r() < 0.2,
     });
     const last = rows[rows.length - 1];
+    // ISO-dated facts (sales-book-v3 §4.2), consistent with the month keys and
+    // using no extra random draws so the planted effects above are unchanged.
+    const day = String((i % 28) + 1).padStart(2, '0');
+    const at = (m: string | null) => (m ? `${m}-${day}T18:00:00.000Z` : null);
+    last.acceptedAt = at(wonMonth);
+    last.paidAt = paid ? at(wonMonth) : null;
+    last.firstQuoteAt = quoted ? at(leadMonth) : null;
+    last.invoicedAt = cash ? at(wonMonth) : null;
+    last.leadAt = at(leadMonth);
+    last.clientKey = `email:lead${i % 950}@example.org`;
+    last.payments = cash ? [{ at: at(wonMonth), amount: cash, cur: 'USD', method: 'wire transfer' }] : [];
+    last.bookedAt = booked ? [{ at: at(wonMonth), amount: booked, margin: Math.round(booked * 0.25), cur: 'USD' }] : [];
+    last.invoicedAtList = cash ? [{ at: at(wonMonth), amount: booked, cur: 'USD' }] : [];
     last.callAttended = last.callBooked && r() < 0.75;
     last.noShow = last.callBooked && !last.callAttended;
   }

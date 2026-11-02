@@ -7,9 +7,13 @@
   import { DIMENSIONS } from '../engine/registry.ts';
   import { dimensionValues } from '../engine/cube.ts';
   import type { LeadFact } from '../engine/types.ts';
-  import { addFilter } from './hubState.ts';
+  import { addFilter as hubAddFilter, type FilterState } from './hubState.ts';
 
   export let rows: LeadFact[] = [];
+  /** Whose filters to add to (default: the Metrics Hub's). */
+  export let target: FilterState | null = null;
+  /** Count every row (Sales Book: deals without a lead record too), not only leads. */
+  export let allRows = false;
 
   let open = false;
   let dim = 'channel';
@@ -19,7 +23,7 @@
   let firstInput: HTMLSelectElement;
 
   const groups = ['Marketing', 'Move', 'Lead', 'Time', 'Sales'] as const;
-  $: values = open ? dimensionValues(rows.filter((r) => r.isLead), dim) : [];
+  $: values = open ? dimensionValues(allRows ? rows : rows.filter((r) => r.isLead), dim) : [];
   $: shown = values.filter((v) => !search || v.label.toLowerCase().includes(search.toLowerCase())).slice(0, 40);
 
   async function toggle() {
@@ -28,7 +32,7 @@
   }
   function apply(exclude: boolean) {
     if (!picked.size) return;
-    addFilter({ dim, values: [...picked], exclude });
+    (target ? target.addFilter : hubAddFilter)({ dim, values: [...picked], exclude });
     open = false;
   }
   function onDoc(e: MouseEvent) { if (open && root && !root.contains(e.target as Node)) open = false; }

@@ -2,15 +2,23 @@
  * Evo — client runtime API.
  *
  * What this file owns:
- *   • `useVariant(componentKey)`         → deterministic, sticky assignment
+ *   • `useVariant(componentKey)`         → sticky assignment, drawn SYNCHRONOUSLY
+ *                                          from the bundled fixed allocation
  *   • `trackExposure(...)`               → log that a visitor saw a variant
  *   • `trackInteraction(...)`            → log an interaction with a variant
  *   • `identify(email)`                  → link the anonymous visitorId to an email
+ *                                          and adopt the person's existing arms
  *
- * Events are buffered and flushed in batches to
- *   POST {API}/api/evo/events/batch
- * Buffered events are also flushed via `navigator.sendBeacon` on pagehide so
- * we don't lose the last exposure before navigation.
+ * Evo Lab Phase 0 (irp-funnel-server/docs/designs/evo-lab.md §5):
+ *   • Every first assignment logs ONE `assignment` event carrying
+ *     `meta.evo = { source, p }` (the intention-to-treat denominator and its
+ *     propensity) and `meta.ctx` (pre-treatment context of THIS page view).
+ *   • The draw no longer waits on `/api/evo/weights`: the old async fetch lost
+ *     the race on almost every first visit, so logged "MAB" weights never
+ *     matched what visitors actually got.
+ *   • Dev-switcher overrides are recorded (`source: 'forced'`, `meta.evo.forced`).
+ *   • The page-hide beacon is sent as text/plain (CORS-safelisted); an
+ *     application/json beacon to the API origin can be dropped silently.
  *
  * Telemetry MUST NEVER break UX — every failure is swallowed with a console
  * warning.
@@ -19,7 +27,7 @@
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 import store from '../../components/store.ts';
-import { EVO_COMPONENTS } from './config.ts';
+import { EVO_COMPONENTS, activeVariantsOf, allocationOf } from './config.ts';
 import {
   getVisitorId,
   getCommitHash,
@@ -28,7 +36,13 @@ import {
   rememberEmail,
   getAssignments,
   setAssignment,
+  isAssignmentLogged,
+  markAssignmentLogged,
+  isForced,
+  markForced,
+  isReturningVisitor,
 } from './identity.ts';
+import { getAttribution } from '../attribution.ts';
 
 // Reactivity store for instantaneous dev switching
 export const activeVariants = writable<Record<string, string>>({});
@@ -40,7 +54,8 @@ if (browser) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-export type EvoEventType = 'exposure' | 'interaction';
+export type EvoEventType = 'assignment' | 'exposure' | 'interaction';
+export type EvoAssignmentSource = 'fixed' | 'adopted' | 'forced' | 'legacy_sticky';
 
 export interface EvoEventPayload {
   type: EvoEventType;
@@ -81,6 +96,11 @@ function schedule(): void {
   flushTimer = setTimeout(() => void flush(), FLUSH_MS);
 }
 
+/** Stamp the delivery path so the probe can compare beacon vs fetch arrival. */
+function withVia(events: EvoEventPayload[], via: 'fetch' | 'beacon'): EvoEventPayload[] {
+  return events.map((e) => ({ ...e, meta: { ...(e.meta ?? {}), via } }));
+}
+
 async function flush(): Promise<void> {
   if (flushTimer) {
     clearTimeout(flushTimer);
@@ -94,7 +114,7 @@ async function flush(): Promise<void> {
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ events: batch }),
+      body: JSON.stringify({ events: withVia(batch, 'fetch') }),
       keepalive: true,
     });
   } catch (err) {
@@ -115,115 +135,154 @@ function enqueue(evt: EvoEventPayload): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Assignment — random on first render, sticky thereafter.
+// Pre-treatment context (attached to assignment events only).
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Global cache for MAB weights fetched from the server.
- * Stored on window to persist across component mounts but re-fetched per session.
- */
-let weightsCache: Record<string, Record<string, number>> | null = null;
-let weightsPromise: Promise<void> | null = null;
-
-/**
- * Non-blocking fetch of current traffic weights.
- * We don't block render for this - if it's not ready, we fall back to uniform distribution.
- */
-function fetchWeights(): void {
-  if (!browser || weightsPromise) return;
-  
-  weightsPromise = fetch(`${apiUrl()}/api/evo/weights`)
-    .then(r => r.json())
-    .then(data => {
-      weightsCache = {};
-      for (const [compKey, entry] of Object.entries(data as Record<string, { weights: Record<string, number> }>)) {
-        weightsCache[compKey] = entry.weights;
-      }
-    })
-    .catch(() => {
-      // Silent failure, weightsCache remains null, fall back to uniform
-    });
+function deviceClass(): 'mobile' | 'tablet' | 'desktop' | 'unknown' {
+  try {
+    const ua = navigator.userAgent || '';
+    if (/iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(ua)) return 'tablet';
+    if (/Mobi|iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)) return 'mobile';
+    return 'desktop';
+  } catch {
+    return 'unknown';
+  }
 }
 
-/** 
- * Selects a variant based on the provided weights map, falling back to 
- * uniform random distribution if weights are missing or invalid.
- */
-function assignWeightedVariant(weights: Record<string, number> | undefined, activeVariants: {key: string}[]): string {
-  if (!weights || Object.keys(weights).length === 0) {
-    // Fallback to uniform distribution
-    return activeVariants[Math.floor(Math.random() * activeVariants.length)].key;
+function isDevEnv(): boolean {
+  try {
+    if (import.meta.env.DEV) return true;
+    const h = window.location.hostname;
+    return h === 'localhost' || h === '127.0.0.1' || h.endsWith('.local');
+  } catch {
+    return false;
   }
+}
 
-  // Ensure weights match active variants and sum to ~1.0
-  let totalWeight = 0;
-  const validWeights: { key: string; weight: number }[] = [];
-  
-  for (const variant of activeVariants) {
-    const w = weights[variant.key];
-    if (w !== undefined && w >= 0) {
-      validWeights.push({ key: variant.key, weight: w });
-      totalWeight += w;
+/** Context known before the variant could have changed anything. */
+export function getEvoContext(): Record<string, unknown> {
+  const ctx: Record<string, unknown> = {
+    device: deviceClass(),
+    lang: '',
+    landingSource: '',
+    landingMedium: '',
+    landingCampaign: '',
+    referrerHost: '',
+    returning: false,
+    env: isDevEnv() ? 'dev' : 'prod',
+    ua: '',
+  };
+  try {
+    ctx.lang = (navigator.language || '').slice(0, 16);
+    ctx.ua = (navigator.userAgent || '').slice(0, 120);
+    ctx.returning = isReturningVisitor();
+    const first = getAttribution().firstTouch;
+    if (first) {
+      ctx.landingSource = first.source || '';
+      ctx.landingMedium = first.medium || '';
+      ctx.landingCampaign = first.campaign || '';
+      ctx.referrerHost = first.referrer || '';
     }
-  }
+  } catch {}
+  return ctx;
+}
 
-  if (totalWeight <= 0 || validWeights.length === 0) {
-    return activeVariants[Math.floor(Math.random() * activeVariants.length)].key;
+// ─────────────────────────────────────────────────────────────────────────────
+// Assignment — synchronous draw from the bundled fixed allocation, sticky
+// thereafter, logged once as an `assignment` event.
+// ─────────────────────────────────────────────────────────────────────────────
+function drawFromAllocation(alloc: Record<string, number>): { key: string; p: number } {
+  const keys = Object.keys(alloc);
+  let r = Math.random();
+  for (const k of keys) {
+    r -= alloc[k];
+    if (r <= 0) return { key: k, p: alloc[k] };
   }
+  const last = keys[keys.length - 1];
+  return { key: last, p: alloc[last] };
+}
 
-  // Weighted random selection
-  let r = Math.random() * totalWeight;
-  for (const { key, weight } of validWeights) {
-    r -= weight;
-    if (r <= 0) return key;
-  }
-  
-  return validWeights[validWeights.length - 1].key;
+function logAssignment(
+  componentKey: string,
+  versionKey: string,
+  source: EvoAssignmentSource,
+  p: number | null,
+  extra: Record<string, unknown> = {},
+): void {
+  if (!browser) return;
+  const evo: Record<string, unknown> = { source, p, ...extra };
+  if (source === 'forced') evo.forced = true;
+  enqueue(makeEvent('assignment', componentKey, versionKey, { evo, ctx: getEvoContext() }));
+  markAssignmentLogged(componentKey);
 }
 
 export function useVariant(componentKey: string): string {
   const cfg = EVO_COMPONENTS[componentKey];
   if (!cfg || !cfg.variants.length) return 'default';
-  
-  const activeVariantsList = cfg.variants.filter((v) => !v.retiredIn);
-  if (!activeVariantsList.length) return 'default';
+
+  const active = activeVariantsOf(cfg);
+  if (!active.length) return 'default';
 
   // SSR-stable: always return the first variant; the client will realign.
-  if (!browser) return activeVariantsList[0].key;
-
-  // Trigger fetch if we haven't yet (doesn't block)
-  fetchWeights();
+  if (!browser) return active[0].key;
 
   const existing = getAssignments()[componentKey];
-  if (existing && activeVariantsList.some(v => v.key === existing)) {
-    // Ensure store is populated for reactivity
+  if (existing && active.some((v) => v.key === existing)) {
+    // A sticky assignment with no assignment event predates Evo Lab (or was
+    // forced): log it once so the visitor is visible, but it never reaches
+    // verdicts (unknown propensity).
+    if (!isAssignmentLogged(componentKey)) {
+      logAssignment(componentKey, existing, isForced(componentKey) ? 'forced' : 'legacy_sticky', null);
+    }
     const curStore = get(activeVariants);
     if (curStore[componentKey] !== existing) {
-      activeVariants.update(s => ({ ...s, [componentKey]: existing }));
+      activeVariants.update((s) => ({ ...s, [componentKey]: existing }));
     }
     return existing;
   }
 
-  // New assignment: Use server MAB weights if available, else uniform fallback
-  const componentWeights = weightsCache?.[componentKey];
-  const pick = assignWeightedVariant(componentWeights, activeVariantsList);
-  
+  // New assignment (or the stored variant was retired → reassign; that is
+  // recorded as `reassignedFrom`, not as a crossover).
+  const { key: pick, p } = drawFromAllocation(allocationOf(cfg));
   setAssignment(componentKey, pick);
-  activeVariants.update(s => ({ ...s, [componentKey]: pick }));
+  logAssignment(componentKey, pick, 'fixed', p, existing ? { reassignedFrom: existing } : {});
+  activeVariants.update((s) => ({ ...s, [componentKey]: pick }));
   return pick;
 }
 
 /**
- * Manually force a variant assignment (used by Dev Switcher)
+ * Manually force a variant assignment (used by the dev-only switcher). The
+ * component is marked forced in this browser, so its events are excluded from
+ * analysis.
  */
 export function forceVariant(componentKey: string, variantKey: string): void {
   if (!browser) return;
+  markForced(componentKey);
   setAssignment(componentKey, variantKey);
-  activeVariants.update(s => ({ ...s, [componentKey]: variantKey }));
+  logAssignment(componentKey, variantKey, 'forced', null);
+  activeVariants.update((s) => ({ ...s, [componentKey]: variantKey }));
 }
 
 export function getVariants(componentKey: string): string[] {
-  return (EVO_COMPONENTS[componentKey]?.variants ?? []).map(v => v.key);
+  return (EVO_COMPONENTS[componentKey]?.variants ?? []).map((v) => v.key);
+}
+
+/**
+ * Adopt the person's existing arms (returned by /api/evo/identify) for
+ * components this browser has NOT assigned yet, so a returning person keeps
+ * their variant on a new device. Already-assigned components are never
+ * changed mid-visit.
+ */
+function adoptAssignments(assignments: Record<string, string> | undefined): void {
+  if (!browser || !assignments) return;
+  const current = getAssignments();
+  for (const [componentKey, variantKey] of Object.entries(assignments)) {
+    if (current[componentKey]) continue;
+    const cfg = EVO_COMPONENTS[componentKey];
+    if (!cfg || !activeVariantsOf(cfg).some((v) => v.key === variantKey)) continue;
+    setAssignment(componentKey, variantKey);
+    logAssignment(componentKey, variantKey, 'adopted', null);
+    activeVariants.update((s) => ({ ...s, [componentKey]: variantKey }));
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,6 +302,11 @@ function makeEvent(
   meta?: Record<string, unknown>,
   subtype: string | null = null,
 ): EvoEventPayload {
+  let m: Record<string, unknown> | null = meta ?? null;
+  // Every event from a force-assigned component carries the flag.
+  if (browser && type !== 'assignment' && isForced(componentKey)) {
+    m = { ...(m ?? {}), evo: { ...((m?.evo as Record<string, unknown>) ?? {}), forced: true } };
+  }
   return {
     type,
     componentKey,
@@ -254,7 +318,7 @@ function makeEvent(
     sessionId: sessionId(),
     pagePath: browser ? window.location.pathname : '',
     interactionSubtype: subtype,
-    meta: meta ?? null,
+    meta: m,
     timestamp: new Date().toISOString(),
   };
 }
@@ -262,12 +326,25 @@ function makeEvent(
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Exposures are de-duplicated to one per component × variant × page view. */
+const exposedThisView = new Set<string>();
+let exposurePath = '';
+
 export function trackExposure(
   componentKey: string,
   versionKey: string,
   meta?: Record<string, unknown>,
 ): void {
   if (!browser) return;
+  const path = window.location.pathname;
+  if (path !== exposurePath) {
+    exposurePath = path;
+    exposedThisView.clear();
+  }
+  const key = `${componentKey}|${versionKey}`;
+  if (exposedThisView.has(key)) return;
+  exposedThisView.add(key);
   enqueue(makeEvent('exposure', componentKey, versionKey, meta));
 }
 
@@ -284,7 +361,9 @@ export function trackInteraction(
 /**
  * Link the anonymous `visitorId` to an email address so that later
  * sales-attribution joins can credit prior anonymous exposures to the
- * identified (and potentially paying) user.
+ * identified (and potentially paying) user. The response carries the
+ * person's existing arms from other devices, adopted for unassigned
+ * components.
  *
  * Safe to call repeatedly — the server upserts by visitorId.
  */
@@ -294,12 +373,16 @@ export async function identify(email: string): Promise<void> {
   if (!clean) return;
   rememberEmail(clean);
   try {
-    await fetch(`${apiUrl()}/api/evo/identify`, {
+    const res = await fetch(`${apiUrl()}/api/evo/identify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ visitorId: getVisitorId(), email: clean }),
       keepalive: true,
     });
+    if (res.ok) {
+      const data = (await res.json().catch(() => null)) as { assignments?: Record<string, string> } | null;
+      adoptAssignments(data?.assignments);
+    }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn('[evo] identify failed', err);
@@ -307,22 +390,22 @@ export async function identify(email: string): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Page-hide flush — use sendBeacon so in-flight exposures aren't lost.
+// Page-hide flush — sendBeacon so in-flight events aren't lost. text/plain is
+// a CORS-safelisted type; the server parses it as JSON.
 // ─────────────────────────────────────────────────────────────────────────────
 if (browser) {
   const beaconFlush = (): void => {
     if (!buffer.length) return;
-    const payload = JSON.stringify({ events: buffer });
+    const payload = JSON.stringify({ events: withVia(buffer, 'beacon') });
     const url = `${apiUrl()}/api/evo/events/batch`;
     try {
       if (navigator.sendBeacon) {
-        const blob = new Blob([payload], { type: 'application/json' });
+        const blob = new Blob([payload], { type: 'text/plain;charset=UTF-8' });
         navigator.sendBeacon(url, blob);
       } else {
-        // Fallback to fetch with keepalive
         void fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
           body: payload,
           keepalive: true,
         });

@@ -19,7 +19,8 @@
    • Kanban board + columns         → styles/_kanban.scss
    • Kanban card component          → styles/_list-view.scss
    • Metrics / charts               → styles/_metrics.scss
-   • Evo A/B view                   → styles/_evo.scss
+   • Detail panel slide-over        → styles/_evo.scss (misnamed)
+   • Evo Lab                        → styles/_evo-lab.scss
    • Detail panel shell + tabs      → styles/_detail-panel-shell.scss
    • Detail — Overview fields       → styles/_detail-overview.scss
    • Detail — Notes tab             → styles/_detail-notes.scss
@@ -57,9 +58,13 @@
 // ── 6. Metrics + charts ──────────────────────────────────────────────────────
 @import './styles/metrics';
 @import './styles/metrics-hub';     // Metrics Hub sections (docs/designs/metrics-hub.md)
+@import './styles/sales-book';      // Sales Report tab (docs/designs/sales-book-v3.md)
 
-// ── 7. Evo A/B view ──────────────────────────────────────────────────────────
+// ── 7. Evo Lab ───────────────────────────────────────────────────────────────
+// NOTE: despite its name, _evo.scss holds the client DETAIL PANEL slide-over
+// styles (.detail-overlay / .detail-panel), not Evo. Keep it.
 @import './styles/evo';
+@import './styles/evo-lab';   // Evo tab (irp-funnel-server/docs/designs/evo-lab.md)
 
 // ── 8. Detail panel — shell, stage chip, tabs ────────────────────────────────
 @import './styles/detail-panel-shell';

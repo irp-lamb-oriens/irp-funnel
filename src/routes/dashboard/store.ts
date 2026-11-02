@@ -1561,15 +1561,15 @@ export async function initDashboardSocket() {
         }, 300);
       }
       else if (typeof collection === 'string' && collection.startsWith('evo_')) {
-        // 5. Live Evolutionary UI Update
-        if (fetchTimeouts['evo']) clearTimeout(fetchTimeouts['evo']);
-        fetchTimeouts['evo'] = setTimeout(async () => {
-          if (get(activeView) === 'evo') {
-            const evoStore = await import('./components/evo/evoStore.ts');
-            await Promise.all([evoStore.fetchTimeline(), evoStore.fetchLeaderboard()]);
-          }
-          delete fetchTimeouts['evo'];
-        }, 500);
+        // 5. Live Evo Lab update. Events arrive in bursts and the cube is
+        // cached 5 min on the server, so coalesce to one refresh per minute
+        // (Evo Lab spec §7.8). EvoView listens to `evoRefresh`.
+        if (!fetchTimeouts['evo']) {
+          fetchTimeouts['evo'] = setTimeout(() => {
+            if (get(activeView) === 'evo') evoRefresh.update((n) => n + 1);
+            delete fetchTimeouts['evo'];
+          }, 60_000);
+        }
       }
       else if (collection === 'overview_fields') {
         // 6. Live Overview field-registry update.
@@ -5009,7 +5009,18 @@ export interface SalesV2Deal {
   booked: number; invoiced: number; cash: number; outstanding: number; backlog: number; credit: number; margin: number;
   daysToClose: number | null; dropKind: 'noShow' | 'nonQualified' | 'saleDropped' | null;
   lastActivityAt: string | null; invoiceIds: string[]; quoteIds: string[];
+  // sales-book-v3 §4.2 — optional so an older server still renders.
+  clientKey?: string | null; invoicedAt?: string | null; isTest?: boolean; quotes?: number;
+  firstQuoteTotal?: number | null; firstQuoteCurrency?: string | null; acceptedQuoteSameAsFirst?: boolean | null;
+  acceptedQuoteTotal?: number | null; refunds?: number; cancelledAfterAcceptance?: boolean;
 }
+/** One sent invoice with a balance ≠ 0, every currency (sales-book-v3 §4.2). */
+export interface SalesV2Receivable {
+  invoiceId: string; number: string | null; dealKey: string; name: string; currency: string;
+  sentAt: string | null; total: number; received: number; due: number; ageDays: number | null;
+  bucket: '0-30' | '31-60' | '61-90' | '90+' | 'credit'; dealStatus: SalesDealStatus;
+}
+export interface SalesV2TestRecord { key: string; name: string; rule: 'override' | 'email' | 'name' | 'transcript'; currency: string | null; booked: number; cash: number }
 export interface SalesV2Health {
   paidByPayments: number; paidByConfirmedFlag: number; paidByCounters: number | null;
   confirmedWithoutPayment: string[]; paidWithoutConfirmedFlag: number; duplicateSettlementPayments: number;
@@ -5027,6 +5038,9 @@ export interface SalesReportV2 {
   deals: SalesV2Deal[];
   health: SalesV2Health;
   warnings: string[];
+  receivables?: SalesV2Receivable[];
+  testRecords?: SalesV2TestRecord[];
+  excludeTest?: boolean;
 }
 
 /** The v1 fields are kept on the payload for one release; the tab renders `v2`. */
@@ -5041,25 +5055,35 @@ export const salesReport = writable<SalesReportResponse | null>(null);
 /** Set by other tabs (Metrics deep links) before switching to the Sales Report. */
 export const salesReportPrefill = writable<{ from: string; to: string } | null>(null);
 
-export interface SalesReportQuery { from?: string | null; to?: string | null; currency?: string | null; fresh?: boolean }
+export interface SalesReportQuery {
+  from?: string | null; to?: string | null; currency?: string | null; fresh?: boolean;
+  /** Every deal in `deals[]`, whatever the range (sales-book-v3). */
+  allDeals?: boolean;
+  /** Drop test / internal records server-side (sales-book-v3 §4.4). */
+  excludeTest?: boolean;
+  /** Return the payload without writing the shared `salesReport` store. */
+  silent?: boolean;
+}
 
 let salesReportSeq = 0;
 
 export class SalesReportSchemaError extends Error {}
 
 export async function fetchSalesReport(q: SalesReportQuery = {}): Promise<SalesReportResponse> {
-  const ticket = ++salesReportSeq;
+  const ticket = q.silent ? -1 : ++salesReportSeq;
   const params = new URLSearchParams();
   if (q.from) params.set('from', q.from);
   if (q.to) params.set('to', q.to);
   if (q.currency) params.set('currency', q.currency);
   if (q.fresh) params.set('fresh', '1');
+  if (q.allDeals) params.set('allDeals', '1');
+  if (q.excludeTest) params.set('excludeTest', '1');
   const qs = params.toString();
   const data = (await apiFetch(`/api/dashboard/sales-report${qs ? `?${qs}` : ''}`)) as SalesReportResponse;
   if (!data?.v2 || (data.schemaVersion ?? 1) < SALES_REPORT_SCHEMA_VERSION) {
     throw new SalesReportSchemaError('The server is running an older sales report. Reload the dashboard after the server update.');
   }
-  if (ticket === salesReportSeq) salesReport.set(data);
+  if (!q.silent && ticket === salesReportSeq) salesReport.set(data);
   return data;
 }
 
@@ -5565,4 +5589,31 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
 // in the browser. `fresh` bypasses the server's 30 s sales-sources cache.
 export async function fetchMetricsCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
   return apiFetch(`/api/dashboard/metrics/cube${opts.fresh ? '?fresh=1' : ''}`);
+}
+
+// ─── Evo Lab (spec: irp-funnel-server/docs/designs/evo-lab.md) ──────────────
+/** Bumped by the socket handler when evo_* collections change. */
+export const evoRefresh = writable(0);
+
+export async function fetchEvoCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
+  return apiFetch(`/api/evo/cube${opts.fresh ? '?fresh=1' : ''}`);
+}
+
+/** Ask Evo: the server turns a question into a validated query spec. */
+export async function askEvo(question: string): Promise<unknown> {
+  return apiFetch('/api/evo/ask', { method: 'POST', body: JSON.stringify({ question }) });
+}
+
+export async function fetchEvoDecisions(): Promise<unknown> {
+  return apiFetch('/api/evo/decisions');
+}
+
+export async function recordEvoDecision(body: {
+  componentKey: string;
+  decision: 'ship' | 'keep_control' | 'stop' | 'extend' | 'investigate' | 'revert';
+  variant?: string;
+  note: string;
+  snapshot: Record<string, unknown>;
+}): Promise<unknown> {
+  return apiFetch('/api/evo/decisions', { method: 'POST', body: JSON.stringify(body) });
 }

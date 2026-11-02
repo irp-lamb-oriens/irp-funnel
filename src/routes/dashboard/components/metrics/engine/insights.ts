@@ -24,6 +24,13 @@ export interface Insight {
 }
 
 export type Money = (n: number) => string;
+
+/** Shared thresholds — the Sales Book imports these instead of restating them. */
+export const STALLED_QUIET_DAYS = 14;
+export const STALLED_MAX_QUOTE_AGE = 90;
+export const CONCENTRATION_MIN_DEALS = 10;
+export const MTD_MIN_DAY = 7;
+export const MTD_MIN_EVENTS = 5;
 const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
 
 // ── Working / not working (from the finder) ──────────────────────────────────
@@ -130,7 +137,7 @@ export function momentumInsights(rows: LeadFact[], nowMonth: string, currency: s
 
 export function mtdInsight(rows: LeadFact[], nowMonth: string, now = new Date()): Insight | null {
   const { day, days } = crDayOfMonth(now);
-  if (day < 7) return null;
+  if (day < MTD_MIN_DAY) return null;
   const last = shiftMonth(nowMonth, -1);
   const dayOf = (iso: string) => Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Costa_Rica', day: '2-digit' }).format(new Date(iso)));
   let cur = 0, prev = 0;
@@ -139,7 +146,7 @@ export function mtdInsight(rows: LeadFact[], nowMonth: string, now = new Date())
     if (r.leadMonth === nowMonth) cur++;
     else if (r.leadMonth === last && dayOf(r.leadAt) <= day) prev++;
   }
-  if (cur + prev < 5) return null;
+  if (cur + prev < MTD_MIN_EVENTS) return null;
   const diff = prev ? (cur - prev) / prev : null;
   const tone: Tone = diff === null ? 'info' : diff >= 0.15 ? 'good' : diff <= -0.15 ? 'bad' : 'info';
   return {
@@ -158,7 +165,7 @@ export function concentrationInsight(rows: LeadFact[], ctx: Ctx, money: Money): 
     .map((r) => ({ r, b: r.money[ctx.currency]?.booked ?? 0 }))
     .filter((d) => d.b > 0)
     .sort((a, b) => b.b - a.b);
-  if (deals.length < 10) return null;
+  if (deals.length < CONCENTRATION_MIN_DEALS) return null;
   const total = deals.reduce((s, d) => s + d.b, 0);
   const top = deals.slice(0, 3).reduce((s, d) => s + d.b, 0);
   const share = top / total;
@@ -173,7 +180,7 @@ export function concentrationInsight(rows: LeadFact[], ctx: Ctx, money: Money): 
 
 export function stalledInsight(rows: LeadFact[], currency: string, money: Money): Insight | null {
   const stalled = rows
-    .filter((r) => r.isLead && r.status === 'quoted' && r.openQuote && (r.openQuote.ageDays ?? 0) <= 90 && (r.daysSinceActivity ?? 0) > 14)
+    .filter((r) => r.isLead && r.status === 'quoted' && r.openQuote && (r.openQuote.ageDays ?? 0) <= STALLED_MAX_QUOTE_AGE && (r.daysSinceActivity ?? 0) > STALLED_QUIET_DAYS)
     .sort((a, b) => (b.openQuote?.total ?? 0) - (a.openQuote?.total ?? 0));
   if (!stalled.length) return null;
   const inCur = stalled.filter((r) => r.openQuote!.cur === currency);
