@@ -261,6 +261,10 @@ export interface Metrics {
   monthlyApprovals: Record<string, number>;
   /** Quotes that reached an "approved" decision per month (YYYY-MM). */
   monthlyApprovedQuotes: Record<string, number>;
+  /** Consultations whose FIRST client acceptance landed that month (shared sales definitions). */
+  monthlyClientAcceptances?: Record<string, number>;
+  /** 2 = monthly Leads / Paid users come from the shared sales definitions. */
+  salesDefinitionsVersion?: number;
   sourceBreakdown: Record<string, number>;
   countryBreakdown: Record<string, number>;
   channelBreakdown: Record<string, number>;
@@ -4975,15 +4979,88 @@ export interface SalesReport {
   projects: ProjectCompletion[];
 }
 
-export const salesReport = writable<SalesReport | null>(null);
+// ─── Sales report v2 (docs/designs/sales-report-v2.md) ─────────────────────
+// Mirrors irp-funnel-server/API/finance/salesReportV2.ts.
+
+export const SALES_REPORT_SCHEMA_VERSION = 2;
+
+export interface SalesV2Kpis {
+  leads: number; quotesSent: number; quotesAccepted: number; wonDeals: number; paidClients: number;
+  booked: number; invoiced: number; cash: number; refunds: number; margin: number;
+  marginPct: number | null; avgDealSize: number | null;
+  cohortLeads: number; cohortQuoted: number; cohortWon: number;
+  winRate: number | null; acceptanceRate: number | null; medianDaysToClose: number | null;
+}
+export interface SalesV2AsOf { outstanding: number; backlog: number; credit: number; openDeals: number }
+export interface SalesV2FunnelStep {
+  stage: string; label: string; reached: number; undated: number;
+  pctOfCohort: number | null; conversionFromPrev: number | null; medianDaysFromPrev: number | null;
+}
+export interface SalesV2Month {
+  month: string; leads: number; quotesSent: number; quotesAccepted: number; wonDeals: number; paidClients: number;
+  booked: number; invoiced: number; cash: number; margin: number;
+}
+export interface SalesV2Segment { key: string; label: string; deals: number; booked: number; cash: number; margin: number; marginPct: number | null }
+export type SalesDealStatus = 'open' | 'quoted' | 'accepted' | 'invoiced' | 'partially_paid' | 'paid' | 'dropped';
+export interface SalesV2Deal {
+  key: string; consultationId: string | null; name: string; route: string | null; service: string | null;
+  providers: string[]; stage: string | null; stageLabel: string | null; status: SalesDealStatus; currency: string;
+  leadAt: string | null; quoteSentAt: string | null; acceptedAt: string | null; paidAt: string | null;
+  booked: number; invoiced: number; cash: number; outstanding: number; backlog: number; credit: number; margin: number;
+  daysToClose: number | null; dropKind: 'noShow' | 'nonQualified' | 'saleDropped' | null;
+  lastActivityAt: string | null; invoiceIds: string[]; quoteIds: string[];
+}
+export interface SalesV2Health {
+  paidByPayments: number; paidByConfirmedFlag: number; paidByCounters: number | null;
+  confirmedWithoutPayment: string[]; paidWithoutConfirmedFlag: number; duplicateSettlementPayments: number;
+  undatedPayments: number; undatedLeads: number; currencyMismatchDeals: string[]; creditInvoices: string[];
+  orphanInvoices: number; otherCurrencyMoney: Record<string, number>;
+}
+export interface SalesReportV2 {
+  generatedAt: string; tz: string; currency: string; currencies: string[];
+  range: { from: string; to: string; months: string[]; isAllTime: boolean; prevFrom: string | null; prevTo: string | null };
+  kpis: { current: SalesV2Kpis; previous: SalesV2Kpis | null; asOf: SalesV2AsOf };
+  funnel: { cohortSize: number; steps: SalesV2FunnelStep[]; drops: { noShow: number; nonQualified: number; saleDropped: number; total: number } };
+  monthly: SalesV2Month[];
+  segments: { route: SalesV2Segment[]; service: SalesV2Segment[]; provider: SalesV2Segment[]; method: SalesV2Segment[] };
+  aging: { buckets: Array<{ key: string; label: string; invoices: number; amount: number }>; total: number; invoices: number };
+  deals: SalesV2Deal[];
+  health: SalesV2Health;
+  warnings: string[];
+}
+
+/** The v1 fields are kept on the payload for one release; the tab renders `v2`. */
+export interface SalesReportResponse extends SalesReport {
+  schemaVersion?: number;
+  sourcesLoadedAt?: string;
+  v2?: SalesReportV2;
+}
+
+export const salesReport = writable<SalesReportResponse | null>(null);
+
+/** Set by other tabs (Metrics deep links) before switching to the Sales Report. */
+export const salesReportPrefill = writable<{ from: string; to: string } | null>(null);
+
+export interface SalesReportQuery { from?: string | null; to?: string | null; currency?: string | null; fresh?: boolean }
 
 let salesReportSeq = 0;
 
-export async function fetchSalesReport(): Promise<SalesReport> {
+export class SalesReportSchemaError extends Error {}
+
+export async function fetchSalesReport(q: SalesReportQuery = {}): Promise<SalesReportResponse> {
   const ticket = ++salesReportSeq;
-  const data = await apiFetch('/api/dashboard/sales-report');
-  if (ticket === salesReportSeq) salesReport.set(data as SalesReport);
-  return data as SalesReport;
+  const params = new URLSearchParams();
+  if (q.from) params.set('from', q.from);
+  if (q.to) params.set('to', q.to);
+  if (q.currency) params.set('currency', q.currency);
+  if (q.fresh) params.set('fresh', '1');
+  const qs = params.toString();
+  const data = (await apiFetch(`/api/dashboard/sales-report${qs ? `?${qs}` : ''}`)) as SalesReportResponse;
+  if (!data?.v2 || (data.schemaVersion ?? 1) < SALES_REPORT_SCHEMA_VERSION) {
+    throw new SalesReportSchemaError('The server is running an older sales report. Reload the dashboard after the server update.');
+  }
+  if (ticket === salesReportSeq) salesReport.set(data);
+  return data;
 }
 
 /**

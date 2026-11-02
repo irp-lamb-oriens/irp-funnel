@@ -48,7 +48,13 @@
   let payingId = '';
   let payAmount = '';
   let payMethod = '';
-  let payDate = new Date().toISOString().slice(0, 10);
+  // Today as a LOCAL calendar date. `toISOString()` is UTC, so after 18:00 in
+  // Costa Rica it would pre-fill tomorrow.
+  function localToday(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  let payDate = localToday();
   let payOpenId = '';
 
   // Invoice whose received payments are expanded into a per-payment list.
@@ -147,7 +153,9 @@
     try {
       const payment: InvoicePayment = {
         id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        date: payDate ? new Date(payDate).toISOString() : null,
+        // Noon UTC keeps the picked calendar day in every timezone from UTC-11
+        // to UTC+11 (midnight UTC is the previous evening in Costa Rica).
+        date: payDate ? `${payDate}T12:00:00.000Z` : null,
         amount: Number(payAmount) || 0,
         method: payMethod.trim() || null,
         note: null,
@@ -157,7 +165,7 @@
       payOpenId = '';
       payAmount = '';
       payMethod = '';
-      payDate = new Date().toISOString().slice(0, 10);
+      payDate = localToday();
       await load();
     } catch (err: any) {
       errorMsg = err?.message ?? 'Could not record the payment.';

@@ -1,9 +1,23 @@
 <script lang="ts">
-  import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData } from '../store.ts';
+  import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData, activeView, salesReportPrefill } from '../store.ts';
   import { onMount } from 'svelte';
   import CallsMetricsModule from './metrics/CallsMetricsModule.svelte';
   import QuotesMetricsModule from './metrics/QuotesMetricsModule.svelte';
   import AttributionMetricsModule from './metrics/AttributionMetricsModule.svelte';
+
+  // ── Sales Report deep links ────────────────────────────────────────────
+  // Monthly Leads / Paid clients / Client acceptances share their definitions
+  // with the Sales Report (server: API/finance/salesDefinitions.ts), so a
+  // month clicked here opens the same month there with matching numbers.
+  function openSalesReport(month?: string) {
+    if (month) salesReportPrefill.set({ from: month, to: month });
+    activeView.set('salesReport');
+  }
+  function monthLabel(key: string): string {
+    const [y, m] = key.split('-').map(Number);
+    if (!y || !m) return key;
+    return new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
 
   // --- Dynamic Business Intelligence Engine ---
   // Now supports ANY collection, not just clients
@@ -435,6 +449,37 @@
   }
   .stage-rating-count { color: #94a3b8; font-size: 12px; margin-left: 2px; }
   .stage-rating-empty { color: #cbd5e1; font-style: italic; font-size: 12px; }
+  .metrics-section__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sales-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #02868a;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .sales-link:hover { color: #02b5bb; }
+  .monthly-bar--link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .monthly-bar--link:hover { background: rgba(2, 181, 187, 0.06); }
+  .monthly-bar--link:focus-visible, .sales-link:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; }
 </style>
 
 
@@ -543,7 +588,10 @@
           </div>
         {/each}
       </div>
-      <div class="metric-total">Total Clients: <strong>{$metrics.pipeline.total}</strong></div>
+      <div class="metric-total">
+        Total Clients: <strong>{$metrics.pipeline.total}</strong>
+        <button class="sales-link" on:click={() => openSalesReport()}>See how leads flow through the funnel in the Sales Report →</button>
+      </div>
     </div>
 
     <!-- Attribution: tagged link (UTM / refer) → lead → call → paid → revenue -->
@@ -828,14 +876,18 @@
     <!-- Monthly Leads -->
     {#if Object.keys($metrics.monthlyLeads).length > 0}
       <div class="metrics-section">
-        <h2>Monthly Leads</h2>
+        <div class="metrics-section__head">
+          <h2>Monthly Leads</h2>
+          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
+        </div>
+        {#if $metrics.salesDefinitionsVersion === 2}<p class="metrics-subtle">Same definition as the Sales Report · months in Costa Rica time · click a month to open it there.</p>{/if}
         <div class="monthly-chart">
           {#each Object.entries($metrics.monthlyLeads).sort() as [month, count]}
-            <div class="monthly-bar">
-              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyLeads))) * 100)}%"></div>
+            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
+              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyLeads))) * 100)}%;"></div>
               <span class="monthly-bar__count">{count}</span>
               <span class="monthly-bar__label">{month}</span>
-            </div>
+            </button>
           {/each}
         </div>
       </div>
@@ -844,17 +896,41 @@
     <!-- Monthly Paid Users -->
     {#if $metrics.monthlyPaidUsers && Object.keys($metrics.monthlyPaidUsers).length > 0}
       <div class="metrics-section">
-        <h2>💳 Monthly Paid Users</h2>
+        <div class="metrics-section__head">
+          <h2>💳 Monthly Paid Users</h2>
+          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
+        </div>
         <div class="metric-total" style="margin-bottom: 12px;">
           Total paid clients: <strong>{Object.values($metrics.monthlyPaidUsers).reduce((a, b) => a + b, 0)}</strong>
         </div>
+        {#if $metrics.salesDefinitionsVersion === 2}<p class="metrics-subtle">A client counts in the month of their first recorded payment (invoice or Finance). Dropped deals are not counted as paid.</p>{/if}
         <div class="monthly-chart">
           {#each Object.entries($metrics.monthlyPaidUsers).sort() as [month, count]}
-            <div class="monthly-bar">
+            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
               <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyPaidUsers))) * 100)}%; background: linear-gradient(180deg, #10b981, #059669);"></div>
               <span class="monthly-bar__count">{count}</span>
               <span class="monthly-bar__label">{month}</span>
-            </div>
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
+    <!-- Monthly Client Acceptances (shared sales definitions) -->
+    {#if $metrics.monthlyClientAcceptances && Object.keys($metrics.monthlyClientAcceptances).length > 0}
+      <div class="metrics-section">
+        <div class="metrics-section__head">
+          <h2>🤝 Monthly Client Acceptances</h2>
+          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
+        </div>
+        <p class="metrics-subtle">Clients whose first quote acceptance happened that month — the "Won deals" figure in the Sales Report.</p>
+        <div class="monthly-chart">
+          {#each Object.entries($metrics.monthlyClientAcceptances).sort() as [month, count]}
+            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
+              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyClientAcceptances))) * 100)}%; background: linear-gradient(180deg, #8b5cf6, #6d28d9);"></div>
+              <span class="monthly-bar__count">{count}</span>
+              <span class="monthly-bar__label">{month}</span>
+            </button>
           {/each}
         </div>
       </div>
@@ -863,9 +939,10 @@
     <!-- Monthly Quote Approvals -->
     {#if $metrics.monthlyApprovals && Object.keys($metrics.monthlyApprovals).length > 0}
       <div class="metrics-section">
-        <h2>✅ Monthly Quote Approvals</h2>
+        <h2>✅ Internal Quote Approval Decisions</h2>
         <p class="metrics-subtle">
-          Approval decisions per month, keyed by the date each approver decided.
+          Team sign-offs on quotes before they go to the client, per month, keyed by the date each approver decided.
+          This is not client acceptance — see Monthly Client Acceptances above.
         </p>
         <div class="metrics-grid metrics-grid--small">
           <div class="metric-card" style="border-left: 4px solid #f59e0b">
