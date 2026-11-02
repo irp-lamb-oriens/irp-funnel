@@ -5559,10 +5559,10 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-
-
-
-
-
-
-
+// ─── Metrics Hub: lead fact cube ────────────────────────────────────────────
+// One row per lead with every dimension plus the Sales Report v2 ledger
+// (server: API/metrics/metricsCube.ts). The Hub filters, groups and scans it
+// in the browser. `fresh` bypasses the server's 30 s sales-sources cache.
+export async function fetchMetricsCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
+  return apiFetch(`/api/dashboard/metrics/cube${opts.fresh ? '?fresh=1' : ''}`);
+}

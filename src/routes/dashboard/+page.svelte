@@ -383,6 +383,17 @@
     activeView.set(allowedViews[0]);
   }
 
+  // Deep links: `?view=metrics` (written by the Metrics Hub's "Copy link")
+  // opens that tab once, if this user may see it.
+  let urlViewApplied = false;
+  $: if (!urlViewApplied && $isAuthenticated && allowedViews.length && typeof window !== 'undefined') {
+    urlViewApplied = true;
+    try {
+      const v = new URLSearchParams(window.location.search).get('view') as DashView | null;
+      if (v && allowedViews.includes(v) && v !== $activeView) switchView(v);
+    } catch { /* no URL access */ }
+  }
+
   async function switchView(view: DashView) {
     if (!allowedViews.includes(view)) return; // guard
     activeView.set(view as any);

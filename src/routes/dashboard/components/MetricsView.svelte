@@ -1,9 +1,16 @@
 <script lang="ts">
+  /**
+   * MetricsView — the Metrics tab. The analysis lives in MetricsHub (lead
+   * fact cube, insights, segments, explorer). The operational modules below
+   * (pipeline snapshot, calls, quotes, ratings, email queue, AI spend, raw
+   * collection explorer) still read /api/dashboard/metrics and render in the
+   * collapsed Operations panel. Spec: irp-funnel-server/docs/designs/metrics-hub.md
+   */
   import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData, activeView, salesReportPrefill } from '../store.ts';
   import { onMount } from 'svelte';
   import CallsMetricsModule from './metrics/CallsMetricsModule.svelte';
   import QuotesMetricsModule from './metrics/QuotesMetricsModule.svelte';
-  import AttributionMetricsModule from './metrics/AttributionMetricsModule.svelte';
+  import MetricsHub from './metrics/hub/MetricsHub.svelte';
 
   // ── Sales Report deep links ────────────────────────────────────────────
   // Monthly Leads / Paid clients / Client acceptances share their definitions
@@ -306,60 +313,6 @@
 </script>
 
 <style>
-  .evo-highlight-banner {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-  }
-
-  .evo-highlight-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .evo-icon {
-    font-size: 28px;
-  }
-
-  .evo-highlight-left h3 {
-    margin: 0;
-    color: #e2e8f0;
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  .evo-highlight-left p {
-    margin: 4px 0 0;
-    color: #94a3b8;
-    font-size: 13px;
-  }
-
-  .evo-highlight-right {
-    text-align: right;
-  }
-
-  .evo-highlight-right h2 {
-    margin: 0;
-    font-size: 32px;
-    font-weight: 800;
-    color: #34d399;
-    letter-spacing: -0.02em;
-  }
-
-  .evo-subtitle {
-    display: block;
-    color: #94a3b8;
-    font-size: 13px;
-    font-weight: 500;
-    margin-top: 4px;
-  }
-
   /* ── AI Cost Summary Pill ─────────────────────────────────────────────
      Moved from the dashboard topbar into the Metrics page.
      Floats at the top of the LLM section as a quick-glance banner.      */
@@ -449,13 +402,6 @@
   }
   .stage-rating-count { color: #94a3b8; font-size: 12px; margin-left: 2px; }
   .stage-rating-empty { color: #cbd5e1; font-style: italic; font-size: 12px; }
-  .metrics-section__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
   .sales-link {
     background: none;
     border: none;
@@ -470,112 +416,17 @@
     text-underline-offset: 3px;
   }
   .sales-link:hover { color: #02b5bb; }
-  .monthly-bar--link {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    cursor: pointer;
-    border-radius: 6px;
-  }
-  .monthly-bar--link:hover { background: rgba(2, 181, 187, 0.06); }
-  .monthly-bar--link:focus-visible, .sales-link:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; }
+  .sales-link:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; }
 </style>
 
 
+<MetricsHub>
+<details class="mh-ops">
+  <summary>Operations, AI cost &amp; raw data <span>pipeline snapshot · calls · quotes · stage satisfaction · email queue · AI spend · raw collections</span></summary>
+  <div class="mh-ops__body">
 <div class="metrics-view">
   {#if $metrics}
     
-    <!-- Dynamic Business Intelligence Section -->
-    <div class="metrics-section dynamic-bi-section" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
-      <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 16px;">🔍 Dynamic Business Intelligence</h2>
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
-        Query any collection, filter by any field recursively (maps, arrays, subcollections), and group by any dimension.
-      </p>
-
-      <div class="bi-controls" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
-        <div class="bi-group">
-          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Collection</label>
-          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #02b5bb; font-size: 13px; min-width: 200px; font-weight: 600; color: #0b3b3d; background: rgba(2,181,187,0.08);">
-            {#each AVAILABLE_COLLECTIONS as col}
-              <option value={col.value}>{col.label}</option>
-            {/each}
-          </select>
-        </div>
-
-        <div class="bi-group">
-          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Group By</label>
-          <select bind:value={selectedGroupBy} style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; min-width: 180px;">
-            {#each allKeys as key}
-              <option value={key}>{key}</option>
-            {/each}
-          </select>
-        </div>
-
-        <!-- Generative Filters UI -->
-        <div class="bi-filters" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; width: 100%;">
-          {#if Object.keys(activeFilters).length > 0}
-            <div style="width: 100%; font-size: 13px; color: #334155; font-weight: 600;">Active Filters (Stacked):</div>
-          {/if}
-
-          {#each Object.keys(activeFilters) as filterKey}
-            <div class="bi-group" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.02); position: relative;">
-              <button on:click={() => removeFilter(filterKey)} style="position: absolute; top: 4px; right: 4px; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 4px;" title="Remove this filter">✕</button>
-              <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px; padding-right: 16px;">{filterKey}</label>
-              <select on:change={(e) => handleFilterChange(filterKey, e)} style="padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; font-size: 13px; color: #1d4ed8; font-weight: 500; min-width: 160px; outline: none; background-color: #eff6ff;">
-                <option value="">-- Choose Value --</option>
-                {#each (keyValuesMap[filterKey] || []) as val}
-                  <option value={String(val)} selected={activeFilters[filterKey] === String(val)}>{val}</option>
-                {/each}
-              </select>
-            </div>
-          {/each}
-
-          <div class="bi-group" style="margin-top: 10px;">
-            <select on:change={(e) => { const k = (e.target as HTMLSelectElement).value; if(k) activeFilters = {...activeFilters, [k]: ''}; (e.target as HTMLSelectElement).value = ''; }} style="padding: 10px; border-radius: 6px; border: 1px dashed #94a3b8; font-size: 13px; background: white; cursor: pointer;">
-              <option value="">+ Add another filter</option>
-              {#each allKeys.filter(k => !(k in activeFilters)) as key}
-                <option value={key}>{key}</option>
-              {/each}
-            </select>
-          </div>
-
-          {#if Object.keys(activeFilters).length > 0}
-            <button on:click={clearFilters} style="padding: 10px 16px; margin-top: 10px; background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 6px; font-size: 13px; cursor: pointer;">Clear All</button>
-          {/if}
-        </div>
-      </div>
-
-      <div class="bi-results" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-        <h3 style="margin-top: 0; font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <span>Results: {filteredData.length} of {biDataset.length} documents · {allKeys.length} fields detected</span>
-          {#if isComputing || isFiltering || biLoading}
-             <span style="font-size: 12px; color: #3b82f6; font-weight: 500;">{biLoading ? 'Loading collection...' : 'Calculating...'} ⏳</span>
-          {/if}
-        </h3>
-        {#if biError}
-          <p style="font-size: 13px; color: #ef4444;">{biError}</p>
-        {/if}
-        
-        {#if sortedGroups.length === 0 && !isFiltering}
-          <p style="font-size: 13px; color: #94a3b8;">No data matches the current filters.</p>
-        {:else if !isFiltering}
-          <div class="bi-table" style="display: grid; gap: 8px;">
-            {#each sortedGroups as [groupVal, count]}
-              <div class="bi-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
-                <span class="bi-row-label" style="font-weight: 500; color: #334155; width: 30%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={groupVal}>{groupVal}</span>
-                <div class="bi-row-bar" style="flex-grow: 1; margin: 0 16px; background: #f1f5f9; height: 10px; border-radius: 5px; overflow: hidden;">
-                  <div style="width: {Math.min(100, (count / filteredData.length) * 100)}%; height: 100%; background: #3b82f6; border-radius: 5px;"></div>
-                </div>
-                <span class="bi-row-count" style="font-weight: 600; color: #1e293b; width: 40px; text-align: right;">{count}</span>
-                <span class="bi-row-percent" style="color: #64748b; width: 50px; text-align: right; font-size: 12px;">{((count / filteredData.length) * 100).toFixed(1)}%</span>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </div>
-
     <!-- Pipeline Overview -->
     <div class="metrics-section">
       <h2>Pipeline Overview</h2>
@@ -593,9 +444,6 @@
         <button class="sales-link" on:click={() => openSalesReport()}>See how leads flow through the funnel in the Sales Report →</button>
       </div>
     </div>
-
-    <!-- Attribution: tagged link (UTM / refer) → lead → call → paid → revenue -->
-    <AttributionMetricsModule attribution={$metrics.attribution} />
 
     <!-- Call + Quote activity (segmented per-client modules) -->
     {#if $metrics.activity}
@@ -826,116 +674,6 @@
       </div>
     {/if}
 
-    <!-- Channel Breakdown -->
-    {#if $metrics.channelBreakdown}
-      <div class="metrics-section">
-        <h2>📊 Lead Channels</h2>
-        <div class="metrics-grid metrics-grid--small">
-          <div class="metric-card" style="border-left: 4px solid #02b5bb">
-            <div class="metric-card__icon">💬</div>
-            <div class="metric-card__value">{$metrics.channelBreakdown.chatbot || 0}</div>
-            <div class="metric-card__label">AI Chatbot</div>
-          </div>
-          <div class="metric-card" style="border-left: 4px solid #fbbf24">
-            <div class="metric-card__icon">📋</div>
-            <div class="metric-card__value">{$metrics.channelBreakdown.form || 0}</div>
-            <div class="metric-card__label">Form</div>
-          </div>
-          <div class="metric-card" style="border-left: 4px solid #25d366">
-            <div class="metric-card__icon">📱</div>
-            <div class="metric-card__value">{$metrics.channelBreakdown.whatsapp || 0}</div>
-            <div class="metric-card__label">WhatsApp</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-card__value">{$metrics.channelBreakdown.unknown || 0}</div>
-            <div class="metric-card__label">Other</div>
-          </div>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Country Breakdown -->
-    {#if $metrics.countryBreakdown && Object.keys($metrics.countryBreakdown).length > 0}
-      <div class="metrics-section">
-        <h2>🌍 Top Destination Countries</h2>
-        <div class="breakdown-table">
-          <div class="breakdown-header">
-            <span>Country</span><span>Leads</span><span>Share</span>
-          </div>
-          {#each Object.entries($metrics.countryBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 15) as [country, count]}
-            <div class="breakdown-row">
-              <span class="breakdown-row__model">{country}</span>
-              <span>{count}</span>
-              <span class="breakdown-row__cost">{(count / $metrics.pipeline.total * 100).toFixed(1)}%</span>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Monthly Leads -->
-    {#if Object.keys($metrics.monthlyLeads).length > 0}
-      <div class="metrics-section">
-        <div class="metrics-section__head">
-          <h2>Monthly Leads</h2>
-          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
-        </div>
-        {#if $metrics.salesDefinitionsVersion === 2}<p class="metrics-subtle">Same definition as the Sales Report · months in Costa Rica time · click a month to open it there.</p>{/if}
-        <div class="monthly-chart">
-          {#each Object.entries($metrics.monthlyLeads).sort() as [month, count]}
-            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
-              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyLeads))) * 100)}%;"></div>
-              <span class="monthly-bar__count">{count}</span>
-              <span class="monthly-bar__label">{month}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Monthly Paid Users -->
-    {#if $metrics.monthlyPaidUsers && Object.keys($metrics.monthlyPaidUsers).length > 0}
-      <div class="metrics-section">
-        <div class="metrics-section__head">
-          <h2>💳 Monthly Paid Users</h2>
-          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
-        </div>
-        <div class="metric-total" style="margin-bottom: 12px;">
-          Total paid clients: <strong>{Object.values($metrics.monthlyPaidUsers).reduce((a, b) => a + b, 0)}</strong>
-        </div>
-        {#if $metrics.salesDefinitionsVersion === 2}<p class="metrics-subtle">A client counts in the month of their first recorded payment (invoice or Finance). Dropped deals are not counted as paid.</p>{/if}
-        <div class="monthly-chart">
-          {#each Object.entries($metrics.monthlyPaidUsers).sort() as [month, count]}
-            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
-              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyPaidUsers))) * 100)}%; background: linear-gradient(180deg, #10b981, #059669);"></div>
-              <span class="monthly-bar__count">{count}</span>
-              <span class="monthly-bar__label">{month}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- Monthly Client Acceptances (shared sales definitions) -->
-    {#if $metrics.monthlyClientAcceptances && Object.keys($metrics.monthlyClientAcceptances).length > 0}
-      <div class="metrics-section">
-        <div class="metrics-section__head">
-          <h2>🤝 Monthly Client Acceptances</h2>
-          <button class="sales-link" on:click={() => openSalesReport()}>Open Sales Report →</button>
-        </div>
-        <p class="metrics-subtle">Clients whose first quote acceptance happened that month — the "Won deals" figure in the Sales Report.</p>
-        <div class="monthly-chart">
-          {#each Object.entries($metrics.monthlyClientAcceptances).sort() as [month, count]}
-            <button class="monthly-bar monthly-bar--link" title="{monthLabel(month)}: {count} — open in Sales Report" on:click={() => openSalesReport(month)}>
-              <div class="monthly-bar__fill" style="height: {Math.min(100, (count / Math.max(...Object.values($metrics.monthlyClientAcceptances))) * 100)}%; background: linear-gradient(180deg, #8b5cf6, #6d28d9);"></div>
-              <span class="monthly-bar__count">{count}</span>
-              <span class="monthly-bar__label">{month}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
     <!-- Monthly Quote Approvals -->
     {#if $metrics.monthlyApprovals && Object.keys($metrics.monthlyApprovals).length > 0}
       <div class="metrics-section">
@@ -965,6 +703,96 @@
         </div>
       </div>
     {/if}
+    <!-- Raw data explorer (formerly "Dynamic Business Intelligence") -->
+    <div class="metrics-section dynamic-bi-section" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+      <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 16px;">Raw data explorer</h2>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+        Query any collection, filter by any field recursively (maps, arrays, subcollections), and group by any dimension.
+      </p>
+
+      <div class="bi-controls" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div class="bi-group">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Collection</label>
+          <select bind:value={selectedCollection} style="padding: 8px; border-radius: 6px; border: 1px solid #02b5bb; font-size: 13px; min-width: 200px; font-weight: 600; color: #0b3b3d; background: rgba(2,181,187,0.08);">
+            {#each AVAILABLE_COLLECTIONS as col}
+              <option value={col.value}>{col.label}</option>
+            {/each}
+          </select>
+        </div>
+
+        <div class="bi-group">
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Group By</label>
+          <select bind:value={selectedGroupBy} style="padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; min-width: 180px;">
+            {#each allKeys as key}
+              <option value={key}>{key}</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- Generative Filters UI -->
+        <div class="bi-filters" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; width: 100%;">
+          {#if Object.keys(activeFilters).length > 0}
+            <div style="width: 100%; font-size: 13px; color: #334155; font-weight: 600;">Active Filters (Stacked):</div>
+          {/if}
+
+          {#each Object.keys(activeFilters) as filterKey}
+            <div class="bi-group" style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.02); position: relative;">
+              <button on:click={() => removeFilter(filterKey)} style="position: absolute; top: 4px; right: 4px; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 4px;" title="Remove this filter">✕</button>
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 8px; padding-right: 16px;">{filterKey}</label>
+              <select on:change={(e) => handleFilterChange(filterKey, e)} style="padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; font-size: 13px; color: #1d4ed8; font-weight: 500; min-width: 160px; outline: none; background-color: #eff6ff;">
+                <option value="">-- Choose Value --</option>
+                {#each (keyValuesMap[filterKey] || []) as val}
+                  <option value={String(val)} selected={activeFilters[filterKey] === String(val)}>{val}</option>
+                {/each}
+              </select>
+            </div>
+          {/each}
+
+          <div class="bi-group" style="margin-top: 10px;">
+            <select on:change={(e) => { const k = (e.target as HTMLSelectElement).value; if(k) activeFilters = {...activeFilters, [k]: ''}; (e.target as HTMLSelectElement).value = ''; }} style="padding: 10px; border-radius: 6px; border: 1px dashed #94a3b8; font-size: 13px; background: white; cursor: pointer;">
+              <option value="">+ Add another filter</option>
+              {#each allKeys.filter(k => !(k in activeFilters)) as key}
+                <option value={key}>{key}</option>
+              {/each}
+            </select>
+          </div>
+
+          {#if Object.keys(activeFilters).length > 0}
+            <button on:click={clearFilters} style="padding: 10px 16px; margin-top: 10px; background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 6px; font-size: 13px; cursor: pointer;">Clear All</button>
+          {/if}
+        </div>
+      </div>
+
+      <div class="bi-results" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+        <h3 style="margin-top: 0; font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>Results: {filteredData.length} of {biDataset.length} documents · {allKeys.length} fields detected</span>
+          {#if isComputing || isFiltering || biLoading}
+             <span style="font-size: 12px; color: #3b82f6; font-weight: 500;">{biLoading ? 'Loading collection...' : 'Calculating...'} ⏳</span>
+          {/if}
+        </h3>
+        {#if biError}
+          <p style="font-size: 13px; color: #ef4444;">{biError}</p>
+        {/if}
+        
+        {#if sortedGroups.length === 0 && !isFiltering}
+          <p style="font-size: 13px; color: #94a3b8;">No data matches the current filters.</p>
+        {:else if !isFiltering}
+          <div class="bi-table" style="display: grid; gap: 8px;">
+            {#each sortedGroups as [groupVal, count]}
+              <div class="bi-row" style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
+                <span class="bi-row-label" style="font-weight: 500; color: #334155; width: 30%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title={groupVal}>{groupVal}</span>
+                <div class="bi-row-bar" style="flex-grow: 1; margin: 0 16px; background: #f1f5f9; height: 10px; border-radius: 5px; overflow: hidden;">
+                  <div style="width: {Math.min(100, (count / filteredData.length) * 100)}%; height: 100%; background: #3b82f6; border-radius: 5px;"></div>
+                </div>
+                <span class="bi-row-count" style="font-weight: 600; color: #1e293b; width: 40px; text-align: right;">{count}</span>
+                <span class="bi-row-percent" style="color: #64748b; width: 50px; text-align: right; font-size: 12px;">{((count / filteredData.length) * 100).toFixed(1)}%</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </div>
+
   {:else}
     <div class="dashboard__loading">
       <div class="spinner"></div>
@@ -972,3 +800,6 @@
     </div>
   {/if}
 </div>
+  </div>
+</details>
+</MetricsHub>

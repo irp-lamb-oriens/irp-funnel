@@ -56,6 +56,7 @@
 
 // ── 6. Metrics + charts ──────────────────────────────────────────────────────
 @import './styles/metrics';
+@import './styles/metrics-hub';     // Metrics Hub sections (docs/designs/metrics-hub.md)
 
 // ── 7. Evo A/B view ──────────────────────────────────────────────────────────
 @import './styles/evo';
