@@ -14,7 +14,9 @@
    * Metrics tab; every hand-off carries the period and filters (§2.1).
    */
   import { onDestroy, onMount, tick } from 'svelte';
-  import { activeView, fetchMetricsCube, fetchSalesReport, SalesReportSchemaError, type SalesReportV2 } from '../../store.ts';
+  import { get } from 'svelte/store';
+  import { activeView, fetchMetricsCube, fetchSalesReport, salesReportPrefill, SalesReportSchemaError, type SalesReportV2 } from '../../store.ts';
+  import { onViewShown, REVALIDATE_AFTER_MS } from '../../utils/viewLifecycle.ts';
   import { cubeSchemaOk, type Ctx, type Filter, type LeadFact, type MetricsCube } from '../metrics/engine/types.ts';
   import { filterRows } from '../metrics/engine/cube.ts';
   import { DIM, dimLabel } from '../metrics/engine/registry.ts';
@@ -48,6 +50,7 @@
   let schemaError = false;
   let loadedAt = '';
   let ticket = 0;
+  let lastLoadAt = 0;
 
   async function load(fresh = false) {
     const t = ++ticket;
@@ -68,6 +71,7 @@
       else cubeError = 'The server sent an older segment-data format.';
     } else cubeError = b.reason?.message ?? 'Could not load segment data.';
     loading = false;
+    lastLoadAt = Date.now();
   }
 
   // ── Settings → URL / storage ─────────────────────────────────────────────
@@ -245,6 +249,17 @@
     lastTest = s.excludeTest;
     ready = true;
     load();
+  });
+  // Kept alive between visits: apply a Metrics → Sales hand-off (period
+  // prefill), restore our URL params, and refresh quietly when stale.
+  onViewShown('salesReport', () => {
+    const pre = get(salesReportPrefill);
+    if (pre) {
+      s = { ...s, preset: 'custom', custom: { from: pre.from, to: pre.to } };
+      salesReportPrefill.set(null);
+    }
+    writeUrl(s);
+    if (Date.now() - lastLoadAt > REVALIDATE_AFTER_MS && !loading) load();
   });
   onDestroy(() => observer?.disconnect());
 </script>

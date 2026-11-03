@@ -21,6 +21,8 @@
   import { DIM, dimLabel } from '../engine/registry.ts';
   import { addFilters, canUndo, clearFilters, decodeFilters, encodeFilters, hubCube, hubFilters, removeFilter, setFiltersSilently, undoFilters } from './hubState.ts';
   import FilterPicker from './FilterPicker.svelte';
+  import { onViewShown, REVALIDATE_AFTER_MS } from '../../../utils/viewLifecycle.ts';
+  import { requestAge } from '../../../utils/requestCache.ts';
   import PulseTiles from './PulseTiles.svelte';
   import InsightsPanel from './InsightsPanel.svelte';
   import GrowthSection from './GrowthSection.svelte';
@@ -187,6 +189,14 @@
     ready = true;
     if (!$hubCube) load();
     writeUrl();
+  });
+  // Kept alive between visits: re-read the URL (a Sales Book cross-link may
+  // have rewritten the mh_* params), put `view=metrics` back, and refresh in
+  // the background if the cube is getting old.
+  onViewShown('metrics', () => {
+    readUrl();
+    writeUrl();
+    if (requestAge('metrics:cube') > REVALIDATE_AFTER_MS && !loading) load();
   });
   onDestroy(() => observer?.disconnect());
 </script>

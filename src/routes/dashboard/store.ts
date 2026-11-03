@@ -1,3 +1,4 @@
+import { cachedRequest, invalidateRequests } from './utils/requestCache.ts';
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import store from '../../components/store.ts';
@@ -1262,7 +1263,22 @@ export function getApiUrl(): string {
 }
 
 
+/**
+ * Number of dashboard API requests in flight. Drives the thin activity rail
+ * under the top bar, so background refreshes are visible without blocking.
+ */
+export const pendingRequests = writable(0);
+
 async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
+  pendingRequests.update((n) => n + 1);
+  try {
+    return await apiFetchInner(path, options);
+  } finally {
+    pendingRequests.update((n) => Math.max(0, n - 1));
+  }
+}
+
+async function apiFetchInner(path: string, options: RequestInit = {}): Promise<any> {
   const token = get(authToken);
   const url = `${getApiUrl()}${path}`;
   const headers: Record<string, string> = {
@@ -1566,7 +1582,10 @@ export async function initDashboardSocket() {
         // (Evo Lab spec §7.8). EvoView listens to `evoRefresh`.
         if (!fetchTimeouts['evo']) {
           fetchTimeouts['evo'] = setTimeout(() => {
-            if (get(activeView) === 'evo') evoRefresh.update((n) => n + 1);
+            // Always signal: a hidden (kept-alive) Evo tab marks itself stale
+            // and reloads when it is shown again.
+            invalidateRequests('evo:');
+            evoRefresh.update((n) => n + 1);
             delete fetchTimeouts['evo'];
           }, 60_000);
         }
@@ -5079,7 +5098,10 @@ export async function fetchSalesReport(q: SalesReportQuery = {}): Promise<SalesR
   if (q.allDeals) params.set('allDeals', '1');
   if (q.excludeTest) params.set('excludeTest', '1');
   const qs = params.toString();
-  const data = (await apiFetch(`/api/dashboard/sales-report${qs ? `?${qs}` : ''}`)) as SalesReportResponse;
+  const path = `/api/dashboard/sales-report${qs ? `?${qs}` : ''}`;
+  const key = new URLSearchParams(params);
+  key.delete('fresh');
+  const data = (await cachedRequest(`sales:${key.toString()}`, () => apiFetch(path), { fresh: q.fresh })) as SalesReportResponse;
   if (!data?.v2 || (data.schemaVersion ?? 1) < SALES_REPORT_SCHEMA_VERSION) {
     throw new SalesReportSchemaError('The server is running an older sales report. Reload the dashboard after the server update.');
   }
@@ -5108,6 +5130,8 @@ export async function saveQuoteSettlement(
   // A write invalidates any report read still in flight: that response was
   // built before this save and would land showing the pre-save totals.
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
 }
 
@@ -5117,6 +5141,8 @@ export async function createLedgerEntry(entry: Partial<LedgerEntry>): Promise<vo
     body: JSON.stringify(entry),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
 }
 
 export async function updateLedgerEntry(
@@ -5128,6 +5154,8 @@ export async function updateLedgerEntry(
     body: JSON.stringify(entry),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
 }
 
 export async function deleteLedgerEntry(id: string): Promise<void> {
@@ -5135,6 +5163,8 @@ export async function deleteLedgerEntry(id: string): Promise<void> {
     method: 'DELETE',
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
 }
 
 // ─── Finance: invoices generated from accepted quotes ────────────────────────
@@ -5462,6 +5492,8 @@ export async function createInvoice(payload: {
     body: JSON.stringify(payload),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
   invoicesSeq++;
   return data.invoice as Invoice;
@@ -5476,6 +5508,8 @@ export async function updateInvoice(id: string, payload: Partial<Invoice>): Prom
     body: JSON.stringify(payload),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
   return data.invoice as Invoice;
 }
@@ -5485,6 +5519,8 @@ export async function deleteInvoice(id: string): Promise<void> {
     method: 'DELETE',
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
 }
 
@@ -5494,6 +5530,8 @@ export async function sendInvoice(id: string, email?: string): Promise<Invoice> 
     body: JSON.stringify({ email }),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
   return data.invoice as Invoice;
 }
@@ -5507,6 +5545,8 @@ export async function recordInvoicePayment(
     body: JSON.stringify({ payments }),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
   return data.invoice as Invoice;
 }
@@ -5525,6 +5565,8 @@ export async function setInvoicePaid(id: string, paid: boolean): Promise<Invoice
     body: JSON.stringify({ paid }),
   });
   financeLedgerSeq++;
+  invalidateRequests('sales:');
+  invalidateRequests('metrics:');
   financeMetricsSeq++;
   const updated = data.invoice as Invoice;
   // Patch in place so the Charges tab reflects the toggle without a refetch.
@@ -5588,7 +5630,7 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
 // (server: API/metrics/metricsCube.ts). The Hub filters, groups and scans it
 // in the browser. `fresh` bypasses the server's 30 s sales-sources cache.
 export async function fetchMetricsCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
-  return apiFetch(`/api/dashboard/metrics/cube${opts.fresh ? '?fresh=1' : ''}`);
+  return cachedRequest('metrics:cube', () => apiFetch(`/api/dashboard/metrics/cube${opts.fresh ? '?fresh=1' : ''}`), { fresh: opts.fresh });
 }
 
 // ─── Evo Lab (spec: irp-funnel-server/docs/designs/evo-lab.md) ──────────────
@@ -5596,7 +5638,7 @@ export async function fetchMetricsCube(opts: { fresh?: boolean } = {}): Promise<
 export const evoRefresh = writable(0);
 
 export async function fetchEvoCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
-  return apiFetch(`/api/evo/cube${opts.fresh ? '?fresh=1' : ''}`);
+  return cachedRequest('evo:cube', () => apiFetch(`/api/evo/cube${opts.fresh ? '?fresh=1' : ''}`), { fresh: opts.fresh });
 }
 
 /** Ask Evo: the server turns a question into a validated query spec. */
@@ -5605,7 +5647,7 @@ export async function askEvo(question: string): Promise<unknown> {
 }
 
 export async function fetchEvoDecisions(): Promise<unknown> {
-  return apiFetch('/api/evo/decisions');
+  return cachedRequest('evo:decisions', () => apiFetch('/api/evo/decisions'));
 }
 
 export async function recordEvoDecision(body: {
@@ -5615,5 +5657,7 @@ export async function recordEvoDecision(body: {
   note: string;
   snapshot: Record<string, unknown>;
 }): Promise<unknown> {
-  return apiFetch('/api/evo/decisions', { method: 'POST', body: JSON.stringify(body) });
+  const res = await apiFetch('/api/evo/decisions', { method: 'POST', body: JSON.stringify(body) });
+  invalidateRequests('evo:decisions');
+  return res;
 }

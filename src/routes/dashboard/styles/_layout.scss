@@ -96,6 +96,8 @@
   }
 
   &__nav {
+    position: relative;          // offsetParent for the sliding pill
+    isolation: isolate;
     display: flex;
     gap: $sp-1;
     margin-left: $sp-2;
@@ -103,7 +105,10 @@
     background: $surface;
     border-radius: $r-sm;
     border: 1px solid $border;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
     button {
+      position: relative;
+      z-index: 1;
       padding: $sp-2 $sp-3;
       background: none;
       border: none;
@@ -111,16 +116,65 @@
       color: $text-dim;
       font-size: 13px;
       font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
       font-family: $font;
-      transition: all $t-fast;
+      transition: color $t-fast, background-color $t-fast, transform $t-fast;
+      -webkit-tap-highlight-color: transparent;
       &:hover { color: $text-2; background: $surface-2; }
+      &:active { transform: scale(0.97); }
+      &:focus-visible { outline: 2px solid $accent; outline-offset: 1px; }
       &.active {
         color: white;
         background: $accent;
         box-shadow: $shadow-sm;
       }
     }
+    // Once JS has measured the active tab, the pill carries the highlight and
+    // glides between tabs; the per-button fill above is only the no-JS fallback.
+    &.has-pill button.active { background: transparent; box-shadow: none; }
+    &.has-pill .topbar__nav-pill { opacity: 1; }
+  }
+
+  &__nav-pill {
+    position: absolute;
+    z-index: 0;
+    top: $sp-1;
+    bottom: $sp-1;
+    left: 0;
+    border-radius: $r-xs;
+    background: linear-gradient(180deg, #14c3c9 0%, $accent 100%);
+    box-shadow: 0 1px 2px rgba(2, 181, 187, 0.35), 0 4px 12px -4px rgba(2, 181, 187, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width;
+    transition: transform 420ms $ease-out, width 420ms $ease-out, opacity $t-fast;
+  }
+
+  // Thin indeterminate rail along the bottom edge while any API request runs.
+  &__activity {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 320ms $ease-out;
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 38%;
+      border-radius: $r-full;
+      background: linear-gradient(90deg, transparent, $accent 45%, #5fe0e4 70%, transparent);
+      animation: irp-rail 1.15s $ease-out infinite;
+      animation-play-state: paused;
+    }
+    &.is-on { opacity: 1; }
+    &.is-on::before { animation-play-state: running; }
   }
 
   &__search {
@@ -213,3 +267,28 @@
   font-weight: 500;
 }
 
+
+@keyframes irp-rail {
+  from { transform: translateX(-110%); }
+  to   { transform: translateX(280%); }
+}
+
+/* ── Keep-alive tab containers ────────────────────────────────────────────
+   Each tab lives in a .dash-view that is hidden, not destroyed, when you
+   leave it. Re-showing it replays a short fade so the switch reads as a
+   transition rather than a jump. The fill-mode is `backwards` so no
+   transform lingers afterwards (a transform would re-anchor fixed overlays). */
+.dash-view {
+  animation: irp-view-in 260ms $ease-out backwards;
+  &[hidden] { display: none !important; }
+}
+@keyframes irp-view-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-view { animation: none; }
+  .topbar__nav-pill { transition: opacity $t-fast; }
+  .topbar__activity::before { animation-duration: 2.4s; }
+}

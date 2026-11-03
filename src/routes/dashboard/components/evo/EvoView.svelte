@@ -13,6 +13,8 @@
   import { onDestroy, onMount, tick } from 'svelte';
   import { activeView, authEmail, evoRefresh, fetchClientDetail, fetchEvoCube, fetchEvoDecisions, fetchMetricsCube } from '../../store.ts';
   import { ADMIN_EMAILS } from '../../access.ts';
+  import { onViewShown, REVALIDATE_AFTER_MS } from '../../utils/viewLifecycle.ts';
+  import { requestAge } from '../../utils/requestCache.ts';
   import { hubCube } from '../metrics/hub/hubState.ts';
   import { METRICS_CUBE_SCHEMA_VERSION, type LeadFact, type MetricsCube } from '../metrics/engine/types.ts';
   import { EVO_CUBE_SCHEMA_VERSION, type EvoCube, type Exclusion } from './engine/types.ts';
@@ -154,7 +156,16 @@
     if (fixture) return;
     try { const d = (await fetchEvoDecisions()) as { decisions?: any[] }; decisions = d?.decisions ?? []; } catch { decisions = []; }
   }
-  const unsub = evoRefresh.subscribe((n) => { if (n && ready && $activeView === 'evo') load(); });
+  // Live updates: reload now if Evo is on screen, otherwise when it is shown.
+  let staleWhileHidden = false;
+  const unsub = evoRefresh.subscribe((n) => {
+    if (!n || !ready) return;
+    if ($activeView === 'evo') load(); else staleWhileHidden = true;
+  });
+  onViewShown('evo', () => {
+    writeUrl();
+    if (staleWhileHidden || requestAge('evo:cube') > REVALIDATE_AFTER_MS) { staleWhileHidden = false; if (!loading) load(); }
+  });
   onDestroy(unsub);
 
   $: if (fixture && ready) load();

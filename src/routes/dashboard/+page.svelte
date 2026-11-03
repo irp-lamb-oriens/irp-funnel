@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
   import {
     isAuthenticated, authEmail, authToken,
     clients, selectedClient, metrics, loading, error,
     clientsLoading, clientsLoadedOnce,
-    searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage,
+    searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage, pendingRequests,
     stageOrderStore, stageConfig,
 
 
@@ -394,6 +394,54 @@
     } catch { /* no URL access */ }
   }
 
+  // ─── Keep-alive tabs ───────────────────────────────────────────────────
+  // A tab mounts on first visit and stays mounted (hidden) afterwards, so
+  // switching back never re-fetches or loses state. Scroll is remembered per
+  // tab because every tab shares the window's scroll.
+  let visited: Partial<Record<DashView, true>> = {};
+  const scrollByView: Partial<Record<string, number>> = {};
+  let shownView: string = $activeView;
+  function markVisited(v: string) {
+    if (!visited[v as DashView]) visited = { ...visited, [v]: true };
+  }
+  $: markVisited($activeView);
+  $: rememberScroll($activeView);
+  async function rememberScroll(v: string) {
+    if (typeof window === 'undefined' || v === shownView) return;
+    scrollByView[shownView] = window.scrollY;
+    shownView = v;
+    await tick();
+    window.scrollTo({ top: scrollByView[v] ?? 0, behavior: 'instant' as ScrollBehavior });
+  }
+
+  // ─── Top-bar nav: sliding active pill ──────────────────────────────────
+  let navEl: HTMLElement | null = null;
+  let navPill = { x: 0, w: 0 };
+  async function placeNavPill(..._deps: unknown[]) {
+    await tick();
+    const btn = navEl?.querySelector<HTMLElement>('button.active');
+    if (!btn) { navPill = { x: 0, w: 0 }; return; }
+    // Subpixel-accurate: offsetLeft/offsetWidth round to whole pixels.
+    const nav = navEl!.getBoundingClientRect();
+    const b = btn.getBoundingClientRect();
+    navPill = { x: b.left - nav.left - navEl!.clientLeft + navEl!.scrollLeft, w: b.width };
+    btn.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }
+  $: placeNavPill($activeView, allowedViews, navEl);
+  // Web fonts change button widths once they load.
+  onMount(() => { document.fonts?.ready.then(() => placeNavPill()).catch(() => {}); });
+
+  // ─── Activity rail: any API request in flight, after a short grace ─────
+  // period so instant cache hits never flash it.
+  let showActivity = false;
+  let activityTimer: ReturnType<typeof setTimeout> | undefined;
+  $: syncActivity($pendingRequests > 0);
+  function syncActivity(busy: boolean) {
+    clearTimeout(activityTimer);
+    if (busy) activityTimer = setTimeout(() => (showActivity = true), 180);
+    else showActivity = false;
+  }
+
   async function switchView(view: DashView) {
     if (!allowedViews.includes(view)) return; // guard
     activeView.set(view as any);
@@ -622,7 +670,7 @@
 
 <!-- Any click outside an open rank popover (badge + popover stop propagation)
      closes it. Harmless no-op when nothing is open. -->
-<svelte:window on:click={() => { if (rankMenuFor) closeRankMenu(); }} />
+<svelte:window on:click={() => { if (rankMenuFor) closeRankMenu(); }} on:resize={() => placeNavPill()} />
 
 
 {#if $isCheckingAuth}
@@ -707,7 +755,8 @@
     <header class="topbar">
       <div class="topbar__left">
         <img src="/IRP-LOGO.jpg" alt="logo" height="40">
-        <nav class="topbar__nav">
+        <nav class="topbar__nav" class:has-pill={navPill.w > 0} bind:this={navEl}>
+          <span class="topbar__nav-pill" aria-hidden="true" style="transform:translateX({navPill.x}px);width:{navPill.w}px"></span>
           {#if allowedViews.includes('board')}
             <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>
           {/if}
@@ -758,6 +807,7 @@
         <span class="topbar__user">{$authEmail?.split('@')[0]}</span>
         <button class="topbar__logout" on:click={handleLogout}>Logout</button>
       </div>
+      <div class="topbar__activity" class:is-on={showActivity} aria-hidden="true"></div>
     </header>
 
     <!-- ── Filters ───────────────────────────────────────────── -->
@@ -1090,40 +1140,39 @@
         </div>
       </div>
 
-    <!-- ══════════════ METRICS VIEW ══════════════ -->
-    {:else if $activeView === 'metrics'}
-      <MetricsView />
+    {/if}
 
-    <!-- ══════════════ EVO VIEW (UI evolution × sales attribution) ══════ -->
-    {:else if $activeView === 'evo'}
-      <EvoView />
-
-    <!-- ══════════════ PROVIDERS VIEW ══════════════ -->
-    {:else if $activeView === 'providers'}
-      <ProvidersView />
-
-    <!-- ══════════════ POSTS VIEW ══════════════ -->
-    {:else if $activeView === 'posts'}
-      <PostsView />
-
-    <!-- ══════════════ ADMIN VIEW (luisarmando + pablo only) ══════════════ -->
-    {:else if $activeView === 'admin'}
-      <AdminView />
-
-    <!-- ══════════════ TEMPLATES VIEW ══════════════ -->
-    {:else if $activeView === 'templates'}
-      <TemplatesView />
-    <!-- ══════════════ AUTOMATIONS VIEW ══════════════ -->
-    {:else if $activeView === 'automations'}
-      <AutomationView />
-
-    <!-- ══════════════ FINANCE VIEW ══════════════ -->
-    {:else if $activeView === 'finance'}
-      <FinanceView />
-
-    <!-- ══════════════ SALES REPORT VIEW ══════════════ -->
-    {:else if $activeView === 'salesReport'}
-      <SalesReportView />
+    <!-- ══════════════ KEEP-ALIVE VIEWS ══════════════
+         Each tab mounts on its first visit and then stays mounted, hidden,
+         while you are elsewhere. Coming back is instant: data, filters,
+         scroll position and any in-flight load are exactly as you left them.
+         Views refresh stale data in the background (utils/viewLifecycle.ts). -->
+    {#if visited.metrics && allowedViews.includes('metrics')}
+      <section class="dash-view" data-view="metrics" hidden={$activeView !== 'metrics'}><MetricsView /></section>
+    {/if}
+    {#if visited.evo && allowedViews.includes('evo')}
+      <section class="dash-view" data-view="evo" hidden={$activeView !== 'evo'}><EvoView /></section>
+    {/if}
+    {#if visited.providers && allowedViews.includes('providers')}
+      <section class="dash-view" data-view="providers" hidden={$activeView !== 'providers'}><ProvidersView /></section>
+    {/if}
+    {#if visited.posts && allowedViews.includes('posts')}
+      <section class="dash-view" data-view="posts" hidden={$activeView !== 'posts'}><PostsView /></section>
+    {/if}
+    {#if visited.admin && allowedViews.includes('admin')}
+      <section class="dash-view" data-view="admin" hidden={$activeView !== 'admin'}><AdminView /></section>
+    {/if}
+    {#if visited.templates && allowedViews.includes('templates')}
+      <section class="dash-view" data-view="templates" hidden={$activeView !== 'templates'}><TemplatesView /></section>
+    {/if}
+    {#if visited.automations && allowedViews.includes('automations')}
+      <section class="dash-view" data-view="automations" hidden={$activeView !== 'automations'}><AutomationView /></section>
+    {/if}
+    {#if visited.finance && allowedViews.includes('finance')}
+      <section class="dash-view" data-view="finance" hidden={$activeView !== 'finance'}><FinanceView /></section>
+    {/if}
+    {#if visited.salesReport && allowedViews.includes('salesReport')}
+      <section class="dash-view" data-view="salesReport" hidden={$activeView !== 'salesReport'}><SalesReportView /></section>
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->

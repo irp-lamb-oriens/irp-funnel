@@ -82,6 +82,31 @@ $t-fast:      150ms $ease-out;
 $t-med:       250ms $ease-out;
 $t-slow:      400ms $ease-out;
 
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+// One shimmer for every loading placeholder. A highlight band sweeps across on
+// the compositor (transform), instead of animating background-position, which
+// repaints every frame. Pass a radius; size the element where it is used.
+$skel-base: #edf1f5;
+@mixin irp-skeleton($radius: $r-md) {
+  position: relative;
+  overflow: hidden;
+  border-radius: $radius;
+  background: $skel-base;
+  isolation: isolate;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+    animation: irp-sweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation-delay: var(--sk-delay, 0s);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::after { animation: none; opacity: 0; }
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  CSS CUSTOM PROPERTIES — emitted to :root for runtime/JS access
 //  These mirror every $scss-var above so child components can inherit and
@@ -139,4 +164,19 @@ $t-slow:      400ms $ease-out;
   --irp-shadow-sm: #{$shadow-sm};
   --irp-shadow-md: #{$shadow-md};
   --irp-shadow-lg: #{$shadow-lg};
+  --irp-shadow-glow: #{$shadow-glow};
+
+  // Motion
+  --irp-ease-out:    #{$ease-out};
+  --irp-ease-spring: #{$ease-spring};
+  --irp-t-fast:      #{$t-fast};
+  --irp-t-med:       #{$t-med};
+  --irp-t-slow:      #{$t-slow};
+
+  // Focus
+  --irp-focus-ring: 0 0 0 3px #{$accent-glow};
+}
+
+@keyframes irp-sweep {
+  to { transform: translateX(100%); }
 }

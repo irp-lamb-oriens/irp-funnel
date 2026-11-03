@@ -11,11 +11,8 @@
   }
 
   &__skeleton {
+    @include irp-skeleton($r-md);
     height: 72px;
-    border-radius: $r-md;
-    background: linear-gradient(90deg, $surface-3 25%, $surface-4 50%, $surface-3 75%);
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
 
     &--short {
       width: 60%;

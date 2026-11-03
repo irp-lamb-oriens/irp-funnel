@@ -17,8 +17,10 @@
   import FinanceLedgerPanel from './FinanceLedgerPanel.svelte';
   import MoveTaxonomyPanel from './MoveTaxonomyPanel.svelte';
   import InvoicesPanel from './InvoicesPanel.svelte';
+  import { onViewShown, REVALIDATE_AFTER_MS } from '../utils/viewLifecycle.ts';
 
   let loading = false;
+  let loadedAt = 0;
   let errorMsg = '';
   let currency = 'USD';
 
@@ -36,6 +38,7 @@
     errorMsg = '';
     try {
       await fetchFinanceMetrics(currency);
+      loadedAt = Date.now();
     } catch (err: any) {
       errorMsg = err?.message ?? 'Could not load the finance metrics.';
     } finally {
@@ -50,6 +53,11 @@
    */
   onMount(() => {
     if (!$financeMetrics) load();
+    else loadedAt = Date.now();
+  });
+  // Kept alive between visits: quietly refresh the quote figures when stale.
+  onViewShown('finance', () => {
+    if (Date.now() - loadedAt > REVALIDATE_AFTER_MS && !loading) load();
   });
 
   function money(n: number | null | undefined): string {
