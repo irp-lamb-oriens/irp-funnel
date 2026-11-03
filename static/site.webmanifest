@@ -1,0 +1,14 @@
+{
+  "name": "International Relocation Partner",
+  "short_name": "IRP",
+  "icons": [
+    { "src": "/logo/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/logo/logo.png", "sizes": "408x408", "type": "image/png", "purpose": "any" }
+  ],
+  "theme_color": "#63d7ff",
+  "background_color": "#63d7ff",
+  "display": "browser",
+  "start_url": "/"
+}
