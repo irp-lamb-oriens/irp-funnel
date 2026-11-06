@@ -133,7 +133,7 @@
   .title { @include heading-xl; font-size: clamp(1.9rem, 3.6vw, 3rem); }
   .count { margin: 0; font: 700 1.5rem $font-mono; color: $color-ink-strong; span { font-size: 0.8rem; color: $color-muted; } }
 
-  .deck { @include container; list-style: none; margin: 0 auto; padding-block: 0; position: relative; flex: 1; min-height: 0; }
+  .deck { @include container; & { list-style: none; margin: 0 auto; padding-block: 0; position: relative; flex: 1; min-height: 0; } }
   .card {
     position: absolute; inset: 0 $space-4; border-radius: 22px; overflow: hidden;
     background: $color-mist; border: 1px solid $color-hairline;

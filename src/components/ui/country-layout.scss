@@ -1,65 +1,205 @@
-/* Country Layout shared styles */
+/* CountryLayout: shared frame for country, guide, news, contact and legal pages.
+   Hero lives in HeroSection.svelte; this file styles the content well and the
+   closing call to action. */
+
+$ink: #0e2f36;
+$teal: #02b5bb;
+$sans: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+$mono: 'SFMono-Regular', Menlo, Consolas, monospace;
 
 .country-hero {
-  background: #f8f8f8;
+  background: #f6f9f9;
   padding: 2.5rem 0 1.5rem 0;
   text-align: center;
   h1 {
-    color: var(--color-highlight-2);
+    color: $ink;
     font-size: 2.2rem;
-    font-weight: 800;
+    font-weight: 700;
     margin: 0;
   }
 }
 
+.country-content,
+.country-cta {
+  // global.scss sets every element to var(--font-paragraph); within the
+  // template that resolves to the same sans as the home page.
+  --font-paragraph: #{$sans};
+  --font-title: #{$sans};
+  --font-subtitle: #{$sans};
+}
+
 .country-content {
-  padding: 2rem;
+  padding: clamp(2.5rem, 6vw, 5.5rem) clamp(1rem, 4vw, 2rem) clamp(2rem, 4vw, 3rem);
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  font-family: $sans;
 }
 
 .country-cta {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 5rem 0;
-  display: block;
+  width: min(1200px, 100% - 2 * clamp(1rem, 4vw, 3rem));
+  margin: clamp(1rem, 3vw, 2rem) auto clamp(3rem, 7vw, 6rem);
   position: relative;
-  background: url(https://images.pexels.com/photos/4245992/pexels-photo-4245992.jpeg);
-  background-attachment: fixed;
-  background-size: cover;
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1000px #0004;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: clamp(22px, 3vw, 36px);
+  background:
+    radial-gradient(900px 420px at 100% 0%, rgba(2, 181, 187, 0.28), transparent 65%),
+    linear-gradient(135deg, #12424b 0%, $ink 60%);
+  color: #fff;
+  font-family: $sans;
 
-  @media (max-width: 900px) {
-    margin: 0 auto;
-    border-radius: 0;
+  // Dotted globe, same motif as the client portal and home.
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    right: -120px;
+    top: 50%;
+    width: 520px;
+    height: 520px;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background-image: radial-gradient(rgba(127, 227, 230, 0.35) 1.2px, transparent 1.6px);
+    background-size: 14px 14px;
+    -webkit-mask-image: radial-gradient(circle at 40% 45%, #000 0%, #000 45%, transparent 70%);
+    mask-image: radial-gradient(circle at 40% 45%, #000 0%, #000 45%, transparent 70%);
+    opacity: 0.8;
   }
 
   .cta-content {
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem 3rem;
+    padding: clamp(2.25rem, 5vw, 4.5rem);
+    text-align: left;
+  }
 
-    @media (max-width: 1024px) {
-      padding: 1rem;
-    }
+  .cta-copy {
+    flex: 1 1 420px;
+    max-width: 640px;
+  }
 
-    h6 {
-      color: var(--color-background);
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-    h2 {
-      color: var(--color-background);
-      font-size: 1.5rem;
-      font-weight: 800;
-      margin-bottom: 1.2rem;
-    }
+  .cta-eyebrow {
+    margin: 0 0 1rem;
+    font: 600 0.75rem/1 $mono;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7fe3e6;
+  }
+
+  h2 {
+    margin: 0;
+    color: #fff;
+    font: 700 clamp(1.9rem, 3.6vw, 3rem) / 1.05 $sans;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  .cta-sub {
+    margin: 1rem 0 0;
+    color: rgba(255, 255, 255, 0.74);
+    font: 400 clamp(1rem, 1.3vw, 1.15rem) / 1.55 $sans;
+  }
+
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-start;
+  }
+
+  @media (max-width: 640px) {
     .button-row {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      margin-top: 1.2rem;
-      
+      width: 100%;
+      > * {
+        flex: 1 1 auto;
+      }
     }
+  }
+}
+
+// ── Long-form documents (legal, terms, policies, careers) ──────────────────
+// These pages keep their own markup and stylesheets; inside the template they
+// share one reading treatment: a 760px measure, ink headings, calm body copy.
+$doc-text: #2b3a3e;
+$doc-steel: #4a5c61;
+$doc-teal-deep: #04767b;
+$doc-hair: rgba(14, 47, 54, 0.1);
+
+.country-content {
+  .legal-content,
+  .terms-content,
+  .terms-sale-content,
+  .cookie-policy-content,
+  .disclaimer-content,
+  .careers-why,
+  .careers-job {
+    max-width: 760px;
+    margin: 0 auto clamp(2rem, 4vw, 3rem);
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    color: $doc-text;
+
+    h1,
+    h2 {
+      color: $ink;
+      font: 700 clamp(1.4rem, 2.2vw, 1.75rem) / 1.2 $sans;
+      letter-spacing: -0.025em;
+      margin: 2.5rem 0 0.9rem;
+    }
+    h3,
+    h4,
+    h5 {
+      color: $ink;
+      font: 700 1.15rem/1.3 $sans;
+      letter-spacing: -0.015em;
+      margin: 1.75rem 0 0.6rem;
+    }
+    > h1:first-child,
+    > h2:first-child {
+      margin-top: 0;
+    }
+    p,
+    li {
+      font-size: 1.075rem;
+      line-height: 1.75;
+      color: $doc-text;
+    }
+    p {
+      margin: 0 0 1.1rem;
+    }
+    a {
+      color: $doc-teal-deep;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    strong,
+    b {
+      color: $ink;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.98rem;
+    }
+    th,
+    td {
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid $doc-hair;
+      vertical-align: top;
+    }
+    th {
+      color: $ink;
+      font-weight: 600;
+    }
+  }
+  .careers-job {
+    padding-top: 2rem;
+    border-top: 1px solid $doc-hair;
   }
 }

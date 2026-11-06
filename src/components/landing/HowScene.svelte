@@ -1,9 +1,10 @@
 <script lang="ts">
   /**
    * Scene 3, "How it works". The page turns sideways through three stations
-   * on one route line, each holding while its own example plays:
-   * 1. the consulting call (two people on a video call, the 60-minute ring,
-   *    the live transcript being written as they talk);
+   * above a journey line that pans with the scroll (MoveRelay: one-colour landscape from the old house to the new one), each holding while its own example plays:
+   * 1. the consulting call (ConsultCall: speaker view, the clients in a
+   *    picture-in-picture tile, live captions and the in-call chat; the
+   *    60-minute ring in front);
    * 2. the written plan (a plan document with the rules that apply, the
    *    steps and the investment, accepted at the end);
    * 3. the status page (the client portal stepper moving stage by stage,
@@ -13,6 +14,8 @@
    */
   import { scene, seg, easeOut, stations } from './scene.ts';
   import { STEPS } from './content.ts';
+  import ConsultCall from './ConsultCall.svelte';
+  import MoveRelay from './MoveRelay.svelte';
 
   let p = 0;
   const N = STEPS.items.length;
@@ -23,15 +26,6 @@
   $: route = seg(p, 0.02, 0.98);
 
   const bars = Array.from({ length: 22 }, (_, i) => 0.3 + 0.7 * Math.abs(Math.sin(i * 1.7)));
-  // Example transcript of the call (station 1).
-  const TRANSCRIPT = [
-    { who: 'IRP', text: 'Tell me about your move. Where are you headed?' },
-    { who: 'You', text: 'San José, Costa Rica, next spring. We are retiring.' },
-    { who: 'IRP', text: 'Then we start with the pensionado residency. It changes what you pay at customs.' },
-    { who: 'You', text: 'Can we bring our SUV?' },
-    { who: 'IRP', text: 'Yes. Import taxes depend on its value and year. I will put the numbers in your plan.' },
-    { who: 'You', text: 'And our two dogs?' }
-  ];
   const RULES = [
     { tag: 'Compliance', title: 'Customs and import duties' },
     { tag: 'Compliance', title: 'Household goods exemptions' },
@@ -64,83 +58,8 @@
               <div class="art" aria-hidden="true">
                 {#if i === 0}
                   <!-- 1. The call: two people on a video call, a live transcript, the ring in front -->
-                  {@const shown = TRANSCRIPT.filter((_, k) => lp > 0.04 + k * 0.14).length}
-                  {@const typing = shown > 0 ? Math.min(1, (lp - (0.04 + (shown - 1) * 0.14)) / 0.12) : 0}
                   <div class="call">
-                    <div class="meet">
-                      <div class="meet-bar"><span class="rec"></span>Consultation call · Example<span class="meet-time">{String(Math.floor(lp * 60)).padStart(2, '0')}:00 / 60:00</span></div>
-                      <div class="meet-grid">
-                        <div class="tiles">
-                          <figure class="tile" class:talk={shown > 0 && TRANSCRIPT[shown - 1].who === 'IRP' && typing < 1}>
-                            <svg viewBox="0 0 200 130" class="person">
-                              <defs>
-                                <linearGradient id="how-roomA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b5a63" /><stop offset="1" stop-color="#0c3339" /></linearGradient>
-                                <radialGradient id="how-skinA" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#e2b48f" /><stop offset="1" stop-color="#b98361" /></radialGradient>
-                                <linearGradient id="how-shirtA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7f8" /><stop offset="1" stop-color="#cfd9dc" /></linearGradient>
-                              </defs>
-                              <rect width="200" height="130" fill="url(#how-roomA)" />
-                              <rect x="12" y="14" width="56" height="76" rx="2" fill="#123e44" />
-                              {#each [0, 1, 2] as row}
-                                <rect x="12" y={38 + row * 25} width="56" height="3" fill="#0a2a2e" />
-                                {#each [0, 1, 2, 3, 4] as b}<rect x={15 + b * 10} y={18 + row * 25} width="7" height="20" rx="1" fill={['#c8a06e', '#7fc8cc', '#e9f3f4', '#c62426', '#8fb3b8'][(b + row) % 5]} opacity="0.75" />{/each}
-                              {/each}
-                              <circle cx="178" cy="22" r="26" fill="#ffd9a0" opacity="0.12" />
-                              <path d="M58 130 C60 98 80 86 100 86 C120 86 140 98 142 130 Z" style="fill:url(#how-shirtA)" />
-                              <path d="M90 88 L100 104 L110 88" style="fill:none" stroke="#9fb0b8" stroke-width="2" />
-                              <rect x="92" y="74" width="16" height="16" rx="6" fill="#b98361" />
-                              <ellipse cx="100" cy="58" rx="19" ry="22" fill="url(#how-skinA)" />
-                              <path d="M80 56 C80 32 120 30 121 54 C116 44 104 40 92 44 C86 46 82 50 80 56 Z" style="fill:#2a211c" />
-                              <ellipse cx="93" cy="60" rx="2" ry="2.4" fill="#2a211c" /><ellipse cx="107" cy="60" rx="2" ry="2.4" fill="#2a211c" />
-                              <path d="M94 70 Q100 74 106 70" style="fill:none" stroke="#7a4b35" stroke-width="2" stroke-linecap="round" />
-                              <path d="M79 58 C77 30 123 30 121 58" style="fill:none" stroke="#10232a" stroke-width="3.5" />
-                              <rect x="75" y="54" width="7" height="13" rx="3" fill="#10232a" />
-                              <path d="M79 66 Q82 78 92 76" style="fill:none" stroke="#10232a" stroke-width="2" />
-                            </svg>
-                            <figcaption>IRP consultant</figcaption>
-                          </figure>
-                          <figure class="tile" class:talk={shown > 0 && TRANSCRIPT[shown - 1].who === 'You' && typing < 1}>
-                            <svg viewBox="0 0 200 130" class="person">
-                              <defs>
-                                <linearGradient id="how-roomB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3eadc" /><stop offset="1" stop-color="#dccbb0" /></linearGradient>
-                                <radialGradient id="how-skinB" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#f1cfb0" /><stop offset="1" stop-color="#cf9f7d" /></radialGradient>
-                                <radialGradient id="how-skinC" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#e8bf9c" /><stop offset="1" stop-color="#bf8a66" /></radialGradient>
-                              </defs>
-                              <rect width="200" height="130" fill="url(#how-roomB)" />
-                              <rect x="138" y="12" width="48" height="40" rx="2" fill="#fbf6ec" stroke="#c9b28f" stroke-width="3" />
-                              <path d="M162 12 V52 M138 32 H186" style="fill:none" stroke="#c9b28f" stroke-width="2" />
-                              <path d="M20 112 C14 92 22 78 28 70 C30 84 34 94 30 112 Z" style="fill:#6f9d6b" />
-                              <path d="M30 112 C34 92 44 84 52 80 C48 94 42 104 38 112 Z" style="fill:#87b383" />
-                              <rect x="18" y="108" width="26" height="22" rx="3" fill="#b5654b" />
-                              <path d="M48 130 C50 104 64 94 80 94 C96 94 110 104 112 130 Z" style="fill:#577590" />
-                              <ellipse cx="80" cy="70" rx="16" ry="19" fill="url(#how-skinB)" />
-                              <path d="M63 70 C60 46 100 44 97 70 C94 58 84 54 78 54 C70 55 65 60 63 70 Z" style="fill:#c9c2b8" />
-                              <ellipse cx="74" cy="71" rx="1.8" ry="2.1" fill="#3b302a" /><ellipse cx="86" cy="71" rx="1.8" ry="2.1" fill="#3b302a" />
-                              <path d="M75 80 Q80 83 85 80" style="fill:none" stroke="#9c6a52" stroke-width="1.8" stroke-linecap="round" />
-                              <path d="M100 130 C102 100 118 90 136 90 C154 90 168 100 170 130 Z" style="fill:#b5654b" />
-                              <ellipse cx="136" cy="66" rx="16" ry="19" fill="url(#how-skinC)" />
-                              <path d="M117 74 C110 44 160 40 156 72 C154 60 146 52 136 52 C126 52 120 60 117 74 Z" style="fill:#6b4a33" />
-                              <path d="M117 74 C116 86 120 92 124 94 L122 74 Z M156 72 C158 84 154 92 150 94 L151 72 Z" style="fill:#6b4a33" />
-                              <ellipse cx="130" cy="68" rx="1.8" ry="2.1" fill="#3b302a" /><ellipse cx="142" cy="68" rx="1.8" ry="2.1" fill="#3b302a" />
-                              <path d="M131 77 Q136 80 141 77" style="fill:none" stroke="#8f5c43" stroke-width="1.8" stroke-linecap="round" />
-                            </svg>
-                            <figcaption>You</figcaption>
-                          </figure>
-                        </div>
-                        <div class="transcript">
-                          <p class="tr-head"><span class="tr-dot"></span>Transcript · live</p>
-                          <ol class="tr-lines">
-                            {#each TRANSCRIPT.slice(0, shown) as line, k}
-                              <li class:irp={line.who === 'IRP'}>
-                                <b>{line.who}</b>
-                                <span>{k === shown - 1 ? line.text.slice(0, Math.ceil(line.text.length * typing)) : line.text}{#if k === shown - 1 && typing < 1}<i class="caret"></i>{/if}</span>
-                              </li>
-                            {/each}
-                          </ol>
-                          <p class="tr-foot">Saved to your file</p>
-                        </div>
-                      </div>
-                      <div class="meet-tools"><i></i><i></i><i class="end"></i></div>
-                    </div>
+                    <ConsultCall {lp} live={active === 0} />
                     <div class="ring-wrap">
                       <svg viewBox="0 0 120 120" class="ring">
                         <circle cx="60" cy="60" r="52" class="track-c" />
@@ -220,12 +139,7 @@
           </li>
         {/each}
       </ol>
-      <svg class="route" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 20 C 160 4, 330 36, 500 20 S 840 4, 1000 20" pathLength="1" style="stroke-dashoffset:{1 - route}" />
-        {#each Array(N) as _, i}
-          <circle cx={(i / (N - 1)) * 1000} cy="20" r="6" class:lit={route >= i / (N - 1) - 0.01} />
-        {/each}
-      </svg>
+      <MoveRelay r={route} />
     </div>
   </div>
 </section>
@@ -249,7 +163,8 @@
     letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.5px rgba(14, 47, 54, 0.1); pointer-events: none;
   }
   .panel-grid {
-    @include container; position: relative; display: grid; gap: $space-6; align-items: center;
+    @include container;
+    & { position: relative; display: grid; gap: $space-6; align-items: center; }
     @include lg { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: $space-12; }
   }
   .text {
@@ -259,45 +174,22 @@
     p { @include body; font-size: 1.1rem; max-width: 40ch; }
   }
   .active .text { opacity: 1; transform: none; }
-  .how-step { font-family: $font-mono; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: $color-accent-hover; }
+  .how-step { font-family: $font-mono; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #04767b; }
   .art { display: grid; place-items: center; min-height: 0; }
 
   /* ── 1. Call ───────────────────────────── */
-  .call { position: relative; width: min(640px, 100%); padding-bottom: 40px; }
-  .meet { border-radius: 16px; overflow: hidden; background: #0b1f24; box-shadow: 0 40px 70px -35px rgba(14, 47, 54, 0.6); }
-  .meet-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font: 0.68rem $font-mono; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
-  .rec { width: 8px; height: 8px; border-radius: 50%; background: #e5484d; animation: blink 1.4s infinite; }
+  .call { position: relative; width: min(700px, 100%); padding-bottom: 28px; }
   @keyframes blink { 50% { opacity: 0.3; } }
-  .meet-time { margin-left: auto; font-variant-numeric: tabular-nums; }
-  .meet-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 6px; padding: 0 6px; }
-  .tiles { display: grid; grid-template-rows: 1fr 1fr; gap: 6px; }
-  .tile { position: relative; margin: 0; border-radius: 10px; overflow: hidden; outline: 2px solid transparent; outline-offset: -2px; transition: outline-color 200ms;
-    &.talk { outline-color: $color-accent; }
-    .person { display: block; width: 100%; height: auto; }
-    figcaption { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #fff; font: 600 0.66rem $font-sans; }
-  }
-  .transcript { display: flex; flex-direction: column; border-radius: 10px; background: #fff; padding: 10px 12px; min-height: 0; overflow: hidden; }
-  .tr-head { margin: 0 0 8px; display: flex; align-items: center; gap: 6px; font: 700 0.6rem $font-mono; letter-spacing: 0.12em; text-transform: uppercase; color: $color-ink-strong; }
-  .tr-dot { width: 7px; height: 7px; border-radius: 50%; background: #e5484d; animation: blink 1.4s infinite; }
-  .tr-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; flex: 1; overflow: hidden;
-    li { display: grid; grid-template-columns: 28px 1fr; gap: 6px; font: 0.68rem/1.4 $font-sans; color: $color-ink; animation: tr-in 300ms $ease both; }
-    b { font: 700 0.58rem $font-mono; color: $color-muted; padding-top: 2px; }
-    li.irp b { color: $color-accent-hover; } }
-  @keyframes tr-in { from { opacity: 0; transform: translateY(6px); } }
-  .caret { display: inline-block; width: 1px; height: 0.9em; margin-left: 1px; background: $color-ink-strong; vertical-align: -1px; animation: blink 0.9s steps(1) infinite; }
-  .tr-foot { margin: 8px 0 0; padding-top: 6px; border-top: 1px solid $color-hairline; font: 0.58rem $font-mono; letter-spacing: 0.08em; text-transform: uppercase; color: $color-muted; }
-  .meet-tools { display: flex; justify-content: center; gap: 10px; padding: 8px 0 12px;
-    i { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
-    i.end { width: 44px; border-radius: 15px; background: #e5484d; } }
-  .ring-wrap { position: absolute; right: -24px; bottom: -6px; width: 150px; padding: 14px; border-radius: 22px; background: #fff;
-    box-shadow: 0 30px 50px -20px rgba(14, 47, 54, 0.45); display: grid; place-items: center; gap: 8px; }
-  .ring { width: 100px; transform: rotate(-90deg);
-    circle { fill: none; stroke-width: 7; }
+  /* The 60-minute card: compact, floating off the photo's top-right corner (clear of the transcript). */
+  .ring-wrap { position: absolute; right: -28px; top: 16px; z-index: 2; padding: 10px 14px 10px 10px; border-radius: 18px; background: #fff;
+    box-shadow: 0 30px 50px -20px rgba(14, 47, 54, 0.45); display: grid; grid-template-columns: 64px auto; align-items: center; gap: 10px; }
+  .ring { grid-area: 1 / 1; width: 64px; transform: rotate(-90deg);
+    circle { fill: none; stroke-width: 9; }
     .track-c { stroke: rgba(14, 47, 54, 0.1); }
     .fill-c { stroke: $color-accent; stroke-linecap: round; stroke-dasharray: 1; } }
-  .ring-label { position: absolute; top: 14px; height: 100px; display: grid; place-content: center; text-align: center;
-    b { font: 800 2rem $font-sans; color: $color-ink-strong; line-height: 1; letter-spacing: -0.04em; }
-    span { font: 0.62rem $font-mono; text-transform: uppercase; letter-spacing: 0.14em; color: $color-muted; } }
+  .ring-label { grid-area: 1 / 1; display: grid; place-content: center; text-align: center;
+    b { font: 800 1.3rem $font-sans; color: $color-ink-strong; line-height: 1; letter-spacing: -0.04em; }
+    span { font: 0.5rem $font-mono; text-transform: uppercase; letter-spacing: 0.14em; color: $color-muted; } }
   .wave { display: flex; align-items: center; gap: 2px; height: 24px;
     i { width: 3px; height: calc(var(--h) * 100%); border-radius: 2px; background: $color-ink-strong; opacity: 0.8; transform: scaleY(0.4); }
     i.live { animation: talk 900ms ease-in-out infinite; animation-delay: calc(var(--k) * -73ms); } }
@@ -358,17 +250,18 @@
     b { font: 700 0.68rem $font-sans; color: #1f7a5c; } p { margin: 2px 0 0; font: 0.72rem/1.35 $font-sans; color: $color-ink; } }
   .wa-ic { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #25d366; color: #fff; font-size: 0.9rem; }
 
-  .route { flex: none; width: 100%; height: 40px; margin-top: $space-4; overflow: visible;
-    path { fill: none; stroke: $color-ink-strong; stroke-width: 2; stroke-dasharray: 1; vector-effect: non-scaling-stroke; }
-    circle { fill: $color-accent-soft; stroke: $color-hairline-strong; stroke-width: 2; vector-effect: non-scaling-stroke; transition: fill 300ms; }
-    circle.lit { fill: $color-accent; stroke: $color-ink-strong; } }
+  /* Short desktop screens: shrink the examples so they stay clear of the heading and the relay diorama. */
+  @media (min-width: 1024px) and (max-height: 820px) { .art { transform: scale(0.84); } }
+  @media (min-width: 1024px) and (max-height: 700px) { .art { transform: scale(0.74); } }
 
   @media (max-width: 1023px) {
     .ghost { font-size: 9rem; bottom: auto; top: 0; }
     .panel { align-items: flex-start; padding-top: $space-4; }
     .art { transform: scale(0.78); transform-origin: top center; }
+    /* The plan is the tallest example; keep it clear of the journey line. */
+    .art:has(.plan) { transform: scale(0.64); }
     .text p { font-size: 1rem; }
-    .ring-wrap { right: 0; }
+    .ring-wrap { display: none; }
   }
 
   :global(.rm) {
@@ -377,7 +270,7 @@
     .track { width: auto; transform: none !important; flex-direction: column; gap: $space-16; margin-top: $space-12; }
     .panel { width: auto; }
     .text { opacity: 1; transform: none; }
-    .ghost, .route { display: none; }
-    .wave i.live, .rec { animation: none; }
+    .ghost { display: none; }
+    .wave i.live { animation: none; }
   }
 </style>

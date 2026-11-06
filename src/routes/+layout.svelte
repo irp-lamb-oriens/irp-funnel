@@ -40,6 +40,9 @@
         "/main-funnel",
         "/agent",
         "/metrics",
+        // The client portal is a private app surface; the marketing strip
+        // pushed the login and the portal below the fold.
+        "/status",
     ];
     $: showPartnerStrip = !STRIP_HIDDEN_PREFIXES.some((p) =>
         $page.url.pathname.startsWith(p),

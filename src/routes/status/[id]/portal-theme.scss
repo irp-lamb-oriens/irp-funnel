@@ -1,0 +1,1445 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Portal theme (2026). A design layer on top of status.scss: same classes,
+// same markup contracts, no behaviour. Brings the client portal, its login
+// gate and the /status lookup in line with the home page's visual language:
+// IRP ink and teal, quiet hairline cards, sentence-case headings, generous
+// spacing, and motion that respects prefers-reduced-motion.
+//
+// Every rule is scoped under .client-portal so it outranks the base sheet and
+// the page's own :global() rules without !important.
+// ─────────────────────────────────────────────────────────────────────────────
+
+$ink: #0e2f36;
+$ink-2: #12424b;
+$teal: #02b5bb;
+$teal-deep: #04767b;
+$text: #1d2a2e;
+$steel: #4a5c61;
+$muted: #5b6d72;
+$mist: #eef8f8;
+$canvas: #f6f9f9;
+$hair: rgba(14, 47, 54, 0.1);
+$hair-2: rgba(14, 47, 54, 0.18);
+$sans: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+$mono: 'SFMono-Regular', Menlo, Consolas, monospace;
+$ease: cubic-bezier(0.16, 1, 0.3, 1);
+$card-shadow: 0 1px 2px rgba(14, 47, 54, 0.05), 0 18px 40px -28px rgba(14, 47, 54, 0.35);
+
+.client-portal {
+  --cp-text-primary: #{$ink};
+  --cp-text-muted: #{$steel};
+  --cp-text-subtle: #{$muted};
+  --cp-border: #{$hair};
+  --cp-radius: 20px;
+  --font-paragraph: #{$sans};
+  background:
+    radial-gradient(1200px 500px at 50% -120px, rgba(2, 181, 187, 0.08), transparent 70%),
+    $canvas;
+  font-family: $sans;
+  color: $text;
+  -webkit-font-smoothing: antialiased;
+
+  h1, h2, h3, h4, h5, p, li, span, label, input, button, a, textarea, select, td, th, small, strong, b {
+    font-family: inherit;
+  }
+
+  // Shared focus ring
+  :where(button, a, input, textarea, select, [role='button'], [tabindex]):focus-visible {
+    outline: 2px solid $teal;
+    outline-offset: 2px;
+  }
+
+  // ── Login gate ────────────────────────────────────────────────────────────
+  .cp-auth-wall {
+    min-height: calc(100vh - 80px);
+    padding: clamp(7rem, 12vh, 9rem) clamp(1rem, 4vw, 3rem) 4rem;
+    background:
+      radial-gradient(900px 600px at 15% 20%, rgba(2, 181, 187, 0.22), transparent 60%),
+      radial-gradient(700px 500px at 90% 100%, rgba(2, 181, 187, 0.12), transparent 60%),
+      linear-gradient(160deg, $ink-2 0%, $ink 55%, #0a242a 100%);
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+
+    // A faint dotted globe behind the card
+    &::before {
+      content: '';
+      position: absolute;
+      width: 900px;
+      height: 900px;
+      right: -260px;
+      bottom: -420px;
+      border-radius: 50%;
+      background-image: radial-gradient(rgba(214, 250, 251, 0.22) 1.2px, transparent 1.6px);
+      background-size: 14px 14px;
+      -webkit-mask-image: radial-gradient(circle at 40% 35%, #000 0, #000 45%, transparent 70%);
+      mask-image: radial-gradient(circle at 40% 35%, #000 0, #000 45%, transparent 70%);
+      pointer-events: none;
+    }
+  }
+
+  .cp-auth-wall__layout {
+    position: relative;
+    z-index: 1;
+    width: min(1040px, 100%);
+    display: grid;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+    @media (min-width: 900px) {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    }
+  }
+
+  .cp-auth-wall__brand {
+    color: #fff;
+    display: none;
+    @media (min-width: 900px) { display: block; }
+  }
+  .cp-auth-wall__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    font: 600 0.72rem $mono;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7fe3e6;
+    &::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: $teal; box-shadow: 0 0 0 4px rgba(2, 181, 187, 0.2); }
+  }
+  .cp-auth-wall__headline {
+    margin: 0 0 1rem;
+    font: 800 clamp(2.4rem, 4.4vw, 3.6rem) / 1.02 $sans;
+    letter-spacing: -0.04em;
+    color: #fff;
+    text-wrap: balance;
+  }
+  .cp-auth-wall__lede {
+    margin: 0 0 2rem;
+    max-width: 44ch;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .cp-auth-wall__features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+    li {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 0.9rem;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+    i {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #7fe3e6;
+      font-style: normal;
+      svg { width: 18px; height: 18px; }
+    }
+    small { display: block; color: rgba(255, 255, 255, 0.6); font-size: 0.82rem; }
+  }
+
+  .cp-auth-wall__card {
+    max-width: 420px;
+    width: 100%;
+    margin-inline: auto;
+    padding: 2.25rem 2rem 1.75rem;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.98);
+    text-align: left;
+    box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.4);
+    animation: cp-rise 700ms $ease both;
+    &::before { display: none; }
+  }
+  .cp-auth-wall__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 0 1.25rem;
+    border-radius: 14px;
+    background: $mist;
+    color: $teal-deep;
+    font-size: 0;
+    svg { width: 24px; height: 24px; }
+  }
+  .cp-auth-wall__title {
+    margin: 0 0 0.4rem;
+    font: 800 1.6rem/1.15 $sans;
+    letter-spacing: -0.03em;
+    color: $ink;
+  }
+  .cp-auth-wall__subtitle {
+    margin: 0 0 1.75rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: $steel;
+  }
+  .cp-auth-wall__form { display: grid; gap: 0.9rem; text-align: left; }
+  .cp-auth-wall__input-group {
+    display: grid;
+    gap: 0.45rem;
+    label {
+      font: 600 0.78rem $sans;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      color: $ink;
+    }
+  }
+  .cp-auth-wall__input {
+    width: 100%;
+    height: 52px;
+    padding: 0 1rem;
+    border-radius: 14px;
+    border: 1.5px solid $hair-2;
+    background: #fff;
+    font-size: 1rem;
+    color: $ink;
+    box-shadow: none;
+    transition: border-color 200ms, box-shadow 200ms;
+    &::placeholder { color: #9aa9ad; }
+    &:hover { border-color: rgba(14, 47, 54, 0.3); }
+    &:focus { outline: none; border-color: $teal; box-shadow: 0 0 0 4px rgba(2, 181, 187, 0.18); }
+  }
+  .cp-auth-wall__input--code {
+    height: 60px;
+    text-align: center;
+    font: 700 1.6rem $mono;
+    letter-spacing: 0.5em;
+    padding-left: 0.5em;
+  }
+  .cp-auth-wall__btn {
+    width: 100%;
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: $ink;
+    color: #fff;
+    font: 700 0.98rem $sans;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+    box-shadow: 0 12px 24px -14px rgba(14, 47, 54, 0.8);
+    transition: background 200ms, transform 160ms $ease, box-shadow 200ms;
+    &:hover:not(:disabled) { background: $ink-2; transform: translateY(-1px); }
+    &:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+    &:disabled { background: #c4d0d2; color: #fff; box-shadow: none; cursor: not-allowed; }
+  }
+  .cp-auth-wall__back {
+    justify-self: center;
+    min-height: 40px;
+    padding: 0 0.75rem;
+    border: none;
+    background: none;
+    color: $teal-deep;
+    font: 600 0.88rem $sans;
+    cursor: pointer;
+    border-radius: 10px;
+    &:hover { background: $mist; }
+  }
+  .cp-auth-wall__error, .cp-auth-wall__success {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    text-align: left;
+  }
+  .cp-auth-wall__error { background: #fdecec; color: #9b1c1c; border: 1px solid rgba(198, 36, 38, 0.2); }
+  .cp-auth-wall__success { background: #e3f4ec; color: #1f6b52; border: 1px solid rgba(31, 122, 92, 0.2); }
+  .cp-auth-wall__security-note {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid $hair;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: none;
+    border-radius: 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: $muted;
+    svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: $teal-deep; }
+  }
+
+  // ── Dashboard shell ───────────────────────────────────────────────────────
+  .cp-dashboard {
+    max-width: 1180px;
+    padding: 2rem clamp(1rem, 3vw, 2rem) 6rem;
+    --cp-h-pad: 0px;
+  }
+
+  // Hero: ink card, dotted globe, greeting, route and progress
+  .cp-dashboard__header {
+    border-radius: 28px;
+    padding: clamp(1.75rem, 4vw, 2.75rem);
+    margin-bottom: 1.5rem;
+    background-image:
+      radial-gradient(700px 360px at 85% 0%, rgba(2, 181, 187, 0.32), transparent 65%),
+      linear-gradient(150deg, $ink-2 0%, $ink 60%, #0a242a 100%);
+    background-attachment: scroll;
+    box-shadow: 0 40px 80px -50px rgba(14, 47, 54, 0.9);
+    isolation: isolate;
+    &::after {
+      content: '';
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      right: -120px;
+      top: -260px;
+      border-radius: 50%;
+      background-image: radial-gradient(rgba(214, 250, 251, 0.28) 1.2px, transparent 1.6px);
+      background-size: 13px 13px;
+      -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 40%, transparent 70%);
+      mask-image: radial-gradient(circle at 50% 50%, #000 0, #000 40%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+  }
+  .cp-dashboard__header-overlay { display: none; }
+  .cp-dashboard__header-content { align-items: flex-start; }
+  .cp-dashboard__header-eyebrow {
+    margin: 0 0 0.75rem;
+    font: 600 0.7rem $mono;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7fe3e6;
+  }
+  .cp-dashboard__header-title {
+    margin: 0 0 1.25rem;
+    font: 800 clamp(2.2rem, 5vw, 3.4rem) / 1 $sans;
+    letter-spacing: -0.045em;
+    text-shadow: none;
+    text-transform: none;
+  }
+  .cp-dashboard__header-route {
+    gap: 0.75rem;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font: 600 0.92rem $sans;
+    box-shadow: none;
+    .route-point { letter-spacing: 0; white-space: nowrap; }
+    .route-arrow { width: 18px; height: 18px; filter: none; color: #7fe3e6; }
+  }
+  .cp-dashboard__header-progress {
+    margin-top: 1.75rem;
+    max-width: 560px;
+  }
+  .cp-dashboard__header-progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.75);
+    b { color: #fff; font-weight: 700; }
+    span:last-child { font: 600 0.72rem $mono; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.6); }
+  }
+  .cp-dashboard__header-progress-bar {
+    height: 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #7fe3e6, $teal);
+      transform-origin: left;
+      animation: cp-grow 1.2s $ease both 200ms;
+    }
+  }
+  .cp-dashboard__header-logout {
+    min-height: 40px;
+    padding: 0 1rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    font: 600 0.85rem $sans;
+    &:hover { background: rgba(255, 255, 255, 0.16); transform: none; box-shadow: none; }
+  }
+
+  // ── Cards: one family for every section ──────────────────────────────────
+  .cp-dashboard__pipeline,
+  .cp-collapsible,
+  .cp-call-banner {
+    border-radius: var(--cp-radius);
+  }
+  .cp-dashboard__pipeline {
+    margin: 0 0 1rem;
+    padding: 1.75rem 1.75rem 1.25rem;
+    background: #fff;
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+    h3 {
+      margin: 0 0 1rem;
+      font: 700 1.15rem $sans;
+      letter-spacing: -0.02em;
+      text-transform: none;
+      color: $ink;
+    }
+  }
+
+  // Stepper: done = filled teal with a check, now = ring that breathes, next = hollow
+  .cp-dashboard__pipeline .stepper {
+    padding: 0.75rem 0.5rem 0.25rem;
+    &::before { top: 26px; left: 70px; right: 70px; height: 2px; background: $hair-2; }
+    .step {
+      min-width: 128px;
+      &__circle {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #fff;
+        box-shadow: inset 0 0 0 2px $hair-2;
+        margin-bottom: 0.7rem;
+        position: relative;
+      }
+      &__label {
+        font: 600 0.78rem/1.35 $sans;
+        text-transform: none;
+        letter-spacing: 0;
+        color: $muted;
+      }
+      &__date {
+        background: none;
+        padding: 0;
+        font: 500 0.7rem $mono;
+        color: $muted;
+      }
+      &.completed .step__circle {
+        background: $teal;
+        box-shadow: none;
+        &::after {
+          content: '';
+          position: absolute;
+          left: 9px;
+          top: 7px;
+          width: 6px;
+          height: 11px;
+          border: solid #fff;
+          border-width: 0 2.5px 2.5px 0;
+          transform: rotate(45deg);
+        }
+      }
+      &.completed .step__label { color: $ink; }
+      &.active .step__circle {
+        background: $ink;
+        transform: none;
+        box-shadow: 0 0 0 5px rgba(2, 181, 187, 0.25);
+        animation: cp-breathe 2.4s ease-in-out infinite;
+        &::after { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: #7fe3e6; }
+      }
+      &.active .step__label { color: $ink; font-weight: 800; }
+      &.active .step__date { color: $teal-deep; background: none; }
+    }
+  }
+
+  // Consultation banner
+  .cp-call-banner {
+    margin: 0 0 1rem;
+    padding: 1.5rem 1.75rem;
+    background:
+      radial-gradient(600px 200px at 100% 0%, rgba(2, 181, 187, 0.25), transparent 70%),
+      linear-gradient(150deg, $ink-2, $ink);
+    border: none;
+    box-shadow: 0 30px 60px -40px rgba(14, 47, 54, 0.9);
+  }
+  .cp-call-banner__eyebrow { font: 600 0.7rem $mono; letter-spacing: 0.14em; color: #7fe3e6; }
+  .cp-call-banner__title { font: 700 1.25rem $sans; letter-spacing: -0.02em; color: #fff; }
+  .cp-call-banner__time { font: 600 1rem $sans; color: #7fe3e6; }
+  .cp-call-banner__subtitle { color: rgba(255, 255, 255, 0.65); font-size: 0.88rem; }
+  .cp-call-banner__join-btn {
+    min-height: 48px;
+    padding: 0 1.4rem;
+    border-radius: 999px;
+    background: $teal;
+    color: $ink;
+    font: 700 0.92rem $sans;
+    box-shadow: 0 12px 24px -12px rgba(2, 181, 187, 0.8);
+    &:hover { filter: none; background: #2cc6cb; }
+  }
+
+  // Collapsible rows
+  .cp-collapsible {
+    margin: 0 0 0.75rem;
+    background: #fff;
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+    overflow: hidden;
+  }
+  .cp-collapsible__trigger {
+    min-height: 64px;
+    padding: 0 1.25rem 0 1rem;
+    background: transparent;
+    border: none;
+    text-transform: none;
+    letter-spacing: 0;
+    font: 700 1rem $sans;
+    color: $ink;
+    transition: background 200ms;
+    &:hover { background: #fafcfc; }
+  }
+  .cp-collapsible__trigger-left {
+    gap: 0.85rem;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    font: 700 1rem $sans;
+    color: $ink;
+    > svg {
+      box-sizing: content-box;
+      padding: 9px;
+      border-radius: 12px;
+      background: $mist;
+      stroke: $teal-deep;
+    }
+  }
+  .cp-collapsible__trigger-count {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: $mist;
+    color: $teal-deep;
+    font: 700 0.75rem $sans;
+    display: inline-grid;
+    place-items: center;
+  }
+  .cp-collapsible__trigger-chevron {
+    width: 30px;
+    height: 30px;
+    padding: 7px;
+    border-radius: 50%;
+    background: #f1f5f5;
+    color: $steel;
+    transition: transform 400ms $ease, background 200ms;
+  }
+  .cp-collapsible__trigger:hover .cp-collapsible__trigger-chevron { background: $mist; color: $teal-deep; }
+
+  // Sections below the overview share the card family
+  .cp-dashboard__full-width-section { margin-bottom: 1rem; }
+
+  // Cover letter: a calm letter on paper
+  .cp-cover-letter__inner {
+    padding: clamp(1.75rem, 4vw, 3rem);
+    border-radius: var(--cp-radius);
+    background: #fff;
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+  }
+  .cp-cover-letter__greeting { font: 700 1.35rem $sans; letter-spacing: -0.02em; color: $ink; }
+  .cp-cover-letter__body { font-size: 1rem; line-height: 1.7; color: $steel; max-width: 70ch; }
+  .cp-cover-letter__callout {
+    border: none;
+    border-left: 3px solid $teal;
+    border-radius: 0 14px 14px 0;
+    background: $mist;
+  }
+  .cp-cover-letter__signoff-brand { color: $teal-deep; font-weight: 700; }
+
+  // Proposal document
+  .cp-proposal-section {
+    border-radius: var(--cp-radius);
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+  }
+
+  // Activity timeline accents follow the brand
+  .timeline__card {
+    border-radius: 16px;
+    border: 1px solid $hair;
+    box-shadow: 0 10px 24px -20px rgba(14, 47, 54, 0.5);
+  }
+  .timeline__card-time { font-family: $mono; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cp-auth-wall__card,
+    .cp-dashboard__header-progress-bar i,
+    .cp-dashboard__pipeline .stepper .step.active .step__circle { animation: none; }
+  }
+}
+
+@keyframes cp-rise { from { opacity: 0; transform: translateY(16px); } }
+@keyframes cp-grow { from { transform: scaleX(0); } }
+@keyframes cp-breathe { 50% { box-shadow: 0 0 0 9px rgba(2, 181, 187, 0.12); } }
+
+// ── Lily chat drawer: opaque ink panel in the brand palette ────────────────
+// The chat used a translucent violet-on-black theme that let the page show
+// through; it now reads as a solid IRP surface. Only colour variables change.
+.client-portal .lily-drawer.lily-drawer {
+  --chat-glass-bg: #0e2f36;
+  --chat-glass-bg-soft: #12424b;
+  --chat-glass-border: rgba(255, 255, 255, 0.08);
+  --chat-glass-border-glow: rgba(2, 181, 187, 0.22);
+  --chat-glass-header: #0a242a;
+  --chat-glass-input-bg: rgba(255, 255, 255, 0.07);
+  --chat-glass-input-focus: rgba(2, 181, 187, 0.35);
+  --chat-bubble-lily: rgba(255, 255, 255, 0.07);
+  --chat-bubble-lily-border: rgba(255, 255, 255, 0.1);
+  --chat-bubble-client: rgba(2, 181, 187, 0.2);
+  --chat-bubble-client-border: rgba(2, 181, 187, 0.4);
+  --chat-color-client: #7fe3e6;
+  --chat-text-primary: rgba(255, 255, 255, 0.94);
+  --chat-text-secondary: rgba(255, 255, 255, 0.66);
+  --chat-text-dim: rgba(255, 255, 255, 0.5);
+  background: #0e2f36;
+  @media (min-width: 520px) {
+    left: 16px;
+    bottom: 16px;
+    border-radius: 22px;
+    height: min(78vh, 680px);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    // Floating panel: slide fully past the bottom margin when closed.
+    &:not(.lily-drawer--open) {
+      transform: translateY(calc(100% + 40px));
+    }
+  }
+}
+
+.client-portal .lily-fab.lily-fab {
+  background: #0e2f36;
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 40px -16px rgba(14, 47, 54, 0.7), 0 0 0 1px rgba(2, 181, 187, 0.14);
+  font-family: $sans;
+}
+
+// ── Your details + Your charges cards ──────────────────────────────────────
+// Doubled class selectors beat the components' scoped (0,2,0) rules.
+.client-portal {
+  .cfc.cfc,
+  .cc.cc {
+    font-family: $sans;
+    border: 1px solid $hair;
+    border-radius: 22px;
+    padding: clamp(1.4rem, 2.6vw, 2rem);
+    box-shadow: $card-shadow;
+    margin: 1.25rem 0;
+  }
+  .cfc__title.cfc__title,
+  .cc__title.cc__title {
+    font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: $ink;
+  }
+  .cfc__sub.cfc__sub,
+  .cc__sub.cc__sub {
+    font-size: 0.95rem;
+    color: $steel;
+    margin-top: 0.35rem;
+  }
+  .cfc__head.cfc__head,
+  .cc__head.cc__head {
+    margin-bottom: 1.4rem;
+  }
+  .cfc__label.cfc__label,
+  .cc__stat-label.cc__stat-label,
+  .cc__block-title.cc__block-title {
+    font-family: $mono;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: $muted;
+  }
+  .cfc__pill.cfc__pill {
+    font-family: $sans;
+    color: $teal-deep;
+    background: $mist;
+    border-color: rgba(2, 181, 187, 0.3);
+  }
+  .cfc__row--editable.cfc__row--editable {
+    background: $canvas;
+    border: 1px solid $hair;
+    border-radius: 16px;
+    padding: 0.9rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    &:focus-within {
+      background: #fff;
+      border-color: rgba(2, 181, 187, 0.55);
+      box-shadow: 0 0 0 4px rgba(2, 181, 187, 0.12);
+    }
+  }
+  .cfc__input.cfc__input {
+    border: 1px solid $hair-2;
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    font-size: 1rem;
+    color: $ink;
+    &:focus {
+      border-color: $teal-deep;
+      box-shadow: none;
+    }
+  }
+  .cfc__value.cfc__value {
+    color: $ink;
+    font-size: 1.05rem;
+  }
+  .cfc__save.cfc__save {
+    background: $ink;
+    border-radius: 999px;
+    padding: 0.8rem 1.6rem;
+    font-weight: 600;
+    box-shadow: 0 12px 24px -14px rgba(14, 47, 54, 0.8);
+    transition: transform 0.2s $ease, background 0.2s, opacity 0.2s;
+    &:hover:not(:disabled) {
+      background: $ink-2;
+      filter: none;
+    }
+    &:disabled {
+      opacity: 0.35;
+    }
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: 3px;
+    }
+  }
+  .cfc__msg--ok.cfc__msg--ok,
+  .cc__ok.cc__ok,
+  .cc__quote-ok.cc__quote-ok {
+    color: #047857;
+  }
+
+  // Charges
+  .cc__stat.cc__stat {
+    background: $canvas;
+    border: 1px solid $hair;
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    gap: 0.4rem;
+    strong {
+      font-size: clamp(1.3rem, 2vw, 1.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: $ink;
+    }
+    // The balance tile is the one that asks something of the client.
+    &:last-child {
+      background: $ink;
+      border-color: $ink;
+      .cc__stat-label {
+        color: rgba(255, 255, 255, 0.66);
+      }
+      strong {
+        color: #fff;
+      }
+      .cc__owing {
+        color: #ffd18a;
+      }
+    }
+  }
+  .cc__owing.cc__owing,
+  .cc__quote-remaining.cc__quote-remaining {
+    color: #9a5200;
+  }
+  .cc__quote.cc__quote,
+  .cc__inv.cc__inv {
+    border: 1px solid $hair;
+    border-radius: 16px;
+  }
+  .cc__quote.cc__quote {
+    padding: 1rem 1.15rem;
+  }
+  .cc__quote-title.cc__quote-title {
+    color: $ink;
+    font-size: 0.98rem;
+  }
+  .cc__quote-row--meta.cc__quote-row--meta,
+  .cc__inv-date.cc__inv-date,
+  .cc__inv-caret.cc__inv-caret {
+    color: $muted;
+  }
+  .cc__inv.cc__inv summary {
+    padding: 0.95rem 1.15rem;
+    transition: background 0.2s;
+    &:hover {
+      background: $canvas;
+    }
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: -2px;
+      border-radius: 16px;
+    }
+  }
+  .cc__inv-num.cc__inv-num {
+    font-family: $mono;
+    color: $teal-deep;
+    font-weight: 600;
+  }
+  .cc__inv-status.cc__inv-status {
+    font-family: $sans;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+  }
+  .cc__inv-status--partially_paid.cc__inv-status--partially_paid {
+    color: #8a4b00;
+  }
+  .cc__muted.cc__muted {
+    color: $muted;
+  }
+}
+
+// ── Stage rating ───────────────────────────────────────────────────────────
+.client-portal {
+  .stage-rating__label.stage-rating__label {
+    color: $muted;
+    font-family: $sans;
+  }
+  // 24px minimum target (WCAG 2.5.8) and a placeholder star that reads on white.
+  .stage-rating__star--btn.stage-rating__star--btn {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+    color: #9aaaae;
+    border-radius: 6px;
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: 1px;
+    }
+  }
+  .stage-rating__star--empty.stage-rating__star--empty {
+    color: #b6c3c6;
+  }
+}
+
+// ── Collapsible content: a taller cap so lists rarely need an inner scroll ──
+.client-portal .cp-collapsible__scroll.cp-collapsible__scroll {
+  max-height: min(72vh, 720px);
+  // The collapsible header already names the section.
+  .rl__title {
+    display: none;
+  }
+  .rl__header {
+    margin-bottom: 1.25rem;
+  }
+}
+
+// ── Regulations, exports & services cards ──────────────────────────────────
+.client-portal {
+  .rl.rl {
+    font-family: $sans;
+  }
+  .rl__subtitle.rl__subtitle {
+    color: $steel;
+    font-size: 0.98rem;
+  }
+  .rl__grid.rl__grid {
+    gap: 14px;
+  }
+  .rl__card.rl__card {
+    border: 1px solid $hair;
+    border-radius: 18px;
+    box-shadow: none;
+    background: #fff;
+    padding: 1.2rem 1.25rem 1.1rem;
+    transition: border-color 0.25s, box-shadow 0.3s $ease, transform 0.3s $ease;
+    &::before {
+      display: none;
+    }
+    &:hover {
+      border-color: rgba(2, 181, 187, 0.4);
+      box-shadow: 0 18px 36px -24px rgba(14, 47, 54, 0.4);
+      transform: translateY(-2px);
+    }
+  }
+  .rl__icon-wrap.rl__icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: $mist;
+    border: 0;
+  }
+  .rl__tag.rl__tag {
+    font-family: $mono;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    font-size: 0.62rem;
+  }
+  .rl__card-title.rl__card-title {
+    color: $ink;
+    font-size: 1.02rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .rl__card-body.rl__card-body {
+    color: $steel;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .rl__link.rl__link {
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    font-weight: 600;
+    min-height: 32px;
+    color: $teal-deep;
+    border-color: rgba(2, 181, 187, 0.3);
+    background: #fff;
+    transition: background 0.2s, border-color 0.2s;
+    &:hover {
+      background: $mist;
+      border-color: $teal;
+    }
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ── Video testimonials ─────────────────────────────────────────────────────
+.client-portal {
+  .cp-video-testimonials.cp-video-testimonials {
+    border-radius: 28px;
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+  }
+  .cp-video-testimonials__inner.cp-video-testimonials__inner {
+    font-family: $sans;
+    padding: clamp(1.75rem, 4vw, 3.25rem);
+  }
+  .cp-video-testimonials__heading.cp-video-testimonials__heading {
+    text-align: left;
+    margin-bottom: 1.75rem;
+  }
+  .cp-video-testimonials__title.cp-video-testimonials__title {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: $ink;
+  }
+  .cp-video-testimonials__subtitle.cp-video-testimonials__subtitle {
+    color: $steel;
+    font-size: 1.02rem;
+  }
+  .cp-video-testimonials__grid.cp-video-testimonials__grid {
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .cp-video-testimonials__card.cp-video-testimonials__card {
+    border-radius: 20px;
+    box-shadow: 0 24px 48px -30px rgba(14, 47, 54, 0.6);
+  }
+  .cp-video-testimonials__quote.cp-video-testimonials__quote {
+    position: relative;
+    background: $ink;
+    border: 0;
+    border-radius: 20px;
+    padding: 1.6rem 1.8rem 1.6rem 3.6rem;
+    &::before {
+      content: '“';
+      position: absolute;
+      left: 1.3rem;
+      top: 0.9rem;
+      font: 700 3rem/1 Georgia, serif;
+      color: $teal;
+    }
+  }
+  .cp-video-testimonials__quote-text.cp-video-testimonials__quote-text {
+    color: #fff;
+    font-weight: 500;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    letter-spacing: -0.01em;
+  }
+}
+
+// ── Template documents (BlockRenderer): accordions read as quiet disclosures ─
+.client-portal .br-document {
+  .br-accordion details {
+    border: 1px solid $hair;
+    border-radius: 16px;
+    background: #fff;
+    margin: 0.75rem 0;
+    transition: border-color 0.2s, box-shadow 0.3s $ease;
+    &[open] {
+      border-color: rgba(2, 181, 187, 0.35);
+      box-shadow: 0 16px 32px -26px rgba(14, 47, 54, 0.45);
+    }
+  }
+  .br-accordion summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    font-weight: 600;
+    color: $ink;
+    border-radius: 16px;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &::after {
+      content: '';
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: $mist
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2304767b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+        center / 14px no-repeat;
+      transition: transform 0.3s $ease;
+    }
+    &:hover {
+      background: $canvas;
+    }
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: 2px;
+    }
+  }
+  .br-accordion details[open] > summary::after {
+    transform: rotate(180deg);
+  }
+  .br-accordion details > :not(summary) {
+    padding: 0 1.2rem;
+    color: $steel;
+  }
+  .br-accordion details > :last-child:not(summary) {
+    padding-bottom: 1rem;
+  }
+  .br-html a,
+  .br-accordion a {
+    color: $teal-deep;
+    text-underline-offset: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .client-portal .br-document .br-accordion summary::after {
+    transition: none;
+  }
+}
+
+// ── Destination-service tabs (ServiceFunnel + the five service bodies) ─────
+// Same content and layout; type and colour move to the portal's language so
+// a service tab reads as part of the same product, and teal-on-mist text that
+// failed contrast becomes ink.
+.client-portal .sf.sf {
+  font-family: $sans;
+  color: $text;
+  .sf__title {
+    font-family: $sans;
+    text-transform: none;
+    color: $ink;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    font-size: clamp(2.2rem, 5vw, 3.75rem);
+  }
+  .sf__lead {
+    color: $steel;
+    border-left-color: $teal;
+    font-size: 1.08rem;
+  }
+  .sf__chip {
+    font-family: $mono;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: $teal-deep;
+  }
+  .sf__eyebrow {
+    font-family: $mono;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    font-size: 0.72rem;
+    color: $teal-deep;
+  }
+  .sf__brand {
+    font-family: $mono;
+    color: $muted;
+    letter-spacing: 0.12em;
+  }
+  .sf__ghost {
+    font-family: $sans;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    opacity: 0.6;
+  }
+  .sf__icon {
+    background: $mist;
+    border-color: transparent;
+  }
+  .rt__manifesto-text,
+  .rt__item-title,
+  .ia__title,
+  .ic__title,
+  .la__title,
+  .re__title {
+    font-family: $sans;
+    letter-spacing: -0.015em;
+  }
+  .rt__item-title,
+  .ia__title,
+  .ic__title,
+  .la__title,
+  .re__title {
+    color: $ink;
+    font-weight: 700;
+  }
+  .rt__manifesto-text {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+  }
+  .rt__item-index,
+  .ia__num,
+  .la__num,
+  .re__num {
+    font-family: $mono;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .rt__item.rt__item {
+    border: 1px solid $hair;
+    border-radius: 18px;
+    box-shadow: none;
+  }
+}
+.client-portal {
+  .sfp__cta-btn.sfp__cta-btn {
+    font-family: $sans;
+    text-transform: none;
+    letter-spacing: -0.005em;
+    font-weight: 600;
+    font-size: 1rem;
+    background: $ink;
+    border-radius: 999px;
+    padding: 0.95rem 1.6rem;
+    box-shadow: 0 16px 30px -18px rgba(14, 47, 54, 0.8);
+    transition: transform 0.25s $ease, background 0.2s;
+    &:hover {
+      background: $ink-2;
+      transform: translateY(-1px);
+    }
+    &:focus-visible {
+      outline: 2px solid $teal;
+      outline-offset: 3px;
+    }
+  }
+  .sfp__cta-note.sfp__cta-note {
+    color: $steel;
+    font-family: $sans;
+  }
+}
+
+// ── One type family across every portal component ──────────────────────────
+// Components read --font-title / --font-paragraph / --font-subtitle; inside
+// the portal those resolve to the same sans the cards above use. The site
+// header and footer sit outside .client-portal and keep their own fonts.
+.client-portal {
+  --font-title: #{$sans};
+  --font-subtitle: #{$sans};
+  --font-paragraph: #{$sans};
+}
+
+// ── Quotes + acceptance ────────────────────────────────────────────────────
+.client-portal {
+  .qp-card.qp-card,
+  .qa-card.qa-card,
+  .qa-summary.qa-summary {
+    border: 1px solid $hair;
+    border-radius: 22px;
+    box-shadow: $card-shadow;
+  }
+  .qp-title.qp-title,
+  .qa-card__title.qa-card__title {
+    color: $ink;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-transform: none;
+  }
+  .qp-amount.qp-amount,
+  .qa-summary__amount.qa-summary__amount {
+    color: $ink;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+  .qp-meta-label.qp-meta-label,
+  .qa-label.qa-label,
+  .qa-summary__label.qa-summary__label {
+    font-family: $mono;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: $muted;
+  }
+  .qp-provider.qp-provider,
+  .qa-summary__provider.qa-summary__provider {
+    color: $ink;
+  }
+  .qp-notes.qp-notes {
+    background: $canvas;
+    border: 0;
+    border-radius: 12px;
+    color: $steel;
+    font-style: normal;
+  }
+  .qp-btn--accept.qp-btn--accept,
+  .qa-btn--ready.qa-btn--ready {
+    background: $ink;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    box-shadow: 0 16px 30px -18px rgba(14, 47, 54, 0.8);
+    &:hover {
+      background: $ink-2;
+    }
+  }
+  .qa-btn.qa-btn {
+    border-radius: 999px;
+  }
+  .qp-btn:focus-visible,
+  .qa-btn:focus-visible,
+  .qa-select:focus-visible,
+  .qa-input:focus-visible {
+    outline: 2px solid $teal;
+    outline-offset: 3px;
+  }
+  .qa-input.qa-input,
+  .qa-select.qa-select {
+    border-radius: 12px;
+    border: 1px solid $hair-2;
+    background: #fff;
+    color: $ink;
+    min-height: 48px;
+  }
+  .qa-terms.qa-terms {
+    border-radius: 16px;
+    border: 1px solid $hair;
+    background: $canvas;
+  }
+  .qa-terms__summary-hint.qa-terms__summary-hint,
+  .qa-consent__link.qa-consent__link,
+  .qa-summary__link.qa-summary__link {
+    color: $teal-deep;
+  }
+  .qa-consent.qa-consent {
+    border-radius: 14px;
+    border: 1px solid $hair;
+  }
+  .qa-consent--checked.qa-consent--checked {
+    border-color: rgba(2, 181, 187, 0.5);
+    background: $mist;
+  }
+}
+
+// Native select gets a drawn chevron (the component sets appearance: none).
+.client-portal .qa-select.qa-select {
+  padding-right: 2.75rem;
+  background: #fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e2f36' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    right 1rem center / 16px no-repeat;
+}
+
+// QuoteAcceptance pins its own font and colour tokens on its root; re-point
+// them at the portal palette (contrast-safe muted and accent text).
+.client-portal .qa-container.qa-container {
+  --font-paragraph: #{$sans};
+  --font-subtitle: #{$sans};
+  --font-title: #{$sans};
+  --_qa-text-subtle: #{$muted};
+  --_qa-warning: #9a5200;
+}
+
+// Payment step and template documents: same tokens, portal palette.
+.client-portal {
+  .ps.ps {
+    --ps-teal: #{$teal-deep};
+    --ps-ink: #{$ink};
+    --ps-body: #{$text};
+    --ps-muted: #{$muted};
+    --ps-line: #{$hair};
+    --ps-soft: #{$mist};
+    font-family: $sans;
+    border: 1px solid $hair;
+    box-shadow: $card-shadow;
+  }
+  .br-document.br-document {
+    font-family: $sans;
+  }
+}
+
+// Contrast fixes (axe, WCAG 1.4.3) for small status text.
+.client-portal {
+  .qp-status--received.qp-status--received {
+    color: #055c60;
+    background: $mist;
+  }
+  .qa-container.qa-container {
+    --_qa-success: #047857;
+  }
+}
+
+// ── Activity log: newest first, grouped by day, one quiet rail ─────────────
+.client-portal .alog {
+  position: relative;
+  font-family: $sans;
+  padding: 0.25rem 0 0.5rem;
+  // One continuous rail through every day, behind the icons.
+  &::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 2.6rem;
+    bottom: 2rem;
+    width: 1.5px;
+    background: linear-gradient($hair-2, $hair);
+  }
+}
+.client-portal .alog__day + .alog__day {
+  margin-top: 0.9rem;
+}
+.client-portal .alog__date {
+  margin: 0 0 0.2rem;
+  padding: 0.35rem 0 0.35rem 50px;
+  font: 600 0.7rem/1.2 $mono;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: $muted;
+}
+.client-portal .alog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+.client-portal .alog__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 0.55rem 0;
+  animation: cp-rise 0.5s $ease both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.client-portal .alog__icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid $hair-2;
+  color: $steel;
+  svg {
+    width: 17px;
+    height: 17px;
+  }
+  svg,
+  svg * {
+    fill: none;
+  }
+}
+.client-portal .alog__item--stage .alog__icon {
+  color: $teal-deep;
+  border-color: rgba(2, 181, 187, 0.35);
+  background: $mist;
+}
+.client-portal .alog__item--payment .alog__icon,
+.client-portal .alog__item--quote .alog__icon {
+  color: #047857;
+  border-color: rgba(4, 120, 87, 0.25);
+  background: #ecf8f2;
+}
+.client-portal .alog__item--latest .alog__icon {
+  background: $ink;
+  border-color: $ink;
+  color: #7fe3e6;
+  box-shadow: 0 0 0 5px rgba(2, 181, 187, 0.16);
+}
+.client-portal .alog__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 1rem;
+  min-height: 36px;
+  padding: 0.45rem 0 0.7rem;
+  border-bottom: 1px solid $hair;
+}
+.client-portal .alog__item:last-child .alog__body {
+  border-bottom: 0;
+}
+.client-portal .alog__text {
+  margin: 0;
+  flex: 1 1 260px;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: $steel;
+  strong {
+    color: $ink;
+    font-weight: 600;
+  }
+}
+.client-portal .alog__item--latest .alog__text {
+  color: $ink;
+}
+.client-portal .alog__time {
+  font: 500 0.78rem/1.4 $mono;
+  color: $muted;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .client-portal .alog__item {
+    animation: none;
+  }
+}
+
+// Regulations cards: one-colour line icons and a quiet category tag.
+.client-portal {
+  .rl__svg {
+    width: 20px;
+    height: 20px;
+    color: $ink;
+  }
+  .rl__svg,
+  .rl__svg * {
+    fill: none;
+  }
+  .rl__icon-wrap.rl__icon-wrap {
+    display: grid;
+    place-items: center;
+    color: $ink;
+  }
+  .rl__tag.rl__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: $canvas;
+    color: $steel;
+    padding: 4px 9px;
+    i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex: none;
+    }
+  }
+  .rl__card.rl__card:hover .rl__icon-wrap {
+    background: $ink;
+    color: #7fe3e6;
+    .rl__svg {
+      color: #7fe3e6;
+    }
+  }
+  .rl__icon-wrap.rl__icon-wrap {
+    transition: background 0.25s, color 0.25s;
+  }
+}

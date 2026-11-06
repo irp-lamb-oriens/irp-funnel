@@ -10,36 +10,23 @@
   import { scene, seg, easeOut, easeInOut } from './scene.ts';
   import Globe from './Globe.svelte';
   import VerticalReviewMarquee from '../VerticalReviewMarquee.svelte';
+  import VideoStory from './VideoStory.svelte';
   import { googleReviews } from '../../lib/reviews.ts';
   import { PROOF } from './content.ts';
+  import { reveal } from './reveal.ts';
 
   let pv = 0;
   let pr = 0;
-  let video: HTMLVideoElement;
 
   $: grow = easeInOut(seg(pv, 0.05, 0.55));
   $: capIn = 1 - seg(pv, 0.1, 0.28);
   $: expanded = grow > 0.85;
-  // Full screen: play muted (the visitor can unmute with the controls). Shrinking pauses it.
-  let autoplayed = false;
-  // Plays muted only while the frame is full and on screen.
+  // Plays muted while the frame is on screen (VideoStory handles it).
   let videoInView = false;
   function watchVideo(node: HTMLElement) {
     const io = new IntersectionObserver(([e]) => (videoInView = e.isIntersecting && e.intersectionRatio > 0.5), { threshold: [0, 0.5, 1] });
     io.observe(node);
     return { destroy: () => io.disconnect() };
-  }
-  $: if (video && typeof window !== 'undefined') syncVideo(expanded && videoInView);
-  function syncVideo(open: boolean) {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (open && video.paused && !autoplayed) {
-      autoplayed = true;
-      video.muted = true;
-      video.play().catch(() => {});
-    } else if (!open && !video.paused && autoplayed) {
-      video.pause();
-      autoplayed = false;
-    }
   }
 
   const pick = (name: string) => googleReviews.find((r) => r.name === name)!;
@@ -67,11 +54,10 @@
         <h2 class="title" id="reviews-title">{PROOF.title}</h2>
       </header>
       <figure class="frame" class:expanded style="--g:{grow}">
-        <video bind:this={video} use:watchVideo controls={expanded} playsinline preload="metadata" src={PROOF.videoSrc} aria-label={PROOF.videoTitle}></video>
-        {#if !expanded}
-          <button class="play" on:click={() => { video?.play(); }} aria-label="Play {PROOF.videoTitle}">▶</button>
-        {/if}
-        <figcaption>{PROOF.videoTitle}</figcaption>
+        <div class="frame-in" use:watchVideo>
+          <VideoStory src={PROOF.videoSrc} title={PROOF.videoTitle} wordsSrc="/landing/jill-reed.json" vttSrc="/landing/jill-reed.vtt" {expanded} active={videoInView} />
+        </div>
+        <figcaption aria-hidden="true">{PROOF.videoTitle}</figcaption>
       </figure>
     </div>
   </section>
@@ -99,14 +85,21 @@
     </div>
   </section>
 
-  <!-- 3. The review wall: infinite vertical carousels per column, as on the previous home. -->
-  <VerticalReviewMarquee
-    title="What Our Customers Say"
-    subtitle="Real reviews from clients who moved their lives with us."
-    background="#ffffff"
-    pauseOnHover={false}
-    id="reviews-wall"
-  />
+  <!-- 3. The review wall: a white sheet rising over the dark scene, then the infinite vertical carousels. -->
+  <section class="wall" aria-labelledby="wall-title">
+    <div class="sheet">
+      <header class="wall-head" use:reveal>
+        <span class="wall-mark" aria-hidden="true">“</span>
+        <p class="wall-eyebrow"><span class="wall-stars" aria-hidden="true">★★★★★</span>{PROOF.wall.eyebrow}</p>
+        <h2 class="wall-title" id="wall-title">
+          {#each PROOF.wall.title as w, k}<span class="ww" class:accent={k === PROOF.wall.title.length - 1} style="--k:{k}">{w}</span>{' '}{/each}
+        </h2>
+        <p class="wall-sub">{PROOF.wall.sub}</p>
+        <p class="wall-hint">{PROOF.wall.hint}</p>
+      </header>
+      <VerticalReviewMarquee background="#ffffff" pauseOnHover={false} id="reviews-wall" />
+    </div>
+  </section>
 </div>
 
 <style lang="scss">
@@ -114,6 +107,40 @@
 
   .wrap { @include container; }
   .scene { @include scene-shell; }
+
+  /* 3. Review wall */
+  .wall { background: $color-ink-strong; }
+  .sheet { background: #fff; border-radius: 36px 36px 0 0; padding-top: clamp(5.5rem, 11vw, 9.5rem); }
+  .wall-head {
+    @include container;
+    & { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: $space-4; margin-bottom: clamp(2.5rem, 5vw, 4rem); }
+  }
+  .wall-mark {
+    position: absolute; top: -0.42em; left: 50%; transform: translateX(-50%); pointer-events: none;
+    font: 700 clamp(9rem, 18vw, 15rem)/1 Georgia, 'Times New Roman', serif; color: $color-accent-soft;
+  }
+  .wall-eyebrow {
+    position: relative; margin: 0; display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px 6px 10px; border-radius: $radius-pill; background: #fff; border: 1px solid $color-hairline;
+    font: 600 0.72rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-ink-strong;
+    box-shadow: 0 6px 18px -10px rgba(14, 47, 54, 0.35);
+  }
+  .wall-stars { color: #f5a623; letter-spacing: 0.08em; font-family: $font-sans; }
+  .wall-title {
+    position: relative; margin: 0; font: 800 clamp(2.4rem, 6vw, 5.2rem)/0.98 $font-sans; letter-spacing: -0.045em; color: $color-ink-strong;
+    text-wrap: balance;
+  }
+  .ww {
+    display: inline-block; font-family: $font-sans;
+    opacity: 0; transform: translateY(0.45em); filter: blur(6px);
+    transition: opacity 600ms $ease, transform 800ms $ease, filter 600ms $ease;
+    transition-delay: calc(var(--k) * 90ms);
+    &.accent { color: #00949a; font-style: italic; letter-spacing: -0.03em; padding-right: 0.06em; }
+  }
+  :global(.is-in) .ww { opacity: 1; transform: none; filter: none; }
+  .wall-sub { position: relative; margin: 0; max-width: 46ch; font: 400 clamp(1.05rem, 1.5vw, 1.25rem)/1.55 $font-sans; color: $color-steel; }
+  .wall-hint { margin: 0; font: 0.72rem $font-mono; letter-spacing: 0.06em; color: $color-muted; @media (pointer: coarse), (max-width: 767px) { display: none; } }
+  @include reduced-motion { .ww { opacity: 1; transform: none; filter: none; transition: none; } }
   .stage { @include stage; }
   .eyebrow { @include eyebrow; display: inline-flex; align-items: center; gap: $space-2; color: $color-on-dark; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: $color-accent; }
@@ -128,16 +155,9 @@
     position: absolute; inset: 0; margin: 0;
     clip-path: inset(calc((1 - var(--g)) * 36%) calc((1 - var(--g)) * 26%) calc((1 - var(--g)) * 14%) calc((1 - var(--g)) * 26%) round calc((1 - var(--g)) * 28px));
     will-change: clip-path;
-    video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; transform: scale(calc(1.15 - var(--g) * 0.15)); }
-    figcaption { position: absolute; left: 50%; bottom: calc((1 - var(--g)) * 14% + 16px); transform: translateX(-50%); font: 0.75rem $font-mono; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); opacity: calc(1 - var(--g)); white-space: nowrap; }
-    &.expanded video { object-fit: contain; }
+    .frame-in { position: absolute; inset: 0; }
+    figcaption { position: absolute; z-index: 2; pointer-events: none; left: 50%; bottom: calc((1 - var(--g)) * 14% + 16px); transform: translateX(-50%); font: 0.75rem $font-mono; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); opacity: calc(1 - var(--g)); white-space: nowrap; }
   }
-  .play {
-    position: absolute; left: 50%; top: 61%; transform: translate(-50%, -50%); width: 84px; height: 84px; border-radius: 50%;
-    border: none; background: $color-accent; color: $color-ink-strong; font-size: 1.6rem; cursor: pointer;
-    box-shadow: 0 0 0 12px rgba(2, 181, 187, 0.2); @include focus-ring;
-  }
-
   /* 2. Routes */
   .routes { background: #0b262c; color: $color-on-dark; }
   .map { position: absolute; inset: 8% -4% 4%; }

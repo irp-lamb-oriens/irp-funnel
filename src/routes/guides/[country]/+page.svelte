@@ -22,6 +22,7 @@
   let htmlContent = "";
   let showModal = false;
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
     import countries from '../../../components/systems/inputs/Country/countries.ts';
 
   let hasAccess = false;
@@ -78,6 +79,11 @@
   // Format country name for display — prefer the CRM guide's country label,
   // then the country-code lookup, then the raw route param.
   $: displayName = data.displayName || countries.find(c => c.code === data.country.toUpperCase())?.name || data.country;
+  // Display-only: a slug like "costa-rica" reads as "Costa Rica" in the hero.
+  // displayName itself (sent with the lead form) is unchanged.
+  $: heroName = /[-_]/.test(displayName) || displayName === displayName.toLowerCase()
+    ? displayName.split(/[-_\s]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : displayName;
 
 
   /**
@@ -97,14 +103,16 @@
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Moving to {displayName} | IRP Relocation Guide" />
   <meta property="og:description" content="Comprehensive {displayName} guide covering customs regulations, restricted and prohibited items, tax and cost of living, local visas, and moving preparation steps." />
-  <meta property="og:url" content="https://yourwebsite.com/guides/{country-slug}" />
+  <!-- Was "{country-slug}", which compiled to `country - slug` and threw a
+       ReferenceError during SSR (every guide page returned 500). -->
+  <meta property="og:url" content={`${$page.url.origin}/guides/${data.country}`} />
   <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <Header />
 
 <CountryLayout 
-  heroTitle={`Moving to ${displayName}`} 
+  heroTitle={`Moving to ${heroName}`} 
   heroSubTitle="A comprehensive overview of customs rules, restricted items, and preparation steps for your international move."
   heroUrl="https://images.pexels.com/photos/28376207/pexels-photo-28376207.jpeg"
 >

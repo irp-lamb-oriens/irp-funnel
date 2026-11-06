@@ -38,29 +38,40 @@
     video.style.transform = `translateX(${left}px)`;
   }
 
-  function frame() {
-    setVideoHeight()
-    if (video ? video?.paused : true) {
-      setVideoClosedSize();
-    } else setVideoOpenSize();
-
-    requestAnimationFrame(frame);
+  // Size the video to the poster. This used to run in a requestAnimationFrame
+  // loop for the life of the page (reading layout and writing styles every
+  // frame, even off screen), which cost every scroll frame site-wide. The
+  // size only changes when the layout does or the video plays/pauses, so it
+  // now updates on exactly those.
+  function sync() {
+    if (!video || !img || !imgWrap) return;
+    setVideoHeight();
+    if (video.paused) setVideoClosedSize();
+    else setVideoOpenSize();
   }
-  
+
   function onclick() {
     if (video.paused) return video.play();
     return video.pause();
   }
-  
+
   onMount(() => {
-    window.addEventListener("resize", () => {
-      if (video ? video?.paused : true) {
-        setVideoClosedSize();
-        return;
-      }
-      setVideoOpenSize();
-    });
-    frame();
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(img);
+    ro.observe(imgWrap);
+    ro.observe(document.documentElement);
+    window.addEventListener("resize", sync);
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    img.addEventListener("load", sync);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", sync);
+      video.removeEventListener("play", sync);
+      video.removeEventListener("pause", sync);
+      img.removeEventListener("load", sync);
+    };
   });
 </script>
 <div class="re-wrap">

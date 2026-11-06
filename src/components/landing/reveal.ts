@@ -48,37 +48,54 @@ export function goToBooking(event?: Event) {
 }
 
 /**
- * "Book your call" at the end of the page: rewind the whole page to the
- * booking form in one eased motion (about 1.2 s, through every section),
- * then focus the form. Instant with reduced motion.
+ * "Book your call" from further down the page: a short cut instead of a long
+ * scroll. The screen dips to the hero colour, the page jumps to the booking
+ * form, and the form opens on its email step. No fade with reduced motion.
+ * Resolves once the form has been asked to open.
  */
-export function rewindToBooking(event?: Event) {
+export function jumpToBooking(event?: Event): Promise<void> {
   event?.preventDefault();
   const el = document.getElementById('hero-form');
-  if (!el) return;
-  const target = Math.max(0, el.getBoundingClientRect().top + window.scrollY);
-  const focus = () => {
-    history.replaceState(null, '', '#hero-form');
-    openBooking(el);
+  if (!el) return Promise.resolve();
+  const land = () => {
+    const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY);
+    window.scrollTo({ top, behavior: 'instant' as ScrollBehavior });
+    history.replaceState(null, '', `${location.pathname}${location.search}#hero-form`);
   };
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) {
-    window.scrollTo({ top: target, behavior: 'auto' });
-    return focus();
+    land();
+    openBooking(el);
+    return Promise.resolve();
   }
-  const from = window.scrollY;
-  const d = target - from;
-  const ms = Math.min(1600, Math.max(900, Math.abs(d) / 12));
-  const t0 = performance.now();
-  const step = (now: number) => {
-    const p = Math.min(1, (now - t0) / ms);
-    const e = p < 0.5 ? 16 * p ** 5 : 1 - Math.pow(-2 * p + 2, 5) / 2;
-    window.scrollTo({ top: from + d * e, behavior: 'instant' as ScrollBehavior });
-    if (p < 1) requestAnimationFrame(step);
-    else focus();
-  };
-  requestAnimationFrame(step);
+  const veil = document.createElement('div');
+  veil.setAttribute('aria-hidden', 'true');
+  veil.style.cssText =
+    'position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:0;' +
+    'background:radial-gradient(120% 90% at 50% 40%,#15444d 0%,#0e2f36 65%);transition:opacity 200ms cubic-bezier(0.4,0,1,1)';
+  document.body.appendChild(veil);
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      veil.style.opacity = '1';
+      window.setTimeout(() => {
+        land();
+        // Let the scenes settle on their new scroll position before revealing.
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            veil.style.transition = 'opacity 420ms cubic-bezier(0.16,1,0.3,1)';
+            veil.style.opacity = '0';
+            openBooking(el);
+            window.setTimeout(() => veil.remove(), 460);
+            resolve();
+          })
+        );
+      }, 210);
+    });
+  });
 }
+
+/** Kept for existing callers: now the same short cut as jumpToBooking. */
+export const rewindToBooking = (event?: Event) => void jumpToBooking(event);
 
 /**
  * Open the booking flow in HeroForm as if the visitor pressed its main

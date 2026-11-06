@@ -4,7 +4,7 @@
    * on screen while four beats play on it: status tags, a duty sheet, the
    * customs counter (week 1 to 10) and the documents calendar (day 15 to 45).
    */
-  import { scene, seg, easeOut } from './scene.ts';
+  import { scene, seg, easeOut, easeInOut } from './scene.ts';
   import { PROBLEM } from './content.ts';
 
   let p = 0;
@@ -19,6 +19,10 @@
   $: week = Math.min(10, 1 + Math.floor(t * 10));
   $: day = 15 + Math.round(t * 30);
   $: armDown = easeOut(seg(t, 0.02, 0.4));
+  // After week 10 the arm lifts and the barrier fades with it, so the move to
+  // beat 4 mirrors the way it came in (down while fading in).
+  $: armUp = b === 2 ? easeInOut(seg(t, 0.88, 1)) : 0;
+  $: armAngle = b === 2 ? -80 * (1 - armDown * (1 - armUp)) : -80;
   // Example estimate lines (beat 2). Amounts are shown redacted: every route is quoted separately.
   const DUTY_ROWS = [
     ['Household goods (used)', 'CIF value'],
@@ -27,15 +31,29 @@
     ['Customs broker and DUA', 'Flat fee'],
     ['Bonded warehouse', 'Per day']
   ];
-  // Example documents (beat 4) with the day each one is ready.
+  // Example documents (beat 4), in the order they arrive, with the day each
+  // one is ready. They land on a stack; the last (the apostille) stays on top.
   const DOCS = [
-    { name: 'Passport copies', kind: 'ID', ready: 15 },
-    { name: 'Apostilled birth certificate', kind: 'Apostille', ready: 24 },
-    { name: 'Proof of income', kind: 'Residency', ready: 30 },
-    { name: 'Vehicle title', kind: 'Vehicle', ready: 36 },
-    { name: 'Packing list and inventory', kind: 'Shipping', ready: 40 },
-    { name: 'Bill of lading', kind: 'Shipping', ready: 45 }
+    { name: 'Passport', kind: 'passport', ready: 15 },
+    { name: 'Criminal record certificate', kind: 'police', ready: 21 },
+    { name: 'Pension income statement', kind: 'income', ready: 27 },
+    { name: 'Vehicle title', kind: 'vtitle', ready: 33 },
+    { name: 'Bill of lading', kind: 'lading', ready: 39 },
+    { name: 'Birth certificate with apostille', kind: 'apostille', ready: 45 }
   ];
+  const TILT = [-1.6, 1.2, -0.8, 1.6, -1.2, 0.6];
+  // Layout of beat 4: ready papers stack at the top (each lands one header
+  // strip lower than the last); the papers still in transit wait as a queue
+  // of placeholder rows *below* the stack and slide up as the stack grows, so
+  // a placeholder never sits on top of a ready paper.
+  const STEP = 38; // header strip visible per paper in the stack
+  const PAPER = 176; // full paper height
+  const GAP = 10; // stack → queue
+  const QROW = 38; // queue row pitch
+  $: readyN = b === 3 ? DOCS.filter((d) => day >= d.ready).length : 0;
+  $: stackH = readyN ? (readyN - 1) * STEP + PAPER + GAP : 0;
+  // DOCS are in ready order, so a paper's stack slot is its index.
+  const docY = (k: number, n: number, sh: number) => (k < n ? k * STEP : sh + (k - n) * QROW);
 </script>
 
 <section id="problem" class="scene" style="--len:4.2" use:scene={(v) => (p = v)} aria-labelledby="problem-title">
@@ -89,12 +107,12 @@
             {#each [345, 365, 415, 435] as x}<line x1={x} y1="400" x2={x} y2="490" stroke="rgba(255,255,255,0.22)" stroke-width="2" />{/each}
           </g>
           <!-- customs barrier -->
-          <g class="barrier" style="opacity:{b === 2 ? 1 : 0}">
+          <g class="barrier" style="opacity:{b === 2 ? 1 - armUp : 0}">
             <!-- post (static) -->
             <rect x="8" y="246" width="24" height="112" rx="4" fill="#d9e1e6" />
             <rect x="4" y="350" width="32" height="10" rx="3" fill="#9fb0b8" />
             <!-- arm: rotates on the pivot where it meets the post -->
-            <g class="arm" style="transform: rotate({b === 2 ? -80 * (1 - armDown) : -80}deg)">
+            <g class="arm" style="transform: rotate({armAngle}deg)">
               <rect x="20" y="255" width="470" height="18" rx="9" fill="#fff" />
               {#each Array(10) as _, i}<rect x={34 + i * 46} y="255" width="22" height="18" fill="#c62426" />{/each}
               <circle cx="482" cy="264" r="5" fill="#c62426" />
@@ -153,16 +171,42 @@
             <p class="cal-day">Day <b>{day}</b> <span>of 45</span></p>
           </div>
           <span class="cal-bar"><i style="transform: scaleX({(day - 15) / 30})"></i><em style="left:0">15</em><em style="right:0">45</em></span>
-          <ul class="docs">
-            {#each DOCS as d}
+          <div class="pile">
+            {#each DOCS as d, k}
               {@const done = b === 3 && day >= d.ready}
-              <li class:done>
-                <span class="doc-ic" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span class="doc-name">{d.name}<small>{d.kind}</small></span>
-                <span class="doc-state">{done ? 'Ready' : 'In transit'}</span>
-              </li>
+              <div class="doc {d.kind}" class:done style="--r:{TILT[k]}deg; transform: translateY({docY(k, readyN, stackH)}px)">
+                <span class="ghost"><svg viewBox="0 0 24 24"><path style="fill:currentColor" d="M21.5 12c0-.7-.6-1.2-1.3-1.2h-5.4L10 3.4H8.2l2.4 7.4H5.6L4 8.6H2.6l1 3.4-1 3.4H4l1.6-2.2h5l-2.4 7.4H10l4.8-7.4h5.4c.7 0 1.3-.5 1.3-1.2z" /></svg>{d.name}</span>
+                <div class="paper">
+                  {#if d.kind === 'passport'}
+                    <div class="pp-cover"><i class="pp-emblem"></i><b>Passport</b><span>Pasaporte</span></div>
+                    <div class="pp-page"><span class="pp-photo"></span><span class="pp-lines"><i></i><i></i><i></i></span><code>P&lt;USAREED&lt;&lt;JILL&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code></div>
+                  {:else if d.kind === 'police'}
+                    <div class="hd"><i class="seal blue"></i><b>Criminal record certificate</b><small>No record found</small></div>
+                  {:else if d.kind === 'income'}
+                    <div class="hd bank"><i class="bank-mark"></i><b>Pension income statement</b><small>Monthly benefit</small></div>
+                  {:else if d.kind === 'vtitle'}
+                    <div class="hd"><b>Certificate of title</b><small>Motor vehicle · VIN ••••4352</small></div>
+                  {:else if d.kind === 'lading'}
+                    <div class="hd"><b class="mono">Bill of lading</b><small class="mono">Original · Port Everglades → Moín</small></div>
+                  {:else}
+                    <div class="ap">
+                      <p class="ap-title">Apostille</p>
+                      <p class="ap-sub">(Convention de La Haye du 5 octobre 1961)</p>
+                      <ol class="ap-lines">
+                        <li><span>1.</span>Country: <i></i></li>
+                        <li><span>2.</span>This public document has been signed by <i></i></li>
+                        <li><span>3.</span>acting in the capacity of <i></i></li>
+                        <li><span>4.</span>bears the seal of <i></i></li>
+                      </ol>
+                      <span class="ap-seal"><i></i></span>
+                    </div>
+                  {/if}
+                </div>
+                <span class="chip">{done ? `Ready · day ${d.ready}` : 'In transit'}</span>
+              </div>
             {/each}
-          </ul>
+          </div>
+          <p class="pile-count">{readyN} of {DOCS.length} ready <span>· Example</span></p>
         </div>
       </div>
     </div>
@@ -178,7 +222,7 @@
     position: absolute; inset: -30% -20%; pointer-events: none;
     background: radial-gradient(40% 40% at 70% 55%, rgba(2, 181, 187, 0.28), transparent 70%);
   }
-  .wrap { @include container; position: relative; }
+  .wrap { @include container; & { position: relative; } }
   .grid {
     display: grid; gap: $space-8; align-items: center;
     @include lg { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: $space-16; }
@@ -277,15 +321,85 @@
     i { position: absolute; inset: 0; border-radius: 3px; background: $color-accent; transform-origin: left; }
     em { position: absolute; top: 9px; font: normal 0.58rem $font-mono; color: $color-muted; }
   }
-  .docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-  .docs li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 8px; border: 1px solid $color-hairline; transition: background 300ms, border-color 300ms;
-    &.done { background: #e8f4ef; border-color: rgba(31, 122, 92, 0.3); .doc-state { color: #1f7a5c; } .doc-state::before { content: '✓ '; } }
+  /* The stack: each paper lands a little lower than the last, so every header stays in view.
+     Papers still in transit queue below it and move up as it grows (see docY).
+     Tallest moment: 5 × 38 + 176 + 10 = 376px (constant for 1–5 ready). */
+  .pile { position: relative; height: 376px; margin-top: 4px; }
+  .doc { position: absolute; left: 0; right: 0; top: 0; height: 176px; transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .ghost {
+    position: absolute; inset: 0 0 auto 0; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+    border: 1.5px dashed $color-hairline-strong; border-radius: 8px; color: $color-muted; font: 600 0.68rem $font-sans;
+    transition: opacity 300ms;
+    svg { width: 14px; height: 14px; flex: none; color: $color-accent-hover; }
   }
-  .doc-ic { width: 22px; height: 28px; border-radius: 3px; background: $color-mist; border: 1px solid $color-hairline-strong; display: flex; flex-direction: column; gap: 3px; padding: 5px 4px;
-    i { height: 2px; background: $color-hairline-strong; } }
-  .doc-name { font: 600 0.78rem $font-sans; color: $color-ink-strong; display: flex; flex-direction: column;
-    small { font: 0.58rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-muted; } }
-  .doc-state { font: 700 0.68rem $font-sans; color: $color-muted; white-space: nowrap; }
+  .paper {
+    position: absolute; inset: 0; border-radius: 6px; overflow: hidden; background: #fff;
+    box-shadow: 0 -1px 0 rgba(14, 47, 54, 0.06), 0 10px 22px -10px rgba(14, 47, 54, 0.45), 0 1px 2px rgba(14, 47, 54, 0.15);
+    opacity: 0; transform: translateY(14px) rotate(calc(var(--r) * 3)) scale(0.985);
+    transition: opacity 260ms ease, transform 600ms cubic-bezier(0.22, 1.2, 0.36, 1);
+  }
+  .doc.done .paper { opacity: 1; transform: rotate(var(--r)); }
+  .doc.done .ghost { opacity: 0; }
+  .chip {
+    position: absolute; right: 8px; top: 7px; z-index: 2; padding: 3px 8px; border-radius: 99px;
+    font: 700 0.58rem $font-sans; letter-spacing: 0.02em; white-space: nowrap;
+    background: $color-mist; color: $color-muted; transition: background 300ms, color 300ms;
+  }
+  .doc.done .chip { background: #e3f4ec; color: #1f7a5c; }
+  .doc.done .chip::before { content: '✓ '; }
+
+  /* Header strips: what each paper is, at a glance */
+  .hd {
+    display: flex; flex-direction: column; justify-content: center; gap: 1px; height: 34px; padding: 0 92px 0 12px; position: relative;
+    b { font: 700 0.74rem $font-sans; color: $color-ink-strong; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    small { font: 0.56rem $font-sans; color: $color-muted; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mono { font-family: $font-mono; letter-spacing: 0.06em; text-transform: uppercase; }
+  }
+  .police .paper { border-top: 3px solid #23468c; }
+  .police .hd { padding-left: 38px; }
+  .seal { position: absolute; left: 10px; top: 6px; width: 20px; height: 20px; border-radius: 50%; }
+  .seal.blue { background: radial-gradient(circle, #fff 30%, #23468c 32% 44%, #fff 46% 56%, #23468c 58%); }
+  .income .paper { background: linear-gradient(#fff, #fff) padding-box; }
+  .hd.bank { background: linear-gradient(90deg, #0b4f55, #127a80); padding-left: 38px; b, small { color: #fff; } small { opacity: 0.8; } }
+  .bank-mark { position: absolute; left: 12px; top: 9px; width: 16px; height: 16px; border-radius: 4px; background: rgba(255, 255, 255, 0.9); clip-path: polygon(50% 0, 100% 35%, 100% 100%, 0 100%, 0 35%); }
+  .vtitle .paper { background: repeating-linear-gradient(45deg, #eef6ee 0 4px, #f7fbf7 4px 8px); box-shadow: inset 0 0 0 4px #b9d8bd, 0 10px 22px -10px rgba(14, 47, 54, 0.45); }
+  .vtitle .hd b { font-family: Georgia, 'Times New Roman', serif; font-size: 0.8rem; color: #24532c; }
+  .lading .paper { background: #fbfaf6; background-image: linear-gradient(rgba(14, 47, 54, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 47, 54, 0.12) 1px, transparent 1px); background-size: 100% 22px, 33.3% 100%; background-position: 0 34px, 0 0; }
+  .passport .paper { display: grid; grid-template-columns: 92px 1fr; background: #f1ecf3; }
+  .pp-cover {
+    position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: linear-gradient(160deg, #24345e, #18233f); color: #d8b75d; text-align: center;
+    b { font: 700 0.62rem Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; }
+    span { font: 0.5rem Georgia, serif; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+  }
+  .pp-emblem { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #d8b75d; background: radial-gradient(circle, transparent 45%, rgba(216, 183, 93, 0.5) 46% 50%, transparent 52%); margin-bottom: 4px; }
+  .pp-page {
+    position: relative; padding: 12px 12px 10px; display: grid; grid-template-columns: 38px 1fr; gap: 6px 10px; align-content: start;
+    background: repeating-radial-gradient(circle at 80% 30%, #f1ecf3 0 3px, #e9e2ee 3px 4px);
+    code { grid-column: 1 / -1; margin-top: 40px; font: 600 0.5rem/1.3 'Courier New', monospace; letter-spacing: 0.08em; color: #3a3a46; white-space: nowrap; overflow: hidden; }
+  }
+  .pp-photo { width: 38px; height: 48px; border-radius: 3px; background: linear-gradient(#c9c2cf, #b7afbf); }
+  .pp-lines { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; i { height: 4px; border-radius: 2px; background: #cfc7d6; } i:nth-child(2) { width: 70%; } i:nth-child(3) { width: 50%; } }
+
+  /* The apostille: the page everyone recognises once they have needed one */
+  .apostille .paper { background: #fbf7ec; box-shadow: inset 0 0 0 5px #fbf7ec, inset 0 0 0 6px #c9b88f, 0 12px 26px -10px rgba(14, 47, 54, 0.5); }
+  .ap { position: relative; padding: 28px 16px 10px; text-align: center; } /* clears the Ready chip */
+  .ap-title { margin: 0; font: 700 1rem Georgia, 'Times New Roman', serif; letter-spacing: 0.2em; text-transform: uppercase; color: #3c3322; }
+  .ap-sub { margin: 1px 0 8px; font: italic 0.56rem Georgia, serif; color: #6b5d41; }
+  .ap-lines {
+    margin: 0; padding: 0 70px 0 0; list-style: none; text-align: left; display: grid; gap: 4px;
+    li { display: flex; gap: 4px; align-items: baseline; font: 0.54rem Georgia, serif; color: #4d4330; white-space: nowrap; }
+    i { flex: 1; min-width: 16px; border-bottom: 1px dotted #a8997a; }
+  }
+  .ap-seal {
+    position: absolute; right: 16px; bottom: -6px; width: 54px; height: 54px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #e0564e, #a3201f 70%); box-shadow: 0 4px 8px rgba(120, 20, 20, 0.35);
+    i { position: absolute; inset: 7px; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, 0.55); }
+    &::before, &::after { content: ''; position: absolute; top: 44px; width: 12px; height: 26px; background: #a3201f; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); }
+    &::before { left: 12px; transform: rotate(14deg); }
+    &::after { right: 12px; transform: rotate(-14deg); }
+  }
+  .pile-count { margin: 8px 0 0; font: 700 0.7rem $font-sans; color: $color-ink-strong; span { font-weight: 400; color: $color-muted; } }
 
   @media (max-width: 1023px) {
     .stage { align-items: flex-start; padding-bottom: 6rem; }

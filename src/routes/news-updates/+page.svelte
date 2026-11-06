@@ -2,8 +2,6 @@
   import Header from "../../components/Header/Header.svelte";
   import Footer from "../../components/Footer/Footer.svelte";
   import CountryLayout from "../../components/ui/CountryLayout.svelte";
-  import NewsCard from "../../components/NewsCard.svelte";
-  import TextNewsCard from "../../components/TextNewsCard.svelte";
   import "./news-updates.scss";
   import { page } from "$app/stores";
   import { onMount } from "svelte";
@@ -273,6 +271,17 @@
     return text.slice(0, cut > 0 ? cut : maxLength) + "...";
   }
 
+  // Presentation helpers (no data logic): imgix thumbnails at card size, and
+  // the poster URL whichever field it arrives in.
+  function posterOf(blog: any): string {
+    return blog?.metadata?.poster?.imgix_url || blog?.metadata?.poster?.url || "";
+  }
+  function thumb(src: string, w = 900): string {
+    if (!src || !/imgix\.net/.test(src)) return src;
+    return `${src}${src.includes("?") ? "&" : "?"}w=${w}&auto=format,compress`;
+  }
+  $: totalPages = Math.ceil(total / LIMIT) || 1;
+
   let animating: "newer" | "older" | null = null;
   let pendingPage: number | null = null;
 
@@ -298,286 +307,131 @@
 
 <Header />
 
-<CountryLayout heroTitle="News" heroUrl="https://images.pexels.com/photos/10464468/pexels-photo-10464468.jpeg?w=2000">
-  <section class="news-list">
-    <div class="search-bar-wrap">
-      <div class="search-bar {searchFocused ? "focused" : ""} {searchTouched && !search ? "empty" : ""}">
-        <svg class="search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <circle cx="10" cy="10" r="8" stroke="#bbb" stroke-width="2"/>
-          <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <input
-          type="text"
-          placeholder="Search news updates…"
-          bind:value={search}
-          on:focus={() => { searchFocused = true; searchTouched = true; }}
-          on:blur={() => { searchFocused = false; }}
-          on:keyup={handleSearch}
-          class="search-input"
-          autocomplete="off"
-        />
-        {#if search}
-          <button class="clear-btn" on:click={() => { search = ""; handleSearch(); }} aria-label="Clear search">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <line x1="4" y1="4" x2="14" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
-              <line x1="14" y1="4" x2="4" y2="14" stroke="#bbb" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        {/if}
+<CountryLayout
+  heroTitle="News"
+  heroEyebrow="News & guides"
+  heroSubTitle="Rule changes, costs and practical advice for moving abroad."
+  heroUrl="https://images.pexels.com/photos/518543/pexels-photo-518543.jpeg?w=2000"
+>
+  <section class="news-list" aria-labelledby="news-list-title">
+    <div class="news-toolbar">
+      <h2 id="news-list-title" class="news-toolbar__title">
+        {#if isSearching}Search results{:else}Latest articles{/if}
+      </h2>
+      <div class="search-bar-wrap" role="search">
+        <div class="search-bar {searchFocused ? "focused" : ""}">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="2"/>
+            <line x1="15.6" y1="15.6" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <label class="sr-only" for="news-search">Search news and guides</label>
+          <input
+            id="news-search"
+            type="search"
+            placeholder="Search articles"
+            bind:value={search}
+            on:focus={() => { searchFocused = true; searchTouched = true; }}
+            on:blur={() => { searchFocused = false; }}
+            on:keyup={handleSearch}
+            class="search-input"
+            autocomplete="off"
+          />
+          {#if search}
+            <button type="button" class="clear-btn" on:click={() => { search = ""; handleSearch(); }} aria-label="Clear search">
+              <svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <line x1="4" y1="4" x2="14" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <line x1="14" y1="4" x2="4" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          {/if}
+        </div>
       </div>
     </div>
-    {#if loading}
-      <div class="loading">Loading...</div>
-    {:else}
+
+    <p class="news-status" aria-live="polite">
       {#if isStreaming}
-        <div class="streaming-banner">
-          Searching<span class="dots">…</span>
-          {#if streamingCount > 0}<span class="stream-count">{streamingCount} found so far</span>{/if}
-        </div>
+        <span class="news-status__pulse" aria-hidden="true"></span>
+        Searching{#if streamingCount > 0}<span class="stream-count">{streamingCount} found so far</span>{/if}
+      {:else if isSearching && noResults}
+        No articles match “<span class="news-status__q">{search}</span>”. Try a country or a topic, like “customs” or “visa”.
+      {:else if isSearching && total > 0}
+        {total} {total === 1 ? "article" : "articles"} for “<span class="news-status__q">{search}</span>”
       {/if}
-      {#if isSearching && noResults && !isStreaming}
-        <div class="no-results">No news found for "<span>{search}</span>"</div>
-      {/if}
-      {#if showPagination}
-        <div class="pagination">
-          <button
-            class="pagination-btn newer {animating === "newer" ? "animating" : ""}"
-            on:click={() => handlePaginate("newer")}
-            disabled={pageIndex === 0 || !!animating}
-          >
-            &laquo; Newer Entries
-          </button>
-          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT) || 1}</span>
-          <button
-            class="pagination-btn older {animating === "older" ? "animating" : ""}"
-            on:click={() => handlePaginate("older")}
-            disabled={(LIMIT * (pageIndex + 1)) >= total || !!animating}
-          >
-            Older Entries &raquo;
-          </button>
-        </div>
-      {/if}
-      <div class="news-grid">
-        {#each blogs as blog (blog.slug)}
-          <div class="news-card-anim">
-            {#if blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url}
-              <NewsCard
-                imageSrc={blog.metadata?.poster?.imgix_url || blog.metadata?.poster?.url}
-                imageAlt={blog.title}
-                title={blog.title}
-                excerpt={getExcerpt(blog.metadata?.title)}
-                link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
-                readMoreText="read more"
-              />
-            {:else}
-              <TextNewsCard
-                title={blog.title}
-                excerpt={getExcerpt(blog.metadata?.title)}
-                link={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
-                readMoreText="read more"
-              />
-            {/if}
+    </p>
+
+    {#if loading}
+      <div class="news-grid" aria-busy="true" aria-label="Loading articles">
+        {#each Array(6) as _, i}
+          <div class="news-card news-card--skeleton" class:featured={i === 0 && pageIndex === 0} aria-hidden="true">
+            <div class="news-card__media"></div>
+            <div class="news-card__body">
+              <span class="sk sk--title"></span>
+              <span class="sk"></span>
+              <span class="sk sk--short"></span>
+            </div>
           </div>
         {/each}
       </div>
+    {:else}
+      <ul class="news-grid" role="list">
+        {#each blogs as blog, i (blog.slug)}
+          {@const poster = posterOf(blog)}
+          {@const featured = i === 0 && pageIndex === 0 && !isSearching}
+          <li class="news-card-anim" class:featured style="--d:{Math.min(i, 8) * 45}ms">
+            <a
+              class="news-card"
+              class:news-card--text={!poster}
+              href={`/news-updates/blog?slug=${blog.slug}&page=${pageIndex}${blog.source === 'render' ? '&type=render' : ''}`}
+            >
+              {#if poster}
+                <div class="news-card__media">
+                  <img
+                    src={thumb(poster, featured ? 1400 : 900)}
+                    alt=""
+                    loading={i < 3 ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                </div>
+              {/if}
+              <div class="news-card__body">
+                {#if featured}<span class="news-card__tag">Latest</span>{/if}
+                <h3 class="news-card__title">{blog.title}</h3>
+                <p class="news-card__excerpt">{getExcerpt(blog.metadata?.title, featured ? 260 : 160)}</p>
+                <span class="news-card__more" aria-hidden="true">
+                  Read article
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </span>
+              </div>
+            </a>
+          </li>
+        {/each}
+      </ul>
+
       {#if showPagination && total > LIMIT}
-        <div class="pagination">
+        <nav class="pagination" aria-label="Article pages">
           <button
+            type="button"
             class="pagination-btn newer {animating === "newer" ? "animating" : ""}"
             on:click={() => handlePaginate("newer")}
             disabled={pageIndex === 0 || !!animating}
           >
-            &laquo; Newer Entries
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+            Newer
           </button>
-          <span>Page {pageIndex + 1} of {Math.ceil(total / LIMIT) || 1}</span>
+          <span class="pagination__count">Page <b>{pageIndex + 1}</b> of {totalPages}</span>
           <button
+            type="button"
             class="pagination-btn older {animating === "older" ? "animating" : ""}"
             on:click={() => handlePaginate("older")}
             disabled={(LIMIT * (pageIndex + 1)) >= total || !!animating}
           >
-            Older Entries &raquo;
+            Older
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
-        </div>
+        </nav>
       {/if}
     {/if}
   </section>
 </CountryLayout>
 
 <Footer />
-
-<style>
-/* Search bar styles */
-.search-bar-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 0rem auto 2.5rem;
-  animation: fadeInUp 0.7s cubic-bezier(0.4,0,0.2,1);
-  z-index: 20;
-  background: rgba(255,255,255,0.97);
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  /* Add a smooth transition for shadow when sticky */
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(18px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-.search-bar {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 2.5em;
-  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.07);
-  padding: 0.2em 1.2em 0.2em 0.8em;
-  min-width: 320px;
-  max-width: 480px;
-  width: 100%;
-  transition: box-shadow 0.3s cubic-bezier(0.4,0,0.2,1), border 0.3s cubic-bezier(0.4,0,0.2,1);
-  border: 2px solid transparent;
-  position: relative;
-}
-.search-bar.focused {
-  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.13);
-  border: 2px solid #0077cc;
-}
-.search-bar.empty {
-  border: 2px solid #ffb3b3;
-}
-.search-icon {
-  margin-right: 0.7em;
-  flex-shrink: 0;
-  transition: stroke 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-.search-input {
-  border: none;
-  outline: none;
-  font-size: 1.08rem;
-  background: transparent;
-  width: 100%;
-  padding: 0.7em 0 0.7em 0;
-  color: #222;
-  transition: color 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-.clear-btn {
-  background: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  margin-left: 0.5em;
-  padding: 0.2em;
-  border-radius: 50%;
-  transition: background 0.2s cubic-bezier(0.4,0,0.2,1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.clear-btn:hover {
-  background: #f3f3f3;
-}
-.no-results {
-  text-align: center;
-  color: #888;
-  font-size: 1.1rem;
-  margin: 2.5rem 0 1.5rem 0;
-  animation: fadeInUp 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-.no-results span {
-  color: #0077cc;
-  font-weight: 500;
-}
-.news-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 2.2rem 1.5rem;
-  margin-bottom: 2.5rem;
-  margin-top: 10rem;
-}
-.news-card-anim {
-  animation: fadeInCard 0.5s cubic-bezier(0.4,0,0.2,1);
-  will-change: transform, opacity;
-}
-@keyframes fadeInCard {
-  from { opacity: 0; transform: translateY(18px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 10rem;
-}
-.pagination-btn {
-  background: none;
-  border: none;
-  color: #222;
-  font-size: 1rem;
-  padding: 0.5em 1.2em;
-  border-radius: 999px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1);
-  outline: none;
-  min-width: 120px;
-}
-.pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-.pagination-btn:not(:disabled):hover {
-  background: #f3f3f3;
-  color: #0077cc;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 2px 12px 0 rgba(0,119,204,0.07);
-  transition: background 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-.pagination-btn.animating.newer {
-  animation: slideLeft 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
-}
-.pagination-btn.animating.older {
-  animation: slideRight 0.45s cubic-bezier(0.4,0,0.2,1) forwards;
-}
-@keyframes slideLeft {
-  0% { transform: translateX(0); opacity: 1; }
-  60% { transform: translateX(-16px); opacity: 0.7; }
-  100% { transform: translateX(-32px); opacity: 0; }
-}
-@keyframes slideRight {
-  0% { transform: translateX(0); opacity: 1; }
-  60% { transform: translateX(16px); opacity: 0.7; }
-  100% { transform: translateX(32px); opacity: 0; }
-}
-/* Streaming search banner */
-.streaming-banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  color: #0077cc;
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
-  animation: fadeInUp 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-.dots {
-  display: inline-block;
-  animation: blink 1.2s steps(3, end) infinite;
-  letter-spacing: 2px;
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  33% { opacity: 0.3; }
-  66% { opacity: 0.6; }
-}
-.stream-count {
-  background: #e8f4ff;
-  color: #0077cc;
-  border-radius: 999px;
-  padding: 0.15em 0.7em;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-</style>

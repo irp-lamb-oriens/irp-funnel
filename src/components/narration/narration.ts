@@ -204,3 +204,48 @@ export const aboutMinutes = (seconds: number) => {
   const m = Math.max(1, Math.round(seconds / 60));
   return `about ${m === 1 ? 'one minute' : `${m} minutes`}`;
 };
+
+/* ── Player helpers ─────────────────────────────────────────── */
+
+/** "1:05" for a time in seconds. */
+export function formatTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/** "1 minute 5 seconds", for screen readers (aria-valuetext). */
+export function spokenTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  const part = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'}`;
+  if (!m) return part(r, 'second');
+  return r ? `${part(m, 'minute')} ${part(r, 'second')}` : part(m, 'minute');
+}
+
+export interface TranscriptSection {
+  label: string;
+  start: number;
+  /** Index of the section's first word in the transcript. */
+  first: number;
+  /** One past the section's last word. */
+  last: number;
+}
+
+/** Splits the transcript into one section per cue, by cue start time. */
+export function transcriptSections(cues: Cue[], words: TimedWord[], starts: readonly number[]): TranscriptSection[] {
+  const firstAt = (time: number) => {
+    const k = words.findIndex((w) => w.start >= time - 0.02);
+    return k < 0 ? words.length : k;
+  };
+  return cues.map((c, i) => ({
+    label: c.label,
+    start: starts[i] ?? 0,
+    first: firstAt(starts[i] ?? 0),
+    last: i + 1 < cues.length ? firstAt(starts[i + 1]) : words.length
+  }));
+}
+
+/** Playback speeds the player cycles through. */
+export const RATES = [1, 1.25, 1.5, 0.75] as const;
+export const nextRate = (rate: number) => RATES[(RATES.indexOf(rate as (typeof RATES)[number]) + 1) % RATES.length];

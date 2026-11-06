@@ -135,6 +135,19 @@
 
   $: ranked = rankCards(destinationCountry);
 
+  /** Line icons per card (one colour, drawn with currentColor). Cards
+   *  without one keep their emoji. */
+  const RL_ICONS: Record<string, string> = {
+    customs: '<path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6M4 20h16"/>',
+    'vehicle-import': '<path d="M5 16h14l-1.5-5.5A2 2 0 0 0 15.6 9H8.4a2 2 0 0 0-1.9 1.5z"/><path d="M4 16v3h3v-3M17 16v3h3v-3M7.5 13h.01M16.5 13h.01"/>',
+    residency: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17c1-2 2.4-3 4-3s3 1 4 3"/>',
+    tax: '<path d="M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21z"/><path d="M10 8h4M10 12h4M9.5 16l5-5"/>',
+    exemptions: '<path d="M4 7h16v13H4z"/><path d="M4 7l3-4h10l3 4M10 12h4"/>',
+    documents: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/>',
+    'shipping-export': '<path d="M3 15h18l-2.5 5h-13z"/><path d="M6 15V9h12v6M10 9V5h4v4"/>',
+    insurance: '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/>'
+  };
+
   // ── Actions ───────────────────────────────────────────────────────────────
 
   function askLily(card: RegCard) {
@@ -165,13 +178,14 @@
       <div class="rl__card">
         <div class="rl__card-top">
           <div class="rl__icon-wrap">
-            <span class="rl__icon" role="img">{card.icon}</span>
+            {#if RL_ICONS[card.id]}
+              <svg class="rl__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{@html RL_ICONS[card.id]}</svg>
+            {:else}
+              <span class="rl__icon" aria-hidden="true">{card.icon}</span>
+            {/if}
           </div>
           {#if card.tag}
-            <span
-              class="rl__tag"
-              style="color:{card.tagColor ?? '#64748b'};background:{(card.tagColor ?? '#64748b') + '18'};border-color:{(card.tagColor ?? '#64748b') + '40'}"
-            >{card.tag}</span>
+            <span class="rl__tag"><i style="background:{card.tagColor ?? '#64748b'}" aria-hidden="true"></i>{card.tag}</span>
           {/if}
         </div>
         <h4 class="rl__card-title">{card.title}</h4>
@@ -191,7 +205,7 @@
           {#if card.lilyTopic && onOpenLily}
             <button class="rl__link rl__link--lily" on:click={() => askLily(card)}>
               Ask Lily
-              <img src="/lili.png" alt="Lily" class="rl__lily-avatar" />
+              <img src="/lili.png" alt="" class="rl__lily-avatar" />
             </button>
           {/if}
         </div>

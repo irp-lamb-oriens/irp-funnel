@@ -52,6 +52,11 @@
   $: {
     if (receivedQuotes.length === 1) {
       selectedQuoteId = (receivedQuotes[0].quoteId ?? receivedQuotes[0].id) ?? null;
+    } else if (receivedQuotes.length > 1 && !selectedQuoteId) {
+      // With several quotes the summary already falls back to the first one;
+      // select it too so the dropdown shows what the summary shows instead of
+      // a blank control. targetQuote is unchanged by this.
+      selectedQuoteId = (receivedQuotes[0].quoteId ?? receivedQuotes[0].id) ?? null;
     }
   }
   $: targetQuote = selectedQuoteId

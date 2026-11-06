@@ -2,6 +2,8 @@
   export let heroTitle: string;
   export let heroUrl: string | undefined = undefined;
   export let heroSubTitle: string | undefined = undefined;
+  /** Optional small label above the hero title (new; omitted by default). */
+  export let heroEyebrow: string | undefined = undefined;
   export let ctaTitle: string = "Contact us & Get a free Relocating consultation";
   export let ctaSubtitle: string = "Choose the best consultation company for your relocation";
   export let ctaPrimary: { label: string; href: string } = { label: "Book a consultation", href: "/consultation" };
@@ -12,17 +14,20 @@
   import "./country-layout.scss";
 </script>
 
-<HeroSection text={heroTitle} url={heroUrl} subtitle={heroSubTitle} />
+<HeroSection text={heroTitle} url={heroUrl} subtitle={heroSubTitle} eyebrow={heroEyebrow} />
 <section class="country-content">
   <slot />
 </section>
-<section class="country-cta">
+<section class="country-cta" aria-labelledby="country-cta-title">
   <div class="cta-content">
-    <h2>{ctaTitle}</h2>
+    <div class="cta-copy">
+      <p class="cta-eyebrow">Free consultation</p>
+      <h2 id="country-cta-title">{ctaTitle}</h2>
+      <p class="cta-sub">{ctaSubtitle}</p>
+    </div>
     <div class="button-row">
       <CTAButton trigger={true} label={ctaPrimary.label} href={ctaPrimary.href} variant="primary" />
       <CTAButton label={ctaSecondary.label} href={ctaSecondary.href} variant="secondary-inverted" />
     </div>
-    <h6>{ctaSubtitle}</h6>
   </div>
 </section>

@@ -98,7 +98,7 @@
     <div class="cfc__grid">
       {#each $clientFields as f (f.id)}
         <div class="cfc__row" class:cfc__row--editable={f.editable}>
-          <span class="cfc__label">
+          <span class="cfc__label" id={`cfc-label-${f.id}`}>
             {f.label}
             {#if f.editable}<span class="cfc__pill">Editable</span>{/if}
           </span>
@@ -107,29 +107,29 @@
 
             <span class="cfc__value">{display(f)}</span>
           {:else if f.valueType === 'boolean'}
-            <select class="cfc__input" bind:value={drafts[f.id]} disabled={saving}>
+            <select class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} bind:value={drafts[f.id]} disabled={saving}>
               <option value="true">Yes</option>
               <option value="false">No</option>
             </select>
           {:else if f.valueType === 'enum' && Array.isArray(f.options) && f.options.length}
-            <select class="cfc__input" bind:value={drafts[f.id]} disabled={saving}>
+            <select class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} bind:value={drafts[f.id]} disabled={saving}>
               <option value="">Select…</option>
               {#each f.options as opt}
                 <option value={opt}>{opt}</option>
               {/each}
             </select>
           {:else if f.valueType === 'text'}
-            <textarea class="cfc__input" rows="3" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving}></textarea>
+            <textarea class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} rows="3" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving}></textarea>
           {:else if f.valueType === 'number'}
-            <input class="cfc__input" type="number" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
+            <input class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} type="number" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
           {:else if f.valueType === 'date'}
-            <input class="cfc__input" type="date" bind:value={drafts[f.id]} disabled={saving} />
+            <input class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} type="date" bind:value={drafts[f.id]} disabled={saving} />
           {:else if f.valueType === 'datetime'}
-            <input class="cfc__input" type="datetime-local" bind:value={drafts[f.id]} disabled={saving} />
+            <input class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} type="datetime-local" bind:value={drafts[f.id]} disabled={saving} />
           {:else if f.valueType === 'email'}
-            <input class="cfc__input" type="email" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
+            <input class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} type="email" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
           {:else}
-            <input class="cfc__input" type="text" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
+            <input class="cfc__input" aria-labelledby={`cfc-label-${f.id}`} type="text" bind:value={drafts[f.id]} placeholder={f.placeholder || ''} disabled={saving} />
           {/if}
         </div>
       {/each}

@@ -70,7 +70,7 @@
 <style lang="scss">
   @use './tokens' as *;
 
-  .section { @include section; background: $color-mist; }
+  .section { @include section; & { background: $color-mist; } }
   .wrap { @include container; }
   .split { display: grid; gap: $space-8;
     @include lg { grid-template-columns: 0.85fr 1.15fr; gap: $space-24; align-items: start; } }

@@ -171,15 +171,29 @@
     tick().then(measureSegment);
   }
 
+  // The strip only animates while it is on screen; off screen the loop is
+  // parked so it doesn't spend a frame (and a style update) on every scroll.
+  let io: IntersectionObserver | null = null;
   onMount(() => {
     ro = new ResizeObserver(() => measureSegment());
     if (track) ro.observe(track);
-    rAF = requestAnimationFrame(() => loop());
+    const start = () => {
+      if (rAF == null) rAF = requestAnimationFrame(() => loop());
+    };
+    const stop = () => {
+      if (rAF != null) cancelAnimationFrame(rAF);
+      rAF = null;
+    };
+    if (typeof IntersectionObserver !== 'undefined' && container) {
+      io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()));
+      io.observe(container);
+    } else start();
   });
 
   onDestroy(() => {
     if (rAF != null) cancelAnimationFrame(rAF);
     ro?.disconnect();
+    io?.disconnect();
   });
 </script>
 

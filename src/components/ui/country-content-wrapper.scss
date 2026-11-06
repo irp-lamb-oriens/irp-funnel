@@ -1,52 +1,68 @@
-/* Modular country content wrapper styles, based on Colombia's beautiful layout */
+/* Long-form article column used by country pages, legal pages and guides.
+   A reading measure of ~68ch, a calm type scale and ink headings. */
+
+$ink: #0e2f36;
+$teal-deep: #04767b;
+$text: #2b3a3e;
+$hair: rgba(14, 47, 54, 0.1);
+$sans: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
 
 .country-content-wrapper {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  font-family: $sans;
+  color: $text;
 
   h4 {
-    color: var(--color-highlight-1);
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 1.2rem;
+    color: $ink;
+    font: 700 clamp(1.8rem, 3.4vw, 2.6rem) / 1.08 $sans;
+    letter-spacing: -0.035em;
+    margin: 0 0 1.5rem;
+    text-wrap: balance;
   }
   h5 {
-    color: var(--color-highlight-2);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-top: 1.5rem;
-    margin-bottom: 0.7rem;
+    color: $ink;
+    font: 700 clamp(1.2rem, 1.8vw, 1.45rem) / 1.25 $sans;
+    letter-spacing: -0.02em;
+    margin: 2.75rem 0 0.9rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid $hair;
+  }
+  p,
+  li {
+    font-family: $sans;
   }
   p {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #222;
+    font-size: 1.125rem;
+    line-height: 1.75;
+    margin: 0 0 1.15rem;
+    color: $text;
+    text-wrap: pretty;
   }
-
-  @media (max-width: 1024px) {
-    padding: 1rem;
+  b,
+  strong {
+    color: $ink;
+    font-weight: 600;
   }
-}
-
-:global(.country-content-wrapper) h4 {
-  color: var(--color-highlight-1);
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 1.2rem;
-}
-:global(.country-content-wrapper) h5 {
-  color: var(--color-highlight-2);
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.7rem;
-}
-:global(.country-content-wrapper) p {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  color: #222;
+  ul,
+  ol {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    padding-left: 1.25rem;
+    margin: 0 0 1.25rem;
+  }
+  li {
+    margin: 0.35rem 0;
+  }
+  a {
+    color: $teal-deep;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    &:hover {
+      text-decoration-thickness: 2px;
+    }
+  }
 }

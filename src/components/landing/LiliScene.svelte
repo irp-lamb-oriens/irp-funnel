@@ -85,7 +85,7 @@
               <span class="ev offer" class:show={p > at(2) - 0.04 && !(k === 1 && fly > 0.85)} style="grid-column:{o.day + 2}; grid-row:{o.from + 2} / span 1">Open</span>
             {/each}
             <span class="ev booked-ev" class:show={fly > 0.85} style="grid-column:5; grid-row:8 / span 1">
-              <b>IRP consultation</b><small>15:00 to 16:00 · Google Meet</small>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path style="fill:#0e2f36" d="M6.6 3.2c.5-.2 1.1 0 1.4.5l1.7 3c.3.5.2 1.1-.2 1.5L8.1 9.6a11.5 11.5 0 0 0 6.3 6.3l1.4-1.4c.4-.4 1-.5 1.5-.2l3 1.7c.5.3.7.9.5 1.4l-.8 2.1c-.3.8-1.1 1.3-2 1.2C10.5 19.9 4.1 13.5 3.3 6c-.1-.9.4-1.7 1.2-2z" /></svg>
             </span>
           </div>
         </div>
@@ -161,10 +161,17 @@
   .offer { background: transparent; border: 1.5px dashed $color-accent; color: $color-accent-hover; display: grid; place-items: center;
     opacity: 0; transform: scale(0.9); transition: opacity 300ms, transform 400ms $ease;
     &.show { opacity: 1; transform: none; } }
-  .booked-ev { background: $color-accent; color: $color-ink-strong; border-left: 3px solid $color-ink-strong; display: flex; flex-direction: column; justify-content: center; padding: 3px 6px;
+  /* The booked call: just a phone in the slot, with a soft ring while it lands. */
+  .booked-ev { position: relative; overflow: visible; background: $color-accent; border-radius: 5px; display: grid; place-items: center; padding: 0;
     opacity: 0; transform: scale(0.6); transform-origin: center; transition: opacity 350ms, transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    &.show { opacity: 1; transform: none; box-shadow: 0 8px 18px -6px rgba(2, 181, 187, 0.7); }
-    b { font: 800 0.6rem $font-sans; } small { font: 0.52rem $font-sans; white-space: nowrap; } }
+    svg { width: 13px; height: 13px; }
+    &::after { content: ''; position: absolute; inset: -1px; border-radius: 6px; border: 2px solid $color-accent; opacity: 0; }
+    &.show { opacity: 1; transform: none; box-shadow: 0 8px 18px -6px rgba(2, 181, 187, 0.7);
+      svg { animation: ring-phone 900ms 450ms ease-in-out 2; }
+      &::after { animation: ring-out 1.2s 300ms $ease 2; } } }
+  @keyframes ring-phone { 0%, 100% { transform: rotate(0); } 15%, 45%, 75% { transform: rotate(-14deg); } 30%, 60%, 90% { transform: rotate(14deg); } }
+  @keyframes ring-out { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.6); } }
+  @include reduced-motion { .booked-ev.show svg, .booked-ev.show::after { animation: none; } }
 
   :global(.rm) {
     .stage { padding-block: $space-24; }

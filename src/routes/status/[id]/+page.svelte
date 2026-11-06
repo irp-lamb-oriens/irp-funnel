@@ -213,38 +213,58 @@
     });
   }
 
-  // ─── Activity visual identity ─────────────────────────────────────────────
-  // Each activity type gets a distinct icon + accent colour so the journey
-  // timeline reads as a richly colour-coded story rather than a monotone list.
-  // Keyword matching keeps it robust against the many concrete event names
-  // (email_sent, email_suggested, quote_accepted, field_edit, …).
-  function getActivityIcon(type: string): string {
+  /** Kind of activity, for the log's icon (presentation only). */
+  function activityKind(type: string): string {
     const t = (type || "").toLowerCase();
-    if (t.includes("quote")) return "📋";
-    if (t.includes("email")) return "📧";
-    if (t === "stage_change" || t.includes("stage") || t.includes("moved")) return "→";
-    if (t.includes("field")) return "✏️";
-    if (t.includes("action")) return "⚡";
-    if (t.includes("call") || t.includes("consult") || t.includes("resched")) return "📞";
-    if (t.includes("payment") || t.includes("pay") || t.includes("refund")) return "💳";
-    if (t.includes("note") || t.includes("comment")) return "📝";
-    return "•";
+    if (t === "stage_change" || t.includes("stage") || t.includes("moved")) return "stage";
+    if (t.includes("quote")) return "quote";
+    if (t.includes("email")) return "email";
+    if (t.includes("field")) return "field";
+    if (t.includes("call") || t.includes("consult") || t.includes("resched")) return "call";
+    if (t.includes("payment") || t.includes("pay") || t.includes("refund")) return "payment";
+    if (t.includes("note") || t.includes("comment")) return "note";
+    if (t.includes("action")) return "action";
+    return "other";
   }
 
-  /** Accent colour (hex) for an activity type — drives the node + card --k var. */
-  function getActivityColor(type: string): string {
-    const t = (type || "").toLowerCase();
-    if (t.includes("quote")) return "#f5b50a";   // gold
-    if (t.includes("email")) return "#0ea5e9";   // sky
-    if (t === "stage_change" || t.includes("stage") || t.includes("moved")) return "#02b5bb"; // teal
-    if (t.includes("field")) return "#f97316";   // orange
-    if (t.includes("action")) return "#8b5cf6";  // violet
-    if (t.includes("call") || t.includes("consult") || t.includes("resched")) return "#10b981"; // emerald
-    if (t.includes("payment") || t.includes("pay") || t.includes("refund")) return "#16a34a"; // green
-    if (t.includes("note") || t.includes("comment")) return "#64748b"; // slate
-    return "#02b5bb";
+  function formatTime(iso: string): string {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
 
+  /** Activity newest first, grouped by calendar day ("Today", "Yesterday", "Nov 2"). */
+  function activityDays(log: any[]): { key: string; label: string; entries: any[] }[] {
+    const days: { key: string; label: string; entries: any[] }[] = [];
+    const today = new Date();
+    const yest = new Date(today.getTime() - 86400000);
+    const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+    const sorted = [...log].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+    for (const e of sorted) {
+      const d = e.timestamp ? new Date(e.timestamp) : null;
+      const key = d && !isNaN(d.getTime()) ? d.toDateString() : "undated";
+      let g = days.find((x) => x.key === key);
+      if (!g) {
+        const label = !d || key === "undated"
+          ? "Earlier"
+          : same(d, today)
+            ? "Today"
+            : same(d, yest)
+              ? "Yesterday"
+              : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", ...(d.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}) });
+        g = { key, label, entries: [] };
+        days.push(g);
+      }
+      g.entries.push(e);
+    }
+    return days;
+  }
+
+
+
+  /** "destinationCity" → "destination city" (display only). */
+  function humanizeField(f: string): string {
+    return String(f).replace(/_/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  }
 
   function getActivityText(entry: any): string {
     switch (entry.type) {
@@ -255,7 +275,7 @@
       case "email_triggered":
         return `Sent communication: <strong>${entry.emailType}</strong>`;
       case "field_update":
-        return `Updated information: <strong>${(entry.fields || []).join(", ")}</strong>`;
+        return `Updated information: <strong>${(entry.fields || []).map(humanizeField).join(", ")}</strong>`;
       case "action_executed":
         return `System action completed: <strong>${entry.actionKey}</strong>`;
       default:
@@ -845,8 +865,19 @@
   {:else if !$isAuthenticated}
     <!-- ═══════════════════════ LOGIN GATE ═══════════════════════ -->
     <div class="cp-auth-wall">
+      <div class="cp-auth-wall__layout">
+      <aside class="cp-auth-wall__brand" aria-label="About the portal">
+        <p class="cp-auth-wall__eyebrow">International Relocation Partner</p>
+        <p class="cp-auth-wall__headline">Your move, in one place.</p>
+        <p class="cp-auth-wall__lede">Every stage of your relocation, from the first call to the last box delivered, with the rules that apply to you in writing.</p>
+        <ul class="cp-auth-wall__features">
+          <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></i><span>Live status<small>See which stage your move is in, as it changes.</small></span></li>
+          <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></i><span>Your proposal and charges<small>Read your plan and your quote, and accept it online.</small></span></li>
+          <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></i><span>Chat with Lily and the team<small>Questions answered without waiting for a call.</small></span></li>
+        </ul>
+      </aside>
       <div class="cp-auth-wall__card">
-        <span class="cp-auth-wall__icon">🌍</span>
+        <span class="cp-auth-wall__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></span>
         <h1 class="cp-auth-wall__title">Your Relocation Portal</h1>
         <p class="cp-auth-wall__subtitle">
           Track your move, view your quote, and chat with our team — all in one
@@ -947,6 +978,7 @@
           >
         </div>
       </div>
+      </div>
     </div>
   {:else if $error && !$project}
     <div class="cp-dashboard">
@@ -970,6 +1002,7 @@
         <div class="cp-dashboard__header-overlay"></div>
         <div class="cp-dashboard__header-content">
           <div class="cp-dashboard__header-main">
+            <p class="cp-dashboard__header-eyebrow">Your relocation portal</p>
             <h1 class="cp-dashboard__header-title">Hello, {$project.name}</h1>
             <div class="cp-dashboard__header-route">
               <span class="route-point"
@@ -992,6 +1025,22 @@
                 >{$project.destinationCountry || "Destination"}</span
               >
             </div>
+            {#if $stages.length && currentStageIndex >= 0}
+              <div class="cp-dashboard__header-progress">
+                <p class="cp-dashboard__header-progress-row">
+                  <span>Now: <b>{$stageLabels[$stages[currentStageIndex]] || $stages[currentStageIndex]}</b></span>
+                  <span>Step {currentStageIndex + 1} of {$stages.length}</span>
+                </p>
+                <div
+                  class="cp-dashboard__header-progress-bar"
+                  role="progressbar"
+                  aria-label="Move progress"
+                  aria-valuemin={1}
+                  aria-valuemax={$stages.length}
+                  aria-valuenow={currentStageIndex + 1}
+                ><i style="width: {((currentStageIndex + 1) / $stages.length) * 100}%"></i></div>
+              </div>
+            {/if}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             {#if $irpStaffIsAuthenticated}
@@ -1066,7 +1115,7 @@
               <div class="cp-call-banner__inner">
                 <div class="cp-call-banner__info">
                   <span class="cp-call-banner__eyebrow"
-                    >📅 Upcoming Consultation</span
+                    >Upcoming consultation</span
                   >
                   <h2 class="cp-call-banner__title">
                     Your consultation call is scheduled
@@ -1342,9 +1391,10 @@
                 <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={regulationsOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
             </button>
-            <div class="cp-collapsible__body" class:cp-collapsible__body--open={regulationsOpen}>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={regulationsOpen} inert={!regulationsOpen}>
               <div class="cp-collapsible__inner">
-                <div class="cp-collapsible__scroll">
+                <!-- Keyboard users can scroll a capped section (WCAG 2.1.1). -->
+                <div class="cp-collapsible__scroll" tabindex="0" role="region" aria-label="Regulations, exports and services">
                   <RegulationsLanding
                     destinationCountry={$project.destinationCountry ?? ""}
                     originCountry={$project.originCountry ?? ""}
@@ -1392,9 +1442,10 @@
                 <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={detailsOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
             </div>
-            <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen}>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={detailsOpen} inert={!detailsOpen}>
               <div class="cp-collapsible__inner">
-                <div class="cp-collapsible__scroll">
+                <!-- Keyboard users can scroll a capped section (WCAG 2.1.1). -->
+                <div class="cp-collapsible__scroll" tabindex="0" role="region" aria-label="Project details">
                   <!-- DETAILS BOX — WYSIWYG inline edit: each editable field
                        shows a frameless input in edit mode instead of a
                        separate form above. Non-editable fields stay as text. -->
@@ -1553,48 +1604,45 @@
                 <svg class="cp-collapsible__trigger-chevron" class:cp-collapsible__trigger-chevron--open={activityOpen} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
               </span>
             </button>
-            <div class="cp-collapsible__body" class:cp-collapsible__body--open={activityOpen}>
+            <div class="cp-collapsible__body" class:cp-collapsible__body--open={activityOpen} inert={!activityOpen}>
               <div class="cp-collapsible__inner">
-                <div class="cp-collapsible__scroll">
+                <!-- Keyboard users can scroll a capped section (WCAG 2.1.1). -->
+                <div class="cp-collapsible__scroll" tabindex="0" role="region" aria-label="Activity log">
                 <section class="cp-dashboard__activity">
                   <h3>Activity Log</h3>
               {#if $project.activityLog && $project.activityLog.length > 0}
-                <div class="timeline" class:timeline--play={activityOpen}>
-                  <div class="timeline__spine" aria-hidden="true">
-                    <span class="timeline__spine-flow"></span>
-                    <span class="timeline__spine-flow timeline__spine-flow--2"></span>
-                  </div>
-                  <!-- "Now" beacon — the live pulsing head of the journey -->
-                  <div class="timeline__beacon timeline__beacon--now" aria-hidden="true">
-                    <span class="timeline__beacon-pulse"></span>
-                    <span class="timeline__beacon-label">Now</span>
-                  </div>
-                  {#each [...$project.activityLog].reverse() as entry, idx}
-                    <div
-                      class="timeline__item"
-                      class:timeline__item--right={idx % 2 === 1}
-                      class:timeline__item--latest={idx === 0}
-                      style="--i:{idx}; --k:{getActivityColor(entry.type)}"
-                    >
-                      <div class="timeline__node">
-                        <span class="timeline__node-ring" aria-hidden="true"></span>
-                        <span class="timeline__node-icon">{getActivityIcon(entry.type)}</span>
-                      </div>
-                      <div class="timeline__card">
-                        <div class="timeline__card-text">
-                          {@html getActivityText(entry)}
-                        </div>
-                        <div class="timeline__card-time">
-                          {formatDateTime(entry.timestamp)}
-                        </div>
-                      </div>
-                    </div>
+                <!-- Newest first, grouped by day. One quiet rail, one icon per
+                     kind of event, the time on the right. -->
+                <div class="alog">
+                  {#each activityDays($project.activityLog) as day, di (day.key)}
+                    <section class="alog__day" aria-label={day.label}>
+                      <h4 class="alog__date">{day.label}</h4>
+                      <ol class="alog__list">
+                        {#each day.entries as entry, ei}
+                          {@const kind = activityKind(entry.type)}
+                          <li class="alog__item alog__item--{kind}" class:alog__item--latest={di === 0 && ei === 0} style="--i:{Math.min(12, ei + di * 2)}">
+                            <span class="alog__icon" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                {#if kind === 'stage'}<path d="M5 12h14M13 6l6 6-6 6" />
+                                {:else if kind === 'quote'}<path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" />
+                                {:else if kind === 'email'}<rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" />
+                                {:else if kind === 'field'}<path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" />
+                                {:else if kind === 'call'}<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+                                {:else if kind === 'payment'}<rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" />
+                                {:else if kind === 'note'}<path d="M5 4h14v12l-4 4H5z" /><path d="M15 20v-4h4M8 9h8M8 13h5" />
+                                {:else if kind === 'action'}<path d="M13 3 5 14h6l-1 7 8-11h-6z" />
+                                {:else}<circle cx="12" cy="12" r="3" />{/if}
+                              </svg>
+                            </span>
+                            <div class="alog__body">
+                              <p class="alog__text">{@html getActivityText(entry)}</p>
+                              <time class="alog__time" datetime={entry.timestamp}>{formatTime(entry.timestamp)}</time>
+                            </div>
+                          </li>
+                        {/each}
+                      </ol>
+                    </section>
                   {/each}
-                  <!-- Origin marker — where the journey began -->
-                  <div class="timeline__beacon timeline__beacon--origin" aria-hidden="true">
-                    <span class="timeline__beacon-diamond"></span>
-                    <span class="timeline__beacon-label">Journey start</span>
-                  </div>
                 </div>
               {:else}
                 <p style="color: #64748b; font-size: 0.95rem;">
@@ -1815,7 +1863,8 @@
                 <div class="cp-video-testimonials__frame">
                   <iframe
                     src="https://www.youtube.com/embed/XoYFMUn_6_c"
-                    title="Customer Testimonial 1"
+                    title="Jill Reed's testimonial video"
+                    loading="lazy"
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen
@@ -1827,7 +1876,8 @@
                 <div class="cp-video-testimonials__frame">
                   <iframe
                     src="https://www.youtube.com/embed/-tMlb7ZQqyI"
-                    title="Customer Testimonial 2"
+                    title="Rick and Denise McGhee's testimonial video"
+                    loading="lazy"
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen
@@ -1994,6 +2044,7 @@
       class="lily-drawer"
       class:lily-drawer--open={lilyOpen}
       aria-hidden={!lilyOpen}
+      inert={!lilyOpen}
     >
       <div class="lily-drawer__body">
         <LilyChat

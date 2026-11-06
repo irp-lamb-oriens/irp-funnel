@@ -57,19 +57,18 @@
           <linearGradient id="pr-sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f6d74" /><stop offset="1" stop-color="#0a4b51" /></linearGradient>
           <linearGradient id="pr-cont" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#13a8ad" /><stop offset="1" stop-color="#0a7f84" /></linearGradient>
           <linearGradient id="pr-wall-shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0.55" stop-color="#000" stop-opacity="0" /><stop offset="1" stop-color="#000" stop-opacity="0.12" /></linearGradient>
-          <clipPath id="pr-sea-clip"><rect x="470" y="256" width="390" height="64" /></clipPath>
+          <!-- the gap between the quays; open upwards so the swell is never cut -->
+          <clipPath id="pr-sea-clip"><rect x="470" y="200" width="390" height="120" /></clipPath>
+          <linearGradient id="pr-swell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a8e95" /><stop offset="1" stop-color="#0b5359" /></linearGradient>
         </defs>
 
-        <!-- sea first, then the quay and the far shore on top of it -->
+        <!-- sea first (back swell); the front swell and the quays are drawn after the ship -->
         <g class="land" style="opacity:{f(0.28, 0.34)}">
-          <rect x="470" y="258" width="392" height="62" fill="url(#pr-sea)" />
           <g clip-path="url(#pr-sea-clip)">
-            <path class="waves" d="M440 262 q15 -6 30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0 t30 0" />
+            <rect x="470" y="268" width="392" height="52" fill="url(#pr-sea)" />
+            <path class="swell back" d="M392 258 q40 -12 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 V320 H392 Z" style="fill:url(#pr-sea)" />
+            <path class="crest" d="M392 258 q40 -12 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0" />
           </g>
-          <rect x="0" y="250" width="472" height="70" class="quay" />
-          <rect x="858" y="250" width="142" height="70" class="quay" />
-          <rect x="858" y="250" width="142" height="6" class="quay-edge" />
-          <rect x="0" y="250" width="472" height="6" class="quay-edge" />
         </g>
 
         <!-- boxes: outline, fill, drop in, then slide into the container -->
@@ -100,6 +99,17 @@
           </g>
           <path class="ol" pathLength="1" style="stroke-dashoffset:{d(0.44, 0.52)}" d="M500 236 H790 L760 276 H520 Z M512 196 h46 v40 h-46 z" />
           <path class="wake" style="opacity:{seg(p, 0.67, 0.72) * (1 - seg(p, 0.84, 0.9))}" d="M500 268 q-30 -4 -60 0 q-20 3 -40 0" />
+        </g>
+
+        <!-- the front swell passes over the hull, so the ship sits in the water -->
+        <g class="land" clip-path="url(#pr-sea-clip)" style="opacity:{f(0.28, 0.34)}">
+          <path class="swell front" d="M392 266 q40 -10 80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 t80 0 V320 H392 Z" style="fill:url(#pr-swell)" />
+        </g>
+        <g class="land" style="opacity:{f(0.28, 0.34)}">
+          <rect x="0" y="250" width="472" height="70" class="quay" />
+          <rect x="858" y="250" width="142" height="70" class="quay" />
+          <rect x="858" y="250" width="142" height="6" class="quay-edge" />
+          <rect x="0" y="250" width="472" height="6" class="quay-edge" />
         </g>
 
         <!-- container: packed, lifted, carried, sailed -->
@@ -185,8 +195,11 @@
   }
   .steel { stroke-width: 3; }
   .quay { fill: #24454c; }
-  .waves { fill: none; stroke: rgba(255, 255, 255, 0.5); stroke-width: 2; animation: waves 3s linear infinite; }
-  @keyframes waves { to { transform: translateX(-60px); } }
+  /* Swell: two layers drift at different speeds by exactly one wavelength, so the loop is seamless. */
+  .swell, .crest { animation: swell 4.2s linear infinite; }
+  .swell.front { opacity: 0.88; animation-duration: 2.8s; }
+  .crest { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 2; stroke-linecap: round; }
+  @keyframes swell { to { transform: translateX(-80px); } }
   .box { fill: #c8a06e; stroke: none; }
   .box-top { fill: #e0bd8b; }
   .tape { fill: #ead7b0; }
@@ -227,7 +240,7 @@
     .paper { display: none; }
   }
 
-  @include reduced-motion { .waves { animation: none; } }
+  @include reduced-motion { .swell, .crest { animation: none; } }
 
   :global(.rm) {
     .stage { padding-block: $space-24; }

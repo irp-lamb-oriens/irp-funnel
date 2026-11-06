@@ -63,10 +63,12 @@
 
   .strip {
     @include container;
-    display: grid;
-    gap: $space-8;
-    padding-top: $space-8;
-    border-top: 1px solid $color-on-dark-hairline;
+    & {
+      display: grid;
+      gap: $space-8;
+      padding-top: $space-8;
+      border-top: 1px solid $color-on-dark-hairline;
+    }
     @include lg { grid-template-columns: 5fr 7fr; align-items: center; }
   }
   .founder { display: flex; align-items: center; gap: $space-4; }

@@ -218,7 +218,58 @@ export const COUNTRIES = {
     { name: 'Portugal', href: '/portugal/' },
     { name: 'Spain', href: '/spain/' },
     { name: 'Colombia', href: '/colombia/' }
-  ]
+  ],
+  /**
+   * Three things people tend to learn too late, per country, shown while the
+   * globe holds on the country. Checked November 2026; re-check every
+   * January, when most thresholds move. Sources:
+   * - Costa Rica: car import tax by age (~52% new to ~79% at 6+ years), costaricalaw.com/?p=2264;
+   *   pensionado $1,000 / rentista $2,500 or $60,000 deposit and mandatory CCSS, costaricalaw.com/?p=2285, goldenharbors.com
+   * - Spain: NLV 400% IPREM = €28,800 + €7,200 per family member, no remote work (RD 1155/2024);
+   *   golden visa closed April 3, 2025 (Ley Orgánica 1/2025); tax residence after 183 days (Ley 35/2006, art. 9)
+   * - Panama: Pensionado $1,000 ($750 with $100,000 property, +$250 per dependent), permanent on approval
+   *   (Decreto Ley 3 de 2008); one-time household goods exemption up to $10,000, relofirm.com
+   * - Portugal: Lei Orgânica 1/2026 (in force May 19, 2026): 10 years for citizenship; D7 = minimum wage
+   *   €920 (Decreto-Lei 139/2025), +50% spouse, +30% child; NHR closed to new residents from 2024 (OE 2024, replaced by IFICI)
+   * - Mexico: residency card fees doubled January 1, 2026; temporary residency income ~US$4,400/month (UMA-based);
+   *   permanent residents can't get a vehicle TIP (Ley de Migración 2012), mexperience.com
+   * - Colombia: M-Pensionado = 3 SMMLV, SMMLV 2026 COP 1,750,905 (Decreto 0159 de 2026) → COP 5,252,715;
+   *   register the visa / cédula within 15 calendar days, fines up to 7 SMMLV; cédula fee COP 294,000 (Res. 0599 de 2026)
+   */
+  catchHeading: 'What catches people out',
+  catchYear: '2026',
+  catches: {
+    'Costa Rica': [
+      { stat: '79%', label: 'Import tax on a car six years or older', text: 'About 52% when it is new. The rate rises with the car’s age.' },
+      { stat: '$1,000', label: 'A month, for life, for pensionado residency', text: 'Rentista asks $2,500 a month for two years, or a $60,000 deposit.' },
+      { stat: 'Caja', label: 'Public health enrollment is mandatory', text: 'Residents pay a monthly share of their declared income, even with private insurance.' }
+    ],
+    Spain: [
+      { stat: '€28,800', label: 'A year in passive income, non-lucrative visa', text: 'Plus €7,200 per family member. No work allowed, remote work included.' },
+      { stat: 'Closed', label: 'Golden visa, since April 3, 2025', text: 'Buying property no longer gives you residency.' },
+      { stat: '183 days', label: 'In Spain make you a tax resident', text: 'From then on, Spain taxes your worldwide income.' }
+    ],
+    Panama: [
+      { stat: '$1,000', label: 'A month, for life, for the Pensionado visa', text: '$750 with Panamanian property worth $100,000 or more. Add $250 per dependent.' },
+      { stat: '$10,000', label: 'Of household goods duty-free, once', text: 'It is a one-time exemption. Plan the whole shipment before you use it.' },
+      { stat: 'Day one', label: 'Pensionado residency is permanent on approval', text: 'No temporary stage, and no income check at renewal.' }
+    ],
+    Portugal: [
+      { stat: '10 years', label: 'Before citizenship, since May 19, 2026', text: 'It used to be 5. Permanent residence still comes at year 5.' },
+      { stat: '€920', label: 'A month in passive income for the D7', text: 'It follows the minimum wage, which rises every January. Add 50% for a spouse, 30% per child.' },
+      { stat: 'NHR', label: 'The old tax regime closed to newcomers in 2024', text: 'Its replacement only covers certain professions.' }
+    ],
+    Mexico: [
+      { stat: '2×', label: 'Residency card fees since January 2026', text: 'Government fees doubled for new and renewing residents.' },
+      { stat: 'US$4,400', label: 'A month in income for temporary residency', text: 'Recalculated every January, and consulates apply it differently.' },
+      { stat: 'No permit', label: 'For a foreign-plated car once you are permanent', text: 'Only visitors and temporary residents can get one outside the free zones.' }
+    ],
+    Colombia: [
+      { stat: 'COP 5.25M', label: 'A month for the pensioner visa', text: 'Three minimum wages. The minimum wage rose about 23% for 2026.' },
+      { stat: '15 days', label: 'To register your visa and get your cédula', text: 'Calendar days from arrival. Missing them can cost up to seven minimum wages in fines.' },
+      { stat: 'COP 294,000', label: 'For the cédula de extranjería', text: 'The 2026 fee. The card arrives about 10 business days after payment.' }
+    ]
+  } as Record<string, { stat: string; label: string; text: string }[]>
 };
 
 export const PROOF = {
@@ -227,7 +278,14 @@ export const PROOF = {
   videoTitle: 'Jill Reed on moving abroad with IRP',
   videoSrc:
     'https://storage.googleapis.com/videos-irp-funnels/Copia-de-Jill-Reed-International-Relocation-Partner%20(1).mp4#t=0.1',
-  reviewsLead: 'Google reviews from clients who moved with us.'
+  reviewsLead: 'Google reviews from clients who moved with us.',
+  wall: {
+    eyebrow: 'Google reviews',
+    /** Words of the heading; the last one is set in the accent colour. */
+    title: ['What', 'our', 'customers', 'say'],
+    sub: 'Real reviews from clients who moved their lives with us.',
+    hint: 'Press a column to stop it. Select a review to read it on Google.'
+  }
 };
 
 export const FAQ = {

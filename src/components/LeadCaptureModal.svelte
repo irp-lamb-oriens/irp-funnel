@@ -62,12 +62,12 @@
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div class="modal-backdrop" transition:fade={{ duration: 200 }} on:click={() => { /* prevent closing by clicking outside if required */ }}>
-    <div class="modal-content" transition:scale={{ duration: 300, start: 0.95 }} on:click|stopPropagation>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="lead-capture-title" tabindex="-1" transition:scale={{ duration: 300, start: 0.95 }} on:click|stopPropagation>
       <div class="modal-header">
         <div class="icon-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
         </div>
-        <h2>Unlock Full Access</h2>
+        <h2 id="lead-capture-title">Unlock Full Access</h2>
       </div>
       
       <p class="modal-desc">
@@ -130,7 +130,13 @@
   }
 
   .modal-content {
-    background: #1a1a1a;
+    // Same sans and ink as the template pages behind it.
+    --font-paragraph: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+    --font-title: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+    font-family: var(--font-paragraph);
+    background:
+      radial-gradient(500px 260px at 100% 0%, rgba(2, 181, 187, 0.22), transparent 70%),
+      #0e2f36;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 24px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -174,15 +180,16 @@
 
     h2 {
       font-size: 1.8rem;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
       font-family: var(--font-title);
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
     }
   }
 
   .modal-desc {
-    color: #a3a3a3;
+    color: rgba(255, 255, 255, 0.74);
     font-size: 1.05rem;
     line-height: 1.5;
     margin-bottom: 2rem;
