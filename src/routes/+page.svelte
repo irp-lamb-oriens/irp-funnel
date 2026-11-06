@@ -20,12 +20,16 @@
   import CountriesScene from '../components/landing/CountriesScene.svelte';
   import ReviewsScene from '../components/landing/ReviewsScene.svelte';
   import FaqSplit from '../components/landing/FaqSplit.svelte';
+  import OfficesScene from '../components/landing/OfficesScene.svelte';
   import FinalScene from '../components/landing/FinalScene.svelte';
   import SceneRail from '../components/landing/SceneRail.svelte';
   import Narrator from '../components/narration/Narrator.svelte';
   import { HOME_CUES } from '../components/narration/narration.ts';
 
-  const stops = HOME_CUES.filter((c) => c.anchor !== 'hero-form').map((c) => ({ id: c.anchor, label: c.label }));
+  const cueStops = HOME_CUES.filter((c) => c.anchor !== 'hero-form').map((c) => ({ id: c.anchor, label: c.label }));
+  // The offices section has no narration cue; it sits between the questions and the close.
+  const at = cueStops.findIndex((s) => s.id === 'book');
+  const stops = [...cueStops.slice(0, at), { id: 'contact', label: 'Our offices' }, ...cueStops.slice(at)];
 </script>
 
 <svelte:head>
@@ -52,6 +56,7 @@
   <CountriesScene />
   <ReviewsScene />
   <FaqSplit />
+  <OfficesScene />
   <FinalScene />
 </main>
 

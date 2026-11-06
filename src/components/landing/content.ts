@@ -17,7 +17,7 @@ export const IMG = {
 
 export const LILI_WHATSAPP =
   'https://wa.me/15186227134?text=' +
-  encodeURIComponent("Hi Lili! I'm interested in international relocation.");
+  encodeURIComponent("Hi Lily! I'm interested in international relocation.");
 
 export const HERO = {
   founder: 'Pablo Arias, founder',
@@ -60,23 +60,19 @@ export const PROBLEM = {
 
 export const STEPS = {
   eyebrow: 'How it works',
-  title: 'From the first call to your first week there.',
+  title: 'From your first call to every stage of your move.',
   items: [
     {
       title: 'A consulting call',
-      body: 'Sixty minutes about your case. We review the rules that apply to your status and your destination and answer your first questions.'
+      body: 'Sixty minutes about your case. We go through the rules and regulations that apply to your immigration status and your destination, and answer your questions.'
     },
     {
-      title: 'Your project plan',
-      body: 'We write the costs, rules and steps into an online Project Planner. You review it and accept it there.'
+      title: 'Your plan, in writing',
+      body: 'After the call you get a written plan: the rules that apply to you, the steps of your move and what it costs. You review it and accept it online.'
     },
     {
-      title: 'Timeline and follow-up',
-      body: 'Every milestone goes on a timeline. We keep you updated so you know what comes next and what we need from you.'
-    },
-    {
-      title: 'Support after you arrive',
-      body: 'Once you land we keep answering questions and solving issues while you settle in.'
+      title: 'Your status page',
+      body: 'Once you confirm, your status page shows each stage of your move with its date, and our team keeps you updated on WhatsApp.'
     }
   ]
 };
@@ -119,10 +115,10 @@ export const SERVICES = {
 };
 
 export const LILI = {
-  eyebrow: 'Chat with Lili',
+  eyebrow: 'Chat with Lily',
   title: 'Ask first, then book.',
-  body: 'Lili, our assistant, answers your questions in the chat, checks the team calendar and books your call. She is on WhatsApp too.',
-  primary: 'Chat with Lili',
+  body: 'Lily, our assistant, answers your questions in the chat, checks the team calendar and books your call. She is on WhatsApp too.',
+  primary: 'Chat with Lily',
   secondary: 'Message on WhatsApp',
   chat: [
     { from: 'you', text: "We're moving from Texas to Costa Rica next spring. Can we ship our car?" },
@@ -139,21 +135,21 @@ export const PRINCIPLE = {
 };
 
 export const INCLUDES = {
-  eyebrow: 'Your project',
-  title: 'What your project includes.',
-  lead: 'Each client gets a plan written for their move and a way to follow it.',
+  eyebrow: 'After you confirm',
+  title: 'What you get with your project.',
+  lead: 'We handle the move for you. You always know the rules that apply, where your move stands and what comes next.',
   items: [
     {
-      title: 'A Project Planner made for you',
-      body: 'An online document with the estimated costs, rules and regulations for your move. You confirm and accept it there.'
+      title: 'The rules for your case, in writing',
+      body: 'Your plan lists the rules and regulations that apply to your status, your route and your destination, with the estimated costs. You accept it online.'
     },
     {
-      title: 'A timeline you can open anytime',
-      body: 'Each step with its dates, descriptions, comments, documents and tasks. Included with our comprehensive consulting services.'
+      title: 'Your status page',
+      body: 'Your Relocation Portal shows each stage of your move with its date, your documents and your next consultation.'
     },
     {
-      title: 'A consulting specialist',
-      body: 'One person who knows your project and answers your questions, including payments and timing.'
+      title: 'Follow-up on WhatsApp',
+      body: 'Our team keeps you updated on WhatsApp at each stage, so you know what comes next and what we need from you.'
     },
     {
       title: 'Notice before the bill changes',
@@ -163,15 +159,27 @@ export const INCLUDES = {
 };
 
 export const TIMELINE = {
-  eyebrow: 'Example',
-  title: 'What your project timeline looks like.',
-  body: 'Once you confirm, we open a timeline for your project and send the instructions by email. This is an example.',
-  steps: [
-    { title: 'Consulting call', meta: 'Done', state: 'done' },
-    { title: 'Project Planner accepted', meta: 'Done', state: 'done' },
-    { title: 'Documents prepared and sent', meta: 'In progress', state: 'now' },
-    { title: 'Customs clearance', meta: 'Next', state: 'next' },
-    { title: 'Delivery at your new home', meta: 'Next', state: 'next' }
+  eyebrow: 'Your status page',
+  title: 'Every stage of your move, with its date.',
+  body: 'Once you confirm, your Relocation Portal follows your move stage by stage, with an activity log. You can rate each stage when it is done. This is an example.',
+  /** Client-visible stages of the IRP pipeline, in order (server API/dashboard/pipeline.ts and the stage restructure). */
+  stages: [
+    'Consultation',
+    'Post-call review',
+    'Pricing quote',
+    'Quoted',
+    'Quote acceptance',
+    'Initial payment',
+    'Packing',
+    'Origin service',
+    'Shipping details',
+    'Arrival at destination',
+    'Bonded warehouse entry',
+    'Import and customs clearance',
+    'Customs inspection',
+    'Delivery service',
+    'Delivery documents',
+    'Completed'
   ]
 };
 
@@ -226,34 +234,35 @@ export const FAQ = {
   eyebrow: 'Questions',
   title: 'What people ask before booking.',
   checklist: { label: 'Download the free relocation checklist', href: '/free-resources/' },
+  /** Questions and answers exactly as on the previous home (FAQSection); answers hold trusted HTML. */
   items: [
     {
-      q: 'When do I have to confirm the service with IRP?',
-      a: 'We recommend confirming six months in advance to ensure availability.'
+      q: "How can I confirm my consulting service with International Relocation Partner?",
+      a: "You can sign and confirm your project in our online Project Planner.<br>We create a custom-tailored Project Planner for each of our customers with a comprehensive estimate of the international project costs, rules, and regulations. This online document has the option to confirm and accept."
     },
     {
-      q: 'How can I confirm my consulting service?',
-      a: 'You sign and confirm your project in our online Project Planner. We create one for each client with an estimate of the costs, rules and regulations, and you can accept it from there.'
+      q: "Does IRP require a deposit payment? What type of payment method do you accept?",
+      a: "Yes, we do require an initial payment. We take wire transfer payments only, for which you will receive an invoice with our bank information. For additional assistance with payment methods, please contact our Consulting Specialist."
     },
     {
-      q: 'Does IRP require a deposit? Which payment methods do you accept?',
-      a: 'Yes, we require an initial payment. We take wire transfers, and you receive an invoice with our bank information. Your consulting specialist can help with other payment questions.'
+      q: "How long does it take for my project documentation to be delivered or to arrive at my destination?",
+      a: "The total time it takes for documents to get from point A to point B can vary depending on different factors, such as the specific route and processing times. It can take anywhere from 15 up to 45 days.<br>We can provide you with an estimated time of project completion for your documentation,<strong> please contact our Consulting Specialist.</strong>"
     },
     {
-      q: 'How can I track my project?',
-      a: 'When your service is booked we create a timeline for your project with dates, descriptions, comments, documents and tasks, and send the instructions by email. Available with our comprehensive consulting services.'
+      q: "When do I have to confirm the service with IRP?",
+      a: "We recommend confirming with 6 months in advance to ensure availability."
     },
     {
-      q: 'How long do my documents take to arrive at my destination?',
-      a: 'Between 15 and 45 days, depending on the route and processing times. Your consulting specialist can give you an estimate for your project.'
+      q: "How can I track my project?",
+      a: "Absolutely. When your service is booked, we will create a Timeline System for your project. This application will allow us to show you the entire process step by step, including dates, descriptions, comments, documents, and tasks. We will send the instructions through email. <strong>(Available only for our comprehensive consulting services)</strong>"
     },
     {
-      q: 'How long does customs take to clear my documentation?',
-      a: "About 1 to 10 weeks, depending on the destination country's rules and requirements."
+      q: "How long does it take for customs to clear my documentation?",
+      a: "It takes approximately 1 to 10 weeks, depending on the destination country's rules and requirements. <strong>Please contact our Consulting Specialist for more information.</strong>"
     },
     {
-      q: 'What if the scope of my project changes from the proposal?',
-      a: 'We tell you if the scope is smaller or larger than expected, and you decide how to proceed. The final bill is adjusted to the actual scope.'
+      q: "What happens if the scope of my project changes from what was estimated in the proposal?",
+      a: "We will notify you if the scope of your project is smaller or larger than expected. You can then decide how to proceed. The final bill will be adjusted to the actual scope of the project."
     }
   ]
 };
@@ -266,5 +275,5 @@ export const FINAL = {
   name: 'Pablo Arias',
   role: 'Founder, International Relocation Partner',
   primary: 'Book your call',
-  secondary: 'Message Lili on WhatsApp'
+  secondary: 'Message Lily on WhatsApp'
 };

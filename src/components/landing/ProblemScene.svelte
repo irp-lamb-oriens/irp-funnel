@@ -17,8 +17,25 @@
   $: intro = easeOut(seg(p, 0, 0.06));
   $: profile = Math.min(2, Math.floor(t * 3));
   $: week = Math.min(10, 1 + Math.floor(t * 10));
-  $: dayFill = 15 + Math.round(t * 30);
-  const days = Array.from({ length: 45 }, (_, i) => i + 1);
+  $: day = 15 + Math.round(t * 30);
+  $: armDown = easeOut(seg(t, 0.02, 0.4));
+  // Example estimate lines (beat 2). Amounts are shown redacted: every route is quoted separately.
+  const DUTY_ROWS = [
+    ['Household goods (used)', 'CIF value'],
+    ['Vehicle import', 'Model, year, engine'],
+    ['Port handling', 'Per container'],
+    ['Customs broker and DUA', 'Flat fee'],
+    ['Bonded warehouse', 'Per day']
+  ];
+  // Example documents (beat 4) with the day each one is ready.
+  const DOCS = [
+    { name: 'Passport copies', kind: 'ID', ready: 15 },
+    { name: 'Apostilled birth certificate', kind: 'Apostille', ready: 24 },
+    { name: 'Proof of income', kind: 'Residency', ready: 30 },
+    { name: 'Vehicle title', kind: 'Vehicle', ready: 36 },
+    { name: 'Packing list and inventory', kind: 'Shipping', ready: 40 },
+    { name: 'Bill of lading', kind: 'Shipping', ready: 45 }
+  ];
 </script>
 
 <section id="problem" class="scene" style="--len:4.2" use:scene={(v) => (p = v)} aria-labelledby="problem-title">
@@ -72,10 +89,18 @@
             {#each [345, 365, 415, 435] as x}<line x1={x} y1="400" x2={x} y2="490" stroke="rgba(255,255,255,0.22)" stroke-width="2" />{/each}
           </g>
           <!-- customs barrier -->
-          <g class="barrier" style="opacity:{b === 2 ? 1 : 0}; transform: rotate({b === 2 ? 0 : -60}deg)">
-            <rect x="20" y="255" width="470" height="18" rx="9" fill="#fff" />
-            {#each Array(10) as _, i}<rect x={34 + i * 46} y="255" width="22" height="18" fill="#c62426" />{/each}
-            <rect x="12" y="245" width="16" height="110" rx="4" fill="#d9e1e6" />
+          <g class="barrier" style="opacity:{b === 2 ? 1 : 0}">
+            <!-- post (static) -->
+            <rect x="8" y="246" width="24" height="112" rx="4" fill="#d9e1e6" />
+            <rect x="4" y="350" width="32" height="10" rx="3" fill="#9fb0b8" />
+            <!-- arm: rotates on the pivot where it meets the post -->
+            <g class="arm" style="transform: rotate({b === 2 ? -80 * (1 - armDown) : -80}deg)">
+              <rect x="20" y="255" width="470" height="18" rx="9" fill="#fff" />
+              {#each Array(10) as _, i}<rect x={34 + i * 46} y="255" width="22" height="18" fill="#c62426" />{/each}
+              <circle cx="482" cy="264" r="5" fill="#c62426" />
+            </g>
+            <circle cx="20" cy="264" r="11" fill="#9fb0b8" />
+            <circle cx="20" cy="264" r="4" fill="#0e2f36" />
           </g>
         </svg>
 
@@ -86,12 +111,32 @@
           {/each}
         </ul>
 
-        <!-- beat 2: duty sheet -->
-        <div class="sheet" class:on={b === 1} style="transform: translate({b === 1 ? 0 : -40}px, {b === 1 ? 0 : 30}px) rotate({b === 1 ? 3 : 12}deg)">
-          <p class="sheet-title">Your route</p>
-          {#each ['Duties', 'Port fees', 'Paperwork', 'Permits'] as row, i}
-            <div class="row"><span>{row}</span><i style="transform: scaleX({b === 1 ? easeOut(seg(t, i * 0.18, i * 0.18 + 0.4)) : 0})"></i></div>
-          {/each}
+        <!-- beat 2: duties and fees estimate (example document) -->
+        <div class="sheet" class:on={b === 1} style="transform: translate({b === 1 ? 0 : -40}px, {b === 1 ? 0 : 30}px) rotate({b === 1 ? 2.5 : 10}deg)">
+          <div class="doc-head">
+            <span class="doc-logo">IRP</span>
+            <div><p class="doc-org">International Relocation Partner</p><p class="doc-kind">Duties and fees estimate</p></div>
+            <span class="doc-ref">Example</span>
+          </div>
+          <dl class="doc-meta">
+            <div><dt>Route</dt><dd>Dallas, TX → San José, CR</dd></div>
+            <div><dt>Status</dt><dd>Pensionado</dd></div>
+          </dl>
+          <table>
+            <thead><tr><th>Item</th><th>Basis</th><th>Amount</th></tr></thead>
+            <tbody>
+              {#each DUTY_ROWS as row, i}
+                {@const f = b === 1 ? easeOut(seg(t, 0.08 + i * 0.12, 0.3 + i * 0.12)) : 0}
+                <tr style="opacity:{0.15 + 0.85 * f}">
+                  <td>{row[0]}</td><td>{row[1]}</td><td><i style="transform: scaleX({f})"></i></td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          <div class="doc-foot">
+            <span>Varies with your immigration status and route</span>
+            <span class="doc-stamp" style="opacity:{b === 1 ? seg(t, 0.75, 0.9) : 0}">Estimate</span>
+          </div>
         </div>
 
         <!-- beat 3: customs counter -->
@@ -101,13 +146,23 @@
           <span class="ticks">{#each Array(10) as _, i}<i class:lit={i < week}></i>{/each}</span>
         </div>
 
-        <!-- beat 4: documents calendar -->
+        <!-- beat 4: documents in transit (example) -->
         <div class="cal" class:on={b === 3}>
-          <p class="cal-title">Documents in transit <span>day {dayFill}</span></p>
-          <div class="cells">
-            {#each days as d}<i class:base={d <= 15} class:lit={d > 15 && d <= dayFill}></i>{/each}
+          <div class="cal-head">
+            <p class="cal-title">Documents in transit</p>
+            <p class="cal-day">Day <b>{day}</b> <span>of 45</span></p>
           </div>
-          <p class="cal-foot"><span>15</span><span>45 days</span></p>
+          <span class="cal-bar"><i style="transform: scaleX({(day - 15) / 30})"></i><em style="left:0">15</em><em style="right:0">45</em></span>
+          <ul class="docs">
+            {#each DOCS as d}
+              {@const done = b === 3 && day >= d.ready}
+              <li class:done>
+                <span class="doc-ic" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="doc-name">{d.name}<small>{d.kind}</small></span>
+                <span class="doc-state">{done ? 'Ready' : 'In transit'}</span>
+              </li>
+            {/each}
+          </ul>
         </div>
       </div>
     </div>
@@ -158,7 +213,8 @@
   .container { width: 100%; height: auto; overflow: visible; animation: float 6s ease-in-out infinite; }
   @keyframes float { 50% { transform: translateY(-8px); } }
   .stamp { transition: opacity 400ms; text { fill: #fff; font: 700 13px $font-mono; letter-spacing: 0.08em; } }
-  .barrier { transform-origin: 20px 264px; transition: transform 700ms $ease, opacity 400ms; }
+  .barrier { transition: opacity 400ms; }
+  .arm { transform-origin: 20px 264px; transform-box: view-box; }
 
   .on { opacity: 1 !important; visibility: visible !important; }
   .tags, .sheet, .weeks, .cal { position: absolute; opacity: 0; visibility: hidden; transition: opacity 450ms $ease, transform 700ms $ease, visibility 0s 450ms; }
@@ -175,14 +231,35 @@
     }
   }
   .sheet {
-    right: 2%; top: 4%; width: min(260px, 48%); padding: 18px 18px 14px; border-radius: 10px;
-    background: #fff; color: $color-ink; box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.6);
-    .sheet-title { margin: 0 0 10px; font: 700 0.72rem $font-mono; letter-spacing: 0.12em; text-transform: uppercase; color: $color-ink-strong; }
-    .row { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid $color-hairline;
-      span { font: 600 0.85rem $font-sans; }
-      i { height: 8px; border-radius: 4px; background: $color-accent; transform-origin: left; transition: transform 200ms linear; }
-    }
+    right: -2%; top: -4%; width: min(330px, 58%); padding: 18px 18px 14px; border-radius: 4px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0) 0 96%, rgba(14, 47, 54, 0.04) 96%),
+      #fdfcf8;
+    color: $color-ink; box-shadow: 0 2px 0 rgba(0,0,0,0.05), 0 40px 60px -25px rgba(0, 0, 0, 0.7);
+    font-family: $font-sans;
+    &::after { content: ''; position: absolute; right: 0; top: 0; border-width: 0 18px 18px 0; border-style: solid; border-color: $color-ink-strong #e8e4da; }
   }
+  .doc-head { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid $color-ink-strong; }
+  .doc-logo { width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center; background: $color-ink-strong; color: $color-accent; font: 800 0.6rem $font-mono; }
+  .doc-org { margin: 0; font: 700 0.7rem $font-sans; color: $color-ink-strong; }
+  .doc-kind { margin: 0; font: 0.62rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-muted; }
+  .doc-ref { margin-left: auto; font: 0.58rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-red; border: 1px solid $color-red; padding: 2px 6px; border-radius: 3px; }
+  .doc-meta { margin: 10px 0 8px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 6px;
+    dt { font: 0.55rem $font-mono; letter-spacing: 0.12em; text-transform: uppercase; color: $color-muted; }
+    dd { margin: 0; font: 600 0.72rem $font-sans; color: $color-ink-strong; }
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.7rem;
+    th { text-align: left; font: 0.55rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-muted; padding: 4px 0; border-bottom: 1px solid $color-hairline-strong; }
+    td { padding: 6px 4px 6px 0; border-bottom: 1px dotted $color-hairline-strong; color: $color-ink; font-family: $font-sans; }
+    td:nth-child(2) { color: $color-muted; }
+    td:last-child { width: 26%; }
+    i { display: block; height: 8px; border-radius: 2px; background: repeating-linear-gradient(90deg, $color-ink-strong 0 6px, #2c4a51 6px 9px); transform-origin: left; }
+    tr { transition: opacity 200ms; }
+  }
+  .doc-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px;
+    span:first-child { font: 0.6rem $font-sans; color: $color-muted; max-width: 60%; }
+  }
+  .doc-stamp { font: 800 0.8rem $font-sans; letter-spacing: 0.12em; text-transform: uppercase; color: $color-red; border: 2px solid $color-red; padding: 3px 10px; border-radius: 4px; transform: rotate(-8deg); transition: opacity 300ms; }
   .weeks {
     left: 0; right: 0; bottom: -2%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
     .weeks-label { font: 0.72rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-on-dark-muted; }
@@ -190,16 +267,25 @@
     .ticks { display: flex; gap: 5px; i { width: 22px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.15); transition: background 200ms; } i.lit { background: $color-red; } }
   }
   .cal {
-    right: 0; top: 2%; width: min(300px, 56%); padding: 16px; border-radius: 12px;
-    background: rgba(255, 255, 255, 0.96); color: $color-ink; box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.6);
-    .cal-title { margin: 0 0 10px; display: flex; justify-content: space-between; font: 700 0.72rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-ink-strong; span { color: $color-accent-hover; } }
-    .cells { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px;
-      i { aspect-ratio: 1; border-radius: 3px; background: $color-mist; transition: background 150ms; }
-      i.base { background: $color-ink-strong; }
-      i.lit { background: $color-accent; }
-    }
-    .cal-foot { display: flex; justify-content: space-between; margin: 8px 0 0; font: 0.7rem $font-mono; color: $color-muted; }
+    right: -2%; top: -2%; width: min(340px, 60%); padding: 16px; border-radius: 14px;
+    background: #fff; color: $color-ink; box-shadow: 0 40px 60px -25px rgba(0, 0, 0, 0.7); font-family: $font-sans;
   }
+  .cal-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .cal-title { margin: 0; font: 700 0.7rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-ink-strong; }
+  .cal-day { margin: 0; font: 0.75rem $font-sans; color: $color-muted; b { font: 800 1.3rem $font-sans; color: $color-ink-strong; font-variant-numeric: tabular-nums; } }
+  .cal-bar { position: relative; display: block; height: 6px; margin: 10px 0 18px; border-radius: 3px; background: $color-mist;
+    i { position: absolute; inset: 0; border-radius: 3px; background: $color-accent; transform-origin: left; }
+    em { position: absolute; top: 9px; font: normal 0.58rem $font-mono; color: $color-muted; }
+  }
+  .docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .docs li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 8px; border: 1px solid $color-hairline; transition: background 300ms, border-color 300ms;
+    &.done { background: #e8f4ef; border-color: rgba(31, 122, 92, 0.3); .doc-state { color: #1f7a5c; } .doc-state::before { content: '✓ '; } }
+  }
+  .doc-ic { width: 22px; height: 28px; border-radius: 3px; background: $color-mist; border: 1px solid $color-hairline-strong; display: flex; flex-direction: column; gap: 3px; padding: 5px 4px;
+    i { height: 2px; background: $color-hairline-strong; } }
+  .doc-name { font: 600 0.78rem $font-sans; color: $color-ink-strong; display: flex; flex-direction: column;
+    small { font: 0.58rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: $color-muted; } }
+  .doc-state { font: 700 0.68rem $font-sans; color: $color-muted; white-space: nowrap; }
 
   @media (max-width: 1023px) {
     .stage { align-items: flex-start; padding-bottom: 6rem; }
@@ -213,7 +299,7 @@
     .stage { padding-block: $space-24; }
     .beats { gap: $space-8; min-height: 0; }
     .beat { grid-area: auto; opacity: 1; transform: none; visibility: visible; }
-    .counter, .tags, .sheet, .weeks, .cal, .stamp { display: none; }
+    .counter, .tags, .sheet, .weeks, .cal, .stamp, .barrier { display: none; }
     .container { animation: none; }
   }
 </style>

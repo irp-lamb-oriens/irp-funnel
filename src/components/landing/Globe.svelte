@@ -17,6 +17,10 @@
   export let arcs: { from: [number, number]; to: [number, number]; t: number }[] = [];
   export let dot = 'rgba(255,255,255,0.55)';
   export let accent = '#02b5bb';
+  /** Fill of markers that are not lit. */
+  export let pin = 'rgba(255,255,255,0.85)';
+  /** Fill of marker labels. */
+  export let ink = '#fff';
 
   let canvas: HTMLCanvasElement;
   let dots: Float32Array | null = null;
@@ -46,7 +50,7 @@
     };
   });
 
-  $: lon, lat, scale, mode, markers, arcs, queue();
+  $: lon, lat, scale, mode, markers, arcs, pin, ink, queue();
 
   function queue() {
     if (typeof window === 'undefined' || raf || !visible) return;
@@ -85,20 +89,29 @@
     const R = (Math.min(w, h) / 2) * 0.92 * scale;
     const cx = w / 2, cy = h / 2;
     // sphere
+    // atmosphere
+    const halo = g.createRadialGradient(cx, cy, R * 0.92, cx, cy, R * 1.14);
+    halo.addColorStop(0, 'rgba(2,181,187,0.35)');
+    halo.addColorStop(1, 'rgba(2,181,187,0)');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(cx, cy, R * 1.14, 0, Math.PI * 2); g.fill();
+    // ocean sphere, lit from the upper left
     const grad = g.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R);
-    grad.addColorStop(0, 'rgba(2,181,187,0.20)');
-    grad.addColorStop(1, 'rgba(2,181,187,0.03)');
+    grad.addColorStop(0, 'rgba(32,120,128,0.55)');
+    grad.addColorStop(0.7, 'rgba(10,60,68,0.55)');
+    grad.addColorStop(1, 'rgba(4,30,36,0.7)');
     g.fillStyle = grad;
     g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = 'rgba(2,181,187,0.35)'; g.lineWidth = 1; g.stroke();
+    g.strokeStyle = 'rgba(127,227,230,0.45)'; g.lineWidth = 1.2; g.stroke();
     if (dots) {
-      const size = Math.max(1, R / 260);
+      const size = Math.max(1.6, R / 170);
       g.fillStyle = dot;
       for (let i = 0; i < dots.length; i += 2) {
         const q = project(dots[i], dots[i + 1], cx, cy, R);
         if (q.z <= 0) continue;
-        g.globalAlpha = 0.25 + 0.75 * q.z;
-        g.fillRect(q.x - size / 2, q.y - size / 2, size * 1.6, size * 1.6);
+        // land dots: bright facing the viewer, fading toward the limb
+        g.globalAlpha = 0.35 + 0.65 * Math.sqrt(q.z);
+        g.beginPath(); g.arc(q.x, q.y, size * (0.55 + 0.45 * q.z), 0, Math.PI * 2); g.fill();
       }
       g.globalAlpha = 1;
     }
@@ -121,12 +134,16 @@
 
   function drawFlat(g: CanvasRenderingContext2D, w: number, h: number) {
     if (dots) {
-      const size = Math.max(1.2, w / 700);
+      // one path, one fill: round dots without a fill call per dot
+      const r = Math.max(0.9, w / 1100);
       g.fillStyle = dot;
+      g.beginPath();
       for (let i = 0; i < dots.length; i += 2) {
         const q = flat(dots[i], dots[i + 1], w, h);
-        g.fillRect(q.x, q.y, size, size);
+        g.moveTo(q.x + r, q.y);
+        g.arc(q.x, q.y, r, 0, Math.PI * 2);
       }
+      g.fill();
     }
     for (const a of arcs) drawArc(g, a, (l, p) => flat(l, p, w, h), Math.min(w, h) * 0.18, true);
     for (const m of markers) {
@@ -176,7 +193,7 @@
   }
 
   function marker(g: CanvasRenderingContext2D, x: number, y: number, on = false, label?: string) {
-    g.fillStyle = on ? accent : 'rgba(255,255,255,0.85)';
+    g.fillStyle = on ? accent : pin;
     if (on) {
       g.globalAlpha = 0.25;
       g.beginPath(); g.arc(x, y, 16, 0, Math.PI * 2); g.fill();
@@ -185,7 +202,7 @@
     g.beginPath(); g.arc(x, y, on ? 6 : 3.5, 0, Math.PI * 2); g.fill();
     if (label && on) {
       g.font = '600 12px "Helvetica Neue", Arial, sans-serif';
-      g.fillStyle = '#fff';
+      g.fillStyle = ink;
       g.fillText(label, x + 12, y - 10);
     }
   }

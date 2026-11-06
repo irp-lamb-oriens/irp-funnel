@@ -29,6 +29,7 @@
     type TimedWord,
     type Transcript
   } from './narration.ts';
+  import { openBooking } from '../landing/reveal.ts';
 
   export let audioSrc = '/narration/home.mp3';
   export let transcriptSrc = '/narration/home.json';
@@ -106,7 +107,12 @@
     const intent = (e: Event) => {
       if (status !== 'playing') return;
       if (bar && e.target instanceof Node && bar.contains(e.target)) return;
-      if (e instanceof KeyboardEvent && !['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) return;
+      if (e instanceof KeyboardEvent) {
+        if (!['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) return;
+        // Typing in a field (the booking form, the chat) is not scrolling.
+        const t = e.target as HTMLElement | null;
+        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName))) return;
+      }
       pause(true);
     };
     window.addEventListener('wheel', intent, { passive: true });
@@ -262,6 +268,25 @@
     storage(false, 'declined');
   }
 
+  /** Offer dialog: focus the play button on open, Escape declines, Tab stays inside. */
+  function dialog(node: HTMLElement) {
+    const prev = document.activeElement as HTMLElement | null;
+    node.querySelector<HTMLElement>('.offer-play')?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        decline();
+      } else if (e.key === 'Tab') {
+        const f = Array.from(node.querySelectorAll<HTMLElement>('button'));
+        const i = f.indexOf(document.activeElement as HTMLElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    };
+    node.addEventListener('keydown', onKey);
+    return { destroy() { node.removeEventListener('keydown', onKey); prev?.focus?.({ preventScroll: true }); } };
+  }
+
   async function onEnded() {
     cancelAnimationFrame(raf);
     status = 'ended';
@@ -271,7 +296,7 @@
     if (el) {
       const y = Math.max(0, el.getBoundingClientRect().top + window.scrollY);
       await glideTo(y, 1400);
-      el.querySelector<HTMLElement>('button, input, a[href]')?.focus({ preventScroll: true });
+      openBooking(el);
     }
   }
 
@@ -388,7 +413,8 @@
       const x = k * (bw + gap);
       const y = (h - bh) / 2;
       g.beginPath();
-      g.roundRect(x, y, bw, bh, bw / 2);
+      if (typeof g.roundRect === 'function') g.roundRect(x, y, bw, bh, bw / 2);
+      else g.rect(x, y, bw, bh);
       g.fill();
     }
   }
@@ -419,7 +445,7 @@
 
 {#if offer}
   <div class="offer-backdrop">
-    <div class="offer" role="dialog" aria-modal="true" aria-labelledby="narrator-offer-title">
+    <div class="offer" role="dialog" aria-modal="true" aria-labelledby="narrator-offer-title" use:dialog>
       <p class="offer-eyebrow">International Relocation Partner</p>
       <h2 id="narrator-offer-title">Let Pablo walk you through it.</h2>
       <p class="offer-sub">The founder explains how we plan your move, {about}, with sound.</p>

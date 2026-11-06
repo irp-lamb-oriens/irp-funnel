@@ -6,17 +6,29 @@
    * button.
    */
   import { scene, seg, easeOut, clamp, stations } from './scene.ts';
-  import { goToBooking } from './reveal.ts';
+  import { rewindToBooking } from './reveal.ts';
   import { WHO } from './content.ts';
 
   let p = 0;
   const N = WHO.rows.length;
+  // Example routes, one per audience (airport codes and cities).
   const ROUTES = [
-    ['Home', 'Abroad'],
-    ['Anywhere', 'Abroad'],
-    ['Home', 'New country'],
-    ['Abroad', 'Home']
+    { from: 'DFW', fromCity: 'Dallas', to: 'SJO', toCity: 'San José', date: '14 MAR', seat: '02A', zone: '1' },
+    { from: 'LAX', fromCity: 'Los Angeles', to: 'LIS', toCity: 'Lisbon', date: '03 APR', seat: '11C', zone: '2' },
+    { from: 'IND', fromCity: 'Indianapolis', to: 'FAO', toCity: 'Faro', date: '22 MAY', seat: '07F', zone: '1' },
+    { from: 'MAD', fromCity: 'Madrid', to: 'BOG', toCity: 'Bogotá', date: '09 JUN', seat: '04D', zone: '3' }
   ];
+  /** Deterministic barcode widths and QR modules (decorative). */
+  const BARS = Array.from({ length: 64 }, (_, k) => 1 + ((k * 37 + 11) % 4));
+  const QR = Array.from({ length: 21 * 21 }, (_, k) => {
+    const x = k % 21, y = Math.floor(k / 21);
+    const finder = (fx: number, fy: number) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7;
+    if (finder(0, 0) || finder(14, 0) || finder(0, 14)) {
+      const lx = x < 7 ? x : x - 14, ly = y < 7 ? y : y - 14;
+      return lx === 0 || lx === 6 || ly === 0 || ly === 6 || (lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4);
+    }
+    return ((x * 7 + y * 13 + x * y) % 5) < 2;
+  });
   $: st = stations(seg(p, 0, 0.82), N, 1, 0.8);
   $: off = (i: number) => (i === N - 1 ? 0 : clamp(st.x - i));
   $: top = Math.min(N - 1, [...Array(N).keys()].filter((i) => off(i) < 0.5)[0] ?? N - 1);
@@ -32,7 +44,7 @@
         <ol class="names">
           {#each WHO.rows as r, i}<li class:on={top === i}>{r.who}</li>{/each}
         </ol>
-        <a class="primary cta" class:in={tear > 0.6} href="#hero-form" on:click={goToBooking}>{WHO.cta}</a>
+        <a class="primary cta" class:in={tear > 0.6} href="#hero-form" on:click={rewindToBooking}>{WHO.cta}</a>
       </div>
 
       <ul class="deck">
@@ -44,21 +56,31 @@
             style="z-index:{N - i}; transform: translate3d(calc({o} * -115vw), {depth * 18 - o * 60}px, 0) rotate({o * -22 + depth * 1.5}deg) scale({1 - depth * 0.04}); opacity:{depth > 2 ? 0 : 1 - seg(o, 0.55, 0.95)}"
           >
             <div class="main">
-              <div class="pass-top">
-                <span class="airline">IRP · Boarding pass</span>
-                <span class="seat">{String(i + 1).padStart(2, '0')}</span>
-              </div>
-              <div class="route">
-                <div><span class="lbl">From</span><b>{ROUTES[i][0]}</b></div>
-                <svg viewBox="0 0 80 20" aria-hidden="true"><path d="M2 10 H70 M62 4 L72 10 L62 16" /></svg>
-                <div><span class="lbl">To</span><b>{ROUTES[i][1]}</b></div>
+              <div class="band">
+                <span class="brand"><span class="mark">IRP</span>International Relocation Partner</span>
+                <span class="kind">Boarding pass</span>
               </div>
               <div class="pax"><span class="lbl">Passenger</span><h3>{r.who}</h3></div>
-              <p>{r.body}</p>
+              <div class="route">
+                <div><b class="iata">{ROUTES[i].from}</b><span class="city">{ROUTES[i].fromCity}</span></div>
+                <svg viewBox="0 0 120 24" aria-hidden="true"><path d="M2 12 H104" class="dash" /><path d="M96 5 L114 12 L96 19 L100 12 Z" class="plane" /></svg>
+                <div class="to"><b class="iata">{ROUTES[i].to}</b><span class="city">{ROUTES[i].toCity}</span></div>
+              </div>
+              <p class="line">{r.body}</p>
+              <div class="fields">
+                <div><span class="lbl">Flight</span><b>IRP 060</b></div>
+                <div><span class="lbl">Date</span><b>{ROUTES[i].date}</b></div>
+                <div><span class="lbl">Gate</span><b>Call</b></div>
+                <div><span class="lbl">Zone</span><b>{ROUTES[i].zone}</b></div>
+                <div><span class="lbl">Seat</span><b>{ROUTES[i].seat}</b></div>
+              </div>
+              <div class="pdf417" aria-hidden="true">{#each BARS as w}<i style="width:{w}px"></i>{/each}</div>
             </div>
             <div class="stub" style={i === N - 1 ? `transform: translate(${tear * 40}px, ${tear * 30}px) rotate(${tear * 14}deg); opacity:${1 - tear}` : ''}>
-              <span class="lbl">Gate</span><b>60-min call</b>
-              <span class="bars" aria-hidden="true">{#each Array(18) as _, k}<i style="width:{(k * 7) % 3 + 1}px"></i>{/each}</span>
+              <span class="lbl">Passenger</span><b class="stub-name">{r.who}</b>
+              <div class="stub-route"><b>{ROUTES[i].from}</b><span>→</span><b>{ROUTES[i].to}</b></div>
+              <div class="stub-row"><div><span class="lbl">Seat</span><b>{ROUTES[i].seat}</b></div><div><span class="lbl">Gate</span><b>Call</b></div></div>
+              <svg class="qr" viewBox="0 0 21 21" aria-hidden="true">{#each QR as on, k}{#if on}<rect x={k % 21} y={Math.floor(k / 21)} width="1" height="1" />{/if}{/each}</svg>
             </div>
           </li>
         {/each}
@@ -91,31 +113,40 @@
     &.in { opacity: 1; transform: none; pointer-events: auto; }
   }
 
-  .deck { list-style: none; margin: 0; padding: 0; position: relative; height: min(360px, 46svh); }
+  .deck { list-style: none; margin: 0; padding: 0; position: relative; height: min(390px, 56vh); height: min(390px, 56svh); }
   .pass {
-    position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 140px; border-radius: 20px; overflow: hidden;
-    background: $color-ink-strong; color: $color-on-dark; box-shadow: 0 40px 70px -40px rgba(14, 47, 54, 0.7);
-    transform-origin: 50% 100%; will-change: transform; transition: opacity 300ms;
-    &:nth-child(even) { background: #0f3f47; }
-    @media (max-width: 640px) { grid-template-columns: 1fr; .stub { display: none; } }
+    position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 170px; border-radius: 18px;
+    background: transparent; color: $color-ink; filter: drop-shadow(0 30px 30px rgba(14, 47, 54, 0.28));
+    transform-origin: 50% 100%; will-change: transform; transition: opacity 300ms; font-family: $font-sans;
+    /* perforation notches */
+    -webkit-mask: radial-gradient(circle 11px at calc(100% - 170px) 0, transparent 98%, #000) top / 100% 51% no-repeat,
+                  radial-gradient(circle 11px at calc(100% - 170px) 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
+    mask: radial-gradient(circle 11px at calc(100% - 170px) 0, transparent 98%, #000) top / 100% 51% no-repeat,
+          radial-gradient(circle 11px at calc(100% - 170px) 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
+    @media (max-width: 640px) { grid-template-columns: 1fr; -webkit-mask: none; mask: none; .stub { display: none; } }
   }
-  .main { padding: clamp(1.25rem, 3vw, 2rem); display: flex; flex-direction: column; gap: $space-3; min-width: 0; }
-  .pass-top { display: flex; justify-content: space-between; }
-  .airline { font: 0.72rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-accent; }
-  .seat { font: 700 0.9rem $font-mono; color: $color-on-dark-muted; }
-  .route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: $space-3;
-    b { display: block; font: 800 clamp(1.1rem, 2vw, 1.5rem) $font-sans; letter-spacing: -0.02em; }
-    svg { width: 100%; height: 20px; path { fill: none; stroke: $color-accent; stroke-width: 2; stroke-dasharray: 4 4; } }
-  }
-  .lbl { display: block; font: 0.65rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-on-dark-muted; }
-  .pax h3 { margin: 2px 0 0; font: 800 clamp(1.5rem, 3vw, 2.25rem)/1.05 $font-sans; letter-spacing: -0.03em; color: $color-on-dark; }
-  .main p { @include body; color: $color-on-dark-muted; font-size: 1rem; }
-  .stub {
-    position: relative; padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
-    border-left: 2px dashed rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.04);
-    b { font: 800 1rem $font-sans; }
-  }
-  .bars { margin-top: auto; display: flex; gap: 2px; height: 44px; align-items: stretch; i { background: rgba(255, 255, 255, 0.7); } }
+  .main { background: #fbfaf7; border-radius: 18px 0 0 18px; padding: 0 0 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; border-right: 2px dashed rgba(14, 47, 54, 0.25); }
+  .band { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-radius: 18px 0 0 0; background: $color-ink-strong; color: #fff; }
+  .brand { display: inline-flex; align-items: center; gap: 8px; font: 700 0.72rem $font-sans; }
+  .mark { padding: 2px 6px; border-radius: 4px; background: $color-accent; color: $color-ink-strong; font: 800 0.6rem $font-mono; }
+  .kind { font: 0.62rem $font-mono; letter-spacing: 0.16em; text-transform: uppercase; color: $color-accent; }
+  .pax { padding: 4px 20px 0; h3 { margin: 0; font: 800 clamp(1.2rem, 2.2vw, 1.6rem)/1.1 $font-sans; letter-spacing: -0.02em; color: $color-ink-strong; text-transform: uppercase; } }
+  .route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 0 20px;
+    svg { width: 100%; height: 24px; } .dash { fill: none; stroke: rgba(14, 47, 54, 0.35); stroke-width: 2; stroke-dasharray: 4 5; } .plane { fill: $color-accent-hover; }
+    .to { text-align: right; } }
+  .iata { display: block; font: 800 clamp(1.8rem, 3.4vw, 2.6rem)/1 $font-sans; letter-spacing: -0.03em; color: $color-ink-strong; }
+  .city { font: 0.7rem $font-sans; color: $color-muted; }
+  .line { margin: 0; padding: 0 20px; font: 0.82rem/1.45 $font-sans; color: $color-steel; }
+  .fields { display: grid; grid-template-columns: repeat(5, auto); justify-content: space-between; gap: 8px; padding: 8px 20px 0; border-top: 1px solid $color-hairline; margin: 0 0 0;
+    b { display: block; font: 800 0.9rem $font-mono; color: $color-ink-strong; } }
+  .lbl { display: block; font: 0.55rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-muted; }
+  .pdf417 { display: flex; gap: 1px; height: 26px; margin: 0 20px; opacity: 0.85; i { background: $color-ink-strong; } }
+  .stub { position: relative; padding: 46px 16px 14px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; background: #f4f1ea; border-radius: 0 18px 18px 0;
+    b { font-family: $font-sans; color: $color-ink-strong; } }
+  .stub-name { font: 800 0.8rem/1.15 $font-sans; text-transform: uppercase; }
+  .stub-route { display: flex; gap: 6px; align-items: baseline; b { font: 800 1.1rem $font-sans; } span { color: $color-accent-hover; } }
+  .stub-row { display: flex; gap: 16px; b { font: 800 0.8rem $font-mono; } }
+  .qr { width: 64px; height: 64px; margin-top: auto; rect { fill: $color-ink-strong; } }
 
   :global(.rm) {
     .stage { padding-block: $space-24; }

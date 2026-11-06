@@ -59,7 +59,7 @@ export function rewindToBooking(event?: Event) {
   const target = Math.max(0, el.getBoundingClientRect().top + window.scrollY);
   const focus = () => {
     history.replaceState(null, '', '#hero-form');
-    el.querySelector<HTMLElement>('button, input, a[href]')?.focus({ preventScroll: true });
+    openBooking(el);
   };
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) {
@@ -78,4 +78,27 @@ export function rewindToBooking(event?: Event) {
     else focus();
   };
   requestAnimationFrame(step);
+}
+
+/**
+ * Open the booking flow in HeroForm as if the visitor pressed its main
+ * button: HeroForm's own click handler records the Evo interaction, moves to
+ * the email step and focuses the email field. If the form is already past
+ * its first screen, only focus it. The form frame gets a short highlight.
+ */
+export function openBooking(root: HTMLElement | null = document.getElementById('hero-form')) {
+  if (!root) return;
+  const container = root.querySelector<HTMLElement>('#hero-form-container');
+  if (container) {
+    container.classList.remove('irp-arrive');
+    void container.offsetWidth;
+    container.classList.add('irp-arrive');
+    window.setTimeout(() => container.classList.remove('irp-arrive'), 1400);
+  }
+  const start = root.querySelector<HTMLButtonElement>('.cta-hero__btn');
+  if (start) {
+    window.setTimeout(() => start.click(), 250);
+    return;
+  }
+  root.querySelector<HTMLElement>('input, button, a[href]')?.focus({ preventScroll: true });
 }

@@ -50,6 +50,14 @@
       radial-gradient(40% 40% at 10% 80%, rgba(2, 181, 187, 0.18), transparent 70%);
     pointer-events: none;
   }
+  /* Arrival highlight when a "Book your call" button brings the visitor back (reveal.ts openBooking). */
+  .form :global(#hero-form-container.irp-arrive) { animation: irp-arrive 1.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes -global-irp-arrive {
+    0% { box-shadow: 0 0 0 0 rgba(2, 181, 187, 0.0); transform: scale(0.985); }
+    35% { box-shadow: 0 0 0 10px rgba(2, 181, 187, 0.35); transform: scale(1.01); }
+    100% { box-shadow: 0 0 0 28px rgba(2, 181, 187, 0); transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .form :global(#hero-form-container.irp-arrive) { animation: none; } }
   /* HeroForm draws its own dark radial vignette; on this ink field it reads as depth. */
   .form :global(.hero-banner) { background: transparent; }
 
@@ -61,10 +69,7 @@
     border-top: 1px solid $color-on-dark-hairline;
     @include lg { grid-template-columns: 5fr 7fr; align-items: center; }
   }
-  .founder {
-    display: flex; align-items: center; gap: $space-4;
-    img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid $color-accent; }
-  }
+  .founder { display: flex; align-items: center; gap: $space-4; }
   .founder-name { @include eyebrow; color: $color-on-dark; }
   .founder-line { font-family: $font-sans; color: $color-on-dark-muted; margin: $space-1 0 0; line-height: 1.5; }
   .facts {

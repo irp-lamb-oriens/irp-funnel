@@ -157,6 +157,7 @@ $header-clear: 104px;
 
 @mixin scene-shell {
   position: relative;
+  height: calc(var(--len, 3) * 100vh);
   height: calc(var(--len, 3) * 100svh);
   &:global(.rm) { height: auto; }
 }
@@ -164,6 +165,7 @@ $header-clear: 104px;
 @mixin stage {
   position: sticky;
   top: 0;
+  height: 100vh;
   height: 100svh;
   overflow: hidden;
   :global(.rm) & { position: relative; height: auto; overflow: visible; }

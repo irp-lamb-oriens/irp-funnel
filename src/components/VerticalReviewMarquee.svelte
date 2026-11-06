@@ -13,6 +13,12 @@
   export let background = '#fbfcfc';
   /** Anchor id (the homepage HeroForm links to #reviews as its proof point). */
   export let id = 'reviews';
+  /**
+   * Pause every column while the pointer is over the marquee (default, as on
+   * the tours and status pages). With `false`, only a pressed column stops;
+   * the others keep moving. Keyboard focus always pauses (WCAG 2.2.2).
+   */
+  export let pauseOnHover = true;
 
   const COPIES = 3;
 
@@ -168,7 +174,8 @@
   // ── Vertical drag handlers ───────────────────────────────────────────────
   function vDown(i: number, e: PointerEvent) {
     if (drag[i].active) return;
-    colEls[i]?.setPointerCapture(e.pointerId);
+    // Pointer capture starts only once the press turns into a drag (vMove),
+    // so a plain click still lands on the review card's link.
     drag[i] = { active: true, id: e.pointerId, lastY: e.clientY, lastT: performance.now() };
     vel[i] = 0;
     dragDistance = 0;
@@ -181,14 +188,17 @@
     const dt = Math.max(1, now - drag[i].lastT);
     vel[i] = dy / dt;
     dragDistance += Math.abs(dy);
-    if (dragDistance > CLICK_SLOP) suppressClick = true;
+    if (dragDistance > CLICK_SLOP && !suppressClick) {
+      suppressClick = true;
+      colEls[i]?.setPointerCapture(e.pointerId);
+    }
     drag[i].lastY = e.clientY;
     drag[i].lastT = now;
     pos[i] = wrap(pos[i] + dy, seg[i]);
   }
   function vUp(i: number, e: PointerEvent) {
     if (!drag[i].active || e.pointerId !== drag[i].id) return;
-    colEls[i]?.releasePointerCapture(e.pointerId);
+    if (colEls[i]?.hasPointerCapture(e.pointerId)) colEls[i].releasePointerCapture(e.pointerId);
     vel[i] *= 0.22;
     drag[i].active = false;
     drag[i].id = -1;
@@ -197,7 +207,6 @@
   // ── Horizontal drag handlers ─────────────────────────────────────────────
   function hDown(e: PointerEvent) {
     if (hDrag.active) return;
-    hEl?.setPointerCapture(e.pointerId);
     hDrag = { active: true, id: e.pointerId, lastX: e.clientX, lastT: performance.now() };
     hVel = 0;
     dragDistance = 0;
@@ -210,14 +219,17 @@
     const dt = Math.max(1, now - hDrag.lastT);
     hVel = dx / dt;
     dragDistance += Math.abs(dx);
-    if (dragDistance > CLICK_SLOP) suppressClick = true;
+    if (dragDistance > CLICK_SLOP && !suppressClick) {
+      suppressClick = true;
+      hEl?.setPointerCapture(e.pointerId);
+    }
     hDrag.lastX = e.clientX;
     hDrag.lastT = now;
     hPos = wrap(hPos + dx, hSeg);
   }
   function hUp(e: PointerEvent) {
     if (!hDrag.active || e.pointerId !== hDrag.id) return;
-    hEl?.releasePointerCapture(e.pointerId);
+    if (hEl?.hasPointerCapture(e.pointerId)) hEl.releasePointerCapture(e.pointerId);
     hVel *= 0.22;
     hDrag.active = false;
     hDrag.id = -1;
@@ -283,9 +295,15 @@
   aria-labelledby={title ? `${id}-title` : undefined}
   aria-label={title ? undefined : 'Customer reviews'}
   bind:this={rootEl}
-  on:pointerenter={() => (hoverPause = true)}
+  on:pointerenter={() => (hoverPause = pauseOnHover)}
   on:pointerleave={() => (hoverPause = false)}
-  on:focusin={() => (hoverPause = true)}
+  on:focusin={(e) => {
+    // Keyboard focus always pauses; focus from a mouse press doesn't when
+    // pauseOnHover is off, so pressing one column leaves the others moving.
+    let keyboard = true;
+    try { keyboard = (e.target as Element).matches(':focus-visible'); } catch { /* old browsers: treat as keyboard */ }
+    hoverPause = pauseOnHover || keyboard;
+  }}
   on:focusout={(e) => {
     if (!rootEl.contains(e.relatedTarget as Node)) hoverPause = false;
   }}
@@ -327,6 +345,7 @@
       on:pointerup={hUp}
       on:pointercancel={hUp}
       on:lostpointercapture={hUp}
+      on:pointerleave={(e) => { if (!hEl?.hasPointerCapture(e.pointerId)) hUp(e); }}
     >
       <div class="vrm__h-mask vrm__h-mask--l"></div>
       <div class="vrm__h-mask vrm__h-mask--r"></div>
@@ -368,6 +387,7 @@
           on:pointerup={(e) => vUp(i, e)}
           on:pointercancel={(e) => vUp(i, e)}
           on:lostpointercapture={(e) => vUp(i, e)}
+          on:pointerleave={(e) => { if (!colEls[i]?.hasPointerCapture(e.pointerId)) vUp(i, e); }}
           style="height: {columnHeight}px;"
         >
           <div class="vrm__mask vrm__mask--t"></div>
@@ -381,6 +401,7 @@
               {@const isCopy = j >= set.length}
               <a
                 class="vrm__card"
+                draggable="false"
                 href={r.link}
                 target="_blank"
                 rel="noopener noreferrer"

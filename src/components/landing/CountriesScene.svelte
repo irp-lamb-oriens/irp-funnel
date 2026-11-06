@@ -19,25 +19,45 @@
   };
   const list = COUNTRIES.list;
   const N = list.length;
+  /**
+   * The globe visits the countries in an order that keeps each turn long
+   * (Americas and Europe alternate), so neighbours like Spain and Portugal
+   * are never back to back and the motion never snaps.
+   */
+  const TOUR = ['Costa Rica', 'Spain', 'Panama', 'Portugal', 'Mexico', 'Colombia'].map((n) => list.findIndex((c) => c.name === n));
+  /** Country facts shown while the globe holds on a country (IRP offices from lib/data/offices.ts). */
+  const FACTS: Record<string, { capital: string; currency: string; language: string; office: string }> = {
+    'Costa Rica': { capital: 'San José', currency: 'Costa Rican colón', language: 'Spanish', office: 'Alajuela and Guanacaste' },
+    Spain: { capital: 'Madrid', currency: 'Euro', language: 'Spanish', office: 'Madrid' },
+    Panama: { capital: 'Panama City', currency: 'Balboa and US dollar', language: 'Spanish', office: 'Panama City' },
+    Portugal: { capital: 'Lisbon', currency: 'Euro', language: 'Portuguese', office: 'Guide and remote consulting' },
+    Mexico: { capital: 'Mexico City', currency: 'Mexican peso', language: 'Spanish', office: 'Mexico City' },
+    Colombia: { capital: 'Bogotá', currency: 'Colombian peso', language: 'Spanish', office: 'Guide and remote consulting' }
+  };
 
   let p = 0;
-  $: st = stations(seg(p, 0, 0.86), N, 1, 0.7);
+  $: st = stations(seg(p, 0, 0.86), N, 0.8, 1.3);
   $: i = Math.min(N - 2, Math.floor(st.x));
   $: move = st.x - i;
-  $: active = Math.round(st.x);
+  $: step = Math.round(st.x);
+  $: active = TOUR[step];
+  $: holding = st.x === st.at && st.hold > 0.08;
   $: out = easeInOut(seg(p, 0.86, 1));
-  $: a = GEO[list[i].name];
-  $: b = GEO[list[Math.min(N - 1, i + 1)].name];
+  $: a = GEO[list[TOUR[i]].name];
+  $: b = GEO[list[TOUR[Math.min(N - 1, i + 1)]].name];
   $: gLon = lerp(lerp(a[0], b[0], move), -50, out);
   $: gLat = lerp(lerp(a[1], b[1], move), 18, out);
-  $: gScale = lerp(1.25, 0.95, out);
+  // Pull back a little while travelling between countries, then settle in.
+  $: gScale = lerp(1.25 - 0.18 * Math.sin(Math.PI * move), 0.95, out);
+  $: facts = FACTS[list[active].name];
   $: markers = list.map((c, k) => ({ lon: GEO[c.name][0], lat: GEO[c.name][1], on: k === active || out > 0.5 }));
 </script>
 
 <section id="countries" class="scene" style="--len:5" use:scene={(v) => (p = v)} aria-labelledby="countries-title">
+  <span id="countries-we-serve" class="anchor-alias" aria-hidden="true"></span>
   <div class="stage">
     <div class="globe-wrap" style="transform: translate3d({(1 - out) * 8}vw, 0, 0)">
-      <Globe lon={gLon} lat={gLat} scale={gScale} {markers} />
+      <Globe lon={gLon} lat={gLat} scale={gScale} {markers} dot="rgba(214,250,251,0.95)" />
     </div>
     <div class="wrap layer">
       <header class="head">
@@ -48,9 +68,16 @@
       <div class="big" aria-hidden="true">
         {#each list as c, k}
           <span class="name" class:on={k === active && out < 0.5}>
-            <small>0{k + 1} / 0{N}{c.tours ? ' · Tours' : ''}</small>{c.name}
+            <small>0{TOUR.indexOf(k) + 1} / 0{N}{c.tours ? ' · Tours' : ''}</small>{c.name}
           </span>
         {/each}
+        <dl class="facts" class:on={holding && out < 0.5}>
+          <div><dt>Capital</dt><dd>{facts.capital}</dd></div>
+          <div><dt>Currency</dt><dd>{facts.currency}</dd></div>
+          <div><dt>Language</dt><dd>{facts.language}</dd></div>
+          <div><dt>IRP</dt><dd>{facts.office}</dd></div>
+          {#if list[active].tours}<div class="tour"><dt>Tours</dt><dd>Private relocation tours</dd></div>{/if}
+        </dl>
       </div>
 
       <nav class="list" aria-label="Country guides">
@@ -72,7 +99,9 @@
 
   .scene { @include scene-shell; background: radial-gradient(120% 80% at 30% 50%, #12424b 0%, $color-ink-strong 60%); color: $color-on-dark; }
   .stage { @include stage; }
-  .globe-wrap { position: absolute; left: -12vw; top: 50%; width: min(118svh, 92vw); height: min(118svh, 92vw); margin-top: calc(min(118svh, 92vw) / -2); will-change: transform; }
+  /* Kept for old links to /#countries-we-serve. */
+  .anchor-alias { position: absolute; top: 0; left: 0; }
+  .globe-wrap { position: absolute; left: -12vw; top: 50%; width: min(118vh, 92vw); width: min(118svh, 92vw); height: min(118vh, 92vw); height: min(118svh, 92vw); margin-top: calc(min(118vh, 92vw) / -2); margin-top: calc(min(118svh, 92vw) / -2); will-change: transform; }
   .wrap { @include container; }
   .layer { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr; padding-top: $header-clear; padding-bottom: 6.5rem; }
   .head { display: flex; flex-direction: column; gap: $space-3; }
@@ -90,6 +119,17 @@
     small { font: 0.8rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-accent; }
   }
 
+  .facts {
+    grid-area: 1 / 1; align-self: start; justify-self: start; margin: clamp(20px, 5vh, 56px) 0 0; padding: 14px 16px; border-radius: 14px; display: grid; grid-template-columns: repeat(2, minmax(120px, auto)); gap: 10px 22px;
+    background: rgba(8, 36, 42, 0.72); border: 1px solid rgba(127, 227, 230, 0.25);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    opacity: 0; transform: translateY(12px); transition: opacity 450ms $ease, transform 600ms $ease;
+    &.on { opacity: 1; transform: none; transition-delay: 120ms; }
+    dt { font: 0.58rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-accent; }
+    dd { margin: 2px 0 0; font: 600 0.9rem $font-sans; color: #fff; }
+    .tour dd { color: $color-accent; }
+    @media (max-width: 1023px) { display: none; }
+  }
   .list {
     position: absolute; right: 0; top: 50%; transform: translateY(-30%); width: min(320px, 34vw);
     margin-right: $space-8; display: flex; flex-direction: column; gap: $space-4;
@@ -114,8 +154,8 @@
   }
 
   :global(.rm) {
-    .stage { min-height: 100svh; }
-    .layer { min-height: 100svh; }
+    .stage { min-height: 100vh; min-height: 100svh; }
+    .layer { min-height: 100vh; min-height: 100svh; }
     .big { display: none; }
     .list { position: static; transform: none; width: auto; margin: $space-8 0 0; }
     li { opacity: 1; }
