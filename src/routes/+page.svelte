@@ -1,27 +1,31 @@
 <script lang="ts">
   /**
-   * IRP home. Section plan: docs/landing-redesign.md (ported from the ILP
-   * landing). Booking logic lives in HeroForm (inside HeroBooking) and is
-   * mounted once; every "book" button on the page scrolls back to it.
-   * Narration script and cue anchors: docs/narration/SCRIPTS.md.
+   * IRP home. Scene plan: docs/landing-redesign.md. The hero (HeroForm
+   * inside HeroBooking) keeps all booking logic and is mounted once; every
+   * section after it is a full-screen scroll scene (components/landing/
+   * scene.ts). Pablo's narration (components/narration) moves through the
+   * scenes in step with his voice. Every "book" action returns to the hero.
    */
   import Header from '../components/Header/Header.svelte';
   import Footer from '../components/Footer/Footer.svelte';
   import HeroBooking from '../components/landing/HeroBooking.svelte';
-  import ProblemSection from '../components/landing/ProblemSection.svelte';
-  import StepsSection from '../components/landing/StepsSection.svelte';
-  import ServicesGrid from '../components/landing/ServicesGrid.svelte';
-  import LiliBand from '../components/landing/LiliBand.svelte';
-  import ParallaxBand from '../components/landing/ParallaxBand.svelte';
-  import IncludesSticky from '../components/landing/IncludesSticky.svelte';
-  import TimelineBand from '../components/landing/TimelineBand.svelte';
-  import WhoWeServe from '../components/landing/WhoWeServe.svelte';
-  import CountriesSection from '../components/landing/CountriesSection.svelte';
-  import ProofSection from '../components/landing/ProofSection.svelte';
+  import ProblemScene from '../components/landing/ProblemScene.svelte';
+  import HowScene from '../components/landing/HowScene.svelte';
+  import ServicesScene from '../components/landing/ServicesScene.svelte';
+  import LiliScene from '../components/landing/LiliScene.svelte';
+  import PrincipleScene from '../components/landing/PrincipleScene.svelte';
+  import IncludesScene from '../components/landing/IncludesScene.svelte';
+  import TimelineScene from '../components/landing/TimelineScene.svelte';
+  import WhoScene from '../components/landing/WhoScene.svelte';
+  import CountriesScene from '../components/landing/CountriesScene.svelte';
+  import ReviewsScene from '../components/landing/ReviewsScene.svelte';
   import FaqSplit from '../components/landing/FaqSplit.svelte';
-  import FinalBooking from '../components/landing/FinalBooking.svelte';
+  import FinalScene from '../components/landing/FinalScene.svelte';
+  import SceneRail from '../components/landing/SceneRail.svelte';
   import Narrator from '../components/narration/Narrator.svelte';
-  import { IMG, PRINCIPLE } from '../components/landing/content.ts';
+  import { HOME_CUES } from '../components/narration/narration.ts';
+
+  const stops = HOME_CUES.filter((c) => c.anchor !== 'hero-form').map((c) => ({ id: c.anchor, label: c.label }));
 </script>
 
 <svelte:head>
@@ -31,29 +35,31 @@
   <meta property="og:title" content="International Relocation Partner | Relocating Abroad Made Simple" />
   <meta property="og:description" content="Book a 60-minute consultation about the rules for your move. International moving, relocation tours and documentation assistance in six countries." />
   <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preload" href="/landing/land-dots.json" as="fetch" crossorigin="anonymous" />
 </svelte:head>
 
 <main id="main-content" class="landing">
   <Header />
   <HeroBooking />
-  <ProblemSection />
-  <StepsSection />
-  <ServicesGrid />
-  <LiliBand />
-  <ParallaxBand split id="principle" image={IMG.principle} title={PRINCIPLE.title} body={PRINCIPLE.body} mark={PRINCIPLE.mark} />
-  <IncludesSticky />
-  <TimelineBand />
-  <WhoWeServe />
-  <CountriesSection />
-  <ProofSection />
+  <ProblemScene />
+  <HowScene />
+  <ServicesScene />
+  <LiliScene />
+  <PrincipleScene />
+  <IncludesScene />
+  <TimelineScene />
+  <WhoScene />
+  <CountriesScene />
+  <ReviewsScene />
   <FaqSplit />
-  <FinalBooking />
+  <FinalScene />
 </main>
 
 <Footer />
 
+<SceneRail {stops} />
 <Narrator />
 
 <style lang="scss">
-  .landing :global(section[id]) { scroll-margin-top: 96px; }
+  .landing { overflow-x: clip; }
 </style>

@@ -46,3 +46,36 @@ export function goToBooking(event?: Event) {
   const target = el.querySelector<HTMLElement>('button, input, a[href]');
   window.setTimeout(() => target?.focus({ preventScroll: true }), reduce ? 0 : 700);
 }
+
+/**
+ * "Book your call" at the end of the page: rewind the whole page to the
+ * booking form in one eased motion (about 1.2 s, through every section),
+ * then focus the form. Instant with reduced motion.
+ */
+export function rewindToBooking(event?: Event) {
+  event?.preventDefault();
+  const el = document.getElementById('hero-form');
+  if (!el) return;
+  const target = Math.max(0, el.getBoundingClientRect().top + window.scrollY);
+  const focus = () => {
+    history.replaceState(null, '', '#hero-form');
+    el.querySelector<HTMLElement>('button, input, a[href]')?.focus({ preventScroll: true });
+  };
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) {
+    window.scrollTo({ top: target, behavior: 'auto' });
+    return focus();
+  }
+  const from = window.scrollY;
+  const d = target - from;
+  const ms = Math.min(1600, Math.max(900, Math.abs(d) / 12));
+  const t0 = performance.now();
+  const step = (now: number) => {
+    const p = Math.min(1, (now - t0) / ms);
+    const e = p < 0.5 ? 16 * p ** 5 : 1 - Math.pow(-2 * p + 2, 5) / 2;
+    window.scrollTo({ top: from + d * e, behavior: 'instant' as ScrollBehavior });
+    if (p < 1) requestAnimationFrame(step);
+    else focus();
+  };
+  requestAnimationFrame(step);
+}

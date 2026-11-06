@@ -53,6 +53,7 @@ $touch-target: 44px;
   margin-inline: auto;
   padding-inline: $space-4;
   @include md { padding-inline: $space-8; }
+  @media (min-width: 1280px) { padding-inline: 4.5rem; }
 }
 
 @mixin section {
@@ -147,4 +148,23 @@ $touch-target: 44px;
   transition: opacity 700ms $ease $delay, transform 900ms $ease $delay;
   &:global(.is-in) { opacity: 1; transform: none; }
   @include reduced-motion { opacity: 1; transform: none; transition: none; }
+}
+
+// ── Scroll scenes (scene.ts) ───────────────────────────────────
+// Outer section: `--len` screens tall. Stage: sticky, one full screen.
+// Under `.rm` (reduced motion) both fall back to normal flow.
+$header-clear: 104px;
+
+@mixin scene-shell {
+  position: relative;
+  height: calc(var(--len, 3) * 100svh);
+  &:global(.rm) { height: auto; }
+}
+
+@mixin stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  :global(.rm) & { position: relative; height: auto; overflow: visible; }
 }

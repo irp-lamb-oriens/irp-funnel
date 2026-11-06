@@ -21,8 +21,9 @@
   <div class="wrap split">
     <div class="head">
       <SectionHead id="faq-title" eyebrow={FAQ.eyebrow} title={FAQ.title}>
-        <a class="checklist" href={FAQ.checklist.href} target="_blank" rel="noopener">
-          <span class="icon" aria-hidden="true">↓</span>{FAQ.checklist.label}
+        <a class="ticket" href={FAQ.checklist.href} target="_blank" rel="noopener">
+          <span class="ticket-main"><small>Free</small>{FAQ.checklist.label}</span>
+          <span class="ticket-stub" aria-hidden="true">↓</span>
         </a>
       </SectionHead>
     </div>
@@ -47,9 +48,22 @@
     @include lg { grid-template-columns: 0.9fr 1.1fr; gap: $space-24; align-items: start; }
   }
   .head { @include lg { position: sticky; top: 120px; } }
-  .checklist {
-    @include button-ghost; & { align-self: flex-start; margin-top: $space-4; background: $color-canvas; }
-    .icon { color: $color-accent-hover; font-weight: 700; }
+  .ticket {
+    align-self: flex-start; margin-top: $space-4; display: flex; text-decoration: none; color: $color-ink-strong;
+    filter: drop-shadow(0 18px 24px rgba(14, 47, 54, 0.18)); @include focus-ring;
+  }
+  .ticket-main {
+    display: flex; flex-direction: column; gap: 2px; padding: 14px 20px; background: #fff; border-radius: 12px 0 0 12px;
+    font: 700 1rem $font-sans; transition: transform 400ms $ease;
+    small { font: 0.65rem $font-mono; letter-spacing: 0.14em; text-transform: uppercase; color: $color-accent-hover; }
+  }
+  .ticket-stub {
+    display: grid; place-items: center; width: 56px; background: $color-accent; border-radius: 0 12px 12px 0;
+    border-left: 2px dashed rgba(14, 47, 54, 0.35); font: 700 1.2rem $font-sans; transition: transform 400ms $ease;
+  }
+  @media (hover: hover) {
+    .ticket:hover .ticket-stub { transform: translate(6px, 4px) rotate(8deg); }
+    .ticket:hover .ticket-main { transform: rotate(-1deg); }
   }
   .list { border-top: 1px solid $color-hairline; }
   details { border-bottom: 1px solid $color-hairline; }

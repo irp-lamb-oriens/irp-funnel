@@ -12,7 +12,7 @@ export const IMG = {
     'https://images.pexels.com/photos/1117210/pexels-photo-1117210.jpeg?auto=compress&cs=tinysrgb&w=1200',
   tours:
     'https://images.pexels.com/photos/14510492/pexels-photo-14510492.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  signature: '/sign-itp.jpg' // Pablo's handwritten signature; no face on the landing (voice only)
+  signature: '/landing/signature.png' // Pablo's handwritten signature; no face on the landing (voice only)
 };
 
 export const LILI_WHATSAPP =
