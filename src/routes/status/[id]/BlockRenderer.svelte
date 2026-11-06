@@ -311,7 +311,7 @@
           <div class="br-accepted">
             <p>🎉 <strong>Quote accepted!</strong></p>
             <p class="br-accepted-sub">
-              Our team will be in touch to coordinate next steps.
+              Your agreement is signed. One step left — <a href="#payment">reserve your move below</a>.
             </p>
           </div>
         {/if}

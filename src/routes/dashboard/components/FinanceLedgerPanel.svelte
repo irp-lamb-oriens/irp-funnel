@@ -236,7 +236,7 @@
 
   /** Export the currently filtered/ordered settlements as CSV. */
   function exportSettlements(): void {
-    const header = ['Client', 'Accepted', 'Billed', 'Paid', '%', 'Client owes', 'We owe', 'Net cash'];
+    const header = ['Client', 'Accepted', 'Billed', 'Paid', '%', 'Client owes', 'We owe', 'Fees', 'Net cash (after fees)', 'Margin after fees'];
     const rows = visibleSettlements.map((s) => [
       s.clientName ?? s.quoteId,
       shortDate(s.acceptedAt),
@@ -245,7 +245,9 @@
       s.collectedPct ?? '',
       s.clientOutstanding,
       s.providerOutstanding,
-      s.netCash,
+      s.fees ?? 0,
+      s.netCashAfterFees ?? s.netCash,
+      s.marginAfterFees ?? s.expectedMargin,
     ]);
     downloadCsv('settlements.csv', [header, ...rows]);
   }
@@ -461,8 +463,8 @@
       </article>
       <article class="c c--cash">
         <h4>Net cash</h4>
-        <p class="c__big">{money(t.netCash)}</p>
-        <span>expected margin {money(t.expectedMargin)}</span>
+        <p class="c__big">{money(t.netCashAfterFees ?? t.netCash)}</p>
+        <span>after {money(t.fees ?? 0)} in payment fees · margin {money(t.marginAfterFees ?? t.expectedMargin)} after fees</span>
       </article>
     </section>
 
@@ -480,6 +482,7 @@
               <th>%</th>
               <th>Client owes</th>
               <th>We owe</th>
+              <th title="Stripe processing, failed-payment and dispute fees, plus bank fees on wires">Fees</th>
               <th>Net cash</th>
               <th></th>
             </tr>
@@ -507,7 +510,11 @@
                 </td>
                 <td class:owing={s.clientOutstanding > 0}>{money(s.clientOutstanding)}</td>
                 <td class:owing={s.providerOutstanding > 0}>{money(s.providerOutstanding)}</td>
-                <td class:negative={s.netCash < 0}>{money(s.netCash)}</td>
+                <td class:muted={!s.fees}>{s.fees ? money(s.fees) : '—'}</td>
+                <td class:negative={(s.netCashAfterFees ?? s.netCash) < 0}>
+                  {money(s.netCashAfterFees ?? s.netCash)}
+                  <div class="fl__sub">margin {money(s.marginAfterFees ?? s.expectedMargin)}{s.marginAfterFeesPct != null ? ` (${pct(s.marginAfterFeesPct)})` : ''}</div>
+                </td>
                 <td>
                   <button
                     class="fl__link"
@@ -521,7 +528,7 @@
 
               {#if openQuoteId === s.quoteId && drafts[s.quoteId]}
                 <tr class="fl__editor-row">
-                  <td colspan="9">
+                  <td colspan="10">
                     <div class="ed">
                       <div class="ed__col">
                         <h5>Client payments</h5>
@@ -1059,6 +1066,7 @@
   .fl__name { font-weight: 600; color: #0f172a; }
   .owing { color: #d97706; font-weight: 600; }
   .negative { color: #dc2626; font-weight: 600; }
+  .muted { color: #94a3b8; }
 
   .bar {
     display: inline-block;

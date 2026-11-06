@@ -1568,6 +1568,16 @@ export async function initDashboardSocket() {
           delete fetchTimeouts[docId];
         }, 500);
       } 
+      else if (collection === 'stripePayments' || collection === 'invoices') {
+        // Live money updates: a Stripe webhook / reconcile or a recorded wire.
+        // Coalesced; payment panels and Finance listen to `paymentsRefresh`.
+        if (fetchTimeouts['payments']) clearTimeout(fetchTimeouts['payments']);
+        fetchTimeouts['payments'] = setTimeout(() => {
+          invalidateRequests('finance:online-payments');
+          paymentsRefresh.update((n) => n + 1);
+          delete fetchTimeouts['payments'];
+        }, 600);
+      }
       else if (collection === 'irp_chatbot_threads') {
         // 4. Live Chat History Update
         if (fetchTimeouts['chatbot_threads']) clearTimeout(fetchTimeouts['chatbot_threads']);
@@ -4750,6 +4760,13 @@ export interface QuoteSettlement {
   /** collected − providerPaid: what this quote has actually banked. */
   netCash: number;
   fullySettled: boolean;
+  /** Stripe + bank fees charged on this deal (net of refunded fees). */
+  fees?: number;
+  /** expectedMargin − fees. */
+  marginAfterFees?: number;
+  marginAfterFeesPct?: number | null;
+  /** netCash − fees. */
+  netCashAfterFees?: number;
 }
 
 export type LedgerKind = 'expense' | 'income' | 'investment';
@@ -4806,6 +4823,9 @@ export interface FinanceLedgerReport {
     expectedMargin: number;
     netCash: number;
     fullySettled: number;
+    fees?: number;
+    marginAfterFees?: number;
+    netCashAfterFees?: number;
   };
   totals: {
     expense: number;
@@ -5660,4 +5680,301 @@ export async function recordEvoDecision(body: {
   const res = await apiFetch('/api/evo/decisions', { method: 'POST', body: JSON.stringify(body) });
   invalidateRequests('evo:decisions');
   return res;
+}
+
+// ─── Online payments (Stripe) ────────────────────────────────────────────────
+// Server: irp-funnel-server/API/payments/stripe/stripeRouter.ts
+// The browser never sends an amount — only a plan ("next" | "full"); the server
+// prices it from the accepted quote.
+
+export type PaymentPlan = 'next' | 'full';
+
+/** Bumped by the socket handler when a payment or invoice changes. */
+export const paymentsRefresh = writable(0);
+
+export interface PaymentScheduleRow {
+  index1: number;
+  percent: number;
+  label: string;
+  amount: number;
+  paid: number;
+  pending: number;
+  status: 'paid' | 'partial' | 'processing' | 'due';
+}
+
+export interface PaymentOption {
+  plan: PaymentPlan;
+  label: string;
+  description: string;
+  amount: number;
+}
+
+export interface QuotePaymentSummary {
+  currency: string;
+  agreedTotal: number;
+  received: number;
+  processing: number;
+  outstanding: number;
+  schedule: PaymentScheduleRow[];
+  options: PaymentOption[];
+  fullyPaid: boolean;
+}
+
+export interface OnlinePayment {
+  paymentIntentId: string;
+  status: string;
+  amount: number;
+  currency: string;
+  methodLabel: string | null;
+  methodType: string | null;
+  receiptUrl: string | null;
+  failureMessage: string | null;
+  createdAt: string | null;
+  refundedAmount: number;
+  // Staff-only fields
+  fee?: number | null;
+  /** Later Stripe costs on this payment: failed-debit, dispute fees… */
+  otherFees?: number;
+  net?: number | null;
+  invoiceNumber?: string | null;
+  dashboardUrl?: string;
+  disputedAt?: string | null;
+  consultationId?: string;
+  quoteId?: string;
+  clientName?: string | null;
+  quoteTitle?: string | null;
+  plan?: PaymentPlan | null;
+}
+
+export interface BankBlock {
+  beneficiary: { name: string; accountNumber: string; accountType: string; address: string[] };
+  receivingBank: {
+    name: string;
+    abaRoutingNumber: string;
+    wireRoutingNumber: string | null;
+    swiftBic: string | null;
+    address: string[];
+    partnerNote: string | null;
+  };
+  domesticNote: string | null;
+}
+
+export interface ClientPaymentState {
+  enabled: boolean;
+  livemode: boolean;
+  publishableKey: string | null;
+  methods: { card: boolean; bank: boolean; wire: boolean };
+  summary: QuotePaymentSummary;
+  latest: OnlinePayment | null;
+  history: OnlinePayment[];
+  transferReportedAt: string | null;
+  bank: BankBlock;
+  quote: { title: string; contractRef: string | null; acceptedAt: string | null };
+}
+
+/** Client portal: what is owed on an accepted quote and what can be paid now. */
+export async function fetchQuotePayments(consultationId: string, token: string): Promise<ClientPaymentState> {
+  return apiFetch(`/api/status/${consultationId}/payments?token=${encodeURIComponent(token)}`);
+}
+
+/** Client portal: start (or resume) a payment for a plan. */
+export async function startQuotePayment(
+  consultationId: string,
+  token: string,
+  plan: PaymentPlan,
+  /** One method per checkout, picked on the page before Stripe's form opens. */
+  method: 'card' | 'bank' = 'card',
+): Promise<{ clientSecret: string; paymentIntentId: string; amount: number; currency: string; plan: PaymentPlan; label: string; publishableKey: string }> {
+  return apiFetch(`/api/status/${consultationId}/payments/intent`, {
+    method: 'POST',
+    body: JSON.stringify({ token, plan, method }),
+  });
+}
+
+/** Client portal: reconcile a payment right after Stripe confirms / redirects back. */
+export async function syncQuotePayment(
+  consultationId: string,
+  token: string,
+  paymentIntentId: string,
+): Promise<{ payment: OnlinePayment | null; summary: QuotePaymentSummary }> {
+  return apiFetch(`/api/status/${consultationId}/payments/sync`, {
+    method: 'POST',
+    body: JSON.stringify({ token, paymentIntentId }),
+  });
+}
+
+/** Client portal: "I've sent the wire" — creates a task for the team. */
+export async function reportWireTransfer(
+  consultationId: string,
+  token: string,
+  body: { amount?: number; reference?: string; sentOn?: string } = {},
+): Promise<{ ok: boolean; reportedAt: string }> {
+  return apiFetch(`/api/status/${consultationId}/payments/transfer-notice`, {
+    method: 'POST',
+    body: JSON.stringify({ token, ...body }),
+  });
+}
+
+export interface QuotePaymentsRow {
+  quoteId: string;
+  title: string;
+  acceptedAt: string | null;
+  payUrl: string | null;
+  summary: QuotePaymentSummary;
+  payments: OnlinePayment[];
+  checkoutsStarted: number;
+  transferNotices: Array<{ reportedAt: string; sentOn?: string | null; amount: number | null; reference: string | null }>;
+  /** Every fee charged on this deal: Stripe (processing, failures, disputes…) + bank fees on wires. */
+  fees: { total: number; stripe: number; bank: number; items: Array<{ label: string; amount: number; date: string | null; kind: string | null }> };
+  /** Received minus all fees. */
+  netReceived: number;
+  invoices: Array<{ invoiceId: string; invoiceNumber: string; total: number; sentAt: string | null }>;
+}
+
+/** Dashboard: money state of each accepted quote of a client. */
+export async function fetchClientPayments(
+  consultationId: string,
+): Promise<{ enabled: boolean; livemode: boolean; webhook: boolean; quotes: QuotePaymentsRow[] }> {
+  return apiFetch(`/api/dashboard/clients/${consultationId}/payments`);
+}
+
+/** Dashboard: confirm money that arrived outside Stripe (wire, cash, check). */
+export async function recordQuotePayment(
+  consultationId: string,
+  quoteId: string,
+  body: {
+    amount: number;
+    date?: string;
+    method?: string;
+    reference?: string;
+    notifyClient?: boolean;
+    /** Fee the banks deducted on the way in. */
+    bankFee?: number;
+    /** 'irp' (default): credit the client for what they sent, book the fee as a cost. 'client': leave it on their balance. */
+    feeCoveredBy?: 'irp' | 'client';
+    /** One id per confirmation attempt: a double click or retry records the money once. */
+    requestId?: string;
+    /** Set after the person confirms an amount above what is left to pay. */
+    confirmOverpay?: boolean;
+  },
+): Promise<{ ok: boolean; duplicate?: boolean; invoiceNumber: string; invoiceNumbers?: string[]; stageMoved: boolean; firstPayment: boolean; credited: number; bankFee: number; overpaid?: number; summary: QuotePaymentSummary }> {
+  const res = await apiFetch(`/api/dashboard/clients/${consultationId}/quotes/${quoteId}/record-payment`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  invalidateRequests('finance:online-payments');
+  return res;
+}
+
+export interface OnlinePaymentsReport {
+  enabled: boolean;
+  livemode: boolean;
+  webhook: boolean;
+  /** `fees` = EVERY Stripe charge (processing, failed debits, disputes, verification, FX, payouts), net of refunded fees. */
+  totals: { gross: number; fees: number; refunded: number; net: number; processing: number; count: number; abandoned: number };
+  feeBreakdown: Array<{ kind: string; label: string; amount: number }>;
+  otherFees: Array<{ id: string; label: string; amount: number; date: string | null; kind: string; consultationId: string | null; quoteId: string | null; note: string | null }>;
+  payments: OnlinePayment[];
+}
+
+export interface StripeSetupItem { key: string; label: string; done: boolean; why: string; fix: string }
+
+/** Admin: is online payment fully set up? (403 for non-admins.) */
+export async function fetchStripeSetup(): Promise<{ livemode: boolean; items: StripeSetupItem[]; allDone: boolean }> {
+  return apiFetch('/api/dashboard/finance/stripe-setup');
+}
+
+/** Dashboard Finance: every Stripe payment with fees and net. */
+export async function fetchOnlinePayments(opts: { fresh?: boolean } = {}): Promise<OnlinePaymentsReport> {
+  return cachedRequest('finance:online-payments', () => apiFetch('/api/dashboard/finance/online-payments'), { fresh: opts.fresh });
+}
+
+/** Open a client's card from anywhere (e.g. Finance → Online payments). */
+export async function selectClientById(id: string): Promise<void> {
+  if (!id) return;
+  const known = get(clients).find((c) => c.id === id);
+  if (known) selectedClient.set(known);
+  detailPanelOpen.set(true);
+  try { await fetchClientDetail(id); } catch { /* the cached card is still shown */ }
+}
+
+// ─── Payment safety: who is told, the permanent log, needs attention ─────────
+// Server: API/payments/stripe/stripeRouter.ts (+ paymentRecipients.ts, paymentJournal.ts)
+
+export type PaymentEventGroup = 'money_in' | 'problems' | 'wire_reported';
+export interface PaymentRecipientRow { email: string; name?: string | null; events: PaymentEventGroup[] }
+
+export async function fetchPaymentRecipients(): Promise<{
+  configured: boolean;
+  people: PaymentRecipientRow[];
+  updatedAt: string | null;
+  updatedBy: string | null;
+  defaults: Record<PaymentEventGroup, string[]>;
+  groups: Record<PaymentEventGroup, string>;
+}> {
+  return apiFetch('/api/dashboard/finance/payment-recipients');
+}
+
+export async function savePaymentRecipients(people: PaymentRecipientRow[]): Promise<{ ok: boolean; people: PaymentRecipientRow[]; updatedAt: string; updatedBy: string }> {
+  return apiFetch('/api/dashboard/finance/payment-recipients', { method: 'PUT', body: JSON.stringify({ people }) });
+}
+
+/** Internal copies of the signed contract PDF (existing endpoint). */
+export async function fetchContractRecipients(): Promise<{ recipients: string[]; updatedAt: string | null; updatedBy: string | null }> {
+  return apiFetch('/api/dashboard/contract-recipients');
+}
+export async function saveContractRecipients(recipients: string[]): Promise<{ recipients: string[] }> {
+  return apiFetch('/api/dashboard/contract-recipients', { method: 'PUT', body: JSON.stringify({ recipients }) });
+}
+
+export interface PaymentLogEvent {
+  id: string;
+  key: string;
+  type: string;
+  at: string;
+  recordedAt?: string;
+  amount?: number | null;
+  currency?: string | null;
+  method?: string | null;
+  consultationId?: string | null;
+  clientName?: string | null;
+  quoteId?: string | null;
+  quoteTitle?: string | null;
+  invoiceNumbers?: string[] | null;
+  reference?: string | null;
+  actor: string;
+  source?: string | null;
+  note?: string | null;
+  livemode?: boolean | null;
+}
+
+export async function fetchPaymentLog(): Promise<{ events: PaymentLogEvent[] }> {
+  return apiFetch('/api/dashboard/finance/payment-log');
+}
+
+export interface AttentionItem {
+  key: string;
+  kind: string;
+  severity: 'high' | 'medium';
+  title: string;
+  detail: string;
+  since: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  consultationId?: string | null;
+  clientName?: string | null;
+  quoteId?: string | null;
+  quoteTitle?: string | null;
+  dashboardUrl?: string | null;
+}
+
+export async function fetchNeedsAttention(): Promise<{ items: AttentionItem[] }> {
+  return apiFetch('/api/dashboard/finance/needs-attention');
+}
+
+export async function resolveAttention(item: AttentionItem, note: string): Promise<{ ok: boolean }> {
+  return apiFetch(`/api/dashboard/finance/needs-attention/${encodeURIComponent(item.key)}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ note, title: item.title, consultationId: item.consultationId ?? null, quoteId: item.quoteId ?? null }),
+  });
 }

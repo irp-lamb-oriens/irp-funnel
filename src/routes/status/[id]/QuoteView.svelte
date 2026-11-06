@@ -5,6 +5,7 @@
   import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription, QUOTE_STATUS_LABEL } from '../../dashboard/store.ts';
 
   import BlockRenderer from './BlockRenderer.svelte';
+  import PaymentStep from './PaymentStep.svelte';
   import { renderMarkdown } from './renderMarkdown.ts';
   import { project } from './store.ts';
   import { irpStaffIsAuthenticated } from '../../../lib/auth/irpStaff.ts';
@@ -503,10 +504,15 @@
 
       <div class="qv-accepted">
         <p>🎉 <strong>Quote accepted!</strong></p>
-        <p class="qv-accepted-sub">Our team will be in touch to coordinate next steps.</p>
+        <p class="qv-accepted-sub">Your agreement is signed. One step left — <a href="#payment" class="qv-legal-link">reserve your move below</a>.</p>
       </div>
     {/if}
   </div>
+  {/if}
+
+  <!-- Payment — the step right after signing (both renderers). -->
+  {#if accepted || quote.status === 'client_accepted'}
+    <PaymentStep consultationId={consultationId} {token} {isStaff} />
   {/if}
 {/if}
 

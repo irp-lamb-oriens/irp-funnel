@@ -18,6 +18,7 @@
   import type { Quote } from '../store.ts';
   import QuoteEditor from './QuoteEditor.svelte';
   import PricingRequestsPanel from './PricingRequestsPanel.svelte';
+  import QuotePaymentsPanel from './QuotePaymentsPanel.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
   import { buildQuoteContext } from '../utils/quoteContext.ts';
 
@@ -442,6 +443,11 @@
       {/key}
     {/if}
 
+
+    <!-- ── Payments on accepted quotes (Stripe + recorded wires) ───────── -->
+    {#if $quotes.some((q) => q.status === 'client_accepted')}
+      <QuotePaymentsPanel {clientId} />
+    {/if}
 
     {#if loading}
 

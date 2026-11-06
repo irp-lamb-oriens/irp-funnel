@@ -17,6 +17,8 @@
   import FinanceLedgerPanel from './FinanceLedgerPanel.svelte';
   import MoveTaxonomyPanel from './MoveTaxonomyPanel.svelte';
   import InvoicesPanel from './InvoicesPanel.svelte';
+  import OnlinePaymentsPanel from './OnlinePaymentsPanel.svelte';
+  import PaymentLogPanel from './PaymentLogPanel.svelte';
   import { onViewShown, REVALIDATE_AFTER_MS } from '../utils/viewLifecycle.ts';
 
   let loading = false;
@@ -31,7 +33,7 @@
    * empty bank account can happen at the same time, and because the categories
    * behind both numbers are a business decision that belongs on screen.
    */
-  let section: 'quotes' | 'money' | 'config' | 'invoices' = 'quotes';
+  let section: 'quotes' | 'money' | 'config' | 'invoices' | 'online' | 'log' = 'quotes';
 
   async function load(): Promise<void> {
     loading = true;
@@ -117,6 +119,8 @@
     <button class:active={section === 'quotes'} on:click={() => (section = 'quotes')}>Quotes</button>
     <button class:active={section === 'money'} on:click={() => (section = 'money')}>Money in and out</button>
     <button class:active={section === 'invoices'} on:click={() => (section = 'invoices')}>Invoices</button>
+    <button class:active={section === 'online'} on:click={() => (section = 'online')}>Online payments</button>
+    <button class:active={section === 'log'} on:click={() => (section = 'log')}>Payment log</button>
     <button class:active={section === 'config'} on:click={() => (section = 'config')}>Configuration</button>
   </nav>
 
@@ -126,6 +130,10 @@
     <MoveTaxonomyPanel />
   {:else if section === 'invoices'}
     <InvoicesPanel />
+  {:else if section === 'online'}
+    <OnlinePaymentsPanel />
+  {:else if section === 'log'}
+    <PaymentLogPanel />
   {:else}
 
   {#if errorMsg}

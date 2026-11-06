@@ -1,0 +1,150 @@
+// IRP landing tokens. Visual system ported from the ILP landing
+// (ilp/frontend/src/styles), mapped to IRP's teal brand.
+
+$color-accent: #02b5bb; // IRP teal: CTAs, accents
+$color-accent-hover: #00a5ab;
+$color-ink-strong: #0e2f36; // headings, ink on teal
+$color-ink: #1d2a2e; // body text
+$color-steel: #4a5c61; // secondary text
+$color-muted: #5b6d72;
+$color-canvas: #ffffff;
+$color-mist: #eef8f8; // tinted background
+$color-accent-soft: #e3f6f6;
+$color-hairline: rgba(14, 47, 54, 0.14);
+$color-hairline-strong: rgba(14, 47, 54, 0.28);
+$color-red: #c62426; // small marks only
+$color-on-dark: #ffffff;
+$color-on-dark-muted: rgba(255, 255, 255, 0.72);
+$color-on-dark-hairline: rgba(255, 255, 255, 0.14);
+
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-pill: 999px;
+$shadow-card: 0 1px 2px rgba(14, 47, 54, 0.06);
+
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-6: 1.5rem;
+$space-8: 2rem;
+$space-12: 3rem;
+$space-16: 4rem;
+$space-24: 6rem;
+
+$bp-md: 768px;
+$bp-lg: 1024px;
+
+$font-sans: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+$font-mono: 'SFMono-Regular', Menlo, Consolas, monospace;
+
+$ease: cubic-bezier(0.16, 1, 0.3, 1);
+$touch-target: 44px;
+
+@mixin md { @media (min-width: $bp-md) { @content; } }
+@mixin lg { @media (min-width: $bp-lg) { @content; } }
+@mixin reduced-motion { @media (prefers-reduced-motion: reduce) { @content; } }
+@mixin hover-only { @media (hover: hover) and (pointer: fine) { @content; } }
+
+@mixin container {
+  width: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: $space-4;
+  @include md { padding-inline: $space-8; }
+}
+
+@mixin section {
+  padding-block: $space-16;
+  @include md { padding-block: $space-24; }
+}
+
+@mixin card {
+  background: $color-canvas;
+  border: 1px solid $color-hairline;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+@mixin eyebrow {
+  font-family: $font-mono;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: $color-ink-strong;
+  margin: 0;
+}
+
+@mixin heading-xl {
+  font-family: $font-sans;
+  font-weight: 700;
+  font-size: clamp(2.1rem, 4.6vw, 3.5rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: $color-ink-strong;
+  margin: 0;
+}
+
+@mixin heading-md {
+  font-family: $font-sans;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2vw, 1.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: $color-ink-strong;
+  margin: 0;
+}
+
+@mixin body {
+  font-family: $font-sans;
+  color: $color-steel;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+@mixin focus-ring {
+  &:focus-visible { outline: 2px solid $color-accent; outline-offset: 3px; }
+}
+
+@mixin button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  min-height: $touch-target;
+  padding: $space-4 $space-8;
+  border: none;
+  border-radius: $radius-pill;
+  background: $color-accent;
+  color: $color-ink-strong;
+  font-family: $font-sans;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms $ease, background 200ms;
+  &:hover { background: $color-accent-hover; }
+  &:active { transform: scale(0.97); }
+  @include focus-ring;
+}
+
+@mixin button-ghost {
+  @include button-primary;
+  & {
+    background: transparent;
+    border: 1px solid $color-hairline-strong;
+    color: $color-ink-strong;
+  }
+  &:hover { background: $color-mist; }
+}
+
+// Reveal-on-scroll: the `reveal` action adds .is-in.
+@mixin reveal($distance: 16px, $delay: 0ms) {
+  opacity: 0;
+  transform: translateY($distance);
+  transition: opacity 700ms $ease $delay, transform 900ms $ease $delay;
+  &:global(.is-in) { opacity: 1; transform: none; }
+  @include reduced-motion { opacity: 1; transform: none; transition: none; }
+}
