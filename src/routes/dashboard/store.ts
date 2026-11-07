@@ -1,4 +1,5 @@
 import { cachedRequest, invalidateRequests } from './utils/requestCache.ts';
+import { optionCount, quoteValue } from '../../lib/quoteValue.ts';
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import store from '../../components/store.ts';
@@ -5051,6 +5052,8 @@ export interface SalesV2Deal {
   // sales-book-v3 §4.2 — optional so an older server still renders.
   clientKey?: string | null; invoicedAt?: string | null; isTest?: boolean; quotes?: number;
   firstQuoteTotal?: number | null; firstQuoteCurrency?: string | null; acceptedQuoteSameAsFirst?: boolean | null;
+  /** Options the first quote offered when it had no single price ("3 options"); 0/absent otherwise. */
+  firstQuoteOptions?: number;
   acceptedQuoteTotal?: number | null; refunds?: number; cancelledAfterAcceptance?: boolean;
 }
 /** One sent invoice with a balance ≠ 0, every currency (sales-book-v3 §4.2). */
@@ -5425,7 +5428,16 @@ export function summarizeQuoteBilling(
 ): QuoteBillingSummary {
   const lines = quoteBillableLines(quote);
   const lineSum = round2Money(lines.reduce((s, l) => s + l.price, 0));
-  const quoteTotal = round2Money(Number(quote?.total) > 0 ? Number(quote?.total) : lineSum);
+  // Accepted → what the client agreed to; a quote still offering options →
+  // the billable lines (its stored total adds every option together).
+  const agreed = quoteValue(quote);
+  const quoteTotal = round2Money(
+    agreed != null && agreed > 0
+      ? agreed
+      : optionCount(quote) > 0
+        ? lineSum
+        : Number(quote?.total) > 0 ? Number(quote?.total) : lineSum,
+  );
 
   const mine = (allInvoices ?? []).filter(
     (inv) => quote?.quoteId && inv.quoteId === quote.quoteId,

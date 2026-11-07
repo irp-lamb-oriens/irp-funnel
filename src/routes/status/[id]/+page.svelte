@@ -460,14 +460,25 @@
     const activeStep = document.querySelector(
       ".stepper .step.active",
     ) as HTMLElement | null;
-    if (activeStep) {
-      activeStep.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
+    const strip = activeStep?.closest(".stepper-scroll") as HTMLElement | null;
+    // Scroll only the strip sideways (never the page), and only when it
+    // actually scrolls: on phones the stages are a vertical list.
+    if (!activeStep || !strip || strip.scrollWidth <= strip.clientWidth) return;
+    const left =
+      activeStep.offsetLeft - (strip.clientWidth - activeStep.offsetWidth) / 2;
+    strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
   }
+
+  /** Phones: all stages listed instead of the ones around the current stage. */
+  let showAllStages = false;
+
+  // Phones, past the first screen: the Lily button shrinks to her avatar so
+  // it covers less of what the client is reading (the label stays as its
+  // accessible name).
+  let pageScrollY = 0;
+  let viewportW = 1024;
+  let viewportH = 800;
+  $: lilyCompact = viewportW <= 640 && pageScrollY > viewportH * 0.6;
 
   /**
    * Smooth-scrolls to a section anchor by id.
@@ -851,6 +862,12 @@
   on:tabchange={(e) => handleTabChange(e.detail)}
 />
 
+<svelte:window
+  bind:scrollY={pageScrollY}
+  bind:innerWidth={viewportW}
+  bind:innerHeight={viewportH}
+/>
+
 <div class="client-portal">
   {#if $isCheckingAuth || ($isAuthenticated && $loading && !$project)}
     <div class="cp-auth-wall" style="background: transparent;">
@@ -1166,11 +1183,13 @@
           <!-- Status pipeline + inline comments ───────────────────────────── -->
           <section class="cp-dashboard__pipeline">
             <h3>Current Status</h3>
-            <div style="overflow-x: auto; padding-bottom: 1rem;">
-              <div class="stepper">
+            <div class="stepper-scroll" style="overflow-x: auto; padding-bottom: 1rem;">
+              <div class="stepper" class:stepper--all={showAllStages}>
                 {#each $stages as stageKey, idx}
                   <div
                     class="step"
+                    class:step--far={idx < currentStageIndex - 1 ||
+                      idx > currentStageIndex + 2}
                     class:completed={idx < currentStageIndex}
                     class:active={idx === currentStageIndex}
                     class:rate-prompt={idx === currentStageIndex - 1 &&
@@ -1198,6 +1217,19 @@
                 {/each}
               </div>
             </div>
+            <!-- Phones show the stages around the current one; this opens the rest. -->
+            {#if $stages.length > 4}
+              <button
+                type="button"
+                class="stepper-more"
+                aria-expanded={showAllStages}
+                on:click={() => (showAllStages = !showAllStages)}
+              >
+                {showAllStages
+                  ? "Show fewer stages"
+                  : `Show all ${$stages.length} stages`}
+              </button>
+            {/if}
           </section>
 
           <!-- Move complete → rate first, then (if delighted) invite a Google review -->
@@ -2028,6 +2060,7 @@
     {#if !lilyOpen}
       <button
         class="lily-fab"
+        class:lily-fab--compact={lilyCompact}
         on:click={() => (lilyOpen = true)}
         aria-label="Chat with Lily"
         aria-expanded={lilyOpen}
@@ -2690,7 +2723,20 @@
       0 0 0 1px rgba(2, 181, 187, 0.25),
       0 0 40px rgba(2, 181, 187, 0.18);
   }
+  .lily-fab--compact {
+    gap: 0;
+    padding: 0.45rem;
+  }
+  .lily-fab--compact .lily-fab__label {
+    max-width: 0;
+    opacity: 0;
+  }
   .lily-fab__label {
+    max-width: 10rem;
+    overflow: hidden;
+    transition:
+      max-width 0.3s ease,
+      opacity 0.2s ease;
     white-space: nowrap;
     font-size: 0.82rem;
     font-weight: 700;

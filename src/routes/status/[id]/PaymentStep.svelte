@@ -90,7 +90,7 @@
   $: onItsWay = state?.latest?.status === 'processing' || (summary?.processing ?? 0) > 0;
   $: lastFailed = state?.latest?.status === 'requires_payment_method' && !!state?.latest?.failureMessage;
   $: received = summary?.received ?? 0;
-  $: reference = state?.quote.contractRef || state?.quote.title || 'IRP';
+  $: reference = state?.quote?.contractRef || state?.quote?.title || 'IRP';
   $: formOpen = !onItsWay && (received <= 0 || wantsToPayMore);
   $: if (selected && !wireTouched) wireAmount = selected.amount.toFixed(2);
 

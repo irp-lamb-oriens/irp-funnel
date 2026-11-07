@@ -262,6 +262,19 @@
     .art:has(.plan) { transform: scale(0.64); }
     .text p { font-size: 1rem; }
     .ring-wrap { display: none; }
+    /* Phones: a shorter head so each example has room above the journey line. */
+    .stage { padding-top: 88px; padding-bottom: 4.75rem; }
+    .title { font-size: clamp(1.6rem, 6.8vw, 2.2rem); }
+    .panel-grid { gap: $space-4; }
+    .text { gap: $space-2; h3 { font-size: clamp(1.4rem, 6vw, 1.9rem); } }
+    /* Eight stage names cannot share a phone's width: name only the current one. */
+    .stepper li:not(.now) b, .stepper li:not(.now) small { visibility: hidden; }
+    .stepper li.now b, .stepper li.now small { white-space: nowrap; }
+  }
+  @media (max-width: 1023px) and (max-height: 760px) {
+    .text p { font-size: 0.95rem; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .art { transform: scale(0.68); }
+    .art:has(.plan) { transform: scale(0.56); }
   }
 
   :global(.rm) {

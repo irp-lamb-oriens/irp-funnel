@@ -39,7 +39,8 @@ export interface LeadFact {
   money: Record<string, CubeMoney>;
   receivable: Record<string, Receivable>;
   costKnown: boolean;
-  openQuote: { total: number; cur: string; sentMonth: string | null; ageDays: number | null } | null;
+  /** `options` > 0 (and `total` 0) when the open quote offers choices: it has no single value yet. */
+  openQuote: { total: number; options?: number; cur: string; sentMonth: string | null; ageDays: number | null } | null;
   daysToClose: number | null;
   quoteTurnaroundDays: number | null;
   decisionDays: number | null;

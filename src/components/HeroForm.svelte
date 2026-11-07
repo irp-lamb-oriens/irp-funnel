@@ -495,7 +495,7 @@
 <div class="hero-banner" id="hero-form">
   <!-- <video autoplay muted loop playsinline class="bg-video" src="https://www.pexels.com/download/video/7855756/"></video> -->
   <Loader visible={isLoading} />
-  <VideoBanner videoUrl={videoUrl} videoPoster={imageUrl} videoAlt={imageAlt}>
+  <VideoBanner videoUrl={videoUrl} videoPoster={imageUrl} videoAlt={imageAlt} slotFirstOnMobile>
     <div class="form-container" id="hero-form-container">
       <div class="form-steps">
 
@@ -1177,9 +1177,14 @@
     .choice-screen__title { font-size: 1.5rem; }
     h2 { font-size: 1.4rem; }
   }
+  @media (max-width: 767px) {
+    /* The card leads on phones (VideoBanner slotFirstOnMobile): no extra gap above it. */
+    .hero-banner { padding: 1rem 0 2rem; }
+    .form-container { margin: 0 auto; }
+  }
   @media (max-width: 480px) {
-    .form-container { padding: 1.5rem 1rem; border-radius: 1.25rem; }
-    .cta-hero__title { font-size: 1.4rem; }
+    .form-container { padding: 1.75rem 1.1rem 1.5rem; border-radius: 1.25rem; }
+    .cta-hero__title { font-size: 1.65rem; line-height: 1.2; }
     .cta-hero__btn { width: 100%; justify-content: center; padding: 1rem 1.5rem; }
     .choice-btn { padding: 1rem 1.1rem; }
   }

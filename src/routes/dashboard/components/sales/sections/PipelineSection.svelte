@@ -9,6 +9,7 @@
   import { crDateKey } from '../../metrics/engine/period.ts';
   import { isStalled, lossValue, openQuoteBuckets, quoteMovement, quotesPerWonDeal } from '../../metrics/engine/sales.ts';
   import { openClient } from '../openClient.ts';
+  import { optionsLabel } from '$lib/quoteValue.ts';
   import type { Book } from '../types.ts';
 
   export let book: Book;
@@ -75,7 +76,7 @@
           {#each openShown as r (r.id)}
             <tr>
               <th scope="row" data-label="Client"><button class="sb-name" on:click={() => open1(r.isLead ? r.id : null)}>{r.name}</button>{#if isStalled(r)} <span class="sb-flag">stalled</span>{/if}</th>
-              <td class="num" data-label="Quote">{money(r.openQuote?.total, r.openQuote?.cur)}</td>
+              <td class="num" data-label="Quote">{!r.openQuote?.total && r.openQuote?.options ? optionsLabel(r.openQuote.options) : money(r.openQuote?.total, r.openQuote?.cur)}</td>
               <td class="num" data-label="Age">{r.openQuote?.ageDays == null ? '—' : `${Math.round(r.openQuote.ageDays)} d`}</td>
               <td class="num" data-label="Quiet" class:mh-bad={(r.daysSinceActivity ?? 0) > 14}>{r.daysSinceActivity === null ? '—' : `${Math.round(r.daysSinceActivity)} d`}</td>
             </tr>
@@ -104,7 +105,7 @@
     {#if lost.length}
       <ul class="sb-list">
         {#each lost.slice(0, 8) as d (d.key)}
-          <li><button class="sb-name" on:click={() => open1(d.consultationId)} disabled={!d.consultationId}>{d.name}</button><span>{d.firstQuoteTotal ? money(d.firstQuoteTotal, d.currency) : 'no quote'} · {d.cancelledAfterAcceptance ? 'after acceptance' : d.stageLabel ?? '—'}</span></li>
+          <li><button class="sb-name" on:click={() => open1(d.consultationId)} disabled={!d.consultationId}>{d.name}</button><span>{d.firstQuoteTotal ? money(d.firstQuoteTotal, d.currency) : d.firstQuoteOptions ? optionsLabel(d.firstQuoteOptions) : 'no quote'} · {d.cancelledAfterAcceptance ? 'after acceptance' : d.stageLabel ?? '—'}</span></li>
         {/each}
       </ul>
     {:else}<p class="mh-empty">None.</p>{/if}

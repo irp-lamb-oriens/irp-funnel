@@ -238,6 +238,27 @@
     &:hover i { transform: translateX(5px); color: $color-accent; }
   }
 
+  /* Phones: heading, the country's name, then its card, each in its own row,
+     so nothing overlaps the heading and the card keeps the space left. */
+  @media (max-width: 1023px) {
+    .layer { padding-top: 88px; padding-bottom: 5.25rem; grid-template-rows: auto auto minmax(0, 1fr); }
+    .big { margin-top: $space-4; align-items: start; }
+    .name { font-size: clamp(2.5rem, 12.5vw, 3.4rem); gap: $space-1;
+      small { font-size: 0.7rem; } }
+    .list { margin-top: $space-4; min-height: 0; align-self: end; }
+    /* The big name above already says which country; keep it for screen readers. */
+    .cc-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .cc-steps { margin-bottom: 4px; }
+    .cc-fact { grid-template-columns: 84px minmax(0, 1fr); padding: 9px 0; }
+    .cc-stat { font-size: 0.98rem; }
+    /* During the tour the card has the room; the guide links follow once it ends. */
+    .list:has(.catch:not(.done)) ol { display: none; }
+  }
+  @media (max-width: 480px) { ol { grid-template-columns: 1fr; } }
+  @media (max-width: 1023px) and (max-height: 760px) {
+    .cc-fact dd span { display: none; }
+    .name { font-size: clamp(2.2rem, 11vw, 2.8rem); }
+  }
   @media (max-width: 1023px) {
     .globe-wrap { left: 50%; top: 58%; width: 130vw; height: 130vw; margin-left: -65vw; margin-top: -65vw; opacity: 0.7; }
   }

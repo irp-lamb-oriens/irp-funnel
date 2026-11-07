@@ -13,6 +13,7 @@
  */
 
 import type { Client, Quote, QuoteLineItem } from '../store.ts';
+import { optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
 
 export interface QuoteContextOptions {
   /** The already-resolved client portal URL (including the quote token). */
@@ -138,7 +139,26 @@ function buildQuoteSection(quote: Quote, includeInternalPricing: boolean): Line[
   pushField(out, 'Title', quote.title || 'Untitled');
   pushField(out, 'Status', quote.status);
   pushField(out, 'Service type', quote.serviceType);
-  out.push(`Total: ${formatMoney(quote.total ?? 0, currency)}`);
+  // A quote offering options has no single total until the client picks one:
+  // list each option at its own price instead of every option added together.
+  const value = quoteValue(quote);
+  const choices = optionCount(quote);
+  if (value == null && choices > 0) {
+    out.push(`Total: ${optionsLabel(choices)} (the client picks; no single total yet)`);
+    for (const g of quote.lineGroups ?? []) {
+      if (!g || g.role === 'fixed') continue;
+      const price = (g.lineItems ?? []).reduce((s, li) => s + clientPriceOf(li), 0);
+      const kind = g.role === 'optional' ? 'add-on' : 'package';
+      out.push(`- ${String(g.title || 'Option').trim()} [${kind}]: ${formatMoney(price, currency)}`);
+    }
+    const fixed = (quote.lineGroups ?? []).filter((g) => g?.role === 'fixed');
+    if (fixed.length) {
+      const price = fixed.flatMap((g) => g.lineItems ?? []).reduce((s, li) => s + clientPriceOf(li), 0);
+      out.push(`- Always included: ${formatMoney(price, currency)}`);
+    }
+  } else {
+    out.push(`Total: ${formatMoney(value ?? quote.total ?? 0, currency)}`);
+  }
 
   if (includeInternalPricing) {
     if (typeof quote.costSubtotal === 'number') {

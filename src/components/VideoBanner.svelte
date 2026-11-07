@@ -2,6 +2,11 @@
   export let videoUrl: string;
   export let videoPoster: string;
   export let videoAlt: string = "";
+  /**
+   * On phones, show the slot (headline + call to action) before the video, so
+   * the first screen says what we do instead of opening on a poster.
+   */
+  export let slotFirstOnMobile = false;
 
   import { onMount } from "svelte";
 
@@ -45,6 +50,9 @@
   // now updates on exactly those.
   function sync() {
     if (!video || !img || !imgWrap) return;
+    // The video overlays the poster; when the poster is not first in the
+    // column (slot shown first on phones) it has to follow it down.
+    video.style.top = slotFirstOnMobile && window.innerWidth < 768 ? `${imgWrap.offsetTop}px` : "";
     setVideoHeight();
     if (video.paused) setVideoClosedSize();
     else setVideoOpenSize();
@@ -84,7 +92,7 @@
     bind:this={video}
     src="https://storage.googleapis.com/videos-irp-funnels/The-Truth-About-Moving-Abroad_-What-You-Need-to-Know-Before-Taking-the-Leap.mp4"
   ></video>
-  <div class="wrapper">
+  <div class="wrapper" class:slot-first={slotFirstOnMobile}>
     <div class="img-wrap" class:show={video ? !video?.paused : false} bind:this={imgWrap}>
       <img class="img" bind:this={img} src={videoPoster} alt={videoAlt}>
     </div>
@@ -241,6 +249,9 @@
     transform: scale(1.02);
   }
 
+  .wrapper.slot-first .slot-wrap {
+    @media (max-width: 767px) { order: -1; margin-bottom: 1.25rem; }
+  }
   .wrapper {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));

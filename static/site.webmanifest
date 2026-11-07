@@ -7,8 +7,8 @@
     { "src": "/logo/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "/logo/logo.png", "sizes": "408x408", "type": "image/png", "purpose": "any" }
   ],
-  "theme_color": "#63d7ff",
-  "background_color": "#63d7ff",
+  "theme_color": "#03b4c1",
+  "background_color": "#03b4c1",
   "display": "browser",
   "start_url": "/"
 }

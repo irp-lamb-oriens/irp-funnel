@@ -40,6 +40,7 @@
   } from '../store.ts';
   import InvoiceDocument from './InvoiceDocument.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
+  import { optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
 
   export let invoice: Invoice | undefined = undefined;
   /**
@@ -500,7 +501,7 @@
             <option value="">No quote — custom charge</option>
             {#each billableQuotes as q (q.quoteId)}
               <option value={q.quoteId}>
-                {q.title || 'Untitled quote'} · {shortDate(q.clientAcceptedAt || q.createdAt)} · {money(q.total)} · {QUOTE_STATUS_LABEL[q.status]?.label ?? q.status}
+                {q.title || 'Untitled quote'} · {shortDate(q.clientAcceptedAt || q.createdAt)} · {quoteValue(q) == null && optionCount(q) > 0 ? optionsLabel(optionCount(q)) : money(quoteValue(q) ?? q.total)} · {QUOTE_STATUS_LABEL[q.status]?.label ?? q.status}
               </option>
             {/each}
           </select>

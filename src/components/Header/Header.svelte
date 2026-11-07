@@ -398,9 +398,10 @@
   }
   @media (max-width: 640px) {
     .pt-inner { padding: 0 10px 0 14px; }
-    .pt-tab { padding: 0 10px; font-size: 0.67rem; letter-spacing: 0.04em; }
-    .pt-brand { padding-right: 10px; }
-    .pt-brand__logo { height: 21px; }
+    /* Readable on a phone: a logo you can recognise and labels at 12px. */
+    .pt-tab { padding: 0 10px; font-size: 0.75rem; letter-spacing: 0.04em; }
+    .pt-brand { padding-right: 10px; min-height: 44px; }
+    .pt-brand__logo { height: 28px; border-radius: 4px; }
     .pt-header { height: 52px; border-radius: 16px; }
     .pt-space { height: 76px; }
   }

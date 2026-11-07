@@ -24,6 +24,7 @@
    */
 
   import { onMount } from 'svelte';
+  import { quoteValue } from '$lib/quoteValue.ts';
   import {
     fetchQuoteRequests,
     updateQuoteRequestOverride,
@@ -76,7 +77,9 @@
       // Newest quote drives margin/collision context (best-effort).
       const q = (quotes as any[])[0];
       if (q) {
-        quoteClientTotal = typeof q.total === 'number' ? q.total : null;
+        // A quote still offering options has no single client total, so no
+        // margin estimate; an accepted one is worth what the client chose.
+        quoteClientTotal = quoteValue(q);
         quoteProviderIds = Array.isArray(q.providerIds) ? q.providerIds : [];
       } else {
         quoteClientTotal = null; quoteProviderIds = [];

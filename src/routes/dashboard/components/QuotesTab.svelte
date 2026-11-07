@@ -21,6 +21,7 @@
   import QuotePaymentsPanel from './QuotePaymentsPanel.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
   import { buildQuoteContext } from '../utils/quoteContext.ts';
+  import { optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
 
 
   export let clientId: string;
@@ -338,8 +339,15 @@
   }
 
   // ── Formatting helpers ─────────────────────────────────────────────────────
+  /**
+   * The quote's amount: what the client agreed to once accepted, "N options"
+   * while it still offers choices (its stored total adds every option up), and
+   * the plain total otherwise.
+   */
   function formatTotal(quote: Quote): string {
-    const total = quote.total ?? quote.lineItems?.reduce((s, li) => s + (li.amount ?? 0), 0) ?? 0;
+    const value = quoteValue(quote);
+    if (value == null && optionCount(quote) > 0) return optionsLabel(optionCount(quote));
+    const total = value ?? quote.lineItems?.reduce((s, li) => s + (li.amount ?? 0), 0) ?? 0;
     return '$' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USD';
   }
 

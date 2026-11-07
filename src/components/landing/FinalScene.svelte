@@ -67,6 +67,17 @@
   .name { font-weight: 700; font-size: 1.15rem; }
   .role { color: $color-on-dark-muted; font-size: 0.85rem; }
 
+  /* Phones: the whole letter, signature included, fits above the floating buttons. */
+  @media (max-width: 767px) {
+    .stage { padding-top: 88px; padding-bottom: 5.5rem; }
+    .inner { gap: $space-4; }
+    .title { font-size: clamp(2.1rem, 9.4vw, 2.6rem); }
+    .body { font-size: 1.02rem; }
+    .actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 340px; }
+    .primary { padding-inline: $space-6; }
+    .sign { margin-top: $space-2; padding-top: $space-4; img { width: 170px; } }
+  }
+
   :global(.rm) {
     .stage { padding-block: $space-24; }
     .w, .body, .actions { opacity: 1 !important; transform: none !important; }

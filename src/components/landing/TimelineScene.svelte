@@ -146,7 +146,18 @@
   @media (max-width: 1023px) {
     .cols { grid-template-columns: 1fr; }
     .next { display: none; }
+    /* Phones: copy first, then the portal; it may run past the bottom (it is
+       a long page), but the heading never slides above the top. */
+    .stage { align-items: flex-start; padding-top: 88px; padding-bottom: $space-4; }
+    .grid { gap: 1.25rem; }
+    .copy { gap: $space-3; }
+    .title { font-size: clamp(1.7rem, 7vw, 2.2rem); }
+    .lead { font-size: 0.98rem; line-height: 1.55; }
+    .pct { margin-top: 0; b { font-size: clamp(2.6rem, 12vw, 3.4rem); } }
+    .body { padding: 14px 16px 16px; }
+    .stepper-wrap { margin: 0 -16px 12px; padding: 4px 16px 6px; }
   }
+  @media (max-width: 1023px) and (max-height: 760px) { .lead { display: none; } }
   @include reduced-motion { .now .circle, .activity li { animation: none; } .stepper { transition: none; } }
 
   :global(.rm) {

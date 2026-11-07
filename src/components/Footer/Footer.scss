@@ -327,3 +327,13 @@
   outline: 2px solid var(--color-highlight-2, #02b5bb);
   outline-offset: 3px;
 }
+
+/* Phones: finger-sized link rows, and room at the bottom so the floating
+   buttons (narrated tour, chat) never sit on top of the last lines. */
+@media (max-width: 767px) {
+  .footer-section { padding: 3.5rem 0 calc(6.5rem + env(safe-area-inset-bottom)); }
+  .footer-container { padding: 0 1.25rem; }
+  .footer-links-list li { margin-bottom: 0; }
+  .footer-links-list li a { display: block; padding: 0.65rem 0; }
+  .footer-bottom .footer-credits a { display: inline-block; padding: 0.4rem 0.1rem; }
+}

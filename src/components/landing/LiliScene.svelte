@@ -173,6 +173,34 @@
   @keyframes ring-out { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.6); } }
   @include reduced-motion { .booked-ev.show svg, .booked-ev.show::after { animation: none; } }
 
+  /* Phones: copy, then the chat filling the rest of the screen. Messages
+     stack from the bottom like a real chat, so the newest one (and the
+     booking) is always in view; messages not sent yet take no room. */
+  @media (max-width: 1023px) {
+    .stage { align-items: stretch; padding-top: 88px; padding-bottom: 5.25rem; }
+    .wrap { display: flex; }
+    .grid { display: flex; flex-direction: column; gap: $space-4; }
+    .copy { gap: $space-3; }
+    .title { font-size: clamp(1.75rem, 7.4vw, 2.4rem); }
+    .lead { font-size: 1rem; line-height: 1.55; }
+    .actions { margin-top: 0; gap: $space-2; }
+    .primary, .ghost { padding: $space-3 $space-6; font-size: 0.95rem; min-height: 44px; }
+    .device { flex: 1; min-height: 0; display: flex; }
+    .chat { display: flex; flex-direction: column; width: 100%; max-width: none; }
+    .chat-bar { padding: $space-3 $space-4; }
+    .msgs { flex: 1; min-height: 0; overflow: hidden; justify-content: flex-end; padding: $space-4; gap: $space-2;
+      -webkit-mask-image: linear-gradient(180deg, transparent, #000 28px); mask-image: linear-gradient(180deg, transparent, #000 28px); }
+    .msg { font-size: 0.92rem; max-width: 86%; }
+    .msg:not(.in):not(.typing) { display: none; }
+    .msg.in { animation: msg-in 450ms $ease; }
+    /* No calendar beside the chat on phones: the booking stays in the chat. */
+    .booked.in { transform: none !important; opacity: 1 !important; }
+  }
+  @media (max-width: 1023px) and (max-height: 720px) { .lead { display: none; } }
+  /* Tablets: a chat window, not a full-height pane. */
+  @media (min-width: 640px) and (max-width: 1023px) { .device { max-height: 34rem; } .chat { max-width: 600px; } }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
+
   :global(.rm) {
     .stage { padding-block: $space-24; }
     .msg { opacity: 1; transform: none; }

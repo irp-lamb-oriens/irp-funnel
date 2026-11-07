@@ -152,6 +152,9 @@
     announcement = msg;
   }
 
+  /** Phones, scrolled past the first screen: the launcher shows its disc only. */
+  let compact = false;
+
   onMount(() => {
     reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     try {
@@ -182,7 +185,24 @@
     window.addEventListener('wheel', intent, { passive: true });
     window.addEventListener('touchmove', intent, { passive: true });
     window.addEventListener('keydown', intent);
+    // Phones: past the first screen the launcher shrinks to its disc so it
+    // covers less of the page; the full label returns at the top.
+    const phone = window.matchMedia('(max-width: 767px)');
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        compact = phone.matches && window.scrollY > window.innerHeight * 0.8;
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    phone.addEventListener?.('change', onScroll);
     return () => {
+      window.removeEventListener('scroll', onScroll);
+      phone.removeEventListener?.('change', onScroll);
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
       window.visualViewport?.removeEventListener('resize', onResize);
       ro.disconnect();
@@ -788,7 +808,7 @@
 {/if}
 
 {#if !barOpen && status !== 'loading' && status !== 'error'}
-  <button class="launcher" bind:this={launcherBtn} on:click={() => start(0)} in:fly={{ y: 12, duration: reduce ? 0 : 320 }}>
+  <button class="launcher" class:compact bind:this={launcherBtn} on:click={() => start(0)} in:fly={{ y: 12, duration: reduce ? 0 : 320 }}>
     <span class="launcher-disc" aria-hidden="true">
       <span class="launcher-wave"><i></i><i></i><i></i><i></i></span>
       <svg class="launcher-play" viewBox="0 0 16 16"><path d="M4.5 2.8v10.4a.6.6 0 0 0 .9.5l8.2-5.2a.6.6 0 0 0 0-1L5.4 2.3a.6.6 0 0 0-.9.5z" /></svg>
@@ -1075,7 +1095,13 @@
     &:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(14, 47, 54, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
     &:active { transform: scale(0.97); }
   }
-  .launcher-text { font-family: $font-sans; }
+  .launcher-text {
+    font-family: $font-sans; white-space: nowrap; overflow: hidden; max-width: 12rem;
+    transition: max-width 320ms $ease, opacity 220ms $ease;
+  }
+  /* Disc only; the label stays in the accessibility tree (clipped, not removed). */
+  .launcher.compact { gap: 0; padding: 0.35rem; }
+  .launcher.compact .launcher-text { max-width: 0; opacity: 0; }
   .launcher-disc {
     position: relative; width: 38px; height: 38px; border-radius: 50%; background: $color-accent;
     display: grid; place-items: center; color: $color-ink-strong; flex: none;

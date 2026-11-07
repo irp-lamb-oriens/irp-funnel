@@ -1443,3 +1443,63 @@ $card-shadow: 0 1px 2px rgba(14, 47, 54, 0.05), 0 18px 40px -28px rgba(14, 47, 5
     transition: background 0.25s, color 0.25s;
   }
 }
+
+// ── Phones ─────────────────────────────────────────────────────────────────
+// The stages become a vertical list around the current one (the rest opens
+// with "Show all stages"), money rows stack, and everything you tap is at
+// least 40px. Desktop is unchanged.
+.client-portal {
+  .stepper-more { display: none; }
+
+  @media (max-width: 640px) {
+    .cp-dashboard__pipeline .stepper-scroll { overflow: visible !important; padding-bottom: 0 !important; }
+    .cp-dashboard__pipeline .stepper.stepper {
+      flex-direction: column;
+      width: 100%;
+      min-width: 0;
+      padding: 0.25rem 0 0;
+      &::before { left: 13px; right: auto; top: 22px; bottom: 22px; width: 2px; height: auto; }
+      .step {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        column-gap: 14px;
+        align-items: center;
+        min-width: 0;
+        padding: 9px 0;
+        text-align: left;
+        &__circle { grid-row: 1 / span 2; margin: 0; align-self: center; }
+        &__label { grid-column: 2; text-align: left; margin: 0; font-size: 0.92rem; }
+        &__date { grid-column: 2; justify-self: start; margin: 2px 0 0; font-size: 0.74rem; }
+        .step__rating { grid-column: 2; margin: 6px 0 0; align-items: flex-start; }
+        &.active { padding-block: 12px; }
+        &.active .step__label { font-size: 1rem; }
+      }
+      &:not(.stepper--all) .step--far { display: none; }
+    }
+    .stepper-more {
+      display: block;
+      width: 100%;
+      min-height: 44px;
+      margin-top: 0.5rem;
+      border: 1px solid $hair-2;
+      border-radius: 12px;
+      background: #fff;
+      color: $ink;
+      font: 700 0.86rem $sans;
+      cursor: pointer;
+      &:focus-visible { outline: 2px solid $teal; outline-offset: 2px; }
+    }
+
+    // Stage stars: a finger-sized target.
+    .stage-rating__star--btn.stage-rating__star--btn { min-width: 34px; min-height: 34px; font-size: 1.35rem; }
+
+    // Accepted quotes: the title gets the full width, the money goes under it.
+    .cc__quote-row.cc__quote-row { flex-wrap: wrap; row-gap: 0.25rem; }
+    .cc__quote-title.cc__quote-title { flex: 1 1 100%; font-size: 0.95rem; line-height: 1.35; }
+    .cc__quote-row--meta.cc__quote-row--meta { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+
+    // Lily: suggestion chips and the close button are tappable.
+    .lily-chat__chip.lily-chat__chip { min-height: 38px; padding: 8px 13px; }
+    .lily-chat__close-btn.lily-chat__close-btn { min-width: 40px; min-height: 40px; }
+  }
+}

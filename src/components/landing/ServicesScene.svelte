@@ -152,7 +152,9 @@
     p { @include body; font-size: 1.125rem; max-width: 40ch; }
   }
   .tag { font-family: $font-mono; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: $color-accent-hover; }
-  .link { align-self: flex-start; font: 700 1rem $font-sans; color: $color-ink-strong; text-decoration: none; border-bottom: 2px solid $color-accent; padding-bottom: 2px; @include focus-ring; }
+  .link { align-self: flex-start; font: 700 1rem $font-sans; color: $color-ink-strong; text-decoration: none; border-bottom: 2px solid $color-accent; padding-bottom: 2px; @include focus-ring;
+    /* A finger-sized target without changing the underline's look. */
+    position: relative; &::after { content: ''; position: absolute; inset: -12px -8px; } }
   .media { position: relative; min-height: 0; display: grid; place-items: center; padding: $space-4;
     @media (max-width: 1023px) { display: none; }
   }

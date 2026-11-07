@@ -27,6 +27,7 @@
   import { renderMarkdown } from './renderMarkdown.ts';
   import { aggregateByCurrency, formatMoney } from '$lib/money.ts';
   import { buildMergeContext, renderMergeFields } from '$lib/mergeFields.ts';
+  import QuoteOptionsPicker from './QuoteOptionsPicker.svelte';
 
   export let blocks: QuoteBlock[];
   export let quote: Quote;
@@ -60,6 +61,17 @@
   export let isStaff = false;
   /** Link to the binding Quote Acceptance Terms page. */
   export let legalUrl = '/legal/quote-acceptance';
+
+  /**
+   * A quote built from line GROUPS offers options (packages to choose from,
+   * add-ons to tick). Its flat `lineItems` is every option added together, so
+   * the `quoteTable` block shows the option picker instead of that flat list.
+   * The selection is owned by QuoteView (bind), which bills exactly it.
+   */
+  export let selectedRequiredGroupId = '';
+  export let selectedOptionalGroupIds: Set<string> = new Set();
+  $: lineGroups = (Array.isArray((quote as any)?.lineGroups) ? (quote as any).lineGroups : []) as any[];
+  $: hasGroups = lineGroups.length > 0;
 
   const dispatch = createEventDispatcher<{
     accept: { acceptedBy: string; selectedLineItemIds: string[]; consent: boolean }
@@ -166,6 +178,25 @@
       <!-- ── Accordion / expandable sections block ─────────────────────── -->
       <div class="br-block br-accordion">
         {@html sanitizeHtml(renderMergeFields(block.html, mergeCtx))}
+      </div>
+
+    {:else if block.type === 'quoteTable' && hasGroups}
+      <!-- ── Quote with options: each package / add-on with its own price; the
+           total is only what the client selects (never every option summed). -->
+      <div class="br-block br-quote-table">
+        <QuoteOptionsPicker
+          groups={lineGroups}
+          currency={quote.currency ?? 'USD'}
+          bind:selectedRequiredGroupId
+          bind:selectedOptionalGroupIds
+          locked={accepted || quote.status === 'client_accepted'}
+        />
+        {#if (quote as any).clientDescription}
+          <div class="br-notes-card br-client-description">
+            <p class="br-notes-label">About this service</p>
+            <div class="br-notes-text md-prose">{@html renderMarkdown((quote as any).clientDescription)}</div>
+          </div>
+        {/if}
       </div>
 
     {:else if block.type === 'quoteTable'}

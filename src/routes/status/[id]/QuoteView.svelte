@@ -5,6 +5,7 @@
   import { fetchQuoteByToken, acceptQuoteAsClient, fetchClientQuoteDescription, QUOTE_STATUS_LABEL } from '../../dashboard/store.ts';
 
   import BlockRenderer from './BlockRenderer.svelte';
+  import QuoteOptionsPicker from './QuoteOptionsPicker.svelte';
   import PaymentStep from './PaymentStep.svelte';
   import { renderMarkdown } from './renderMarkdown.ts';
   import { project } from './store.ts';
@@ -85,12 +86,6 @@
     );
   }
 
-  function toggleOptionalGroup(groupId: string) {
-    const next = new Set(selectedOptionalGroupIds);
-    next.has(groupId) ? next.delete(groupId) : next.add(groupId);
-    selectedOptionalGroupIds = next; // reassign so Svelte reacts
-  }
-
   // The set of groups the client is billed for = the always-included FIXED
   // groups + the chosen required package + any checked optional add-ons.
   $: selectedGroups = hasGroups
@@ -106,10 +101,6 @@
   $: groupSelectedLineItemIds = selectedGroups.flatMap((g) =>
     (Array.isArray(g.lineItems) ? g.lineItems : []).map((li: any) => li.lineId),
   );
-  // Live total reflects the current selection (or the static quote total when flat).
-  $: liveTotal = hasGroups
-    ? selectedGroups.reduce((sum, g) => sum + groupClientTotal(g), 0)
-    : quote?.total ?? 0;
   // A package must be chosen before signing when the quote has required groups.
   $: requiredSelectionOk = requiredGroups.length === 0 || !!selectedRequiredGroupId;
 
@@ -269,6 +260,8 @@
     {/if}
     <BlockRenderer
       blocks={quote.blocks}
+      bind:selectedRequiredGroupId
+      bind:selectedOptionalGroupIds
 
       {quote}
       {accepted}
@@ -306,117 +299,15 @@
     </div>
 
     {#if hasGroups}
-      <!-- ── Phase 5 — package (required radio) + add-on (optional checkbox) picker ── -->
-      <div class="qv-groups">
-        {#if fixedGroups.length > 0}
-          <!-- Fixed groups: always billed, never a choice. Plain, non-interactive
-               "included in every quote" rows. -->
-          <p class="qv-groups-heading">Included in every quote</p>
-          <div class="qv-groups-list">
-            {#each fixedGroups as g (g.groupId)}
-              <div class="qv-group qv-group--fixed">
-                <span class="qv-group__marker qv-group__marker--fixed" aria-hidden="true">🔒</span>
-                <span class="qv-group__body">
-                  <span class="qv-group__top">
-                    <span class="qv-group__title">{g.title}</span>
-                    <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
-                  </span>
-                  {#if g.description}
-                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
-                  {/if}
-                </span>
-              </div>
-            {/each}
-          </div>
-        {/if}
-
-
-        {#if requiredGroups.length > 0}
-
-          <p class="qv-groups-heading">
-            {requiredGroups.length > 1 ? 'Choose your package' : 'Your package'}
-          </p>
-          <div class="qv-groups-list" role="radiogroup" aria-label="Choose your package">
-            {#each requiredGroups as g (g.groupId)}
-              <label class="qv-group" class:qv-group--active={selectedRequiredGroupId === g.groupId}>
-                <input
-                  type="radio"
-                  class="qv-group__input"
-                  name="qv-required-group"
-                  value={g.groupId}
-                  checked={selectedRequiredGroupId === g.groupId}
-                  disabled={accepted || quote.status === 'client_accepted'}
-                  on:change={() => (selectedRequiredGroupId = g.groupId)}
-                />
-                <span class="qv-group__marker qv-group__marker--radio" aria-hidden="true"></span>
-                <span class="qv-group__body">
-                  <span class="qv-group__top">
-                    <span class="qv-group__title">{g.title}</span>
-                    <span class="qv-group__price">{formatCurrency(groupClientTotal(g), quote.currency)}</span>
-                  </span>
-                  {#if g.description}
-                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
-                  {/if}
-                  <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
-
-                    <span class="qv-group__items">
-                      {#each g.lineItems as li (li.lineId)}
-                        <span class="qv-group__item">
-                          <span class="qv-group__item-label">{li.label}</span>
-                          <span class="qv-group__item-price">{formatCurrency(li.clientPrice ?? li.amount ?? 0, li.currency)}</span>
-                        </span>
-                      {/each}
-                    </span>
-                  {/if} -->
-                </span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-
-        {#if optionalGroups.length > 0}
-          <p class="qv-groups-heading qv-groups-heading--addons">Optional add-ons</p>
-          <div class="qv-groups-list">
-            {#each optionalGroups as g (g.groupId)}
-              <label class="qv-group" class:qv-group--active={selectedOptionalGroupIds.has(g.groupId)}>
-                <input
-                  type="checkbox"
-                  class="qv-group__input"
-                  checked={selectedOptionalGroupIds.has(g.groupId)}
-                  disabled={accepted || quote.status === 'client_accepted'}
-                  on:change={() => toggleOptionalGroup(g.groupId)}
-                />
-                <span class="qv-group__marker qv-group__marker--check" aria-hidden="true"></span>
-                <span class="qv-group__body">
-                  <span class="qv-group__top">
-                    <span class="qv-group__title">{g.title}</span>
-                    <span class="qv-group__price">+{formatCurrency(groupClientTotal(g), quote.currency)}</span>
-                  </span>
-                  {#if g.description}
-                    <div class="qv-group__desc md-prose">{@html renderMarkdown(g.description)}</div>
-                  {/if}
-                  <!-- {#if Array.isArray(g.lineItems) && g.lineItems.length > 0}
-
-                    <span class="qv-group__items">
-                      {#each g.lineItems as li (li.lineId)}
-                        <span class="qv-group__item">
-                          <span class="qv-group__item-label">{li.label}</span>
-                          <span class="qv-group__item-price">{formatCurrency(li.clientPrice ?? li.amount ?? 0, li.currency)}</span>
-                        </span>
-                      {/each}
-                    </span>
-                  {/if} -->
-                </span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-
-        <div class="qv-live-total">
-          <span class="qv-live-total__label">Total</span>
-          <span class="qv-live-total__value">{formatCurrency(liveTotal, quote.currency)}</span>
-        </div>
-      </div>
+      <!-- ── Packages (choose one) + add-ons, each with its own price; the running
+           total is only what is selected, never the sum of every option. ── -->
+      <QuoteOptionsPicker
+        {groups}
+        currency={quote.currency}
+        bind:selectedRequiredGroupId
+        bind:selectedOptionalGroupIds
+        locked={accepted || quote.status === 'client_accepted'}
+      />
     {:else if Array.isArray(quote.lineItems) && quote.lineItems.length > 0}
       <table class="qv-table">
         <thead>
@@ -696,195 +587,6 @@
     letter-spacing: -0.02em;
   }
 
-  /* ── Phase 5 — package / add-on selection cards ───────────────────────── */
-  .qv-groups { margin-bottom: 24px; }
-  .qv-groups-heading {
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin: 0 0 10px;
-  }
-  .qv-groups-heading--addons { margin-top: 22px; }
-  .qv-groups-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .qv-group {
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    padding: 14px 16px;
-    background: #ffffff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: border-color 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
-                background 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
-                box-shadow 0.18s cubic-bezier(0.22, 0.61, 0.36, 1),
-                transform 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
-  }
-  /* Brand teal sourced from the global design tokens (global.scss) per the
-     style bible — `--color-highlight-2` (#02b5bb) + its rgb channel token. */
-  .qv-group:hover {
-    border-color: rgba(var(--color-highlight-2-rgb), 0.45);
-    box-shadow: 0 6px 18px -8px rgba(var(--color-highlight-2-rgb), 0.4);
-    transform: translateY(-1px);
-  }
-  .qv-group--active {
-    border-color: rgba(var(--color-highlight-2-rgb), 0.6);
-    background: linear-gradient(135deg, rgba(var(--color-highlight-2-rgb), 0.06) 0%, #f0fdfe 100%);
-    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1);
-  }
-  .qv-group--active:hover {
-    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1), 0 6px 18px -8px rgba(var(--color-highlight-2-rgb), 0.45);
-  }
-  /* Locked-in look once the quote is accepted — no pointer affordance. */
-  .qv-group:has(.qv-group__input:disabled) {
-    cursor: default;
-    transform: none;
-    box-shadow: none;
-  }
-
-  /* ── Fixed group — always billed, never a client choice (no interaction). ── */
-  .qv-group--fixed {
-    cursor: default;
-    background: #f8fafc;
-    border-style: dashed;
-    border-color: #e2e8f0;
-  }
-  .qv-group--fixed:hover { transform: none; box-shadow: none; border-color: #e2e8f0; }
-  .qv-group__marker--fixed {
-    border: none;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    line-height: 1;
-    filter: grayscale(0.2);
-    opacity: 0.75;
-  }
-
-
-  /* Visually-hidden native input — the custom marker mirrors its state. */
-  .qv-group__input {
-    position: absolute;
-    opacity: 0;
-    width: 1px;
-    height: 1px;
-    pointer-events: none;
-  }
-  .qv-group__marker {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    margin-top: 1px;
-    border: 2px solid #cbd5e1;
-    background: #ffffff;
-    transition: border-color 0.16s ease, background 0.16s ease;
-    position: relative;
-  }
-  .qv-group__marker--radio { border-radius: 999px; }
-  .qv-group__marker--check { border-radius: 6px; }
-  .qv-group--active .qv-group__marker { border-color: var(--color-highlight-2); background: var(--color-highlight-2); }
-  /* Radio inner dot */
-  .qv-group--active .qv-group__marker--radio::after {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border-radius: 999px;
-    background: #ffffff;
-  }
-  /* Checkbox tick */
-  .qv-group--active .qv-group__marker--check::after {
-    content: '';
-    position: absolute;
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid #ffffff;
-    border-width: 0 2.5px 2.5px 0;
-    transform: rotate(45deg);
-  }
-  .qv-group__input:focus-visible + .qv-group__marker {
-    box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.3);
-  }
-  .qv-group__input:disabled ~ .qv-group__body { opacity: 0.85; }
-  .qv-group__body { flex: 1; min-width: 0; }
-  .qv-group__top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .qv-group__title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.01em;
-  }
-  .qv-group__price {
-    font-size: 15px;
-    font-weight: 800;
-    color: #0f172a;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  /* Staff-authored, client-visible per-group description (below the title). */
-  .qv-group__desc {
-    display: block;
-    margin-top: 6px;
-    font-size: 13px;
-    color: #475569;
-    line-height: 1.5;
-  }
-  .qv-group__items {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    margin-top: 8px;
-  }
-
-  .qv-group__item {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 12.5px;
-    color: #64748b;
-    line-height: 1.45;
-  }
-  .qv-group__item-price {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    color: #94a3b8;
-  }
-  /* Live, reactive total that updates as packages / add-ons are toggled. */
-  .qv-live-total {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 2px solid #e2e8f0;
-  }
-  .qv-live-total__label {
-    font-size: 19px;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-  }
-  .qv-live-total__value {
-    font-size: 19px;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-  }
 
 
   /* ── Notes card ───────────────────────────────────────────────────────── */
@@ -1117,12 +819,6 @@
       border-radius: 0;
     }
     .qv-accept-btn { font-size: 15px; height: 50px; }
-    /* Disable the hover-lift on touch so cards don't feel "stuck" after a tap. */
-    .qv-group { padding: 13px 14px; }
-    .qv-group:hover { transform: none; box-shadow: none; }
-    .qv-group--active:hover { box-shadow: 0 0 0 3px rgba(var(--color-highlight-2-rgb), 0.1); }
-    .qv-group__title,
-    .qv-group__price { font-size: 14.5px; }
   }
 
 </style>

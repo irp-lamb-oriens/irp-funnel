@@ -8,6 +8,7 @@
 import type { Ctx, Filter, LeadFact } from './types.ts';
 import { DIMENSIONS, MATURE_DAYS, MEASURE, dimLabel, dimValues, forecast, inCohort } from './registry.ts';
 import { poissonFlag } from './stats.ts';
+import { optionsLabel } from '../../../../../lib/quoteValue.ts';
 import { shiftMonth, crDayOfMonth, monthLabel } from './period.ts';
 import type { ComboResult, Segment } from './combos.ts';
 
@@ -189,7 +190,7 @@ export function stalledInsight(rows: LeadFact[], currency: string, money: Money)
     id: 'stalled', tone: 'watch', kind: 'stalled',
     headline: `${stalled.length} quote${stalled.length === 1 ? '' : 's'} waiting with no activity for 2+ weeks`,
     detail: `${money(value)} in open quotes${inCur.length < stalled.length ? ` (${stalled.length - inCur.length} in other currencies)` : ''}. A follow-up now is cheaper than a new lead.`,
-    deals: stalled.slice(0, 5).map((r) => ({ id: r.id, name: r.name, value: `${r.openQuote!.cur === currency ? money(r.openQuote!.total) : `${r.openQuote!.total.toLocaleString('en-US')} ${r.openQuote!.cur}`} · ${Math.round(r.daysSinceActivity ?? 0)}d quiet` })),
+    deals: stalled.slice(0, 5).map((r) => ({ id: r.id, name: r.name, value: `${!r.openQuote!.total && r.openQuote!.options ? optionsLabel(r.openQuote!.options) : r.openQuote!.cur === currency ? money(r.openQuote!.total) : `${r.openQuote!.total.toLocaleString('en-US')} ${r.openQuote!.cur}`} · ${Math.round(r.daysSinceActivity ?? 0)}d quiet` })),
   };
 }
 

@@ -408,6 +408,24 @@
     .beats { min-height: 8rem; }
   }
 
+  /* Phones: tighter copy, and the illustration sized to the screen height so
+     the papers stay on screen instead of sliding under the fold. */
+  @media (max-width: 767px) {
+    .stage { padding-top: 88px; padding-bottom: $space-4; }
+    .grid { gap: $space-4; }
+    .copy { gap: $space-2; }
+    .title { font-size: clamp(1.6rem, 6.8vw, 2rem); }
+    .counter { margin-top: $space-2; }
+    .beats { min-height: 7.25rem; }
+    .beat p { font-size: 0.95rem; line-height: 1.5; }
+    .visual { width: 94%; max-width: 360px; }
+    .sheet { zoom: 0.86; }
+    .cal { zoom: 0.76; top: -6%; }
+    .tags li { font-size: 0.8rem; padding: 6px 12px; }
+  }
+  @media (max-width: 767px) and (max-height: 780px) { .visual { zoom: 0.84; } }
+  @media (max-width: 767px) and (max-height: 700px) { .visual { zoom: 0.72; } .beats { min-height: 6.5rem; } }
+
   /* Reduced motion: every beat listed, the container alone. */
   :global(.rm) {
     .stage { padding-block: $space-24; }

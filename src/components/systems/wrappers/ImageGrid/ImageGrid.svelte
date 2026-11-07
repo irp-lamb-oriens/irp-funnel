@@ -462,5 +462,16 @@
     .carousel {
       height: 100px;
     }
+    .item :global(.reveal-img) { max-height: 84px; }
+  }
+  /* Phones: one compact proof band (rating, line, logos) so the headline and
+     the booking button reach the first screen. */
+  @media (max-width: 600px) {
+    .image-grid-outer { padding-top: 4.75rem; }
+    .glass-container { padding: 1.1rem 0 0.9rem; gap: 0.6rem; }
+    .header .rating { margin-bottom: 0.4rem; }
+    .header .titles { font-size: 0.7rem; letter-spacing: 0.16em; padding: 0 1rem; }
+    .carousel { height: 64px; }
+    .item :global(.reveal-img) { max-height: 48px; }
   }
 </style>

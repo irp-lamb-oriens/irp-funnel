@@ -251,7 +251,9 @@
     b { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 700 0.95rem $font-sans; color: $color-ink-strong; }
     em { font: normal 600 0.62rem $font-mono; letter-spacing: 0.1em; text-transform: uppercase; color: #04767b; border: 1px solid currentColor; padding: 2px 7px; border-radius: 99px; }
     span { font: 0.9rem/1.5 $font-sans; color: $color-steel; }
-    a { margin-top: 4px; font: 600 0.85rem $font-sans; color: #04767b; text-decoration: none; overflow-wrap: anywhere; @include focus-ring; &:hover { text-decoration: underline; } }
+    a { margin-top: 4px; font: 600 0.85rem $font-sans; color: #04767b; text-decoration: none; overflow-wrap: anywhere; @include focus-ring; &:hover { text-decoration: underline; }
+      /* Phones: a finger-sized row for each address. */
+      @media (max-width: 767px) { display: inline-block; margin-top: 0; padding: 10px 0; } }
     &.on { background: $color-accent-soft; }
   }
 </style>

@@ -50,6 +50,7 @@
   import StarRating from './StarRating.svelte';
 
   import { aggregateByCurrency } from '$lib/money.ts';
+  import { optionCount, optionsLabel } from '$lib/quoteValue.ts';
   import { browser } from '$app/environment';
 
   export let clientId: string;
@@ -249,6 +250,12 @@
   $: clientTotal  = lineItems.reduce((s, li) => s + lineClientPrice(li), 0);
   $: earnings     = Math.round((clientTotal - costSubtotal) * 100) / 100;
   $: total        = clientTotal; // total = client-facing number (used in payload)
+  // A quote offering choices (several packages and/or add-ons) has no single
+  // total: the sum above is every option added together. The footer then shows
+  // each option's own figures instead.
+  $: choices = optionCount({ lineGroups });
+  $: fixedCost  = lineGroups.filter((g) => g.role === 'fixed').reduce((s, g) => s + groupCost(g), 0);
+  $: fixedPrice = lineGroups.filter((g) => g.role === 'fixed').reduce((s, g) => s + groupClientTotal(g), 0);
   // Per-currency buckets kept for the currency selector in handleSave
   $: totalBuckets = aggregateByCurrency(lineItems, null);
 
@@ -1671,7 +1678,39 @@
         </button>
       </div>
 
-      <!-- Finance footer: internal Cost subtotal · Client total · Earnings -->
+      <!-- Finance footer: internal Cost subtotal · Client total · Earnings.
+           A quote offering options shows each option instead of their sum. -->
+      {#if choices > 0}
+        <div class="qe-options-footer">
+          <p class="qe-options-footer__head">
+            <strong>{optionsLabel(choices)}</strong>
+            <span>The client picks; the total is set when they accept.</span>
+          </p>
+          <table class="qe-options-table">
+            <thead>
+              <tr><th scope="col">Option</th><th scope="col">Cost</th><th scope="col">Client price</th><th scope="col">Earnings</th></tr>
+            </thead>
+            <tbody>
+              {#each lineGroups.filter((g) => g.role !== 'fixed') as g (g.groupId)}
+                <tr>
+                  <th scope="row">{g.title || 'Untitled option'} <span class="qe-options-table__kind">{g.role === 'optional' ? 'add-on' : 'package'}</span></th>
+                  <td>{groupCost(g).toFixed(2)}</td>
+                  <td class="qe-options-table__price">{g.role === 'optional' ? '+' : ''}{groupClientTotal(g).toFixed(2)}</td>
+                  <td class="qe-options-table__earn">{groupMargin(g).toFixed(2)}</td>
+                </tr>
+              {/each}
+              {#if fixedPrice > 0 || fixedCost > 0}
+                <tr class="qe-options-table__fixed">
+                  <th scope="row">Always included <span class="qe-options-table__kind">every option</span></th>
+                  <td>{fixedCost.toFixed(2)}</td>
+                  <td class="qe-options-table__price">+{fixedPrice.toFixed(2)}</td>
+                  <td class="qe-options-table__earn">{(fixedPrice - fixedCost).toFixed(2)}</td>
+                </tr>
+              {/if}
+            </tbody>
+          </table>
+        </div>
+      {:else}
       <div class="qe-finance-footer">
         <div class="qe-finance-cell qe-finance-cell--cost">
           <span class="qe-finance-label">Cost subtotal</span>
@@ -1691,6 +1730,7 @@
           <span class="qe-finance-hint">IRP margin</span>
         </div>
       </div>
+      {/if}
 
       <!-- Payment schedule — installment segments in percent of the agreed total.
            Defaults to 35/65; the first segment is the reservation payment. Add or
@@ -1725,7 +1765,7 @@
                   <span class="qe-pct-sym">%</span>
                 </div>
                 <span class="qe-schedule__amt">
-                  {formatTotal((clientTotal * (Number(pct) || 0)) / 100)}
+                  {choices > 0 ? 'of the chosen option' : formatTotal((clientTotal * (Number(pct) || 0)) / 100)}
                 </span>
                 <button
                   type="button"
@@ -3428,6 +3468,47 @@
   .qe-finance-value--accent { color: #02b5bb; }
   .qe-finance-value--earn   { color: #22c55e; }
   .qe-finance-hint { font-size: 10px; color: #94a3b8; font-weight: 500; }
+
+  /* ── Options footer: one row per option instead of a summed total ───── */
+  .qe-options-footer {
+    border-radius: 14px;
+    border: 1px solid var(--irp-border, rgba(0,0,0,0.08));
+    background: var(--irp-surface, #fff);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .qe-options-footer__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--irp-border, rgba(0,0,0,0.08));
+    font-size: 12px;
+    color: #64748b;
+  }
+  .qe-options-footer__head strong { font-size: 15px; color: var(--irp-text, #181818); }
+  .qe-options-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .qe-options-table th,
+  .qe-options-table td { padding: 8px 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .qe-options-table thead th {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #64748b;
+    background: rgba(0,0,0,0.02);
+  }
+  .qe-options-table th[scope='row'],
+  .qe-options-table thead th:first-child { text-align: left; font-weight: 600; color: var(--irp-text, #181818); }
+  .qe-options-table tbody tr + tr { border-top: 1px solid var(--irp-border, rgba(0,0,0,0.06)); }
+  .qe-options-table__kind { margin-left: 6px; font-size: 10px; font-weight: 600; color: #64748b; }
+  .qe-options-table__price { color: #027a7e; font-weight: 700; }
+  .qe-options-table__earn { color: #15803d; }
+  .qe-options-table__fixed th,
+  .qe-options-table__fixed td { background: rgba(0,0,0,0.015); }
 
   /* ── Payment schedule editor (installment segments, ≤100%) ───────────── */
   .qe-schedule {
