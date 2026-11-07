@@ -81,6 +81,17 @@
   let captionsOn = true;
   let rate = 1;
   let transcriptOpen = false;
+  /**
+   * Phones: the player is a slim strip (play, two caption lines, close) and
+   * the other controls open on demand, so the tour covers as little of the
+   * page as possible. Wider screens always show every control.
+   */
+  let expanded = false;
+  async function toggleExpanded() {
+    expanded = !expanded;
+    await tick();
+    measure();
+  }
   let tipsHidden = false;
   let masking = false;
   let announcement = '';
@@ -408,6 +419,7 @@
     status = 'ready';
     barOpen = false;
     transcriptOpen = false;
+    expanded = false;
     pausedByScroll = false;
     mediaSession(false);
     document.documentElement.style.setProperty('--narrator-reserve', '0px');
@@ -826,6 +838,7 @@
     class:playing
     class:buffering
     class:tips-off={tipsHidden}
+    class:expanded
     bind:this={bar}
     aria-label="Narrated tour"
     aria-busy={buffering}
@@ -966,7 +979,23 @@
         </p>
       </div>
 
-      <div class="controls" role="group" aria-label="Narration controls">
+      <!-- Phones only: open the other controls, and close, in the slim strip. -->
+      <div class="mini">
+        <button
+          class="ctl more"
+          on:click={toggleExpanded}
+          aria-label={expanded ? 'Fewer controls' : 'More controls'}
+          aria-expanded={expanded}
+          aria-controls="narrator-controls"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 10l4-4 4 4" /></svg>
+        </button>
+        <button class="ctl" on:click={exit} aria-label="Close narration">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+        </button>
+      </div>
+
+      <div class="controls" id="narrator-controls" role="group" aria-label="Narration controls">
         <button class="ctl prev" on:click={() => seekCue(cueIndex - 1)} aria-label="Previous section" data-tip="Previous section" disabled={cueIndex === 0}>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5" /></svg>
         </button>
@@ -1346,6 +1375,49 @@
     .ctl { width: 44px; height: 44px; }
     .caption { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; min-height: 2.7em; }
     .launcher-time { display: none; }
+  }
+  /* ── Phones: a slim strip docked at the bottom (about 64px). The timeline
+     becomes a hairline on its top edge (still draggable), the caption keeps
+     two lines, and section, speed, captions, transcript and sound open with
+     the chevron. ── */
+  .mini { display: none; }
+  @media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
+    .bar {
+      left: 8px; right: 8px; width: auto; margin: 0;
+      bottom: max(8px, env(safe-area-inset-bottom)); border-radius: 18px;
+    }
+    .scrub { position: absolute; z-index: 2; top: -10px; left: 16px; right: 16px; height: 20px; margin: 0; }
+    .scrub-track { height: 3px; margin-top: -1.5px; }
+    .scrub.dragging .scrub-track { height: 5px; margin-top: -2.5px; }
+    .scrub.dragging .scrub-thumb { transform: scale(1); }
+    .row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 10px; padding: 8px 6px 8px 8px; }
+    .play-wrap { width: 48px; height: 48px; }
+    .play { width: 42px; height: 42px; svg { width: 19px; height: 19px; } }
+    .caption { font-size: 0.95rem; line-height: 1.3; min-height: 0; }
+    .section-only { font-size: 0.95rem; }
+    .notice { gap: 0.5rem; min-height: 0; span { font-size: 0.88rem; } }
+    .middle { gap: 3px; }
+    .meta { display: none; font-size: 0.64rem; letter-spacing: 0.08em; }
+    .mini { display: flex; align-items: center; }
+    .mini .ctl { width: 40px; height: 44px; }
+    .more svg { transition: transform 260ms $ease; }
+    .controls { display: none; }
+    .controls .exit { display: none; }
+    .bar.expanded {
+      .meta { display: flex; }
+      .more svg { transform: rotate(180deg); }
+      .more::before { display: none; }
+      .controls { display: flex; grid-column: 1 / -1; justify-content: space-between; margin-top: 6px; padding-top: 4px; border-top: 1px solid $line; }
+    }
+    .transcript { bottom: calc(100% + 8px); max-height: min(62svh, 520px); border-radius: 18px; }
+    .tr-head { padding: 8px 8px 6px 16px; }
+    .tr-list { padding: 6px 8px; li { padding: 8px 8px 10px; } p { font-size: 0.92rem; } }
+  }
+  /* Phones held sideways: room for every control on the same line. */
+  @media (min-width: 641px) and (max-height: 500px) and (pointer: coarse) {
+    .bar.expanded .row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+    .bar.expanded .controls { grid-column: auto; margin-top: 0; padding-top: 0; border-top: none; gap: 0; }
+    .bar.expanded .mini { order: 2; } // close stays last
   }
   @media (pointer: coarse) {
     [data-tip]::after { display: none; }
