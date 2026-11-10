@@ -904,7 +904,7 @@ export const filters = writable<Filters>({
   serviceCategory: '',
 });
 
-export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance' | 'salesReport'>('board');
+export const activeView = writable<'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance' | 'salesReport' | 'partners'>('board');
 
 
 /**
@@ -1270,7 +1270,7 @@ export function getApiUrl(): string {
  */
 export const pendingRequests = writable(0);
 
-async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
   pendingRequests.update((n) => n + 1);
   try {
     return await apiFetchInner(path, options);

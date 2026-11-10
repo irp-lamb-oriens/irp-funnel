@@ -432,7 +432,7 @@ export interface Filters {
     serviceCategory?: string;
 }
 export declare const filters: import("svelte/store").Writable<Filters>;
-export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance" | "salesReport">;
+export declare const activeView: import("svelte/store").Writable<"board" | "list" | "metrics" | "evo" | "providers" | "posts" | "admin" | "templates" | "automations" | "finance" | "salesReport" | "partners">;
 /**
  * Stages hidden from the board/list UI. The three "private feedback" columns
  * were retired: their emails are now sent automatically by the Stage Email

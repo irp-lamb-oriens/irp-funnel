@@ -10,7 +10,7 @@
  *   either edit this file and redeploy,
  *   or (preferred) use the Admin → Access Config tab in the dashboard.
  */
-export type DashView = 'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance' | 'salesReport';
+export type DashView = 'board' | 'list' | 'metrics' | 'evo' | 'providers' | 'posts' | 'admin' | 'templates' | 'automations' | 'finance' | 'salesReport' | 'partners';
 export declare const ALL_VIEWS: DashView[];
 /**
  * Static fallback access map.

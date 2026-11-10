@@ -44,6 +44,7 @@
   import AutomationView from './components/AutomationView.svelte';
   import FinanceView from './components/FinanceView.svelte';
   import SalesReportView from './components/SalesReportView.svelte';
+  import PartnersView from './components/partners/PartnersView.svelte';
 
   import ToastContainer from './components/ToastContainer.svelte';
   import AddClientModal from './components/AddClientModal.svelte';
@@ -375,7 +376,9 @@
   $: allowedViews = (() => {
     const email = $authEmail ?? '';
     const map = liveAccessConfig ?? STATIC_SECTION_ACCESS;
-    return ((map[email] ?? DEFAULT_ACCESS) as DashView[]);
+    const views = (map[email] ?? DEFAULT_ACCESS) as DashView[];
+    // New sections reach admins even when a saved live access map predates them.
+    return ADMIN_EMAILS.includes(email) && !views.includes('partners') ? [...views, 'partners' as DashView] : views;
   })();
 
   /** If the active view is not allowed, silently redirect to the first allowed view. */
@@ -771,6 +774,9 @@
           {/if}
           {#if allowedViews.includes('salesReport')}
             <button class:active={$activeView === 'salesReport'} on:click={() => switchView('salesReport')} title="Monthly sales and payment funnel">Sales Report</button>
+          {/if}
+          {#if allowedViews.includes('partners')}
+            <button class:active={$activeView === 'partners'} on:click={() => switchView('partners')} title="Partner links, referrals, commissions and payouts">Partners</button>
           {/if}
           {#if allowedViews.includes('evo')}
             <button class:active={$activeView === 'evo'} on:click={() => switchView('evo')} title="Experiments: what's winning and what to do next">Evo Lab</button>
@@ -1173,6 +1179,9 @@
     {/if}
     {#if visited.salesReport && allowedViews.includes('salesReport')}
       <section class="dash-view" data-view="salesReport" hidden={$activeView !== 'salesReport'}><SalesReportView /></section>
+    {/if}
+    {#if visited.partners && allowedViews.includes('partners')}
+      <section class="dash-view" data-view="partners" hidden={$activeView !== 'partners'}><PartnersView /></section>
     {/if}
 
     <!-- ══════════════ DETAIL PANEL ══════════════ -->
