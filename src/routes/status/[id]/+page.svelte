@@ -86,6 +86,7 @@
   import { goto } from "$app/navigation";
   import { sendLilyMessage, updateProjectDetails, projectFieldFlags } from "./store.ts";
   import { resolveProjectRef } from "./store.ts";
+  import { portalAddress } from "$lib/clientIdentity.ts";
 
   import "./status.scss";
 
@@ -131,7 +132,9 @@
     const resolved = await resolveProjectRef(projectId);
     const pid = resolved?.id || projectId;
     const shown = resolved?.publicId || pid;
-    if (shown !== $page.params.id) await goto(`/status/${shown}`, { replaceState: true });
+    // Keep the query string and fragment: `?quoteToken=…` and `#payment` are
+    // what make a quote or contract link work.
+    if (shown !== $page.params.id) await goto(portalAddress(shown, $page.url), { replaceState: true });
     projectId = pid;
 
     // ─── 1. IRP organization-agent bypass ────────────────────────────────

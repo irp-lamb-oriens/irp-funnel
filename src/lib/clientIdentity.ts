@@ -49,3 +49,17 @@ export function reconstructEmailFromProjectId(projectId: string): string {
 	if (!local) return '';
 	return `${local}@${domain}.${tld}`.toLowerCase().trim();
 }
+
+/**
+ * The address the portal moves the browser to once it knows the client's
+ * current reference: `/status/<reference>` WITH the query string and the
+ * fragment the visitor arrived with.
+ *
+ * Those are part of the link: `?quoteToken=…` is what opens a quote from an
+ * email and `#payment` is where a contract email lands. Dropping them when
+ * swapping the id for the reference broke every such link sent before the
+ * swap (found and fixed 2026-11-18).
+ */
+export function portalAddress(reference: string, current: { search: string; hash: string }): string {
+	return `/status/${encodeURIComponent(reference)}${current.search ?? ''}${current.hash ?? ''}`;
+}

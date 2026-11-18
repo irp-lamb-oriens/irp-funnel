@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { emailToLegacyDocId, normalizeEmail, reconstructEmailFromProjectId } from './clientIdentity.ts';
+import { emailToLegacyDocId, normalizeEmail, portalAddress, reconstructEmailFromProjectId } from './clientIdentity.ts';
 
 describe('clientIdentity', () => {
 	it('normalizes emails by trimming and lowercasing', () => {
@@ -63,5 +63,21 @@ describe('client identity conversions live only in $lib/clientIdentity.ts', () =
 				});
 		}
 		expect(violations).toEqual([]);
+	});
+});
+
+describe('moving the portal address to the client reference', () => {
+	it('keeps the quote token and the fragment the visitor arrived with', () => {
+		expect(portalAddress('5ddaa8e1', { search: '?quoteToken=abc123', hash: '#payment' })).toBe('/status/5ddaa8e1?quoteToken=abc123#payment');
+		expect(portalAddress('5ddaa8e1', { search: '', hash: '' })).toBe('/status/5ddaa8e1');
+		expect(portalAddress('5ddaa8e1', new URL('https://x.test/status/Hispath5_aol_com?quoteToken=t&utm_source=email#quote'))).toBe(
+			'/status/5ddaa8e1?quoteToken=t&utm_source=email#quote'
+		);
+	});
+
+	it('guard: the portal page never navigates to a bare /status/ address', () => {
+		const page = readFileSync(join(process.cwd(), 'src/routes/status/[id]/+page.svelte'), 'utf8');
+		expect(page).toContain('goto(portalAddress(');
+		expect(page).not.toMatch(/goto\(\s*`\/status\//);
 	});
 });
