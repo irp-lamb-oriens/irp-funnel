@@ -83,11 +83,18 @@
     checkIrpStaff,
     clearIrpStaff,
   } from "../../../lib/auth/irpStaff.ts";
+  import { goto } from "$app/navigation";
   import { sendLilyMessage, updateProjectDetails, projectFieldFlags } from "./store.ts";
+  import { resolveProjectRef } from "./store.ts";
 
   import "./status.scss";
 
-  $: projectId = $page.params.id;
+  // `projectId` is the project's real id and is what every API call below
+  // uses. It starts as whatever the URL carries (possibly an old id, an id that
+  // spells the client's email, or their short reference) and is replaced by
+  // the resolved id in onMount. It deliberately does NOT follow the URL
+  // afterwards: once resolved, the address bar shows the short reference.
+  let projectId: string = $page.params.id;
 
   // Prefill the login email from the document id the moment the gate renders.
   // The doc id IS the client email with `@`/`.` → `_`, so anyone who already
@@ -116,6 +123,17 @@
     //        .client-portal doesn't expose the body background colour.
     document.body.style.setProperty("background-color", "#fbfcfc");
 
+    // ─── 0b. Old links keep working ─────────────────────────
+    // The id in the URL may predate a move of this client's record, or spell
+    // the client's email. Ask the server where the project lives now, open it
+    // there, and move the address bar to the client's short reference without
+    // adding a history entry.
+    const resolved = await resolveProjectRef(projectId);
+    const pid = resolved?.id || projectId;
+    const shown = resolved?.publicId || pid;
+    if (shown !== $page.params.id) await goto(`/status/${shown}`, { replaceState: true });
+    projectId = pid;
+
     // ─── 1. IRP organization-agent bypass ────────────────────────────────
     // If a /dashboard session is present, every /api/client-status request
     // is authorized via the `x-dashboard-token` header. Skip the OTP wall
@@ -124,11 +142,11 @@
     if (isStaff) {
       isAuthenticated.set(true);
       isCheckingAuth.set(false);
-      await fetchProject(projectId);
-      await loadLilyHistory(projectId);
+      await fetchProject(pid);
+      await loadLilyHistory(pid);
       // Load quotes early so hasQuotes is known before the first render tick.
       // This drives the tab-bar and section visibility (quote-gated sections).
-      loadQuotes(projectId);
+      loadQuotes(pid);
       scrollStepperToActive();
       return;
     }
@@ -136,10 +154,10 @@
     // ─── 2. Existing end-customer flow ───────────────────────────
     const valid = await checkClientAuth();
     if (valid) {
-      await fetchProject(projectId);
-      await loadLilyHistory(projectId);
+      await fetchProject(pid);
+      await loadLilyHistory(pid);
       // Same quote pre-load for end-customers.
-      loadQuotes(projectId);
+      loadQuotes(pid);
       scrollStepperToActive();
     }
   });

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { emailToLegacyDocId, normalizeEmail } from '$lib/clientIdentity.ts';
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
   import '../status/[id]/status.scss'; // Reuse the ultra-modern styling
@@ -11,7 +12,7 @@
     
     // Reshape email to document ID format
     // e.g., oriens@aiban.news -> oriens_aiban_news
-    const projectId = emailInput.toLowerCase().trim().replace(/[@.]/g, "_");
+    const projectId = emailToLegacyDocId(normalizeEmail(emailInput));
     
     // Redirect to the specific project status page
     goto(`/status/${projectId}`);

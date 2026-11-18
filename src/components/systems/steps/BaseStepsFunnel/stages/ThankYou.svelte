@@ -10,6 +10,7 @@
     import Brand from '../../../../Brand/Brand.svelte';
     import { browser } from '$app/environment';
     import { AGE_RANGES_BIDI } from '../../../helpers/constants.ts';
+    import { emailToLegacyDocId } from '$lib/clientIdentity.ts';
 
 	export let canReveal = false;
 
@@ -48,7 +49,7 @@
 	// hand the client their portal immediately on the thank-you screen — the
 	// same hub the welcome email points them to.
 	$: portalEmail = (email ?? $store.email ?? '').trim();
-	$: portalUrl = portalEmail ? `/status/${portalEmail.replace(/[@.]/g, '_')}` : null;
+	$: portalUrl = portalEmail ? `/status/${emailToLegacyDocId(portalEmail)}` : null;
 
 
 	// --- SUBMIT LOGIC (from SubmitStage) ---

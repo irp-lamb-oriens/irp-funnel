@@ -53,6 +53,7 @@
 
   import PendingBadge from './PendingBadge.svelte';
   import CrmLilyTab from './CrmLilyTab.svelte';
+  import ClientEmailEditor from './ClientEmailEditor.svelte';
   import QuotesTab from './QuotesTab.svelte';
   import ChargesTab from './ChargesTab.svelte';
   import ProvidersRfqPanel from './ProvidersRfqPanel.svelte';
@@ -1325,6 +1326,16 @@
                            datetime   calendar row
                          • else     → the classic inline <EditableField> text box
                        Read-only fields render a formatted, non-editable value. -->
+                  {#if f.id === 'email'}
+                    <!-- The email has its own flow: history, former-address
+                         search and queued emails all follow the change. -->
+                    <ClientEmailEditor
+                      clientId={$selectedClient.id}
+                      value={typeof val === 'string' ? val : ''}
+                      history={$selectedClient.rawDoc?.emailHistory ?? []}
+                      shortId={$selectedClient.rawDoc?.shortId ?? ''}
+                    />
+                  {:else}
                   <FieldControl
                     clientId={$selectedClient.id}
                     path={ovPath(f, latestIdx)}
@@ -1335,6 +1346,7 @@
                     placeholder={f.placeholder || '—'}
                     readonly={f.readOnly === true}
                   />
+                  {/if}
                 {/if}
 
 

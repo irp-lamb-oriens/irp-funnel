@@ -1,151 +1,142 @@
 <script lang="ts">
+  /**
+   * Country guides index ("the atlas"). Built on the home's visual system
+   * (components/landing/_tokens.scss): an ink hero with a turning globe and
+   * a search that steers it, the six chapters every guide carries, the A to Z
+   * index with a sticky globe lens, and a close back to booking.
+   * Sections live in components/guides; per-guide data in lib/data/guide-atlas.ts.
+   *
+   * Lead capture is unchanged: visitors without an email on file get the
+   * LeadCaptureModal before a guide opens; IRP staff skip it and can audit it.
+   */
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
-  import CountryLayout from '../../components/ui/CountryLayout.svelte';
-  import CountryContentWrapper from '../../components/ui/CountryContentWrapper.svelte';
   import LeadCaptureModal from '../../components/LeadCaptureModal.svelte';
+  import AtlasHero from '../../components/guides/AtlasHero.svelte';
+  import AtlasChapters from '../../components/guides/AtlasChapters.svelte';
+  import AtlasIndex from '../../components/guides/AtlasIndex.svelte';
+  import AtlasClose from '../../components/guides/AtlasClose.svelte';
+  import { atlasEntry, type AtlasEntry } from '../../lib/data/guide-atlas.ts';
   import { irpStaffIsAuthenticated, checkIrpStaff } from '../../lib/auth/irpStaff.ts';
   import './guides.scss';
 
   export let data: { guides: { slug: string; name: string }[] };
-  
-  let searchTerm = '';
+
+  const guides: AtlasEntry[] = data.guides
+    .map((g) => atlasEntry(g.slug, g.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  let query = '';
   let showModal = false;
   let selectedGuideSlug = '';
   let selectedGuideName = '';
   let hasAccess = false;
-  
+
   onMount(async () => {
     // ─── IRP organization-agent bypass ────────────────────────────────────
     // Staff signed into /dashboard skip the lead-capture wall by default —
     // they can still open the modal on demand via the floating "Audit lead
-    // capture" pill (or the `?audit=lead-capture` URL override) so they can
-    // assess the mechanism end-to-end.
+    // capture" pill (or the `?audit=lead-capture` URL override).
     const isStaff = await checkIrpStaff();
-    if (isStaff) {
-      hasAccess = true;
-    }
+    if (isStaff) hasAccess = true;
 
-    // ─── Existing public visitor flow ─────────────────────────────────────
+    // ─── Public visitor flow ──────────────────────────────────────────────
     const urlParams = new URLSearchParams(window.location.search);
     const emailParam = urlParams.get('email');
     const auditParam = urlParams.get('audit');
+    const q = urlParams.get('q');
+    if (q) query = q;
 
-    if (emailParam) {
-      localStorage.setItem("userEmail", emailParam);
-    }
+    if (emailParam) localStorage.setItem('userEmail', emailParam);
+    if (localStorage.getItem('userEmail')) hasAccess = true;
 
-    if (localStorage.getItem("userEmail")) {
-      hasAccess = true;
-    }
-
-    // Staff-only "audit mode" override — opens the modal even if hasAccess
-    // is true so an agent can inspect the form. Ignored for non-staff.
-    if (isStaff && auditParam === 'lead-capture') {
-      showModal = true;
-    }
+    if (isStaff && auditParam === 'lead-capture') showModal = true;
   });
-  
-  $: filteredGuides = data.guides.filter(guide => 
-    guide.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  function handleGuideClick(event: Event, slug: string, name: string) {
+  /** Open a guide; without access, ask for the email first. `e` is null for keyboard opens (Enter in the search). */
+  function openGuide(e: Event | null, g: AtlasEntry) {
     if (!hasAccess) {
-      event.preventDefault();
-      selectedGuideSlug = slug;
-      selectedGuideName = name;
+      e?.preventDefault();
+      selectedGuideSlug = g.slug;
+      selectedGuideName = g.name;
       showModal = true;
+      return;
     }
+    if (!e) goto(`/guides/${g.slug}`);
   }
 
   function handleModalSuccess() {
     hasAccess = true;
-    if (selectedGuideSlug) {
-      goto(`/guides/${selectedGuideSlug}`);
-    }
+    if (selectedGuideSlug) goto(`/guides/${selectedGuideSlug}`);
   }
 
-  /**
-   * Staff-only: open the lead-capture modal so an organization agent can
-   * audit the wall behavior end-to-end without losing their access.
-   * Keeps `selectedGuideSlug` empty so `handleModalSuccess` doesn't
-   * navigate them away from the listing after submitting.
-   */
+  /** Staff-only: open the lead-capture modal to audit the wall without leaving the listing. */
   function openLeadCaptureAudit() {
     selectedGuideSlug = '';
     selectedGuideName = '';
     showModal = true;
   }
+
+  const itemList = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'International relocation country guides',
+    numberOfItems: guides.length,
+    itemListElement: guides.map((g, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: `${g.name} relocation and customs guide`,
+      url: `https://internationalrelocationpartner.com/guides/${g.slug}`
+    }))
+  });
 </script>
 
 <svelte:head>
-  <title>International Relocation Country Guides | IRP</title>
+  <title>Country Guides: Customs Rules for {guides.length} Countries | IRP</title>
+  <meta name="description" content="Customs rules for household goods, vehicles, pets, restricted and prohibited items in {guides.length} countries. Free relocation guides from International Relocation Partner." />
+  <meta property="og:title" content="Country guides: customs rules for {guides.length} countries" />
+  <meta property="og:description" content="What customs asks for, what it taxes and what it refuses: household goods, cars and pets, country by country." />
+  <link rel="preload" href="/landing/land-dots.json" as="fetch" crossorigin="anonymous" />
+  {@html '<scr' + 'ipt type="application/ld+json">' + itemList + '</scr' + 'ipt>'}
 </svelte:head>
 
 <Header />
 
-<CountryLayout 
-  heroTitle="International Relocation Country Guides" 
-  heroSubTitle="Official customs rules, restricted items, and key considerations for your move to almost any country in the world."
-  heroUrl="https://images.pexels.com/photos/35085677/pexels-photo-35085677.jpeg"
+<main id="main-content" class="atlas">
+  <AtlasHero {guides} bind:query open={openGuide} />
+  <AtlasChapters />
+  <AtlasIndex {guides} bind:query open={openGuide} />
+  <AtlasClose />
+</main>
+
+<!--
+  Staff-only "Audit lead capture" pill: visible only when an IRP organization
+  agent is signed in (`$irpStaffIsAuthenticated`). Opens the modal so agents can
+  inspect the lead-capture wall they otherwise bypass.
+-->
+<button
+  type="button"
+  class="staff-audit-pill"
+  style="display: {$irpStaffIsAuthenticated ? 'block' : 'none'};"
+  title="Open the lead-capture modal to audit how it behaves for a real visitor."
+  on:click={openLeadCaptureAudit}
 >
-  <CountryContentWrapper>
-    <div class="search-container">
-      <input type="text" bind:value={searchTerm} placeholder="Search for your destination country..." class="search-input" />
-      <div class="search-icon">🔍</div>
-    </div>
+  Audit lead capture
+</button>
 
-    <!--
-      Staff-only "Audit lead capture" pill. Per centralized auth contract:
-      visible only via `display: block` when the visitor is an IRP
-      organization agent (`$irpStaffIsAuthenticated === true`). Hidden
-      (`display: none`) for every other visitor. Lets agents inspect the
-      lead-capture mechanism (the wall they otherwise bypass) end-to-end.
-    -->
-    <button
-      type="button"
-      class="staff-audit-pill"
-      style="display: {$irpStaffIsAuthenticated ? 'block' : 'none'};"
-      title="Open the lead-capture modal to audit how it behaves for a real visitor."
-      on:click={openLeadCaptureAudit}
-    >
-      🔎 Audit lead capture
-    </button>
-
-    <div class="guides-container">
-      {#if data.guides.length === 0}
-        <div class="empty-state">
-          <p>No guides generated yet. Run the guide generation script to populate this folder.</p>
-        </div>
-      {:else}
-        <div class="guides-grid">
-          {#each filteredGuides as guide}
-            <a href="/guides/{guide.slug}" class="guide-card" on:click={(e) => handleGuideClick(e, guide.slug, guide.name)}>
-              <div class="card-icon">🌍</div>
-              <h3>{guide.name}</h3>
-              <p>View customs rules and requirements for relocating to {guide.name}.</p>
-              <span class="read-more">Read Guide →</span>
-            </a>
-          {/each}
-          
-          {#if filteredGuides.length === 0}
-            <div class="no-results">
-              <p>No countries found matching "{searchTerm}".</p>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
-  </CountryContentWrapper>
-</CountryLayout>
-
-<LeadCaptureModal 
-  bind:show={showModal} 
-  destinationCountry={selectedGuideName}
-  on:success={handleModalSuccess} 
-/>
+<LeadCaptureModal bind:show={showModal} destinationCountry={selectedGuideName} on:success={handleModalSuccess} />
 
 <Footer />
+
+<style>
+  .atlas {
+    overflow-x: clip;
+    --font-paragraph: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+    font-family: var(--font-paragraph);
+  }
+  /* The site globals give every element the paragraph font directly; inside the
+     atlas, elements inherit so the mono labels and the sans headings hold. */
+  :global(.atlas *) { font-family: inherit; }
+</style>

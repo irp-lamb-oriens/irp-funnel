@@ -882,6 +882,12 @@ export const clientsLoading = writable<boolean>(false);
 // data has arrived at least once.
 export const clientsLoadedOnce = writable<boolean>(false);
 export const searchQuery = writable<string>('');
+/**
+ * Client ids returned by the server lookup for the current search (Enter in
+ * the search box). They are shown even when the typed text is not on the card,
+ * e.g. a former email or an old id. Cleared whenever the text changes.
+ */
+export const searchLookupIds = writable<string[]>([]);
 
 
 export interface Filters {
@@ -1095,14 +1101,15 @@ export function compareByRank(a: Client, b: Client): number {
 }
 
 // ─── Derived: filtered clients ──────────────────────────────────────────────
-export const filteredClients = derived([clients, searchQuery, filters], ([$clients, $search, $filters]) => {
+export const filteredClients = derived([clients, searchQuery, filters, searchLookupIds], ([$clients, $search, $filters, $lookupIds]) => {
   const q = $search.toLowerCase().trim();
 
   const matched = $clients.filter(c => {
     // 1. Text search
     if (q) {
       const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity} ${c.originZip} ${c.destinationZip}`.toLowerCase();
-      if (!haystack.includes(q)) return false;
+      const identity = `${(c as any).shortId ?? ''} ${((c as any).previousEmails ?? []).join(' ')}`.toLowerCase();
+      if (!haystack.includes(q) && !identity.includes(q) && !$lookupIds.includes(c.id)) return false;
     }
 
     // 2. Field filters
@@ -1980,6 +1987,66 @@ export async function editField(
       next.rawDoc = applyPatch(next.rawDoc, path, data.newValue);
     }
     next.activityLog = [...(c.activityLog || []), data.entry];
+    return next as Client;
+  };
+  clients.update((list) => list.map((c) => patchClient(c) ?? c));
+  selectedClient.update((c) => patchClient(c));
+
+  return data;
+}
+
+/** One entry of a client's email history (newest last). */
+export interface EmailHistoryEntry {
+  from: string;
+  to: string;
+  changedAt: string;
+  changedBy: string;
+  source: 'dashboard' | 'migration' | 'merge';
+  note?: string;
+}
+
+export interface ChangeEmailResult {
+  success: boolean;
+  from: string;
+  to: string;
+  entry: EmailHistoryEntry;
+  activityEntry: ActivityEntry;
+  emailHistory: EmailHistoryEntry[];
+  previousEmailKeys: string[];
+  /** Pending queued emails that now go to the new address. */
+  queueItemsUpdated: number;
+  /** Pending queued emails the server could not repoint (ids). */
+  queueItemsFailed: string[];
+}
+
+/**
+ * Change a client's email through the dedicated endpoint. The server updates
+ * the address everywhere it lives on the client, records the change in the
+ * client's email history and activity log, and repoints pending queued
+ * emails. The generic field editor refuses email fields, so this is the only
+ * way. Throws with the server's message when the address is invalid or
+ * already belongs to another client.
+ */
+export async function changeClientEmail(id: string, email: string, note?: string): Promise<ChangeEmailResult> {
+  const data: ChangeEmailResult = await apiFetch(`/api/dashboard/clients/${id}/email`, {
+    method: 'PATCH',
+    body: JSON.stringify({ email, note }),
+  });
+
+  const patchClient = (c: Client | null): Client | null => {
+    if (!c || c.id !== id) return c;
+    const next: any = { ...c, email: data.to };
+    if (next.rawDoc) {
+      next.rawDoc = {
+        ...next.rawDoc,
+        email: data.to,
+        dripEmail: data.to,
+        emailKey: data.to,
+        emailHistory: data.emailHistory,
+        previousEmailKeys: data.previousEmailKeys,
+      };
+    }
+    next.activityLog = [...(c.activityLog || []), data.activityEntry];
     return next as Client;
   };
   clients.update((list) => list.map((c) => patchClient(c) ?? c));
@@ -5899,6 +5966,27 @@ export async function fetchStripeSetup(): Promise<{ livemode: boolean; items: St
 /** Dashboard Finance: every Stripe payment with fees and net. */
 export async function fetchOnlinePayments(opts: { fresh?: boolean } = {}): Promise<OnlinePaymentsReport> {
   return cachedRequest('finance:online-payments', () => apiFetch('/api/dashboard/finance/online-payments'), { fresh: opts.fresh });
+}
+
+export interface ClientLookupMatch {
+  id: string;
+  matchedBy: 'emailKey' | 'legacyDocId' | 'previousEmail' | 'shortId' | 'id' | 'previousDocId';
+}
+
+/**
+ * Indexed server search for a client by email (current or former, any
+ * capitalization), 8-character reference, or id (current or former). Runs when
+ * staff press Enter in the search box. One match opens its card; several
+ * (duplicates of the same person) stay listed.
+ */
+export async function lookupClients(query: string): Promise<ClientLookupMatch[]> {
+  const q = query.trim();
+  if (!q) { searchLookupIds.set([]); return []; }
+  const data = await apiFetch(`/api/dashboard/clients/lookup?q=${encodeURIComponent(q)}`);
+  const matches = (data?.matches ?? []) as ClientLookupMatch[];
+  searchLookupIds.set(matches.map((m) => m.id));
+  if (matches.length === 1) await selectClientById(matches[0].id);
+  return matches;
 }
 
 /** Open a client's card from anywhere (e.g. Finance → Online payments). */

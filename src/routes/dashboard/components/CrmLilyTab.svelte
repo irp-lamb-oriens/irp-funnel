@@ -10,13 +10,29 @@
   import { tick, onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { irpStaffToken, getApiUrl } from '../../../lib/auth/irpStaff.ts';
+  import { editField } from '../store.ts';
 
   export let clientId: string;
 
   const API_BASE = getApiUrl();
 
   // ─── State ────────────────────────────────────────────────────────────────
-  type Msg = { role: 'user' | 'assistant'; content: string; timestamp: string; };
+  /**
+   * A field change Lily proposed. Lily never writes: each proposal is approved
+   * or skipped here, and an approval goes through the same `editField` store
+   * action as a manual edit (activity log, concurrency guard, undo, and the
+   * Overview updating in place).
+   */
+  type FieldProposal = {
+    id: string;
+    key: string;
+    label: string;
+    path: string;
+    oldValue: unknown;
+    newValue: string | number | boolean;
+    status: 'pending' | 'applied' | 'rejected';
+  };
+  type Msg = { role: 'user' | 'assistant'; content: string; timestamp: string; fieldProposals?: FieldProposal[]; };
   let messages: Msg[] = [];
   let input = '';
   let loading = false;
@@ -79,6 +95,65 @@
     } finally {
       loading = false;
     }
+  }
+
+  // ─── Field proposals ─────────────────────────────────────────
+  let proposalBusy: Record<string, boolean> = {};
+  let proposalError: Record<string, string> = {};
+
+  function isEmptyValue(v: unknown): boolean {
+    return v === undefined || v === null || v === '';
+  }
+
+  function formatValue(v: unknown): string {
+    if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+    return typeof v === 'string' ? v : JSON.stringify(v);
+  }
+
+  function pendingProposals(msg: Msg): FieldProposal[] {
+    return (msg.fieldProposals ?? []).filter((p) => p.status === 'pending');
+  }
+
+  /** Persist the decision so the card shows the same outcome after a reload. */
+  async function recordDecision(p: FieldProposal, status: 'applied' | 'rejected') {
+    p.status = status;
+    messages = [...messages];
+    try {
+      await apiFetch(`/api/dashboard/clients/${clientId}/lily/proposals/${encodeURIComponent(p.id)}`, {
+        method: 'POST',
+        body: JSON.stringify({ status }),
+      });
+    } catch { /* the decision already took effect; only its bookkeeping failed */ }
+  }
+
+  async function approveProposal(p: FieldProposal) {
+    if (p.status !== 'pending' || proposalBusy[p.id]) return;
+    proposalBusy = { ...proposalBusy, [p.id]: true };
+    proposalError = { ...proposalError, [p.id]: '' };
+    try {
+      await editField(clientId, p.path, p.newValue, p.oldValue ?? '');
+      await recordDecision(p, 'applied');
+    } catch (err: any) {
+      const text = String(err?.message ?? '');
+      proposalError = {
+        ...proposalError,
+        [p.id]: /concurrent|changed/i.test(text)
+          ? 'This field was changed after Lily read it. Check the Overview, then ask Lily again.'
+          : (text || 'Could not save this field. Try again.'),
+      };
+    } finally {
+      proposalBusy = { ...proposalBusy, [p.id]: false };
+    }
+  }
+
+  async function skipProposal(p: FieldProposal) {
+    if (p.status !== 'pending' || proposalBusy[p.id]) return;
+    await recordDecision(p, 'rejected');
+  }
+
+  /** Approve one at a time so each write sees the previous one. */
+  async function approveAll(msg: Msg) {
+    for (const p of pendingProposals(msg)) await approveProposal(p);
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -174,7 +249,7 @@
   <div class="crm-lily__messages" bind:this={scrollEl}>
     {#if messages.length === 0}
       <div class="crm-lily__empty">
-        <p>Start a conversation. Try <em>"Summarize this project"</em> or <em>"Draft a follow-up email"</em>.</p>
+        <p>Start a conversation. Try <em>"Summarize this project"</em>, <em>"Draft a follow-up email"</em>, or give Lily details to fill in: <em>"Origin is Panama City, phone +1 502 435 1958"</em>. She asks you to confirm each field before anything is saved.</p>
       </div>
     {/if}
 
@@ -189,6 +264,58 @@
             <span class="crm-lily__time">{formatTime(msg.timestamp)}</span>
           </div>
         </div>
+        {#if msg.fieldProposals?.length}
+          {@const pending = pendingProposals(msg)}
+          <section class="lily-prop" aria-label="Field changes proposed by Lily">
+            <header class="lily-prop__head">
+              <span class="lily-prop__title">
+                {#if pending.length}
+                  Lily wants to update {pending.length} {pending.length === 1 ? 'field' : 'fields'}
+                {:else}
+                  Field changes reviewed
+                {/if}
+              </span>
+              {#if pending.length > 1}
+                <button type="button" class="lily-prop__btn lily-prop__btn--approve" disabled={loading} on:click={() => approveAll(msg)}>
+                  Approve all
+                </button>
+              {/if}
+            </header>
+            <ul class="lily-prop__list">
+              {#each msg.fieldProposals as p (p.id)}
+                <li class="lily-prop__item" class:lily-prop__item--done={p.status !== 'pending'}>
+                  <div class="lily-prop__field">
+                    <span class="lily-prop__label">{p.label}</span>
+                    <span class="lily-prop__change">
+                      <span class="lily-prop__old" class:lily-prop__old--empty={isEmptyValue(p.oldValue)}>
+                        {isEmptyValue(p.oldValue) ? 'Empty' : formatValue(p.oldValue)}
+                      </span>
+                      <span class="lily-prop__arrow" aria-hidden="true">→</span>
+                      <span class="lily-prop__new">{formatValue(p.newValue)}</span>
+                    </span>
+                    {#if proposalError[p.id]}
+                      <span class="lily-prop__error" role="alert">{proposalError[p.id]}</span>
+                    {/if}
+                  </div>
+                  <div class="lily-prop__actions">
+                    {#if p.status === 'applied'}
+                      <span class="lily-prop__state lily-prop__state--applied">✓ Saved</span>
+                    {:else if p.status === 'rejected'}
+                      <span class="lily-prop__state">Skipped</span>
+                    {:else}
+                      <button type="button" class="lily-prop__btn" disabled={loading || proposalBusy[p.id]} on:click={() => skipProposal(p)}>
+                        Skip
+                      </button>
+                      <button type="button" class="lily-prop__btn lily-prop__btn--approve" disabled={loading || proposalBusy[p.id]} on:click={() => approveProposal(p)}>
+                        {proposalBusy[p.id] ? 'Saving…' : 'Approve'}
+                      </button>
+                    {/if}
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
       {:else}
         <div class="crm-lily__row crm-lily__row--staff">
           <div class="crm-lily__bubble crm-lily__bubble--staff">
@@ -351,6 +478,117 @@
     gap: 0.4rem;
   }
   .crm-lily__row--staff { flex-direction: row-reverse; }
+
+  /* ── Field proposals ──────────────────────────────────────────
+     Lily proposes, staff confirms. The card sits under Lily's bubble, aligned
+     with it, and uses the same glass surface and teal accent. */
+  .lily-prop {
+    margin-left: calc(24px + 0.4rem); /* clear the avatar pip */
+    max-width: calc(82% + 2rem);
+    border: 1px solid var(--chat-bubble-lily-border, rgba(2,181,187,0.18));
+    border-left: 2px solid var(--chat-color-lily, #02b5bb);
+    border-radius: 8px;
+    background: var(--chat-bubble-lily, rgba(255,255,255,0.06));
+    overflow: hidden;
+  }
+  .lily-prop__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--chat-glass-border, rgba(255,255,255,0.07));
+  }
+  .lily-prop__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--chat-color-lily, #02b5bb);
+  }
+  .lily-prop__list { list-style: none; margin: 0; padding: 0; }
+  .lily-prop__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.75rem;
+  }
+  .lily-prop__item + .lily-prop__item {
+    border-top: 1px solid var(--chat-glass-border, rgba(255,255,255,0.07));
+  }
+  .lily-prop__item--done { opacity: 0.72; }
+  .lily-prop__field { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+  .lily-prop__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+  }
+  .lily-prop__change {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .lily-prop__old {
+    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+    text-decoration: line-through;
+  }
+  .lily-prop__old--empty {
+    color: var(--chat-text-dim, rgba(255,255,255,0.35));
+    font-style: italic;
+    text-decoration: none;
+  }
+  .lily-prop__arrow { color: var(--chat-text-dim, rgba(255,255,255,0.35)); }
+  .lily-prop__new { color: var(--chat-text-primary, rgba(255,255,255,0.92)); font-weight: 600; }
+  .lily-prop__error { font-size: 0.72rem; color: var(--chat-color-staff, #f59e0b); }
+  .lily-prop__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+  .lily-prop__btn {
+    font: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--chat-glass-border, rgba(255,255,255,0.14));
+    background: transparent;
+    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .lily-prop__btn:hover:not(:disabled) {
+    color: var(--chat-text-primary, rgba(255,255,255,0.92));
+    border-color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+  }
+  .lily-prop__btn--approve {
+    background: var(--chat-color-lily, #02b5bb);
+    border-color: var(--chat-color-lily, #02b5bb);
+    color: #04121a;
+  }
+  .lily-prop__btn--approve:hover:not(:disabled) {
+    color: #04121a;
+    border-color: var(--chat-color-lily, #02b5bb);
+    filter: brightness(1.12);
+  }
+  .lily-prop__btn:focus-visible {
+    outline: 2px solid var(--chat-color-lily, #02b5bb);
+    outline-offset: 2px;
+  }
+  .lily-prop__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .lily-prop__state {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+  }
+  .lily-prop__state--applied { color: var(--chat-color-lily, #02b5bb); }
+  @media (max-width: 520px) {
+    .lily-prop { margin-left: 0; max-width: 100%; }
+    .lily-prop__item { flex-direction: column; align-items: stretch; }
+    .lily-prop__actions { justify-content: flex-end; }
+  }
 
   /* ── Avatar pip ──────────────────────────────────────────────────────── */
   .crm-lily__pip {

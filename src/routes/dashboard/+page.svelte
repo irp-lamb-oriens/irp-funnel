@@ -7,6 +7,7 @@
     clients, selectedClient, metrics, loading, error,
     clientsLoading, clientsLoadedOnce,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage, pendingRequests,
+    searchLookupIds, lookupClients,
     stageOrderStore, stageConfig,
 
 
@@ -664,6 +665,14 @@
     }
     return false;
   }
+
+  // Enter in the search box runs the indexed server lookup, so a client is
+  // found by an email in any capitalization, a former email, their 8-character
+  // reference or an old id, even when that text is not on their card.
+  function handleSearchKeydown(e: KeyboardEvent) {
+    if (e.key !== 'Enter') return;
+    lookupClients($searchQuery).catch(() => { /* the typed filter still applies */ });
+  }
 </script>
 
 <svelte:head>
@@ -800,7 +809,13 @@
       </div>
       <div class="topbar__right">
         <div class="topbar__search">
-          <input type="text" placeholder="Search clients…" bind:value={$searchQuery} />
+          <input
+            type="text"
+            placeholder="Search clients… (Enter: find by email or Ref.)"
+            bind:value={$searchQuery}
+            on:input={() => searchLookupIds.set([])}
+            on:keydown={handleSearchKeydown}
+          />
         </div>
         <button class="topbar__add-client" on:click={openAddClient} title="Add client manually">
 

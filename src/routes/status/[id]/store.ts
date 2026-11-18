@@ -17,34 +17,9 @@ export const isCheckingAuth = writable(true);
 export const authEmail = writable('');
 export const authToken = writable<string | null>(null);
 
-/**
- * Recover the principal client email from a project id BEFORE authentication,
- * for the login-gate prefill. This mirrors the server's `resolvePrincipalEmail`
- * reconstruction: the consultation doc id is the email with `@` and `.` replaced
- * by underscores, so the last two dot-separated segments are the TLD and domain.
- *
- * This reveals nothing new — anyone holding the /status/:id URL can perform the
- * same reconstruction — it only saves the principal applicant a manual step.
- * Returns "" when the id can't be parsed into a plausible address.
- */
-export function reconstructEmailFromProjectId(projectId: string): string {
-  // The consultation doc id is the client email with every `@` and `.` turned
-  // into `_` (server `emailToDocId`). Reverse it by position:
-  //   • last segment            → TLD
-  //   • segment before it       → domain
-  //   • everything before those → the local part, rejoined with `.` (its own
-  //     dots were also serialized as `_`).
-  // e.g. "roxannefleszar_protonmail_com" → "roxannefleszar@protonmail.com"
-  //      "john_doe_gmail_com"             → "john.doe@gmail.com"
-  const segments = String(projectId ?? "").split("_");
-  if (segments.length < 2) return "";
-  const tld = segments.pop()!;
-  const domain = segments.pop()!;
-  if (!tld || !domain) return "";
-  const local = segments.join(".");
-  if (!local) return "";
-  return `${local}@${domain}.${tld}`.toLowerCase().trim();
-}
+// Email ↔ id conversions live in $lib/clientIdentity.ts. Re-exported here so
+// existing imports from this store keep working.
+export { reconstructEmailFromProjectId } from '../../../lib/clientIdentity.ts';
 
 // We store the token in localStorage with a key specific to client portal
 if (typeof window !== 'undefined') {
@@ -258,6 +233,27 @@ export async function fetchCharges(projectId: string): Promise<StatusCharges> {
   };
   charges.set(result);
   return result;
+}
+
+/**
+ * Ask the server where a project lives now. A /status link sent before the
+ * client's document moved or was re-keyed, or typed in another
+ * capitalization, still resolves; the page then moves the address bar to the
+ * current URL. `id` is the project's id for API calls; `publicId` is what the
+ * address bar should show (the client's 8-character reference when there is
+ * one). Returns null when the id matches nothing or the lookup fails, in
+ * which case the caller carries on with the id it has.
+ */
+export async function resolveProjectRef(ref: string): Promise<{ id: string; publicId: string } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/client-status/resolve/${encodeURIComponent(ref)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (typeof data?.id !== 'string' || !data.id) return null;
+    return { id: data.id, publicId: typeof data.publicId === 'string' && data.publicId ? data.publicId : data.id };
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchProject(projectId: string) {
