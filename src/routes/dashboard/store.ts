@@ -1108,7 +1108,9 @@ export const filteredClients = derived([clients, searchQuery, filters, searchLoo
     // 1. Text search
     if (q) {
       const haystack = `${c.name} ${c.surname} ${c.email} ${c.phone} ${c.originCountry} ${c.destinationCountry} ${c.originCity} ${c.destinationCity} ${c.originZip} ${c.destinationZip}`.toLowerCase();
-      const identity = `${(c as any).shortId ?? ''} ${((c as any).previousEmails ?? []).join(' ')}`.toLowerCase();
+      // The client's own identifiers: typing an id (the current one, or one
+      // the client had before the cut over or a merge) finds them as you type.
+      const identity = `${c.id} ${(c as any).shortId ?? ''} ${((c as any).previousEmails ?? []).join(' ')} ${((c as any).formerIds ?? []).join(' ')}`.toLowerCase();
       if (!haystack.includes(q) && !identity.includes(q) && !$lookupIds.includes(c.id)) return false;
     }
 
