@@ -55,24 +55,24 @@
 
 <style>
   .wf-wrap { overflow-x: auto; }
-  .wf { width: 100%; border-collapse: collapse; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .wf { width: 100%; border-collapse: collapse; font-size: var(--irp-fs-sm); font-variant-numeric: tabular-nums; }
   .wf thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .wf th[scope='row'] { text-align: left; font-weight: 600; color: #334155; padding: 0.38rem 0.8rem 0.38rem 0; white-space: nowrap; width: 1%; }
+  .wf th[scope='row'] { text-align: left; font-weight: 600; color: var(--irp-text-2); padding: 0.38rem 0.8rem 0.38rem 0; white-space: nowrap; width: 1%; }
   .wf td { padding: 0.38rem 0; }
-  .wf .num { text-align: right; font-weight: 700; color: #0f172a; padding-left: 0.8rem; white-space: nowrap; width: 1%; }
+  .wf .num { text-align: right; font-weight: 700; color: var(--irp-text); padding-left: 0.8rem; white-space: nowrap; width: 1%; }
   .wf-barcol { width: auto; min-width: 140px; }
   @media (max-width: 640px) {
     .wf th[scope='row'] { white-space: normal; width: 42%; }
     .wf-barcol { min-width: 48px; }
   }
-  .wf-track { position: relative; display: block; height: 14px; background: #f8fafc; border-radius: 4px; }
-  .wf-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: #94a3b8; }
-  .wf-row--total .wf-bar { background: #0b878c; }
-  .wf-row--total th[scope='row'], .wf-row--total .num { font-weight: 800; color: #0f172a; }
-  .wf-row--add .wf-bar { background: #52c6c9; }
-  .wf-row--sub .wf-bar { background: #cbd5e1; }
-  .wf-row--risk .wf-bar { background: repeating-linear-gradient(45deg, #fca5a5 0 4px, #fee2e2 4px 8px); }
+  .wf-track { position: relative; display: block; height: 14px; background: var(--irp-surface-2); border-radius: var(--irp-r-2xs); }
+  .wf-bar { position: absolute; top: 0; bottom: 0; border-radius: var(--irp-r-2xs); background: var(--irp-slate-400); }
+  .wf-row--total .wf-bar { background: var(--irp-teal-700); }
+  .wf-row--total th[scope='row'], .wf-row--total .num { font-weight: 800; color: var(--irp-text); }
+  .wf-row--add .wf-bar { background: var(--irp-teal-400); }
+  .wf-row--sub .wf-bar { background: var(--irp-slate-300); }
+  .wf-row--risk .wf-bar { background: repeating-linear-gradient(45deg, var(--irp-red-300) 0 4px, var(--irp-red-100) 4px 8px); }
   .wf-pick { all: unset; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(2, 181, 187, 0.45); text-underline-offset: 3px; }
-  .wf-pick:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; border-radius: 3px; }
+  .wf-pick:focus-visible { outline: 2px solid var(--irp-accent); outline-offset: 2px; border-radius: var(--irp-r-2xs); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

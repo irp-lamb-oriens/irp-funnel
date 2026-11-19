@@ -119,30 +119,30 @@
 <style>
   .ip-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
   .ip-col { min-width: 0; }
-  .ip-col__h { margin: 0 0 0.55rem; font-size: 0.86rem; font-weight: 800; color: #0f172a; }
-  .ip-col--good .ip-col__h span { color: #047857; }
-  .ip-col--bad .ip-col__h span { color: #b91c1c; }
+  .ip-col__h { margin: 0 0 0.55rem; font-size: var(--irp-fs-md); font-weight: 800; color: var(--irp-text); }
+  .ip-col--good .ip-col__h span { color: var(--irp-green-700); }
+  .ip-col--bad .ip-col__h span { color: var(--irp-red-700); }
   .ip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
-  .ip-card { padding: 0.7rem 0.85rem; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; border-left-width: 4px; }
-  .ip-card--good { border-left-color: #10b981; background: linear-gradient(90deg, #f0fdf8, #fff 40%); }
-  .ip-card--bad { border-left-color: #ef4444; background: linear-gradient(90deg, #fff5f5, #fff 40%); }
-  .ip-card--watch { border-left-color: #f59e0b; background: linear-gradient(90deg, #fffbeb, #fff 40%); }
-  .ip-card__h { font-weight: 700; font-size: 0.86rem; color: #0f172a; }
-  .ip-card__d { margin-top: 0.2rem; font-size: 0.76rem; color: #475569; line-height: 1.4; font-variant-numeric: tabular-nums; }
-  .ip-card__a { margin-top: 0.35rem; font-size: 0.74rem; }
+  .ip-card { padding: 0.7rem 0.85rem; border-radius: var(--irp-r-md); border: 1px solid var(--irp-line); background: var(--irp-surface); border-left-width: 4px; }
+  .ip-card--good { border-left-color: var(--irp-green-500); background: linear-gradient(90deg, var(--irp-surface-2), var(--irp-surface) 40%); }
+  .ip-card--bad { border-left-color: var(--irp-red-500); background: linear-gradient(90deg, var(--irp-surface-2), var(--irp-surface) 40%); }
+  .ip-card--watch { border-left-color: var(--irp-amber-500); background: linear-gradient(90deg, var(--irp-bg), var(--irp-surface) 40%); }
+  .ip-card__h { font-weight: 700; font-size: var(--irp-fs-md); color: var(--irp-text); }
+  .ip-card__d { margin-top: 0.2rem; font-size: var(--irp-fs-xs); color: var(--irp-text-muted); line-height: 1.4; font-variant-numeric: tabular-nums; }
+  .ip-card__a { margin-top: 0.35rem; font-size: var(--irp-fs-xs); }
   .ip-meta { margin-top: 0.7rem; }
   .ip-strip { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.6rem; }
-  .ip-risk { padding: 0.65rem 0.8rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
-  .ip-risk__h { display: flex; gap: 0.45rem; align-items: baseline; font-weight: 700; font-size: 0.8rem; color: #0f172a; }
-  .ip-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; transform: translateY(-1px); }
-  .ip-risk--good .ip-dot { background: #10b981; }
-  .ip-risk--bad .ip-dot { background: #ef4444; }
-  .ip-risk--watch .ip-dot { background: #f59e0b; }
-  .ip-risk--info .ip-dot { background: #38bdf8; }
-  .ip-risk__d { margin-top: 0.2rem; font-size: 0.74rem; color: #475569; line-height: 1.4; }
-  .ip-deals { list-style: none; margin: 0.45rem 0 0; padding: 0; display: grid; gap: 0.2rem; font-size: 0.74rem; }
+  .ip-risk { padding: 0.65rem 0.8rem; border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); background: var(--irp-surface-2); }
+  .ip-risk__h { display: flex; gap: 0.45rem; align-items: baseline; font-weight: 700; font-size: var(--irp-fs-sm); color: var(--irp-text); }
+  .ip-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--irp-slate-400); transform: translateY(-1px); }
+  .ip-risk--good .ip-dot { background: var(--irp-green-500); }
+  .ip-risk--bad .ip-dot { background: var(--irp-red-500); }
+  .ip-risk--watch .ip-dot { background: var(--irp-amber-500); }
+  .ip-risk--info .ip-dot { background: var(--irp-blue-400); }
+  .ip-risk__d { margin-top: 0.2rem; font-size: var(--irp-fs-xs); color: var(--irp-text-muted); line-height: 1.4; }
+  .ip-deals { list-style: none; margin: 0.45rem 0 0; padding: 0; display: grid; gap: 0.2rem; font-size: var(--irp-fs-xs); }
   .ip-deals li { display: flex; justify-content: space-between; gap: 0.5rem; }
-  .ip-deals span { color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .ip-deals .mh-link { font-size: 0.74rem; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ip-deals span { color: var(--irp-text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ip-deals .mh-link { font-size: var(--irp-fs-xs); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @media (max-width: 860px) { .ip-cols { grid-template-columns: minmax(0, 1fr); } }
 </style>

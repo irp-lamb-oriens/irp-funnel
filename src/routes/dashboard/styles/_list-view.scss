@@ -17,7 +17,7 @@
 
   &::-webkit-scrollbar-thumb {
     background: $surface-3;
-    border-radius: 3px;
+    border-radius: var(--irp-r-2xs);
   }
 
   &::-webkit-scrollbar-track {
@@ -56,11 +56,11 @@
 }
 
 .board__column-icon {
-  font-size: 16px;
+  font-size: var(--irp-fs-lg);
 }
 
 .board__column-title {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 700;
   color: $text-2;
   flex: 1;
@@ -69,7 +69,7 @@
 }
 
 .board__column-count {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: $text-dim;
   background: $surface-2;
@@ -105,7 +105,7 @@
     padding: 6px 10px;
     border: 1px solid $border;
     border-radius: $r-xs;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     background: $surface-2;
     color: $text;
     outline: none;
@@ -130,8 +130,8 @@
   border: 1px dashed $border-hover;
   border-radius: $r-sm;
   background: transparent;
-  color: $accent;
-  font-size: 12px;
+  color: $accent-ink;
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   cursor: pointer;
   font-family: $font;
@@ -147,7 +147,7 @@
   text-align: center;
   padding: $sp-7 $sp-2;
   color: $text-dim;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 500;
 }
 
@@ -171,7 +171,7 @@
   }
 
   &__name {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     color: $text;
     margin-bottom: 3px;
@@ -181,7 +181,7 @@
   }
 
   &__route {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-muted;
     margin-bottom: $sp-2;
     white-space: nowrap;
@@ -204,7 +204,7 @@
   }
 
   &__tag {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     padding: 2px 7px;
     background: $accent-subtle;
@@ -222,19 +222,19 @@
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     padding: 2px 6px;
     border-radius: $r-full;
     background: rgba($success, 0.1);
-    color: $success;
+    color: $success-ink;
     border: 1px solid rgba($success, 0.25);
     white-space: nowrap;
     letter-spacing: 0.02em;
   }
 
   &__date {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
     font-weight: 500;
   }
@@ -243,11 +243,11 @@
     position: absolute;
     top: 0;
     right: 0;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     padding: 2px 6px;
     background: rgba($warning, 0.12);
-    color: $warning;
+    color: $warning-ink;
     border-radius: $r-full;
 
     &--missing {
@@ -274,7 +274,7 @@
     border-radius: $r-full;
     background: rgba($text-muted, 0.18);
     color: $text-muted;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     font-style: normal;
     /* keep "?" upright even when parent is italic */
@@ -292,7 +292,7 @@
 
   &--no-show {
     background: linear-gradient(to right, rgba(254, 226, 226, 0.4), transparent);
-    border-left: 3px solid #ef4444;
+    border-left: 3px solid var(--irp-red-500);
 
     &:hover {
       background: linear-gradient(to right, rgba(254, 226, 226, 0.7), rgba(254, 226, 226, 0.2));
@@ -310,9 +310,9 @@
         margin-right: 6px;
         padding: 1px 6px;
         border-radius: $r-full;
-        background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
-        color: #fff;
-        font-size: 10px;
+        background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
+        color: var(--irp-text-inverse);
+        font-size: var(--irp-fs-2xs);
         font-weight: 800;
         font-style: normal;
         line-height: 1.4;
@@ -322,7 +322,7 @@
       }
 
       &__name {
-        color: #7f1d1d;
+        color: var(--irp-red-900);
       }
     }
   }

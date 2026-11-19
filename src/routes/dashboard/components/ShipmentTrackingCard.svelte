@@ -301,9 +301,9 @@
 
 <style>
   .stc {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     padding: 16px;
     margin: 16px 0;
     font-family: inherit;
@@ -319,20 +319,20 @@
   }
 
   .stc__title {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
-    color: #111827;
+    color: var(--irp-text);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   .stc__loop-pill {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
-    color: var(--loop-color, #374151);
-    background: color-mix(in srgb, var(--loop-color, #374151) 10%, white);
-    border: 1px solid color-mix(in srgb, var(--loop-color, #374151) 25%, white);
-    border-radius: 999px;
+    color: var(--loop-color, var(--irp-text-2));
+    background: color-mix(in srgb, var(--loop-color, var(--irp-slate-700)) 10%, white);
+    border: 1px solid color-mix(in srgb, var(--loop-color, var(--irp-slate-700)) 25%, white);
+    border-radius: var(--irp-r-full);
     padding: 2px 8px;
     white-space: nowrap;
   }
@@ -341,12 +341,12 @@
   .stc__empty {
     text-align: center;
     padding: 12px 0 4px;
-    color: #6b7280;
-    font-size: 13px;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     line-height: 1.5;
   }
   .stc__empty p { margin: 0 0 6px; }
-  .stc__empty-hint { font-size: 12px; color: #9ca3af; }
+  .stc__empty-hint { font-size: var(--irp-fs-xs); color: var(--irp-text-faint); }
 
   /* Row of cells */
   .stc__row {
@@ -363,33 +363,33 @@
   }
   .stc__cell-label {
     display: block;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--irp-text-faint);
     margin-bottom: 3px;
   }
   .stc__cell-value {
-    font-size: 13px;
-    color: #111827;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text);
     display: flex;
     align-items: center;
     gap: 5px;
     flex-wrap: wrap;
   }
-  .stc__method { font-size: 14px; }
-  .stc__na { color: #d1d5db; }
+  .stc__method { font-size: var(--irp-fs-md); }
+  .stc__na { color: var(--irp-slate-300); }
 
   .stc__confirmed-badge {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
-    background: #d1fae5;
-    color: #065f46;
-    border-radius: 4px;
+    background: var(--irp-green-100);
+    color: var(--irp-green-800);
+    border-radius: var(--irp-r-2xs);
     padding: 1px 5px;
   }
-  .stc__confirmed-text { color: #059669; font-weight: 600; }
+  .stc__confirmed-text { color: var(--irp-green-600); font-weight: 600; }
 
   /* Date rail */
   .stc__date-rail {
@@ -418,19 +418,19 @@
     left: -50%;
     width: 100%;
     height: 2px;
-    background: #e5e7eb;
+    background: var(--irp-surface-4);
     z-index: 0;
   }
   .stc__date-node--set + .stc__date-node--set::before {
-    background: #a7f3d0;
+    background: var(--irp-green-200);
   }
 
   .stc__date-icon {
-    font-size: 18px;
+    font-size: var(--irp-fs-xl);
     margin-bottom: 4px;
     position: relative;
     z-index: 1;
-    background: #f9fafb;
+    background: var(--irp-surface-2);
     padding: 0 2px;
     line-height: 1;
   }
@@ -442,21 +442,21 @@
   }
 
   .stc__date-label {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #9ca3af;
+    color: var(--irp-text-faint);
     margin-bottom: 2px;
   }
-  .stc__date-node--set .stc__date-label { color: #374151; }
+  .stc__date-node--set .stc__date-label { color: var(--irp-text-2); }
 
   .stc__date-value {
-    font-size: 11px;
-    color: #6b7280;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     white-space: nowrap;
   }
-  .stc__date-node--set .stc__date-value { color: #111827; font-weight: 600; }
+  .stc__date-node--set .stc__date-value { color: var(--irp-text); font-weight: 600; }
 
   /* Agent emails */
   .stc__agents {
@@ -464,9 +464,9 @@
     gap: 14px;
     flex-wrap: wrap;
     padding: 10px 12px;
-    background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 7px;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-blue-200);
+    border-radius: var(--irp-r-sm);
     margin-bottom: 10px;
   }
   .stc__agent {
@@ -476,15 +476,15 @@
     min-width: 0;
   }
   .stc__agent-role {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #0369a1;
+    color: var(--irp-blue-700);
   }
   .stc__agent-email {
-    font-size: 12px;
-    color: #0ea5e9;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-blue-500);
     text-decoration: none;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -494,29 +494,29 @@
 
   /* Not-yet-configured hint (shown above the always-rendered fields) */
   .stc__hint {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     line-height: 1.5;
-    color: #92700e;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    border-radius: 7px;
+    color: var(--irp-amber-800);
+    background: var(--irp-bg);
+    border: 1px solid var(--irp-amber-200);
+    border-radius: var(--irp-r-sm);
     padding: 8px 12px;
     margin-bottom: 14px;
   }
-  .stc__hint strong { color: #78350f; font-weight: 700; }
+  .stc__hint strong { color: var(--irp-amber-900); font-weight: 700; }
 
   /* Custom Logistics fields (Overview Field Registry) */
   .stc__custom {
     margin-top: 6px;
     padding-top: 12px;
-    border-top: 1px dashed #e5e7eb;
+    border-top: 1px dashed var(--irp-line);
   }
   .stc__custom-title {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--irp-text-dim);
     margin-bottom: 10px;
   }
   .stc__custom-grid {

@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _mixins.scss — shared visual primitives for the dashboard
+   ───────────────────────────────────────────────────────────────────────────
+   Emits NOTHING on its own. Every mixin reads only --irp-* CSS custom
+   properties (never SCSS $vars), so it can be included from global partials
+   AND from a component's <style lang="scss"> via:
+       @import 'routes/dashboard/styles/mixins';
+   The matching ready-made classes (.irp-tabs, .irp-btn …) live in
+   _primitives.scss. Registry: component-registry.md → "Dashboard primitives".
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Focus ────────────────────────────────────────────────────────────────────
+@mixin irp-focus-ring($offset: 2px) {
+  outline: 2px solid var(--irp-focus);
+  outline-offset: $offset;
+}
+@mixin irp-field-focus {
+  outline: none;
+  border-color: var(--irp-accent);
+  box-shadow: var(--irp-focus-ring);
+}
+
+// ── Typography ───────────────────────────────────────────────────────────────
+@mixin irp-overline {
+  font-size: var(--irp-fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--irp-text-dim);
+}
+
+// ── Surfaces ─────────────────────────────────────────────────────────────────
+@mixin irp-card($pad: var(--irp-sp-4)) {
+  background: var(--irp-surface);
+  border: 1px solid var(--irp-line);
+  border-radius: var(--irp-r-lg);
+  box-shadow: var(--irp-shadow-sm);
+  padding: $pad;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+// One tab language, three densities:
+//   pills    — section navigation (Finance, Admin, Automation …): white track,
+//              teal-tinted active pill. The dashboard's house tab style.
+//   segment  — in-section switches (period, lens, view mode): slate track,
+//              raised white active chip with teal ink.
+//   line     — tab lists inside a card or panel (detail panel, deal book):
+//              underline with a rounded teal indicator.
+// $item is the selector for the tab element (default: direct children).
+// Active state accepts every convention already in the codebase so markup
+// does not have to change: .active, .is-active, [class*='--active'],
+// [aria-selected=true], [aria-pressed=true], [aria-current=true|page].
+$irp-tab-active: '.active, &.is-active, &[class*="--active"], &[aria-selected="true"], &[aria-pressed="true"], &[aria-current="true"], &[aria-current="page"]';
+
+@mixin irp-tab-item-base {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0 0.85rem;
+  border: 1px solid transparent;
+  border-radius: var(--irp-r-sm);
+  background: none;
+  color: var(--irp-text-dim);
+  font: inherit;
+  font-size: var(--irp-fs-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--irp-t-fast), background-color var(--irp-t-fast),
+    border-color var(--irp-t-fast), box-shadow var(--irp-t-fast), transform var(--irp-t-fast);
+  &:hover:not(:disabled) { color: var(--irp-text); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:focus-visible { @include irp-focus-ring(1px); }
+  &:disabled, &[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+}
+
+@mixin irp-tabs-pills($item: '> button:not([data-tab-skip]), > a:not([data-tab-skip])') {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  background: var(--irp-surface);
+  border: 1px solid var(--irp-line);
+  border-radius: var(--irp-r-md);
+  box-shadow: var(--irp-shadow-xs);
+  &::-webkit-scrollbar { display: none; }
+  #{$item} {
+    @include irp-tab-item-base;
+    min-height: 34px;
+    padding: 0 1rem;
+    &:hover:not(:disabled) { background: var(--irp-surface-3); }
+    &#{$irp-tab-active} {
+      color: var(--irp-accent-ink);
+      background: linear-gradient(135deg, rgba(2, 181, 187, 0.12) 0%, rgba(139, 92, 246, 0.06) 100%);
+      border-color: rgba(2, 181, 187, 0.24);
+      box-shadow: 0 1px 3px rgba(2, 181, 187, 0.14);
+    }
+  }
+}
+
+@mixin irp-tabs-segment($item: '> button:not([data-tab-skip])') {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  background: var(--irp-surface-3);
+  border: 1px solid var(--irp-line);
+  border-radius: var(--irp-r-md);
+  #{$item} {
+    @include irp-tab-item-base;
+    min-height: 28px;
+    padding: 0 0.75rem;
+    font-size: var(--irp-fs-xs);
+    font-weight: 700;
+    border-radius: var(--irp-r-sm);
+    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.6); }
+    &#{$irp-tab-active} {
+      color: var(--irp-accent-ink);
+      background: var(--irp-surface);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.04);
+    }
+  }
+}
+
+@mixin irp-tabs-line($item: '> button:not([data-tab-skip])') {
+  display: flex;
+  gap: 0.15rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--irp-line);
+  &::-webkit-scrollbar { display: none; }
+  #{$item} {
+    @include irp-tab-item-base;
+    min-height: 38px;
+    padding: 0 0.85rem;
+    margin-bottom: -1px;
+    border: 0;
+    border-radius: var(--irp-r-sm) var(--irp-r-sm) 0 0;
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0.6rem;
+      right: 0.6rem;
+      bottom: 0;
+      height: 2px;
+      border-radius: 2px 2px 0 0;
+      background: var(--irp-accent);
+      transform: scaleX(0);
+      transition: transform var(--irp-t-med);
+    }
+    &:hover:not(:disabled) { background: var(--irp-surface-2); }
+    &#{$irp-tab-active} {
+      color: var(--irp-accent-ink);
+      &::after { transform: scaleX(1); }
+    }
+  }
+}
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+@mixin irp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--irp-control-md);
+  padding: 0 0.95rem;
+  border: 1px solid var(--irp-line);
+  border-radius: var(--irp-r-md);
+  background: var(--irp-surface);
+  color: var(--irp-text-2);
+  font: inherit;
+  font-size: var(--irp-fs-sm);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--irp-t-fast), color var(--irp-t-fast),
+    border-color var(--irp-t-fast), box-shadow var(--irp-t-fast), transform var(--irp-t-fast);
+  &:hover:not(:disabled) { background: var(--irp-surface-3); color: var(--irp-text); border-color: var(--irp-line-strong); }
+  &:active:not(:disabled) { transform: translateY(1px); }
+  &:focus-visible { @include irp-focus-ring; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+@mixin irp-btn-primary {
+  background: var(--irp-accent-gradient);
+  border-color: var(--irp-teal-600);
+  color: var(--irp-text-inverse);
+  box-shadow: 0 1px 2px rgba(2, 153, 158, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  &:hover:not(:disabled) { background: var(--irp-teal-600); border-color: var(--irp-teal-700); color: var(--irp-text-inverse); }
+}
+@mixin irp-btn-danger {
+  background: var(--irp-surface);
+  border-color: var(--irp-danger-line);
+  color: var(--irp-danger-ink);
+  &:hover:not(:disabled) { background: var(--irp-danger-bg); border-color: var(--irp-red-300); color: var(--irp-red-800); }
+}
+@mixin irp-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  &:hover:not(:disabled) { background: var(--irp-surface-3); border-color: transparent; }
+}
+
+// ── Chips / badges ───────────────────────────────────────────────────────────
+@mixin irp-chip($tone: accent) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2em 0.65em;
+  border-radius: var(--irp-r-full);
+  font-size: var(--irp-fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  @if $tone == accent {
+    background: var(--irp-accent-subtle); color: var(--irp-accent-ink); border: 1px solid rgba(2, 181, 187, 0.28);
+  } @else if $tone == neutral {
+    background: var(--irp-surface-3); color: var(--irp-text-muted); border: 1px solid var(--irp-line);
+  } @else {
+    background: var(--irp-#{$tone}-bg); color: var(--irp-#{$tone}-ink); border: 1px solid var(--irp-#{$tone}-line);
+  }
+}
+
+// ── Inputs ───────────────────────────────────────────────────────────────────
+@mixin irp-input {
+  min-height: var(--irp-control-md);
+  padding: 0 0.75rem;
+  background: var(--irp-surface);
+  border: 1px solid var(--irp-line-strong);
+  border-radius: var(--irp-r-sm);
+  color: var(--irp-text);
+  font: inherit;
+  font-size: var(--irp-fs-sm);
+  transition: border-color var(--irp-t-fast), box-shadow var(--irp-t-fast);
+  &::placeholder { color: var(--irp-text-faint); }
+  &:hover:not(:disabled):not(:focus) { border-color: var(--irp-slate-400); }
+  &:focus, &:focus-visible { @include irp-field-focus; }
+  &:disabled { background: var(--irp-surface-2); color: var(--irp-text-dim); cursor: not-allowed; }
+  &[aria-invalid='true'] { border-color: var(--irp-danger); }
+}

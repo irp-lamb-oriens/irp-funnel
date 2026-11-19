@@ -10,6 +10,7 @@
     Operations (collapsed)
 -->
 <script lang="ts">
+  import { tabs } from '../../utils/a11yTabs.ts';
   import { onDestroy, onMount, tick } from 'svelte';
   import { activeView, authEmail, evoRefresh, fetchClientDetail, fetchEvoCube, fetchEvoDecisions, fetchMetricsCube } from '../../store.ts';
   import { ADMIN_EMAILS } from '../../access.ts';
@@ -245,7 +246,7 @@
       <p>What we're testing, what's winning and what to do next · Costa Rica time{updated ? ` · updated ${updated}` : ''}{decidedLabel ? ` · decisions as of ${decidedLabel}` : ''}</p>
     </div>
     <div class="mh-head__actions">
-      <div class="mh-seg" role="group" aria-label="Headline numbers for">
+      <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Headline numbers for">
         {#each VIEWS as v}<button aria-pressed={view === v.key} on:click={() => (view = v.key)}>{v.label}</button>{/each}
       </div>
       <button class="mh-btn" on:click={copyLink}>{copied ? 'Link copied' : 'Copy link'}</button>
@@ -261,7 +262,7 @@
       <select class="mh-input" bind:value={windowDays} title="A lead counts for a visitor's variant if it arrives within this many days of their first visit">{#each WINDOWS as w}<option value={w}>{w} days</option>{/each}</select>
     </label>
     <div class="mh-control"><span class="mh-label">Surface</span>
-      <div class="mh-seg" role="group" aria-label="Surface">
+      <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Surface">
         {#each SURFACES as s}<button aria-pressed={surface === s.k} on:click={() => (surface = s.k)}>{s.l}</button>{/each}
       </div>
     </div>
@@ -343,7 +344,7 @@
   .evo-excl { position: relative; align-self: flex-end; }
   .evo-excl > summary { list-style: none; }
   .evo-excl > summary::-webkit-details-marker { display: none; }
-  .evo-excl__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.7rem 0.8rem; display: grid; gap: 0.4rem; min-width: 240px; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12); }
+  .evo-excl__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); padding: 0.7rem 0.8rem; display: grid; gap: 0.4rem; min-width: 240px; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12); }
   @media (max-width: 640px) {
     .evo-bar { gap: 0.5rem; }
     .evo-bar__filters { flex-basis: 100%; }

@@ -75,9 +75,9 @@
 
 <style>
   .vl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.8rem; }
-  .vl-card { background: #fff; }
+  .vl-card { background: var(--irp-surface); }
   .vl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.3rem; }
   .vl-head .mh-card__h { margin: 0; }
-  .vl-med { font-size: 0.82rem; color: #0f172a; white-space: nowrap; }
+  .vl-med { font-size: var(--irp-fs-sm); color: var(--irp-text); white-space: nowrap; }
   .vl-stalled { margin-top: 1rem; }
 </style>

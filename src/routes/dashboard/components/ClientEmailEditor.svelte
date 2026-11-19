@@ -146,7 +146,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--color-highlight-2, #02b5bb);
+    color: var(--color-highlight-2, var(--irp-accent-ink));
     cursor: pointer;
   }
   .email-editor__link:hover { text-decoration: underline; }
@@ -155,7 +155,7 @@
   .email-editor__input {
     font: inherit;
     padding: 0.4rem 0.6rem;
-    border-radius: 6px;
+    border-radius: var(--irp-r-xs);
     border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
     background: transparent;
     color: inherit;
@@ -163,7 +163,7 @@
   .email-editor__input:focus-visible,
   .email-editor__btn:focus-visible,
   .email-editor__link:focus-visible {
-    outline: 2px solid var(--color-highlight-2, #02b5bb);
+    outline: 2px solid var(--color-highlight-2, var(--irp-accent));
     outline-offset: 2px;
   }
   .email-editor__actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.3rem; }
@@ -172,20 +172,20 @@
     font-size: 0.85em;
     font-weight: 600;
     padding: 0.4rem 0.9rem;
-    border-radius: 6px;
+    border-radius: var(--irp-r-xs);
     border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
     background: transparent;
     color: inherit;
     cursor: pointer;
   }
   .email-editor__btn--primary {
-    background: var(--color-highlight-2, #02b5bb);
-    border-color: var(--color-highlight-2, #02b5bb);
-    color: #04121a;
+    background: var(--color-highlight-2, var(--irp-accent));
+    border-color: var(--color-highlight-2, var(--irp-accent));
+    color: var(--irp-text);
   }
   .email-editor__btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .email-editor__notice { margin: 0; font-size: 0.82em; color: var(--color-highlight-2, #02b5bb); }
-  .email-editor__error { margin: 0; font-size: 0.82em; color: var(--chat-color-staff, #f59e0b); }
+  .email-editor__notice { margin: 0; font-size: 0.82em; color: var(--color-highlight-2, var(--irp-accent-ink)); }
+  .email-editor__error { margin: 0; font-size: 0.82em; color: var(--chat-color-staff, var(--irp-amber-700)); }
   .email-editor__history { list-style: none; margin: 0.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
   .email-editor__history li { display: flex; flex-direction: column; font-size: 0.82em; }
   .email-editor__history-change { overflow-wrap: anywhere; }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * History — the whole book over time with the period highlighted
    * (sales-book-v3 §6.6): booked and cash per month / quarter / year, rolling
@@ -56,16 +57,16 @@
   <p class="mh-empty">Segment data unavailable — history needs it.</p>
 {:else}
   <div class="mh-tools sb-hist-tools">
-    <div class="mh-seg" role="group" aria-label="Group by">
+    <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Group by">
       {#each GRAINS as [g, l]}
         <button aria-pressed={grain === g} on:click={() => (grain = g)}>{l}</button>
       {/each}
     </div>
-    <div class="mh-seg" role="group" aria-label="Values">
+    <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Values">
       <button aria-pressed={!showCum} on:click={() => (showCum = false)}>Per {grain}</button>
       <button aria-pressed={showCum} on:click={() => (showCum = true)}>Cumulative</button>
     </div>
-    <div class="mh-seg" role="group" aria-label="Show as">
+    <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Show as">
       <button aria-pressed={!asTable} on:click={() => (asTable = false)}>Chart</button>
       <button aria-pressed={asTable} on:click={() => (asTable = true)}>Table</button>
     </div>

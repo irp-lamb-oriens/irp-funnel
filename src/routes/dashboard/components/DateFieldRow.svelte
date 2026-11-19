@@ -200,11 +200,11 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: 7px;
+    border-radius: var(--irp-r-sm);
     border: 1.5px solid rgba(220, 38, 38, 0.28);
     background: rgba(220, 38, 38, 0.06);
-    color: #dc2626;
-    font-size: 11px;
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
@@ -212,7 +212,7 @@
 
     &:hover:not(:disabled) {
       background: rgba(220, 38, 38, 0.14);
-      border-color: #dc2626;
+      border-color: var(--irp-red-600);
     }
     &:active:not(:disabled) { transform: scale(0.92); }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -231,8 +231,8 @@
     padding: 1rem;
   }
   .dfr-confirm-card {
-    background: #fff;
-    border-radius: 16px;
+    background: var(--irp-surface);
+    border-radius: var(--irp-r-lg);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
     padding: 1.4rem 1.35rem;
     width: 100%;
@@ -244,35 +244,35 @@
     gap: 0.5rem;
   }
   .dfr-confirm-icon { font-size: 1.9rem; }
-  .dfr-confirm-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin: 0; }
-  .dfr-confirm-text { font-size: 0.84rem; color: #64748b; margin: 0 0 0.5rem; line-height: 1.45; }
+  .dfr-confirm-title { font-size: var(--irp-fs-lg); font-weight: 700; color: var(--irp-text); margin: 0; }
+  .dfr-confirm-text { font-size: var(--irp-fs-sm); color: var(--irp-text-dim); margin: 0 0 0.5rem; line-height: 1.45; }
   .dfr-confirm-buttons { display: flex; gap: 0.55rem; }
 
   .dfr-cancel-btn {
     padding: 0.5rem 1.05rem;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1.5px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     background: transparent;
-    color: #64748b;
-    font-size: 0.85rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     transition: background 0.15s;
-    &:hover { background: #f8fafc; }
+    &:hover { background: var(--irp-surface-2); }
   }
   .dfr-danger-btn {
     padding: 0.5rem 1.15rem;
     border: none;
-    border-radius: 10px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 0.85rem;
+    border-radius: var(--irp-r-md);
+    background: var(--irp-red-600);
+    color: var(--irp-text-inverse);
+    font-size: var(--irp-fs-md);
     font-weight: 700;
     cursor: pointer;
     font-family: inherit;
     transition: background 0.15s, opacity 0.15s;
-    &:hover:not(:disabled) { background: #b91c1c; }
+    &:hover:not(:disabled) { background: var(--irp-red-700); }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
   }
 </style>

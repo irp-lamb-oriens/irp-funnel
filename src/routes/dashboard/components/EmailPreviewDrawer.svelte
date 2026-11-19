@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../utils/a11yTabs.ts';
   /**
    * EmailPreviewDrawer.svelte
    * ────────────────────────────────────────────────────────────────────────
@@ -347,7 +348,7 @@
 
       <!-- ── Mode Toolbar ─────────────────────────────────────────────────── -->
       <div class="email-preview-drawer__presend-toolbar">
-        <div class="epd-mode-tabs">
+        <div class="epd-mode-tabs" use:tabs={{ label: 'Editor mode' }}>
           <button
             type="button"
             class="epd-mode-tab"
@@ -731,8 +732,8 @@
   .epd-mode-tabs {
     display: flex;
     gap: 2px;
-    background: #12121e;
-    border-radius: 7px;
+    background: var(--irp-slate-900);
+    border-radius: var(--irp-r-sm);
     padding: 2px;
     flex-shrink: 0;
   }
@@ -741,17 +742,17 @@
     padding: 0.3rem 0.7rem;
     border: none;
     background: none;
-    color: #888;
-    font-size: 0.78rem;
+    color: var(--irp-text-faint);
+    font-size: var(--irp-fs-xs);
     font-weight: 500;
-    border-radius: 5px;
+    border-radius: var(--irp-r-xs);
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
     white-space: nowrap;
   }
-  .epd-mode-tab:hover { background: #1e1e2e; color: #ccc; }
-  .epd-mode-tab--active { background: #1e1e2e; color: #a78bfa; }
-  .epd-mode-tab--html { font-family: monospace; font-size: 0.72rem; }
+  .epd-mode-tab:hover { background: var(--irp-slate-900); color: var(--irp-slate-300); }
+  .epd-mode-tab--active { background: var(--irp-slate-900); color: var(--irp-violet-400); }
+  .epd-mode-tab--html { font-family: monospace; font-size: var(--irp-fs-xs); }
 
   /* ── Formatting toolbar ───────────────────────────────────────────────────── */
   .epd-format-toolbar {
@@ -760,31 +761,31 @@
     gap: 2px;
     flex-wrap: wrap;
     padding: 4px 0 2px;
-    border-top: 1px solid #2a2a3e;
+    border-top: 1px solid var(--irp-slate-800);
     margin-top: 6px;
   }
 
   .epd-fmt-btn {
     padding: 0.25rem 0.5rem;
-    background: #12121e;
-    border: 1px solid #2a2a3e;
-    color: #bbb;
-    border-radius: 4px;
+    background: var(--irp-slate-900);
+    border: 1px solid var(--irp-slate-800);
+    color: var(--irp-slate-300);
+    border-radius: var(--irp-r-2xs);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     line-height: 1.4;
     transition: background 0.12s, color 0.12s;
     font-family: inherit;
     min-width: 28px;
     text-align: center;
   }
-  .epd-fmt-btn:hover { background: #1e1e2e; color: #e2e2f0; border-color: #4a4a7c; }
-  .epd-fmt-btn--active { background: #2e2e4e; color: #a78bfa; border-color: #7c3aed; }
+  .epd-fmt-btn:hover { background: var(--irp-slate-900); color: var(--irp-slate-200); border-color: var(--irp-slate-600); }
+  .epd-fmt-btn--active { background: var(--irp-slate-800); color: var(--irp-violet-400); border-color: var(--irp-violet-600); }
 
   .epd-fmt-sep {
     width: 1px;
     height: 20px;
-    background: #2a2a3e;
+    background: var(--irp-slate-800);
     margin: 0 3px;
     flex-shrink: 0;
   }
@@ -795,7 +796,7 @@
   }
 
   .epd-snippet-btn {
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
     padding: 0.25rem 0.6rem;
     white-space: nowrap;
   }
@@ -811,9 +812,9 @@
     top: calc(100% + 4px);
     left: 0;
     z-index: 999;
-    background: #1e1e2e;
-    border: 1px solid #3a3a5c;
-    border-radius: 8px;
+    background: var(--irp-slate-900);
+    border: 1px solid var(--irp-slate-700);
+    border-radius: var(--irp-r-sm);
     box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     min-width: 210px;
     max-height: 320px;
@@ -827,9 +828,9 @@
 
   .epd-snippet-group__label {
     padding: 6px 12px 3px;
-    font-size: 0.68rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
-    color: #666;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -842,16 +843,16 @@
     padding: 6px 12px;
     background: none;
     border: none;
-    color: #d0d0e8;
-    font-size: 0.83rem;
+    color: var(--irp-slate-300);
+    font-size: var(--irp-fs-sm);
     text-align: left;
     cursor: pointer;
     transition: background 0.1s;
   }
-  .epd-snippet-item:hover { background: #2a2a3e; }
+  .epd-snippet-item:hover { background: var(--irp-slate-800); }
 
   .epd-snippet-item__icon {
-    font-size: 0.9rem;
+    font-size: var(--irp-fs-md);
     flex-shrink: 0;
     width: 18px;
     text-align: center;

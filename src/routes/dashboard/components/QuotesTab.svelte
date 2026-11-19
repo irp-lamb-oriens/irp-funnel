@@ -598,16 +598,16 @@
     flex-direction: column;
     gap: 0;
     padding: 20px 24px 24px;
-    background: #f8fafc;
+    background: var(--irp-surface-2);
     min-height: 200px;
     font-feature-settings: 'cv02','cv03','cv04','cv11';
   }
 
   /* ── Proposal template selector card ──────────────────────────────────── */
   .qt-template {
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdfe 100%);
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    background: linear-gradient(180deg, var(--irp-surface) 0%, var(--irp-bg) 100%);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-lg);
     padding: 14px 16px 12px;
     margin-bottom: 16px;
     box-shadow: 0 1px 3px rgba(15,23,42,0.05), 0 1px 10px rgba(2,181,187,0.04);
@@ -625,38 +625,38 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .qt-template__title svg { color: #02b6bc; flex-shrink: 0; }
+  .qt-template__title svg { color: var(--irp-accent-ink); flex-shrink: 0; }
 
   .qt-template__source {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     letter-spacing: 0.03em;
     padding: 2px 10px;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     border: 1px solid transparent;
     white-space: nowrap;
     line-height: 1.6;
   }
   .qt-template__source.is-auto {
-    color: #0d9488;
+    color: var(--irp-accent-ink);
     background: rgba(2,182,188,0.1);
     border-color: rgba(2,182,188,0.24);
   }
   .qt-template__source.is-manual {
-    color: #7c3aed;
+    color: var(--irp-violet-600);
     background: rgba(124,58,237,0.09);
     border-color: rgba(124,58,237,0.22);
   }
   .qt-template__source.is-default {
-    color: #64748b;
-    background: #f1f5f9;
-    border-color: #e2e8f0;
+    color: var(--irp-text-dim);
+    background: var(--irp-surface-3);
+    border-color: var(--irp-line);
   }
 
   .qt-template__row {
@@ -673,17 +673,17 @@
     width: 38px;
     height: 38px;
     flex-shrink: 0;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #475569;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-muted);
     cursor: pointer;
     transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.14s;
   }
   .qt-template__redetect:hover:not(:disabled) {
-    background: #f0fdfe;
+    background: var(--irp-surface-2);
     border-color: rgba(2,182,188,0.35);
-    color: #02b6bc;
+    color: var(--irp-accent-ink);
     transform: translateY(-1px);
   }
   .qt-template__redetect:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -693,15 +693,15 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #94a3b8;
-    font-size: 12.5px;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     padding: 10px 2px;
   }
   .qt-template__dot {
     width: 14px;
     height: 14px;
-    border: 2px solid #e2e8f0;
-    border-top-color: #02b5bb;
+    border: 2px solid var(--irp-line);
+    border-top-color: var(--irp-accent);
     border-radius: 50%;
     animation: qt-spin 0.7s linear infinite;
     flex-shrink: 0;
@@ -709,9 +709,9 @@
 
   .qt-template__hint {
     margin: 8px 0 0;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     line-height: 1.5;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   /* ── Toolbar ──────────────────────────────────────────────────────────── */
@@ -726,19 +726,19 @@
 
   .quotes-tab__heading {
     margin: 0;
-    font-size: 15px;
+    font-size: var(--irp-fs-lg);
     font-weight: 700;
-    color: #0f172a;
+    color: var(--irp-text);
     letter-spacing: -0.01em;
   }
 
   .quotes-tab__new-btn {
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
+    color: var(--irp-text-inverse);
     border: none;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     padding: 7px 16px;
-    font-size: 12.5px;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: box-shadow 0.18s, transform 0.18s, filter 0.18s;
@@ -768,16 +768,16 @@
     align-items: center;
     gap: 10px;
     padding: 28px 0;
-    color: #94a3b8;
-    font-size: 13.5px;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     justify-content: center;
   }
 
   .quotes-tab__spinner {
     width: 18px;
     height: 18px;
-    border: 2px solid #e2e8f0;
-    border-top-color: #02b5bb;
+    border: 2px solid var(--irp-line);
+    border-top-color: var(--irp-accent);
     border-radius: 50%;
     animation: qt-spin 0.7s linear infinite;
     flex-shrink: 0;
@@ -790,27 +790,27 @@
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 10px;
-    color: #dc2626;
-    font-size: 13px;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
   }
 
   .quotes-tab__retry {
-    background: #fff;
-    border: 1px solid #fca5a5;
-    color: #dc2626;
-    border-radius: 6px;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-red-300);
+    color: var(--irp-red-600);
+    border-radius: var(--irp-r-xs);
     padding: 3px 10px;
-    font-size: 11.5px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.14s;
     margin-left: auto;
     flex-shrink: 0;
   }
-  .quotes-tab__retry:hover { background: #fef2f2; }
+  .quotes-tab__retry:hover { background: var(--irp-surface-3); }
 
   /* ── Empty state ──────────────────────────────────────────────────────── */
   .quotes-tab__empty {
@@ -828,13 +828,13 @@
   }
   .quotes-tab__empty-title {
     font-weight: 700;
-    font-size: 14.5px;
-    color: #0f172a;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text);
     margin: 0;
   }
   .quotes-tab__empty-desc {
-    color: #94a3b8;
-    font-size: 12.5px;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     margin: 0;
   }
 
@@ -853,9 +853,9 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     padding: 13px 16px 11px;
     cursor: pointer;
     transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
@@ -863,12 +863,12 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(0,0,0,0.04);
   }
   .quotes-tab__item:hover {
-    border-color: #9fe3e6;
+    border-color: var(--irp-teal-200);
     box-shadow: 0 4px 16px rgba(2,181,187,0.10), 0 1px 4px rgba(0,0,0,0.06);
     transform: translateY(-1px);
   }
   .quotes-tab__item:focus-visible {
-    outline: 2px solid #02b5bb;
+    outline: 2px solid var(--irp-accent);
     outline-offset: 2px;
   }
 
@@ -883,8 +883,8 @@
 
   .quotes-tab__item-title {
     font-weight: 700;
-    font-size: 14px;
-    color: #0f172a;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text);
     flex: 1;
     min-width: 0;
     white-space: nowrap;
@@ -895,10 +895,10 @@
 
   /* ── Status badge ─────────────────────────────────────────────────────── */
   .quotes-tab__status-badge {
-    font-size: 10.5px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     padding: 2px 10px;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     border: 1px solid;
     white-space: nowrap;
     letter-spacing: 0.05em;
@@ -910,29 +910,29 @@
   .quotes-tab__item-meta {
     display: flex;
     gap: 10px;
-    font-size: 12px;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     flex-wrap: wrap;
     align-items: center;
   }
   .quotes-tab__item-meta > span + span {
     padding-left: 10px;
-    border-left: 1px solid #e2e8f0;
+    border-left: 1px solid var(--irp-line);
   }
 
   .quotes-tab__item-total {
     font-weight: 700;
-    font-size: 13px;
-    color: #0f172a;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text);
     font-variant-numeric: tabular-nums;
   }
 
   .quotes-tab__item-lines {
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   .quotes-tab__item-date {
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   /* ── Action buttons ───────────────────────────────────────────────────── */
@@ -954,24 +954,24 @@
     justify-content: center;
     width: 28px;
     height: 28px;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     line-height: 1;
     transition: background 0.14s, border-color 0.14s, transform 0.14s;
-    color: #64748b;
+    color: var(--irp-text-dim);
   }
   .quotes-tab__action-btn:hover {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
+    background: var(--irp-surface-4);
+    border-color: var(--irp-line-strong);
     transform: scale(1.08);
   }
   .quotes-tab__action-btn--duplicate:hover {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    background: var(--irp-surface-3);
+    border-color: var(--irp-blue-200);
+    color: var(--irp-blue-600);
   }
   .quotes-tab__action-btn--duplicate:disabled {
     opacity: 0.55;
@@ -979,9 +979,9 @@
     transform: none;
   }
   .quotes-tab__action-btn--delete:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
+    background: var(--irp-surface-3);
+    border-color: var(--irp-red-200);
+    color: var(--irp-red-600);
   }
 
   /* ── Portal link row (sent_to_client / client_accepted) ──────────────── */
@@ -990,21 +990,21 @@
     align-items: center;
     gap: 6px;
     padding: 5px 10px;
-    background: #f0fdfc;
-    border: 1px solid #99f6e4;
-    border-radius: 7px;
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-green-200);
+    border-radius: var(--irp-r-sm);
     margin-top: 2px;
   }
 
   .quotes-tab__portal-icon {
-    color: #0d9488;
+    color: var(--irp-accent-ink);
     flex-shrink: 0;
   }
 
   .quotes-tab__portal-link {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
-    color: #0d9488;
+    color: var(--irp-accent-ink);
     text-decoration: none;
     flex: 1;
     min-width: 0;
@@ -1015,7 +1015,7 @@
     transition: color 0.14s;
   }
   .quotes-tab__portal-link:hover {
-    color: #0f766e;
+    color: var(--irp-accent-ink);
     text-decoration: underline;
   }
 
@@ -1026,26 +1026,26 @@
     width: 22px;
     height: 22px;
     background: transparent;
-    border: 1px solid #99f6e4;
-    border-radius: 5px;
+    border: 1px solid var(--irp-green-200);
+    border-radius: var(--irp-r-xs);
     cursor: pointer;
-    color: #0d9488;
+    color: var(--irp-accent-ink);
     flex-shrink: 0;
     transition: background 0.14s, border-color 0.14s, transform 0.14s;
     padding: 0;
   }
   .quotes-tab__copy-btn:hover {
-    background: #ccfbf1;
-    border-color: #5eead4;
+    background: var(--irp-green-100);
+    border-color: var(--irp-green-300);
     transform: scale(1.1);
   }
   .quotes-tab__copy-btn:active {
     transform: scale(0.96);
   }
   .quotes-tab__copy-btn.is-copied {
-    background: #0d9488;
-    border-color: #0d9488;
-    color: #fff;
+    background: var(--irp-accent-hover);
+    border-color: var(--irp-accent-hover);
+    color: var(--irp-text-inverse);
   }
 
   /* ── Copy-full-context button ────────────────────────────────────────── */
@@ -1054,12 +1054,12 @@
     align-items: center;
     gap: 4px;
     padding: 3px 9px;
-    background: #ffffff;
-    border: 1px solid #99f6e4;
-    border-radius: 6px;
-    color: #0d9488;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-green-200);
+    border-radius: var(--irp-r-xs);
+    color: var(--irp-accent-ink);
     font-family: inherit;
-    font-size: 10.5px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     letter-spacing: 0.01em;
     cursor: pointer;
@@ -1069,15 +1069,15 @@
   }
   .quotes-tab__context-btn svg { flex-shrink: 0; }
   .quotes-tab__context-btn:hover {
-    background: #ccfbf1;
-    border-color: #5eead4;
+    background: var(--irp-green-100);
+    border-color: var(--irp-green-300);
     transform: translateY(-1px);
   }
   .quotes-tab__context-btn:active { transform: translateY(0); }
   .quotes-tab__context-btn.is-copied {
-    background: #0d9488;
-    border-color: #0d9488;
-    color: #fff;
+    background: var(--irp-accent-hover);
+    border-color: var(--irp-accent-hover);
+    color: var(--irp-text-inverse);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1090,12 +1090,12 @@
   /* ── Create-invoice button (accepted quotes) ─────────────────────────── */
   .quotes-tab__invoice-btn {
     padding: 3px 10px;
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
     border: none;
-    border-radius: 6px;
-    color: #fff;
+    border-radius: var(--irp-r-xs);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 10.5px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
@@ -1114,12 +1114,12 @@
     align-items: center;
     gap: 5px;
     padding: 3px 10px;
-    background: linear-gradient(135deg, #16a34a 0%, #0f7a37 100%);
+    background: linear-gradient(135deg, var(--irp-green-600) 0%, var(--irp-green-700) 100%);
     border: none;
-    border-radius: 6px;
-    color: #fff;
+    border-radius: var(--irp-r-xs);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 10.5px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
@@ -1141,8 +1141,8 @@
 
   .quotes-tab__invoice-msg {
     margin: 2px 0 0;
-    font-size: 11px;
-    color: #0d9488;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-accent-ink);
     line-height: 1.4;
   }
 </style>

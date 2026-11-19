@@ -176,20 +176,20 @@
 
   .veh-editor__input {
     font-family: inherit;
-    font-size: 0.85rem;
-    color: #1e293b;
-    background: #fff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text);
+    background: var(--irp-surface);
+    border: 1.5px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     padding: 0.4rem 0.6rem;
     min-width: 0;
     transition: border-color 0.15s, box-shadow 0.15s;
 
-    &::placeholder { color: #94a3b8; }
-    &:hover:not(:disabled) { border-color: #cbd5e1; }
+    &::placeholder { color: var(--irp-text-dim); }
+    &:hover:not(:disabled) { border-color: var(--irp-line-strong); }
     &:focus {
       outline: none;
-      border-color: #02b5bb;
+      border-color: var(--irp-accent);
       box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.15);
     }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -202,26 +202,26 @@
     width: 26px;
     height: 26px;
     flex: none;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #94a3b8;
-    font-size: 0.8rem;
+    border: 1.5px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     line-height: 1;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 
     &:hover:not(:disabled) {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #ef4444;
+      background: var(--irp-surface-3);
+      border-color: var(--irp-red-200);
+      color: var(--irp-red-600);
     }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
   }
 
   .veh-editor__empty {
-    font-size: 0.85rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text-dim);
   }
 
   .veh-editor__footer {
@@ -232,12 +232,12 @@
 
   .veh-editor__add {
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: #0f766e;
+    color: var(--irp-accent-ink);
     background: rgba(2, 181, 187, 0.08);
     border: 1.5px solid rgba(2, 181, 187, 0.25);
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     padding: 0.35rem 0.7rem;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
@@ -254,7 +254,7 @@
     height: 13px;
     flex: none;
     border: 2px solid rgba(2, 181, 187, 0.25);
-    border-top-color: #02b5bb;
+    border-top-color: var(--irp-accent);
     border-radius: 50%;
     animation: veh-spin 0.7s linear infinite;
   }

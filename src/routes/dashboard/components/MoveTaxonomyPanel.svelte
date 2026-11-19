@@ -271,7 +271,7 @@
      borders, teal accent, Jost via --font-paragraph. */
   .tx {
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    color: var(--irp-text, #181818);
+    color: var(--irp-text);
   }
 
   .tx__head {
@@ -285,9 +285,9 @@
 
   .tx__head h4 {
     margin: 0;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
@@ -295,8 +295,8 @@
   .tx__head p {
     margin: 0.4rem 0 0;
     max-width: 62ch;
-    font-size: 0.78rem;
-    color: #64748b;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     line-height: 1.55;
   }
 
@@ -308,28 +308,28 @@
 
   .tx__ghost {
     padding: 0.46rem 0.95rem;
-    border-radius: 9px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #475569;
+    border-radius: var(--irp-r-sm);
+    border: 1px solid var(--irp-line);
+    background: var(--irp-surface);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .tx__ghost:hover:not(:disabled) { background: #f1f5f9; color: #1e293b; }
+  .tx__ghost:hover:not(:disabled) { background: var(--irp-surface-3); color: var(--irp-text); }
   .tx__ghost:disabled { opacity: 0.5; cursor: default; }
 
   .tx__save {
     padding: 0.48rem 1.2rem;
     border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
-    color: #fff;
+    border-radius: var(--irp-r-md);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
@@ -343,27 +343,27 @@
   .tx__ok,
   .tx__warn {
     padding: 0.6rem 1rem;
-    border-radius: 8px;
-    font-size: 0.8rem;
+    border-radius: var(--irp-r-sm);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin: 0 0 0.9rem;
     line-height: 1.5;
   }
 
-  .tx__error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
-  .tx__ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+  .tx__error { background: var(--irp-surface-3); border: 1px solid var(--irp-red-200); color: var(--irp-red-600); }
+  .tx__ok { background: var(--irp-surface-2); border: 1px solid var(--irp-green-200); color: var(--irp-green-700); }
 
   .tx__warn {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #b45309;
+    background: var(--irp-bg);
+    border: 1px solid var(--irp-amber-200);
+    color: var(--irp-amber-700);
     font-weight: 500;
     margin-top: 1rem;
   }
 
   .tx__empty {
-    color: #94a3b8;
-    font-size: 0.85rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     font-style: italic;
   }
 
@@ -375,9 +375,9 @@
 
   .tx__card {
     padding: 1.25rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
   }
 
@@ -386,26 +386,26 @@
     align-items: center;
     gap: 0.5rem;
     margin: 0 0 0.35rem;
-    font-size: 0.75rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     text-transform: uppercase;
     letter-spacing: 0.07em;
   }
 
   .tx__count {
-    background: linear-gradient(135deg, #02b5bb, #02999e);
-    color: #fff;
-    border-radius: 999px;
-    font-size: 0.66rem;
+    background: linear-gradient(135deg, var(--irp-accent), var(--irp-accent-hover));
+    color: var(--irp-text-inverse);
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     padding: 0.1em 0.55em;
   }
 
   .tx__hint {
     margin: 0 0 0.8rem;
-    font-size: 0.72rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     font-style: italic;
     line-height: 1.55;
   }
@@ -424,15 +424,15 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.22rem 0.3rem 0.22rem 0.55rem;
-    border-radius: 999px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-line);
   }
 
   .tx__keys code {
     font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 0.72rem;
-    color: #334155;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-2);
   }
 
   .tx__x {
@@ -441,13 +441,13 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: #94a3b8;
-    font-size: 0.62rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     cursor: pointer;
     line-height: 1;
   }
 
-  .tx__x:hover { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+  .tx__x:hover { background: rgba(239, 68, 68, 0.12); color: var(--irp-red-600); }
 
   .tx__add {
     display: flex;
@@ -459,12 +459,12 @@
     flex: 1;
     min-width: 0;
     padding: 0.42rem 0.6rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -476,18 +476,18 @@
 
   .tx__add button {
     padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: #f1f5f9;
-    color: #475569;
+    border-radius: var(--irp-r-sm);
+    border: 1px solid var(--irp-line);
+    background: var(--irp-surface-3);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
   }
 
-  .tx__add button:hover:not(:disabled) { background: #e2e8f0; color: #1e293b; }
+  .tx__add button:hover:not(:disabled) { background: var(--irp-surface-4); color: var(--irp-text); }
   .tx__add button:disabled { opacity: 0.5; cursor: default; }
 
-  .tx__unit { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; }
+  .tx__unit { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); white-space: nowrap; }
 </style>

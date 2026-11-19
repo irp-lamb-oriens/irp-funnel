@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../utils/a11yTabs.ts';
   /**
    * FinanceLedgerPanel — what actually happened to the money.
    *
@@ -379,7 +380,7 @@
 </script>
 
 <div class="fl">
-  <div class="fl__tabs" role="tablist" aria-label="Finance reports">
+  <div class="fl__tabs irp-tabs" role="tablist" aria-label="Finance reports" use:tabs>
     <button
       role="tab"
       aria-selected={tab === 'settlements'}
@@ -407,7 +408,7 @@
       Ledger
       {#if $financeLedger}<span class="fl__count">{$financeLedger.entries.length}</span>{/if}
     </button>
-    <button class="fl__reload" on:click={load} disabled={loading}>
+    <button class="fl__reload" data-tab-skip on:click={load} disabled={loading}>
       {loading ? 'Loading…' : 'Refresh'}
     </button>
   </div>
@@ -821,67 +822,37 @@
 </div>
 
 <style>
+  /* Report tabs: shared .irp-tabs (styles/_primitives.scss) */
+  .fl__tabs { align-items: center; margin-bottom: 1.25rem; }
+
   /* Same palette as FinanceView and AdminView: #fafbfc canvas, white cards on
      #e2e8f0 borders, teal accent, Jost through --font-paragraph. */
   .fl {
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    color: var(--irp-text, #181818);
+    color: var(--irp-text);
   }
 
-  .fl__tabs {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 1.25rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 4px;
-    width: fit-content;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  }
 
-  .fl__tabs button {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.46rem 1.1rem;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    color: #64748b;
-    font-family: inherit;
-    font-size: 0.84rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: color 0.14s cubic-bezier(0.4, 0, 0.2, 1), background 0.14s cubic-bezier(0.4, 0, 0.2, 1);
-  }
 
-  .fl__tabs button:hover { background: #f1f5f9; color: #475569; }
 
-  .fl__tabs button.active {
-    background: linear-gradient(135deg, rgba(2, 181, 187, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
-    color: #02999e;
-    border: 1px solid rgba(2, 181, 187, 0.2);
-  }
 
   .fl__count {
-    background: linear-gradient(135deg, #02b5bb, #02999e);
-    color: #fff;
-    border-radius: 999px;
-    font-size: 0.68rem;
+    background: linear-gradient(135deg, var(--irp-accent), var(--irp-accent-hover));
+    color: var(--irp-text-inverse);
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     padding: 0.1em 0.55em;
   }
 
   .fl__sub {
-    font-size: 0.68rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     white-space: nowrap;
     margin-top: 2px;
   }
 
-  .fl__reload { margin-left: 0.5rem; color: #94a3b8; }
+  .fl__reload { margin-left: 0.5rem; color: var(--irp-text-dim); }
 
   .fl__filters {
     display: flex;
@@ -894,12 +865,12 @@
     flex: 1;
     max-width: 320px;
     padding: 0.5rem 0.8rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -917,48 +888,48 @@
   .fl__clear,
   .fl__export {
     padding: 0.5rem 1.1rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #475569;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .fl__clear:hover,
-  .fl__export:hover { background: #f1f5f9; color: #1e293b; }
+  .fl__export:hover { background: var(--irp-surface-3); color: var(--irp-text); }
 
   .fl__export { margin-left: auto; }
 
   .fl__meta {
     margin: -0.5rem 0 1rem;
-    font-size: 0.75rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
   }
 
   .fl__total-row td {
-    border-top: 2px solid #e2e8f0;
+    border-top: 2px solid var(--irp-line);
     font-weight: 800;
-    color: #0f172a;
-    background: #f8fafc;
+    color: var(--irp-text);
+    background: var(--irp-surface-2);
   }
 
   .fl__error {
     padding: 0.6rem 1rem;
-    border-radius: 8px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    font-size: 0.82rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
   }
 
   .fl__empty {
-    color: #94a3b8;
-    font-size: 0.85rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -972,24 +943,24 @@
 
   .c {
     padding: 1.15rem 1.25rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-top: 3px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-top: 3px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
   }
 
-  .c--in { border-top-color: #10b981; }
-  .c--owed { border-top-color: #f59e0b; }
-  .c--out { border-top-color: #ef4444; }
-  .c--cash { border-top-color: #02b5bb; }
-  .c--inv { border-top-color: #8b5cf6; }
+  .c--in { border-top-color: var(--irp-green-500); }
+  .c--owed { border-top-color: var(--irp-amber-500); }
+  .c--out { border-top-color: var(--irp-red-500); }
+  .c--cash { border-top-color: var(--irp-accent); }
+  .c--inv { border-top-color: var(--irp-violet-500); }
 
   .c h4 {
     margin: 0 0 0.5rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
@@ -998,18 +969,18 @@
     margin: 0 0 0.3rem;
     font-size: 1.6rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
   }
 
-  .c span { font-size: 0.72rem; color: #94a3b8; }
+  .c span { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); }
 
   .fl__panel {
     padding: 1.5rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     margin-bottom: 1rem;
     overflow-x: auto;
@@ -1024,9 +995,9 @@
 
   .fl__panel h4 {
     margin: 0 0 1rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
@@ -1036,44 +1007,44 @@
   .fl__table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
   }
 
-  .fl__table thead tr { background: #f8fafc; }
+  .fl__table thead tr { background: var(--irp-surface-2); }
 
   .fl__table th {
     text-align: left;
     padding: 0.6rem 0.8rem;
-    color: #94a3b8;
-    font-size: 0.68rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     white-space: nowrap;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--irp-line);
   }
 
   .fl__table td {
     padding: 0.6rem 0.8rem;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    color: var(--irp-text-2);
+    border-bottom: 1px solid var(--irp-slate-100);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  .fl__table tbody tr:hover { background: #fafbff; }
-  .fl__table tr.settled { color: #94a3b8; }
-  .fl__name { font-weight: 600; color: #0f172a; }
-  .owing { color: #d97706; font-weight: 600; }
-  .negative { color: #dc2626; font-weight: 600; }
-  .muted { color: #94a3b8; }
+  .fl__table tbody tr:hover { background: var(--irp-bg); }
+  .fl__table tr.settled { color: var(--irp-text-dim); }
+  .fl__name { font-weight: 600; color: var(--irp-text); }
+  .owing { color: var(--irp-amber-700); font-weight: 600; }
+  .negative { color: var(--irp-red-600); font-weight: 600; }
+  .muted { color: var(--irp-text-dim); }
 
   .bar {
     display: inline-block;
     width: 46px;
     height: 5px;
-    border-radius: 999px;
-    background: #f1f5f9;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface-3);
     overflow: hidden;
     vertical-align: middle;
     margin-right: 0.35rem;
@@ -1082,29 +1053,29 @@
   .bar__fill {
     display: block;
     height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #02b5bb, #10b981);
+    border-radius: var(--irp-r-full);
+    background: linear-gradient(90deg, var(--irp-accent), var(--irp-green-500));
   }
 
   .pill {
     display: inline-block;
     padding: 0.16em 0.6em;
-    border-radius: 999px;
-    font-size: 0.68rem;
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     border: 1px solid transparent;
   }
 
-  .pill--expense { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-  .pill--income { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-  .pill--investment { background: #ede9fe; color: #7c3aed; border-color: #c4b5fd; }
+  .pill--expense { background: var(--irp-surface-3); color: var(--irp-red-600); border-color: var(--irp-red-200); }
+  .pill--income { background: var(--irp-surface-2); color: var(--irp-green-700); border-color: var(--irp-green-200); }
+  .pill--investment { background: var(--irp-surface-4); color: var(--irp-violet-600); border-color: var(--irp-violet-300); }
 
   .fl__link {
     background: none;
     border: none;
-    color: #02999e;
+    color: var(--irp-accent-ink);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     padding: 0;
@@ -1112,7 +1083,7 @@
 
   .fl__link:hover { text-decoration: underline; }
 
-  .fl__editor-row td { background: #f8fafc; white-space: normal; }
+  .fl__editor-row td { background: var(--irp-surface-2); white-space: normal; }
 
   .ed {
     display: grid;
@@ -1123,15 +1094,15 @@
 
   .ed h5 {
     margin: 0 0 0.3rem;
-    font-size: 0.75rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
   }
 
   .ed__hint {
     margin: 0 0 0.6rem;
-    font-size: 0.72rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     font-style: italic;
     line-height: 1.5;
   }
@@ -1151,12 +1122,12 @@
   .form select,
   .ed__inline {
     padding: 0.4rem 0.55rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     min-width: 0;
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -1177,36 +1148,36 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.75rem;
-    color: #475569;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-muted);
     white-space: nowrap;
   }
 
-  .ed__row input[type='checkbox'] { accent-color: #02b5bb; }
+  .ed__row input[type='checkbox'] { accent-color: var(--irp-accent); }
 
   .ed__add {
     margin-top: 0.2rem;
     padding: 0.32rem 0.8rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    color: #475569;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.76rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
   }
 
-  .ed__add:hover { background: #e2e8f0; color: #1e293b; }
+  .ed__add:hover { background: var(--irp-surface-4); color: var(--irp-text); }
 
   .ed__x {
     width: 24px;
     height: 24px;
-    border-radius: 6px;
+    border-radius: var(--irp-r-xs);
     border: 1px solid rgba(239, 68, 68, 0.2);
     background: rgba(239, 68, 68, 0.05);
-    color: #ef4444;
-    font-size: 0.7rem;
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-2xs);
     cursor: pointer;
     flex-shrink: 0;
   }
@@ -1217,12 +1188,12 @@
 
   .ed__save {
     padding: 0.5rem 1.2rem;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
     border: none;
-    border-radius: 10px;
-    color: #fff;
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
@@ -1239,18 +1210,18 @@
     align-items: end;
     padding: 1rem;
     margin-bottom: 1rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
   }
 
   .form label {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }

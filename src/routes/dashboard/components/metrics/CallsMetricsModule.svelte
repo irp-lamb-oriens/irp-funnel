@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../utils/a11yTabs.ts';
   import type { ActivityMetric } from '../../store.ts';
 
   export let activity: ActivityMetric | undefined = undefined;
@@ -82,7 +83,7 @@
     <h2>📞 Calls</h2>
 
     <div class="segment-bar">
-      <div class="period-tabs">
+      <div class="period-tabs" use:tabs={{ label: 'Period' }}>
         {#each PERIODS as p}
           <button class:active={period === p.key} on:click={() => (period = p.key)}>{p.label}</button>
         {/each}

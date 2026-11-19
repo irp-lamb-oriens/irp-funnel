@@ -349,9 +349,9 @@
 
   /* ── Modal shell ─────────────── */
   .vendor-modal {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 1.25rem;
+    background: var(--irp-slate-800);
+    border: 1px solid var(--irp-slate-700);
+    border-radius: var(--irp-r-xl);
     width: 100%;
     max-width: 640px;
     max-height: 90dvh;
@@ -367,27 +367,27 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--irp-slate-700);
     flex-shrink: 0;
   }
   .vendor-modal__title {
     margin: 0;
-    font-size: 1.125rem;
+    font-size: var(--irp-fs-xl);
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--irp-slate-100);
   }
   .vendor-modal__close {
     background: transparent;
     border: none;
-    color: #64748b;
-    font-size: 1rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-lg);
     cursor: pointer;
     padding: 0.25rem;
-    border-radius: 0.35rem;
+    border-radius: var(--irp-r-xs);
     line-height: 1;
     transition: color 0.15s, background 0.15s;
   }
-  .vendor-modal__close:hover { color: #f1f5f9; background: rgba(255,255,255,0.08); }
+  .vendor-modal__close:hover { color: var(--irp-slate-100); background: rgba(255,255,255,0.08); }
 
   /* ── Body (scrollable) ───────── */
   .vendor-modal__body {
@@ -412,16 +412,16 @@
   }
   .section-label {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--irp-text-faint);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
   .section-hint {
     margin: 0;
-    font-size: 0.78rem;
-    color: #64748b;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     line-height: 1.4;
   }
 
@@ -434,16 +434,16 @@
     gap: 0.3rem;
   }
   label {
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--irp-text-faint);
   }
   input, textarea {
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 0.5rem;
-    color: #f1f5f9;
-    font-size: 0.875rem;
+    background: var(--irp-slate-900);
+    border: 1px solid var(--irp-slate-700);
+    border-radius: var(--irp-r-sm);
+    color: var(--irp-slate-100);
+    font-size: var(--irp-fs-md);
     padding: 0.5rem 0.75rem;
     outline: none;
     transition: border-color 0.2s;
@@ -452,7 +452,7 @@
     box-sizing: border-box;
   }
   input:focus, textarea:focus {
-    border-color: #38bdf8;
+    border-color: var(--irp-blue-400);
     box-shadow: 0 0 0 2px rgba(56,189,248,0.12);
   }
   textarea { resize: vertical; min-height: 72px; }
@@ -460,7 +460,7 @@
   code {
     background: rgba(255,255,255,0.08);
     padding: 1px 4px;
-    border-radius: 3px;
+    border-radius: var(--irp-r-2xs);
     font-size: 0.8em;
   }
 
@@ -475,34 +475,34 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.4rem 0.85rem;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     border: 1.5px solid transparent;
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    background: #0f172a;
-    color: #64748b;
-    border-color: #334155;
+    background: var(--irp-slate-900);
+    color: var(--irp-text-dim);
+    border-color: var(--irp-slate-700);
     transition: all 0.15s;
   }
-  .pill:hover { border-color: #475569; color: #94a3b8; }
+  .pill:hover { border-color: var(--irp-slate-600); color: var(--irp-text-faint); }
 
   /* Selected state — category */
-  .pill--full_service.pill--selected           { background: rgba(2,181,187,0.12); border-color: #02b5bb; color: #02b5bb; }
-  .pill--self_pack_with_loading.pill--selected { background: rgba(20,184,166,0.15); border-color: #14b8a6; color: #5eead4; }
-  .pill--diy_no_loading.pill--selected         { background: rgba(234,179,8,0.15);  border-color: #eab308; color: #fde047; }
+  .pill--full_service.pill--selected           { background: rgba(2,181,187,0.12); border-color: var(--irp-accent); color: var(--irp-teal-500); }
+  .pill--self_pack_with_loading.pill--selected { background: rgba(20,184,166,0.15); border-color: var(--irp-accent); color: var(--irp-green-300); }
+  .pill--diy_no_loading.pill--selected         { background: rgba(234,179,8,0.15);  border-color: var(--irp-amber-400); color: var(--irp-amber-300); }
   /* Selected state — modality */
-  .pill--maritime.pill--selected { background: rgba(14,165,233,0.15); border-color: #0ea5e9; color: #38bdf8; }
-  .pill--air.pill--selected      { background: rgba(2,181,187,0.12); border-color: #02b5bb; color: #02b5bb; }
-  .pill--land.pill--selected     { background: rgba(249,115,22,0.15); border-color: #f97316; color: #fdba74; }
+  .pill--maritime.pill--selected { background: rgba(14,165,233,0.15); border-color: var(--irp-blue-500); color: var(--irp-blue-400); }
+  .pill--air.pill--selected      { background: rgba(2,181,187,0.12); border-color: var(--irp-accent); color: var(--irp-teal-500); }
+  .pill--land.pill--selected     { background: rgba(249,115,22,0.15); border-color: var(--irp-amber-500); color: var(--irp-amber-300); }
 
   .pill__icon { font-size: 1em; }
   .pill__label { }
 
   .pill-description {
     margin: 0;
-    font-size: 0.78rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-faint);
     padding-left: 0.25rem;
     line-height: 1.4;
   }
@@ -517,10 +517,10 @@
   .tag {
     display: inline-block;
     padding: 0.15rem 0.45rem;
-    border-radius: 0.35rem;
+    border-radius: var(--irp-r-xs);
     background: rgba(56,189,248,0.12);
-    color: #38bdf8;
-    font-size: 0.72rem;
+    color: var(--irp-blue-400);
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     letter-spacing: 0.04em;
   }
@@ -530,28 +530,28 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text-faint);
     cursor: pointer;
   }
   .toggle {
     width: 44px;
     height: 24px;
-    background: #334155;
-    border-radius: 999px;
+    background: var(--irp-slate-700);
+    border-radius: var(--irp-r-full);
     border: none;
     cursor: pointer;
     position: relative;
     transition: background 0.2s;
   }
-  .toggle--on { background: #0ea5e9; }
+  .toggle--on { background: var(--irp-blue-500); }
   .toggle-knob {
     position: absolute;
     top: 3px;
     left: 3px;
     width: 18px;
     height: 18px;
-    background: #fff;
+    background: var(--irp-surface);
     border-radius: 50%;
     transition: transform 0.2s;
     pointer-events: none;
@@ -565,14 +565,14 @@
     justify-content: flex-end;
     gap: 0.75rem;
     padding: 1rem 1.5rem;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--irp-slate-700);
     flex-shrink: 0;
     flex-wrap: wrap;
   }
   .save-error {
     flex: 1;
-    font-size: 0.8rem;
-    color: #fca5a5;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-red-300);
   }
   .footer-actions {
     display: flex;
@@ -580,9 +580,9 @@
   }
   .btn {
     border: none;
-    border-radius: 0.5rem;
+    border-radius: var(--irp-r-sm);
     padding: 0.5rem 1.1rem;
-    font-size: 0.875rem;
+    font-size: var(--irp-fs-md);
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, opacity 0.2s;
@@ -591,17 +591,17 @@
     gap: 0.4rem;
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn--ghost   { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+  .btn--ghost   { background: transparent; color: var(--irp-text-faint); border: 1px solid var(--irp-slate-700); }
   .btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.06); }
-  .btn--primary { background: #0ea5e9; color: #fff; }
-  .btn--primary:hover:not(:disabled) { background: #0284c7; }
+  .btn--primary { background: var(--irp-blue-500); color: var(--irp-text-inverse); }
+  .btn--primary:hover:not(:disabled) { background: var(--irp-blue-600); }
 
   /* ── Spinner ─────────────────── */
   .spinner {
     width: 14px;
     height: 14px;
     border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
+    border-top-color: var(--irp-slate-0);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;

@@ -742,13 +742,13 @@
     gap: 1.5rem;
     align-items: start;
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    color: var(--irp-text, #181818);
+    color: var(--irp-text);
   }
 
   .ie__form {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-lg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     padding: 1.5rem;
   }
@@ -762,30 +762,30 @@
 
   .ie__head h3 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--irp-fs-lg);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
   }
 
   .ie__cancel {
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
   }
 
-  .ie__cancel:hover { color: #475569; }
+  .ie__cancel:hover { color: var(--irp-text-muted); }
 
   .ie__error {
     padding: 0.6rem 1rem;
-    border-radius: 8px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    font-size: 0.82rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
   }
@@ -803,9 +803,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -823,9 +823,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     min-width: 0;
@@ -833,12 +833,12 @@
 
   .ie__pick-field select {
     padding: 0.5rem 0.6rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 500;
     text-transform: none;
     letter-spacing: normal;
@@ -853,26 +853,26 @@
   }
 
   .ie__pick-field select:disabled {
-    background: #f8fafc;
-    color: #94a3b8;
+    background: var(--irp-surface-2);
+    color: var(--irp-text-dim);
     cursor: not-allowed;
   }
 
   .ie__hint {
     margin: 0 0 1rem;
     padding: 0.55rem 0.8rem;
-    border-radius: 8px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    font-size: 0.8rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-line);
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     line-height: 1.5;
   }
 
   .ie__quote {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fafbfc;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    background: var(--irp-bg);
     padding: 0.9rem 1rem;
     margin-bottom: 1.25rem;
   }
@@ -882,7 +882,7 @@
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 0.7rem;
     padding-bottom: 0.85rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--irp-line);
   }
 
   .ie__quote-stats div {
@@ -893,29 +893,29 @@
   }
 
   .ie__quote-stats span {
-    font-size: 0.64rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
 
   .ie__quote-stats strong {
-    font-size: 0.86rem;
+    font-size: var(--irp-fs-md);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     font-variant-numeric: tabular-nums;
   }
 
-  .ie__quote-stat--open strong { color: #02999e; }
+  .ie__quote-stat--open strong { color: var(--irp-accent-ink); }
 
   .ie__pct { padding: 0.85rem 0 0; }
 
   .ie__pct-label {
     display: block;
-    font-size: 0.64rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 0.45rem;
@@ -930,34 +930,34 @@
 
   .ie__pct-preset {
     padding: 0.3rem 0.7rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    background: #fff;
-    color: #475569;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.74rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1), background 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .ie__pct-preset:hover { border-color: rgba(2, 181, 187, 0.4); color: #02999e; }
+  .ie__pct-preset:hover { border-color: rgba(2, 181, 187, 0.4); color: var(--irp-accent-ink); }
 
   .ie__pct-preset.active {
     background: rgba(2, 181, 187, 0.1);
     border-color: rgba(2, 181, 187, 0.5);
-    color: #02777b;
+    color: var(--irp-accent-ink);
   }
 
   .ie__pct-row input {
     width: 84px;
     padding: 0.3rem 0.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
     text-align: right;
   }
 
@@ -975,14 +975,14 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.32rem 0;
-    font-size: 0.82rem;
-    color: #334155;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-2);
     cursor: pointer;
   }
 
-  .ie__qline--invoiced .ie__qline-label { color: #94a3b8; }
+  .ie__qline--invoiced .ie__qline-label { color: var(--irp-text-dim); }
 
-  .ie__qline input { cursor: pointer; accent-color: #02b5bb; }
+  .ie__qline input { cursor: pointer; accent-color: var(--irp-accent); }
 
   .ie__qline-label {
     min-width: 0;
@@ -993,10 +993,10 @@
 
   .ie__qline-tag {
     padding: 0.1rem 0.45rem;
-    border-radius: 999px;
-    background: #f1f5f9;
-    color: #94a3b8;
-    font-size: 0.62rem;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface-3);
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -1005,7 +1005,7 @@
 
   .ie__qline-price {
     font-weight: 700;
-    color: #0f172a;
+    color: var(--irp-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -1015,12 +1015,12 @@
   .ie__wide textarea,
   .ie__line input {
     padding: 0.5rem 0.6rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     min-width: 0;
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -1047,30 +1047,30 @@
 
   .ie__lines-head h4 {
     margin: 0;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
 
   .ie__add {
     padding: 0.32rem 0.8rem;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    color: #475569;
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.76rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
   }
 
-  .ie__add:hover { background: #e2e8f0; color: #1e293b; }
+  .ie__add:hover { background: var(--irp-surface-4); color: var(--irp-text); }
 
   .ie__empty {
-    color: #94a3b8;
-    font-size: 0.82rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -1088,8 +1088,8 @@
     margin: 0 0 0.6rem 1.4rem;
     padding: 0.5rem 0.75rem;
     border-left: 2px solid rgba(2, 181, 187, 0.35);
-    background: #f8fafc;
-    border-radius: 0 8px 8px 0;
+    background: var(--irp-surface-2);
+    border-radius: 0 var(--irp-r-sm) var(--irp-r-sm) 0;
     /* Long quote-line labels (especially the accepted group's full service
        description) otherwise push the price out of the container. Scroll
        instead of overflowing. */
@@ -1098,9 +1098,9 @@
   }
 
   .ie__group-lines-head {
-    font-size: 0.62rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 0.35rem;
@@ -1110,8 +1110,8 @@
     display: flex;
     justify-content: space-between;
     gap: 0.75rem;
-    font-size: 0.78rem;
-    color: #475569;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-muted);
     padding: 0.12rem 0;
   }
 
@@ -1124,7 +1124,7 @@
 
   .ie__group-line-price {
     font-weight: 700;
-    color: #0f172a;
+    color: var(--irp-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -1133,9 +1133,9 @@
 
   .ie__line-amount {
     text-align: right;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
-    color: #0f172a;
+    color: var(--irp-text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -1143,29 +1143,29 @@
   .ie__x {
     width: 24px;
     height: 24px;
-    border-radius: 6px;
+    border-radius: var(--irp-r-xs);
     border: 1px solid rgba(239, 68, 68, 0.2);
     background: rgba(239, 68, 68, 0.05);
-    color: #ef4444;
-    font-size: 0.7rem;
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-2xs);
     cursor: pointer;
   }
 
   .ie__x:hover { background: rgba(239, 68, 68, 0.12); }
 
   .ie__margin {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #f8fafc;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    background: var(--irp-surface-2);
     padding: 0.75rem 1rem;
     margin-bottom: 1.25rem;
   }
 
   .ie__margin-head h4 {
     margin: 0 0 0.5rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #64748b;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
@@ -1174,13 +1174,13 @@
     display: grid;
     grid-template-columns: auto auto;
     gap: 0.2rem 1rem;
-    font-size: 0.82rem;
-    color: #334155;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-2);
     font-variant-numeric: tabular-nums;
   }
 
   .ie__margin-row strong {
-    color: #0f172a;
+    color: var(--irp-text);
     font-weight: 800;
     text-align: right;
   }
@@ -1199,13 +1199,13 @@
     display: grid;
     grid-template-columns: auto auto;
     gap: 0.2rem 1rem;
-    font-size: 0.82rem;
-    color: #334155;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-2);
     font-variant-numeric: tabular-nums;
   }
 
   .ie__totals-sum strong {
-    color: #0f172a;
+    color: var(--irp-text);
     font-weight: 800;
     text-align: right;
   }
@@ -1230,12 +1230,12 @@
 
   .ie__save {
     padding: 0.55rem 1.3rem;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
     border: none;
-    border-radius: 10px;
-    color: #fff;
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
@@ -1247,18 +1247,18 @@
 
   .ie__pdf {
     padding: 0.55rem 1.3rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #475569;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .ie__pdf:hover { background: #f1f5f9; color: #1e293b; }
+  .ie__pdf:hover { background: var(--irp-surface-3); color: var(--irp-text); }
 
   .ie__preview {
     min-width: 0;

@@ -3,7 +3,7 @@
   padding: $sp-4 $sp-6;
   border-bottom: 1px solid $border;
   label {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -39,40 +39,18 @@
   }
 }
 
-.detail-stage__dot-icon { font-size: 15px; }
+.detail-stage__dot-icon { font-size: var(--irp-fs-lg); }
 .detail-stage__current {
   display: block;
   margin-top: $sp-2;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 700;
 }
 
 /* ── Detail Tabs ──────────────────────────────────────────────────────────── */
 .detail-tabs {
-  display: flex;
-  padding: 0 $sp-6;
-  border-bottom: 1px solid $border;
-  gap: 0;
-  overflow-x: auto;
+  @include irp-tabs-line;
+  padding: 0 $sp-5;
   -webkit-overflow-scrolling: touch;
-  &::-webkit-scrollbar { display: none; }
-  button {
-    padding: $sp-3 $sp-4;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: $text-dim;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: $font;
-    transition: all $t-fast;
-    white-space: nowrap;
-    &:hover { color: $text-2; }
-    &.active {
-      color: $accent-hover;
-      border-bottom-color: $accent;
-    }
-  }
 }
 

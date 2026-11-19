@@ -40,8 +40,8 @@
   }
 }
 .gemini-doc__caret {
-  font-size: 12px;
-  color: $accent;
+  font-size: var(--irp-fs-xs);
+  color: $accent-ink;
   width: 18px;
   text-align: center;
   font-weight: 700;
@@ -51,7 +51,7 @@
   transform: rotate(0deg); /* the parser already swaps the glyph; rotate is symbolic */
 }
 .gemini-doc__title {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 700;
   color: $accent-hover;
   white-space: nowrap;
@@ -59,7 +59,7 @@
   text-overflow: ellipsis;
 }
 .gemini-doc__stats {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-muted;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -70,7 +70,7 @@
   padding: $sp-2 $sp-4;
   background: $surface-2;
   border-bottom: 1px solid $border;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-muted;
   line-height: 1.5;
   font-style: italic;
@@ -99,11 +99,11 @@
   border-bottom: 1px solid rgba($accent, 0.18);
 }
 .gemini-doc__section-icon {
-  font-size: 16px;
+  font-size: var(--irp-fs-lg);
   line-height: 1;
 }
 .gemini-doc__section-name {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 800;
   color: $text;
   letter-spacing: -0.1px;
@@ -111,7 +111,7 @@
   flex-shrink: 0;
 }
 .gemini-doc__section-subtitle {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-muted;
   font-weight: 500;
   white-space: nowrap;
@@ -128,7 +128,7 @@
   border: 1px solid $border;
   color: $text-2;
   font-family: $mono;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -150,7 +150,7 @@
   border-radius: $r-full;
   background: $surface-2;
   color: $text-2;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 500;
   border: 1px solid $border;
   max-width: 100%;
@@ -180,14 +180,14 @@
 }
 .gemini-doc__subsection-heading {
   margin: 0 0 $sp-2 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 700;
   color: $accent-hover;
   letter-spacing: -0.05px;
 }
 .gemini-doc__paragraph {
   margin: 0 0 $sp-2 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   line-height: 1.55;
   color: $text;
   word-break: break-word;
@@ -204,7 +204,7 @@
   li {
     position: relative;
     padding-left: $sp-3;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     line-height: 1.5;
     color: $text;
     word-break: break-word;
@@ -234,7 +234,7 @@
   max-height: 520px;
   overflow-y: auto;
   &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb { background: $surface-3; border-radius: var(--irp-r-2xs); }
 }
 .gemini-doc__turn {
   display: flex;
@@ -260,7 +260,7 @@
   }
 }
 .gemini-doc__turn-speaker {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: $text-2;
   text-transform: uppercase;
@@ -268,7 +268,7 @@
   word-break: break-word;
 }
 .gemini-doc__turn-text {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text;
   line-height: 1.55;
   word-break: break-word;
@@ -279,7 +279,7 @@
   padding: $sp-2 $sp-4;
   background: $surface-2;
   border-top: 1px solid $border;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-dim;
   font-style: italic;
 }
@@ -310,7 +310,7 @@
   border-radius: $r-md;
   background: linear-gradient(180deg, $surface 0%, $surface-2 100%);
   font-family: $font;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 600;
   color: $text-2;
   text-align: left;
@@ -392,8 +392,8 @@
   padding: 1px 6px;
   border-radius: $r-full;
   background: rgba(99, 102, 241, 0.15);
-  color: #02b5bb;
-  font-size: 10px;
+  color: var(--irp-accent-ink);
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -460,7 +460,7 @@
     border-radius: $r-sm;
     color: $text-muted;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-family: $font;
     transition: all $t-fast;
     &:hover { color: $text; background: $surface-4; border-color: $border-hover; }
@@ -472,9 +472,9 @@
     margin-bottom: $sp-2;
     padding-right: $sp-9;
   }
-  &__icon { font-size: 20px; line-height: 1; }
+  &__icon { font-size: var(--irp-fs-2xl); line-height: 1; }
   &__title {
-    font-size: 18px;
+    font-size: var(--irp-fs-xl);
     font-weight: 800;
     margin: 0;
     color: $text;
@@ -489,7 +489,7 @@
   }
   &__error {
     color: $danger;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     margin: $sp-2 0 0 0;
   }
   &__badge {
@@ -497,8 +497,8 @@
     padding: 2px 8px;
     border-radius: $r-full;
     background: rgba(99, 102, 241, 0.15);
-    color: #02b5bb;
-    font-size: 10px;
+    color: var(--irp-accent-ink);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -508,7 +508,7 @@
     display: flex;
     align-items: center;
     gap: $sp-2;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-muted;
     margin-bottom: $sp-2;
     flex-wrap: wrap;
@@ -516,7 +516,7 @@
   }
   &__meta-dot { color: $text-dim; }
   &__subject {
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 600;
     color: $text;
     background: $surface-2;
@@ -539,14 +539,14 @@
     gap: 4px;
     padding: 3px 10px;
     border-radius: $r-full;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 500;
     border: 1px solid $border;
     background: $surface-2;
     color: $text-2;
     code {
       font-family: $mono;
-      font-size: 10px;
+      font-size: var(--irp-fs-2xs);
       background: $surface-3;
       padding: 1px 5px;
       border-radius: $r-xs;
@@ -554,7 +554,7 @@
     }
     &--template { color: $accent-hover; border-color: rgba($accent, 0.3); background: rgba($accent, 0.06); }
     &--variant {
-      color: $warning;
+      color: $warning-ink;
       border-color: rgba($warning, 0.3);
       background: rgba($warning, 0.08);
       // Map well-known Evo variants to deterministic colours so two variants
@@ -567,8 +567,8 @@
     border-radius: $r-sm;
     background: rgba($warning, 0.08);
     border: 1px solid rgba($warning, 0.25);
-    color: #92400e;
-    font-size: 12px;
+    color: var(--irp-amber-800);
+    font-size: var(--irp-fs-xs);
     line-height: 1.45;
   }
 
@@ -596,7 +596,7 @@
   }
   &__h3 {
     margin: 0 0 $sp-2 0;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     color: $text-muted;
     text-transform: uppercase;
@@ -615,18 +615,18 @@
     border: 1px solid $border;
     border-radius: $r-sm;
     background: $surface-2;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-muted;
-    span:first-child { font-size: 14px; }
+    span:first-child { font-size: var(--irp-fs-md); }
     &--on {
       background: rgba($success, 0.08);
       border-color: rgba($success, 0.3);
-      color: #047857;
+      color: var(--irp-green-700);
     }
   }
   &__engagement-hint {
     margin: $sp-2 0 0 0;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
     font-style: italic;
   }
@@ -639,7 +639,7 @@
     border-radius: $r-sm;
     background: transparent;
     color: $text-muted;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     cursor: pointer;
     text-align: left;
@@ -655,7 +655,7 @@
     margin: $sp-3 0 0 0;
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-2;
     th, td {
       padding: 6px $sp-2;
@@ -668,7 +668,7 @@
       color: $text-muted;
       font-weight: 600;
       font-family: $mono;
-      font-size: 11px;
+      font-size: var(--irp-fs-2xs);
     }
     td {
       word-break: break-word;
@@ -676,7 +676,7 @@
   }
   &__context-mono {
     font-family: $mono;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     background: $surface-2;
     padding: 1px 5px;
     border-radius: $r-xs;
@@ -690,7 +690,7 @@
 // Mode badge for PREVIEW state
 .email-preview-drawer__badge--presend {
   background: rgba($accent, 0.12);
-  color: $accent;
+  color: $accent-ink;
   border: 1px solid rgba($accent, 0.3);
 }
 
@@ -714,14 +714,14 @@
   border: 1px solid $border;
   background: $surface-2;
   color: $text-muted;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 500;
   cursor: pointer;
   transition: background $t-fast, color $t-fast, border-color $t-fast;
   &:hover { background: $surface-3; border-color: $border-hover; }
   &--active {
     background: $accent;
-    color: #fff;
+    color: var(--irp-text-inverse);
     border-color: $accent;
     &:hover { background: $accent-hover; }
   }
@@ -729,8 +729,8 @@
 
 .email-preview-drawer__edit-attribution {
   margin-left: auto;
-  font-size: 11px;
-  color: $warning;
+  font-size: var(--irp-fs-2xs);
+  color: $warning-ink;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -738,8 +738,8 @@
 }
 
 .email-preview-drawer__meta-type {
-  font-size: 12px;
-  color: $accent;
+  font-size: var(--irp-fs-xs);
+  color: $accent-ink;
   font-weight: 500;
 }
 
@@ -754,7 +754,7 @@
   border-radius: $r-sm;
   padding: 12px;
   font-family: $mono;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   line-height: 1.6;
   color: $text-2;
   background: $surface-2;
@@ -775,8 +775,8 @@
   background: $surface;
 
   &-attribution {
-    font-size: 11px;
-    color: $warning;
+    font-size: var(--irp-fs-2xs);
+    color: $warning-ink;
     margin: 0 0 8px 0;
     padding: 6px 10px;
     background: rgba($warning, 0.08);
@@ -797,7 +797,7 @@
     border: 1px solid $border;
     background: transparent;
     color: $text-muted;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 500;
     cursor: pointer;
     transition: background $t-fast, border-color $t-fast;
@@ -816,8 +816,8 @@
     border-radius: $r-sm;
     border: none;
     background: $accent;
-    color: #fff;
-    font-size: 13px;
+    color: var(--irp-text-inverse);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     cursor: pointer;
     transition: background $t-fast, box-shadow $t-fast;

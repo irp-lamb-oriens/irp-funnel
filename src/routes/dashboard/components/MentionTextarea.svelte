@@ -347,8 +347,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 6px;
-    border-radius: 14px;
-    background: #10131a;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-slate-900);
     border: 1px solid rgba(255, 255, 255, 0.09);
     box-shadow:
       0 18px 48px -12px rgba(0, 0, 0, 0.7),
@@ -376,7 +376,7 @@
   }
   .mt-menu::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.14);
-    border-radius: 8px;
+    border-radius: var(--irp-r-sm);
   }
 
   .mt-opt {
@@ -387,10 +387,10 @@
     padding: 8px 10px;
     border: none;
     background: transparent;
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     cursor: pointer;
     text-align: left;
-    color: #e6e9ef;
+    color: var(--irp-slate-200);
     transition: background 0.1s ease;
   }
   .mt-opt.is-active,
@@ -404,10 +404,10 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: var(--irp-text-inverse);
+    background: linear-gradient(135deg, var(--irp-violet-500), var(--irp-violet-500));
   }
   .mt-opt__body {
     flex: 1 1 auto;
@@ -417,15 +417,15 @@
     line-height: 1.2;
   }
   .mt-opt__name {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .mt-opt__handle {
-    font-size: 11px;
-    color: #8b93a7;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -433,8 +433,8 @@
   .mt-opt__email {
     flex: 0 0 auto;
     max-width: 42%;
-    font-size: 10.5px;
-    color: #6b7280;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

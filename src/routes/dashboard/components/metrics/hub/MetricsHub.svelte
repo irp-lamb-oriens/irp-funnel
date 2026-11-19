@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * MetricsHub — the Metrics tab (spec: irp-funnel-server/docs/designs/metrics-hub.md).
    *
@@ -208,7 +209,7 @@
       <p>What works, what doesn't, and why · Costa Rica time{updated ? ` · updated ${updated}` : ''}</p>
     </div>
     <div class="mh-head__actions">
-      <div class="mh-seg" role="group" aria-label="Headline numbers for">
+      <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Headline numbers for">
         {#each PULSE_KEYS as k}
           <button aria-pressed={pulseView === k} on:click={() => (pulseView = k)}>{PULSE[k].label}</button>
         {/each}
@@ -348,7 +349,7 @@
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .mh-filters-wrap { flex: 1 1 320px; }
   .mh-pulse { scroll-margin-top: calc(var(--mh-sticky) + 12px); }
-  .mh-health { font-size: 0.76rem; color: #64748b; margin: 0.2rem 0 0; line-height: 1.5; }
+  .mh-health { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); margin: 0.2rem 0 0; line-height: 1.5; }
   #mh-ops { scroll-margin-top: calc(var(--mh-sticky) + 12px); }
   h3[tabindex='-1']:focus { outline: none; }
 </style>

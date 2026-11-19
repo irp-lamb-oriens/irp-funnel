@@ -89,6 +89,8 @@
   import { portalAddress } from "$lib/clientIdentity.ts";
 
   import "./status.scss";
+  // Dashboard :root tokens — EmailPreviewDrawer (shared with /dashboard) reads --irp-*.
+  import "../../dashboard/styles/irp-tokens.scss";
 
   // `projectId` is the project's real id and is what every API call below
   // uses. It starts as whatever the URL carries (possibly an old id, an id that

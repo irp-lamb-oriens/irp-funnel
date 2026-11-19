@@ -28,8 +28,8 @@
 // ── Base badge ────────────────────────────────────────────────────────────────
 .pending-badge {
   // Level-2 CSS var tokens — fall back through --irp-* → hard-coded defaults
-  --pb-bg:       var(--irp-accent,        #02b5bb);
-  --pb-color:    #fff;
+  --pb-bg:       var(--irp-accent);
+  --pb-color:    var(--irp-text-inverse);
   --pb-size:     18px;
   --pb-font-sz:  10px;
   --pb-shadow:   0 2px 8px rgba(2, 181, 187, .45);
@@ -102,7 +102,7 @@
 
 // Active tab: invert badge so it stays readable on the teal active background
 .detail-tabs button.active .pending-badge--tab {
-  --pb-bg:     #fff;
-  --pb-color:  var(--irp-accent, #02b5bb);
+  --pb-bg:     var(--irp-surface);
+  --pb-color:  var(--irp-accent);
   --pb-shadow: none;
 }

@@ -137,9 +137,9 @@
 
 <style>
   .sg-tools { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
-  .sg-pick { all: unset; cursor: pointer; font-weight: 700; color: #0f172a; text-decoration: underline; text-decoration-color: rgba(2, 181, 187, 0.4); text-underline-offset: 3px; }
-  .sg-pick:hover { color: #02868a; }
-  .sg-pick:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; border-radius: 3px; }
-  .sg-muted th, .sg-muted td { color: #94a3b8 !important; }
+  .sg-pick { all: unset; cursor: pointer; font-weight: 700; color: var(--irp-text); text-decoration: underline; text-decoration-color: rgba(2, 181, 187, 0.4); text-underline-offset: 3px; }
+  .sg-pick:hover { color: var(--irp-accent-ink); }
+  .sg-pick:focus-visible { outline: 2px solid var(--irp-accent); outline-offset: 2px; border-radius: var(--irp-r-2xs); }
+  .sg-muted th, .sg-muted td { color: var(--irp-text-dim) !important; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

@@ -272,29 +272,29 @@
     appearance: none;
     -webkit-appearance: none;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: var(--irp-fs-md);
     font-weight: 500;
-    color: #1e293b;
-    background-color: #fff;
+    color: var(--irp-text);
+    background-color: var(--irp-surface);
     // Chevron drawn via inline SVG so no icon font is needed.
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
+    border: 1.5px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     padding: 0.4rem 1.9rem 0.4rem 0.7rem;
     cursor: pointer;
     max-width: 100%;
     transition: border-color 0.15s, box-shadow 0.15s;
 
-    &:hover:not(:disabled) { border-color: #cbd5e1; }
+    &:hover:not(:disabled) { border-color: var(--irp-line-strong); }
     &:focus {
       outline: none;
-      border-color: #02b5bb;
+      border-color: var(--irp-accent);
       box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.15);
     }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
-    &.fc-select--empty { color: #94a3b8; }
+    &.fc-select--empty { color: var(--irp-text-dim); }
   }
 
   // ── boolean: toggle switch ─────────────────────────────────────────────────
@@ -309,8 +309,8 @@
     height: 24px;
     flex: none;
     border: none;
-    border-radius: 999px;
-    background: #cbd5e1;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-slate-300);
     cursor: pointer;
     padding: 0;
     transition: background 0.18s ease;
@@ -320,7 +320,7 @@
       box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.25);
     }
     &:disabled { opacity: 0.6; cursor: not-allowed; }
-    &.fc-switch--on { background: #02b5bb; }
+    &.fc-switch--on { background: var(--irp-accent); }
   }
   .fc-knob {
     position: absolute;
@@ -329,17 +329,17 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--irp-surface);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
     transition: transform 0.18s ease;
   }
   .fc-switch--on .fc-knob { transform: translateX(18px); }
 
   .fc-bool-state {
-    font-size: 0.85rem;
+    font-size: var(--irp-fs-md);
     font-weight: 600;
-    color: #94a3b8;
-    &.fc-bool-state--on { color: #0f766e; }
+    color: var(--irp-text-dim);
+    &.fc-bool-state--on { color: var(--irp-accent-ink); }
   }
 
   // ── number: inline click-to-edit ───────────────────────────────────────────
@@ -351,11 +351,11 @@
   }
   .fc-num-input {
     font-family: inherit;
-    font-size: 0.85rem;
-    color: #1e293b;
-    background: #fff;
-    border: 1.5px solid #02b5bb;
-    border-radius: 10px;
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text);
+    background: var(--irp-surface);
+    border: 1.5px solid var(--irp-accent);
+    border-radius: var(--irp-r-md);
     padding: 0.4rem 0.6rem;
     width: 8rem;
     max-width: 100%;
@@ -368,25 +368,25 @@
     align-items: center;
     gap: 6px;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: var(--irp-fs-md);
     font-weight: 500;
-    color: #1e293b;
+    color: var(--irp-text);
     background: transparent;
     border: 1.5px solid transparent;
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     padding: 0.4rem 0.6rem;
     cursor: pointer;
     text-align: left;
     transition: background 0.15s, border-color 0.15s;
 
     &:hover {
-      background: #f1f5f9;
-      border-color: #e2e8f0;
+      background: var(--irp-surface-3);
+      border-color: var(--irp-line);
     }
-    &.fc-num-value--empty { color: #94a3b8; }
+    &.fc-num-value--empty { color: var(--irp-text-dim); }
   }
   .fc-pencil {
-    font-size: 0.72rem;
+    font-size: var(--irp-fs-xs);
     opacity: 0;
     transition: opacity 0.15s;
   }
@@ -398,7 +398,7 @@
     height: 13px;
     flex: none;
     border: 2px solid rgba(2, 181, 187, 0.25);
-    border-top-color: #02b5bb;
+    border-top-color: var(--irp-accent);
     border-radius: 50%;
     animation: fc-spin 0.7s linear infinite;
   }

@@ -1,21 +1,34 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   _tokens.scss — IRP Dashboard Design Tokens
+   _tokens.scss — IRP Dashboard Design Tokens (v2)
    ───────────────────────────────────────────────────────────────────────────
-   Single source of truth for every colour, spacing, shadow, radius, and
-   transition used across the dashboard.
+   Single source of truth for every colour, type size, radius, shadow, focus
+   ring and transition used across the dashboard.
 
-   TWO-LAYER TOKEN SYSTEM
+   THREE-LAYER TOKEN SYSTEM
+   ━━━━━━━━━━━━━━━━━━━━━━━
+   1. Ramps      — --irp-{slate|teal|red|amber|green|blue|violet}-{50…900}.
+                   The ONLY place raw hex values may live. Every colour in
+                   the dashboard resolves to one of these steps, which is
+                   what keeps tabs, panels and modals visually identical.
+   2. Semantics  — --irp-text, --irp-line, --irp-surface-*, --irp-accent-ink,
+                   --irp-{danger|warning|success|info}-{bg|line|ink|solid}.
+                   Prefer these in new code: they describe a ROLE, so a
+                   future palette tweak changes one line here.
+   3. Component  — scoped vars such as --qe-border or --ch-accent, which must
+                   point at layer 1 or 2 (never at a literal).
+
+   SCSS $variables mirror the semantics for partials that need compile-time
+   colour maths (rgba($accent, .1)). Names are frozen: partials depend on them.
+
+   ACCESSIBILITY CONTRACT
    ━━━━━━━━━━━━━━━━━━━━━
-   1. SCSS $variables  — resolved at compile time; used in all partials for
-                         arithmetic, colour functions, and code readability.
-   2. CSS --irp-* vars — emitted onto :root so child components can inherit,
-                         override locally, and be read from JavaScript.
-                         The CSS vars intentionally mirror the SCSS vars 1:1.
-
-   Component partials add a THIRD layer of scoped vars, e.g.
-     .card-history { --ch-accent: var(--irp-accent, #02b5bb); }
-   This creates the top-down inheritance tree:
-     :root --irp-* → .component --ch-* / --da-* / --ep-* …
+   • Text tokens (--irp-text*, --irp-*-ink) pass WCAG AA (≥ 4.5:1) on
+     --irp-surface and --irp-surface-2. --irp-text-faint does NOT: it is for
+     placeholders-as-decoration, dividers and icons only.
+   • Brand teal (#02b5bb) is 2.5:1 on white, so it is a FILL colour. Teal text
+     uses --irp-accent-ink.
+   • Type never goes below --irp-fs-2xs (11px).
+   • Guarded by src/routes/dashboard/styles.guard.test.ts.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // ── Typography ───────────────────────────────────────────────────────────────
@@ -23,37 +36,72 @@ $font:       var(--font-paragraph, 'Jost'), -apple-system, BlinkMacSystemFont, s
 $font-title: var(--font-title, 'Kiona Regular'), serif;
 $mono:       'SF Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 
-// ── Palette — IRP light mode ─────────────────────────────────────────────────
-$bg:          #fafbfc;
-$bg-subtle:   #f1f3f5;
+// Type scale. Snap every font-size to one of these.
+$fs-2xs: 11px;  // micro labels, badges, overlines (floor — nothing smaller)
+$fs-xs:  12px;  // meta, captions, table headers
+$fs-sm:  13px;  // dense UI: chips, buttons, inputs, list rows
+$fs-md:  14px;  // default body in panels
+$fs-lg:  16px;  // emphasized body, section titles
+$fs-xl:  18px;  // panel titles
+$fs-2xl: 20px;  // view titles, KPI numbers (small)
+
+// ── Colour ramps (layer 1) ───────────────────────────────────────────────────
+$ramps: (
+  "slate": (0: #ffffff, 25: #fafbfc, 50: #f8fafc, 100: #f1f5f9, 200: #e2e8f0, 300: #cbd5e1,
+          400: #94a3b8, 500: #64748b, 600: #475569, 700: #334155, 800: #1e293b, 900: #0f172a, 950: #020617),
+  "teal": (50: #effcfc, 100: #d5f6f7, 200: #a8ecee, 300: #6cdde1, 400: #2fc9ce,
+           500: #02b5bb, 600: #02999e, 700: #0a7c81, 800: #0b6367, 900: #0d4f52),
+  "red": (50: #fef2f2, 100: #fee2e2, 200: #fecaca, 300: #fca5a5, 400: #f87171,
+           500: #ef4444, 600: #dc2626, 700: #c62426, 800: #991b1b, 900: #7f1d1d),
+  "amber": (50: #fffbeb, 100: #fef3c7, 200: #fde68a, 300: #fcd34d, 400: #fbbf24,
+           500: #f59e0b, 600: #d97706, 700: #b45309, 800: #92400e, 900: #78350f),
+  "green": (50: #ecfdf5, 100: #d1fae5, 200: #a7f3d0, 300: #6ee7b7, 400: #34d399,
+           500: #10b981, 600: #059669, 700: #047857, 800: #065f46, 900: #064e3b),
+  "blue": (50: #eff6ff, 100: #dbeafe, 200: #bfdbfe, 300: #93c5fd, 400: #60a5fa,
+           500: #3b82f6, 600: #2563eb, 700: #1d4ed8, 800: #1e40af, 900: #1e3a8a),
+  "violet": (50: #f5f3ff, 100: #ede9fe, 200: #ddd6fe, 300: #c4b5fd, 400: #a78bfa,
+           500: #8b5cf6, 600: #7c3aed, 700: #6d28d9, 800: #5b21b6, 900: #4c1d95),
+);
+@function ramp($family, $step) { @return map-get(map-get($ramps, $family), $step); }
+
+// ── Palette — semantic SCSS mirrors (names frozen) ───────────────────────────
+$bg:          ramp("slate", 25);
+$bg-subtle:   ramp("slate", 100);
 $surface:     #ffffff;
-$surface-2:   #f8f9fa;
-$surface-3:   #f1f3f5;
-$surface-4:   #e9ecef;
-$glass:       rgba(255, 255, 255, 0.85);
-$glass-border: rgba(0, 0, 0, 0.06);
+$surface-2:   ramp("slate", 50);
+$surface-3:   ramp("slate", 100);
+$surface-4:   ramp("slate", 200);
+$glass:       rgba(255, 255, 255, 0.82);
+$glass-border: rgba(15, 23, 42, 0.06);
 
-$border:       rgba(0, 0, 0, 0.08);
-$border-hover: rgba(0, 0, 0, 0.15);
-$border-focus: rgba(2, 181, 187, 0.5);
+$border:       rgba(15, 23, 42, 0.09);
+$border-hover: rgba(15, 23, 42, 0.18);
+$border-focus: rgba(2, 181, 187, 0.55);
 
-$text:        #181818;
-$text-2:      #343a40;
-$text-muted:  #495057;
-$text-dim:    #868e96;
+$text:        ramp("slate", 900);
+$text-2:      ramp("slate", 700);
+$text-muted:  ramp("slate", 600);
+$text-dim:    ramp("slate", 500);   // 4.76:1 on white — AA
+$text-faint:  ramp("slate", 400);   // decorative only
 
 // Brand accent — IRP teal
-$accent:        #02b5bb;
-$accent-hover:  #02999e;
-$accent-glow:   rgba(2, 181, 187, 0.2);
+$accent:        ramp("teal", 500);
+$accent-hover:  ramp("teal", 600);
+$accent-ink:    ramp("teal", 700);  // teal TEXT on light surfaces (4.9:1)
+$accent-glow:   rgba(2, 181, 187, 0.22);
 $accent-subtle: rgba(2, 181, 187, 0.1);
 
-// Status colours
-$highlight: #c62426;
-$danger:    #c62426;
-$success:   #10b981;
-$warning:   #f59e0b;
-$info:      #38bdf8;
+// Status colours (solid fills). For text use the *-ink tokens below.
+$highlight: ramp("red", 700);
+$danger:    ramp("red", 700);
+$success:   ramp("green", 500);
+$warning:   ramp("amber", 500);
+$info:      ramp("blue", 500);
+
+$danger-ink:  ramp("red", 700);
+$success-ink: ramp("green", 700);
+$warning-ink: ramp("amber", 700);
+$info-ink:    ramp("blue", 700);
 
 // ── Spacing scale ────────────────────────────────────────────────────────────
 $sp-1: 4px;  $sp-2: 8px;   $sp-3: 12px;  $sp-4: 16px;
@@ -61,6 +109,7 @@ $sp-5: 20px; $sp-6: 24px;  $sp-7: 32px;  $sp-8: 40px;
 $sp-9: 48px; $sp-10: 64px;
 
 // ── Radius scale ─────────────────────────────────────────────────────────────
+$r-2xs:  4px;
 $r-xs:   6px;
 $r-sm:   8px;
 $r-md:   12px;
@@ -69,11 +118,29 @@ $r-xl:   20px;
 $r-2xl:  24px;
 $r-full: 9999px;
 
-// ── Shadows ──────────────────────────────────────────────────────────────────
-$shadow-sm:   0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
-$shadow-md:   0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-$shadow-lg:   0 8px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+// ── Control sizing (hit targets) ─────────────────────────────────────────────
+$control-sm: 28px;
+$control-md: 36px;
+$control-lg: 44px;   // WCAG 2.5.5 comfortable target
+
+// ── Shadows — slate-tinted so elevation matches the neutral ramp ─────────────
+$shadow-xs:   0 1px 2px rgba(15, 23, 42, 0.05);
+$shadow-sm:   0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+$shadow-md:   0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+$shadow-lg:   0 12px 32px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(15, 23, 42, 0.06);
+$shadow-xl:   0 24px 64px -12px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.08);
 $shadow-glow: 0 0 20px $accent-glow, 0 0 40px rgba(2, 181, 187, 0.08);
+
+// ── Focus ────────────────────────────────────────────────────────────────────
+$focus-color: ramp("teal", 600);
+$focus-ring:  0 0 0 3px rgba(2, 181, 187, 0.32);
+
+// ── Layering ─────────────────────────────────────────────────────────────────
+$z-sticky:   100;
+$z-dropdown: 800;
+$z-overlay:  1000;
+$z-modal:    1100;
+$z-toast:    9600;
 
 // ── Transitions ──────────────────────────────────────────────────────────────
 $ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
@@ -109,14 +176,26 @@ $skel-base: #edf1f5;
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  CSS CUSTOM PROPERTIES — emitted to :root for runtime/JS access
-//  These mirror every $scss-var above so child components can inherit and
-//  override them with standard CSS var() calls.
 // ══════════════════════════════════════════════════════════════════════════════
 :root {
+  // Layer 1 — ramps
+  @each $family, $steps in $ramps {
+    @each $step, $value in $steps {
+      --irp-#{$family}-#{$step}: #{$value};
+    }
+  }
+
   // Typography
   --irp-font:       #{$font};
   --irp-font-title: #{$font-title};
   --irp-mono:       #{$mono};
+  --irp-fs-2xs: #{$fs-2xs};
+  --irp-fs-xs:  #{$fs-xs};
+  --irp-fs-sm:  #{$fs-sm};
+  --irp-fs-md:  #{$fs-md};
+  --irp-fs-lg:  #{$fs-lg};
+  --irp-fs-xl:  #{$fs-xl};
+  --irp-fs-2xl: #{$fs-2xl};
 
   // Surfaces
   --irp-bg:           #{$bg};
@@ -125,45 +204,67 @@ $skel-base: #edf1f5;
   --irp-surface-2:    #{$surface-2};
   --irp-surface-3:    #{$surface-3};
   --irp-surface-4:    #{$surface-4};
+  --irp-glass:        #{$glass};
 
-  // Borders
+  // Lines
   --irp-border:       #{$border};
   --irp-border-hover: #{$border-hover};
   --irp-border-focus: #{$border-focus};
+  --irp-line:         var(--irp-slate-200);
+  --irp-line-strong:  var(--irp-slate-300);
 
   // Text
   --irp-text:         #{$text};
   --irp-text-2:       #{$text-2};
   --irp-text-muted:   #{$text-muted};
   --irp-text-dim:     #{$text-dim};
+  --irp-text-faint:   #{$text-faint};
+  --irp-text-inverse: #ffffff;
 
   // Brand
   --irp-accent:        #{$accent};
   --irp-accent-hover:  #{$accent-hover};
+  --irp-accent-ink:    #{$accent-ink};
   --irp-accent-glow:   #{$accent-glow};
   --irp-accent-subtle: #{$accent-subtle};
+  --irp-accent-gradient: linear-gradient(180deg, var(--irp-teal-400) 0%, var(--irp-teal-500) 100%);
 
-  // Status
+  // Status — solid / tint bg / tint line / ink (AA text)
   --irp-danger:   #{$danger};
   --irp-success:  #{$success};
   --irp-warning:  #{$warning};
   --irp-info:     #{$info};
+  --irp-danger-bg:   var(--irp-red-50);    --irp-danger-line:  var(--irp-red-200);    --irp-danger-ink:  var(--irp-red-700);
+  --irp-warning-bg:  var(--irp-amber-50);  --irp-warning-line: var(--irp-amber-200);  --irp-warning-ink: var(--irp-amber-700);
+  --irp-success-bg:  var(--irp-green-50);  --irp-success-line: var(--irp-green-200);  --irp-success-ink: var(--irp-green-700);
+  --irp-info-bg:     var(--irp-blue-50);   --irp-info-line:    var(--irp-blue-200);   --irp-info-ink:    var(--irp-blue-700);
 
   // Spacing
   --irp-sp-1: #{$sp-1};  --irp-sp-2: #{$sp-2};  --irp-sp-3: #{$sp-3};
   --irp-sp-4: #{$sp-4};  --irp-sp-5: #{$sp-5};  --irp-sp-6: #{$sp-6};
+  --irp-sp-7: #{$sp-7};  --irp-sp-8: #{$sp-8};
 
   // Radius
+  --irp-r-2xs:  #{$r-2xs};
   --irp-r-xs:   #{$r-xs};
   --irp-r-sm:   #{$r-sm};
   --irp-r-md:   #{$r-md};
   --irp-r-lg:   #{$r-lg};
+  --irp-r-xl:   #{$r-xl};
+  --irp-r-2xl:  #{$r-2xl};
   --irp-r-full: #{$r-full};
 
+  // Controls
+  --irp-control-sm: #{$control-sm};
+  --irp-control-md: #{$control-md};
+  --irp-control-lg: #{$control-lg};
+
   // Shadows
+  --irp-shadow-xs: #{$shadow-xs};
   --irp-shadow-sm: #{$shadow-sm};
   --irp-shadow-md: #{$shadow-md};
   --irp-shadow-lg: #{$shadow-lg};
+  --irp-shadow-xl: #{$shadow-xl};
   --irp-shadow-glow: #{$shadow-glow};
 
   // Motion
@@ -174,7 +275,15 @@ $skel-base: #edf1f5;
   --irp-t-slow:      #{$t-slow};
 
   // Focus
-  --irp-focus-ring: 0 0 0 3px #{$accent-glow};
+  --irp-focus:      #{$focus-color};
+  --irp-focus-ring: #{$focus-ring};
+
+  // Layering
+  --irp-z-sticky:   #{$z-sticky};
+  --irp-z-dropdown: #{$z-dropdown};
+  --irp-z-overlay:  #{$z-overlay};
+  --irp-z-modal:    #{$z-modal};
+  --irp-z-toast:    #{$z-toast};
 }
 
 @keyframes irp-sweep {

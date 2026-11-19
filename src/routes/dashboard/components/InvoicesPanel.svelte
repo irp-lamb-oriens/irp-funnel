@@ -416,7 +416,7 @@
 <style>
   .ip {
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    color: var(--irp-text, #181818);
+    color: var(--irp-text);
   }
 
   .ip__head {
@@ -430,15 +430,15 @@
 
   .ip__head h3 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--irp-fs-lg);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
   }
 
   .ip__head p {
     margin: 0.3rem 0 0;
-    font-size: 0.8rem;
-    color: #64748b;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-dim);
   }
 
   .ip__head-actions {
@@ -448,28 +448,28 @@
 
   .ip__reload {
     padding: 0.5rem 1.1rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #475569;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .ip__reload:hover:not(:disabled) { background: #f1f5f9; color: #1e293b; }
+  .ip__reload:hover:not(:disabled) { background: var(--irp-surface-3); color: var(--irp-text); }
   .ip__reload:disabled { opacity: 0.55; cursor: wait; }
 
   .ip__new {
     padding: 0.5rem 1.2rem;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
     border: none;
-    border-radius: 10px;
-    color: #fff;
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
@@ -480,18 +480,18 @@
 
   .ip__error {
     padding: 0.6rem 1rem;
-    border-radius: 8px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    font-size: 0.82rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
   }
 
   .ip__empty {
-    color: #94a3b8;
-    font-size: 0.85rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     font-style: italic;
     padding: 0.5rem 0;
   }
@@ -503,12 +503,12 @@
     width: 100%;
     max-width: 360px;
     padding: 0.5rem 0.7rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .ip__search input:focus {
@@ -520,22 +520,22 @@
   .ip__more {
     margin-top: 0.75rem;
     padding: 0.5rem 1.1rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #02999e;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-accent-ink);
     font-family: inherit;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
   }
-  .ip__more:hover { background: #f1f5f9; }
+  .ip__more:hover { background: var(--irp-surface-3); }
 
   .ip__panel {
     padding: 1.5rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     overflow-x: auto;
   }
@@ -543,52 +543,52 @@
   .ip__table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
   }
 
-  .ip__table thead tr { background: #f8fafc; }
+  .ip__table thead tr { background: var(--irp-surface-2); }
 
   .ip__table th {
     text-align: left;
     padding: 0.6rem 0.8rem;
-    color: #94a3b8;
-    font-size: 0.68rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     white-space: nowrap;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--irp-line);
   }
 
   .ip__table td {
     padding: 0.6rem 0.8rem;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    color: var(--irp-text-2);
+    border-bottom: 1px solid var(--irp-slate-100);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
-  .ip__table tbody tr:hover { background: #fafbff; }
+  .ip__table tbody tr:hover { background: var(--irp-bg); }
 
-  .ip__num { font-weight: 800; color: #02b5bb; }
-  .ip__name { font-weight: 600; color: #0f172a; }
-  .owing { color: #d97706; font-weight: 600; }
+  .ip__num { font-weight: 800; color: var(--irp-accent-ink); }
+  .ip__name { font-weight: 600; color: var(--irp-text); }
+  .owing { color: var(--irp-amber-700); font-weight: 600; }
 
   .ip__status {
     display: inline-block;
     padding: 0.16em 0.6em;
-    border-radius: 999px;
-    font-size: 0.68rem;
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     border: 1px solid transparent;
   }
 
-  .ip__status--draft { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
-  .ip__status--sent { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-  .ip__status--partially_paid { background: #fffbeb; color: #d97706; border-color: #fde68a; }
-  .ip__status--paid { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+  .ip__status--draft { background: var(--irp-surface-3); color: var(--irp-text-dim); border-color: var(--irp-line); }
+  .ip__status--sent { background: var(--irp-surface-3); color: var(--irp-blue-600); border-color: var(--irp-blue-200); }
+  .ip__status--partially_paid { background: var(--irp-bg); color: var(--irp-amber-700); border-color: var(--irp-amber-200); }
+  .ip__status--paid { background: var(--irp-surface-2); color: var(--irp-green-700); border-color: var(--irp-green-200); }
 
   .ip__row-actions {
     display: flex;
@@ -596,13 +596,13 @@
   }
 
   .ip__sub {
-    font-size: 0.68rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     white-space: nowrap;
     margin-top: 2px;
   }
 
-  .ip__payments-row td { background: #f8fafc; white-space: normal; }
+  .ip__payments-row td { background: var(--irp-surface-2); white-space: normal; }
 
   .ip__payments {
     padding: 0.25rem 0;
@@ -610,39 +610,39 @@
 
   .ip__payments h4 {
     margin: 0 0 0.6rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.09em;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   .ip__payments-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    font-size: var(--irp-fs-sm);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
     overflow: hidden;
   }
 
   .ip__payments-table th {
     text-align: left;
     padding: 0.5rem 0.7rem;
-    color: #94a3b8;
-    font-size: 0.64rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid var(--irp-line);
+    background: var(--irp-surface-2);
   }
 
   .ip__payments-table td {
     padding: 0.5rem 0.7rem;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    color: var(--irp-text-2);
+    border-bottom: 1px solid var(--irp-slate-100);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -652,18 +652,18 @@
   .ip__link {
     background: none;
     border: none;
-    color: #02999e;
+    color: var(--irp-accent-ink);
     font-family: inherit;
-    font-size: 0.76rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
     padding: 0;
   }
 
   .ip__link:hover { text-decoration: underline; }
-  .ip__link--danger { color: #ef4444; }
+  .ip__link--danger { color: var(--irp-red-600); }
 
-  .ip__action-row td { background: #f8fafc; white-space: normal; }
+  .ip__action-row td { background: var(--irp-surface-2); white-space: normal; }
 
   .ip__action {
     display: flex;
@@ -677,21 +677,21 @@
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
 
   .ip__action input {
     padding: 0.45rem 0.6rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #0f172a;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface);
+    color: var(--irp-text);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     min-width: 0;
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -708,12 +708,12 @@
 
   .ip__save {
     padding: 0.5rem 1.2rem;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
     border: none;
-    border-radius: 10px;
-    color: #fff;
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
@@ -725,18 +725,18 @@
 
   .ip__ghost {
     padding: 0.5rem 1.1rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    color: #475569;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
+    color: var(--irp-text-muted);
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1), color 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .ip__ghost:hover { background: #f1f5f9; color: #1e293b; }
+  .ip__ghost:hover { background: var(--irp-surface-3); color: var(--irp-text); }
 
   .ip__editor-wrap {
     margin-bottom: 1rem;
@@ -752,9 +752,9 @@
   .ip__back {
     background: none;
     border: none;
-    color: #02999e;
+    color: var(--irp-accent-ink);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     padding: 0;

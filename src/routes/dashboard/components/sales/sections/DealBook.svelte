@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * DealBook — every deal in the database, every currency (sales-book-v3 §6.5),
    * plus a Leads tab for leads that never became a deal. Saved views are
@@ -113,7 +114,7 @@
 
 {#if err}<p class="mh-alert mh-alert--error" role="alert">{err}</p>{/if}
 
-<div class="sb-tabs" role="tablist" aria-label="Deal book">
+<div class="sb-tabs" role="tablist" aria-label="Deal book" use:tabs>
   <button role="tab" aria-selected={tab === 'deals'} on:click={() => (tab = 'deals')}>Deals <span class="mh-muted">{inPeriod.length}</span></button>
   <button role="tab" aria-selected={tab === 'leads'} on:click={() => (tab = 'leads')} disabled={!book.cubeOk}>Leads with no deal <span class="mh-muted">{book.cubeOk ? leads.length : '—'}</span></button>
 </div>

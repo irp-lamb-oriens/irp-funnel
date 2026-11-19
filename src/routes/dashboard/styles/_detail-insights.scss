@@ -26,8 +26,8 @@
   padding: 4px 10px;
   border-radius: $r-full;
   background: $accent;
-  color: #fff;
-  font-size: 10px;
+  color: var(--irp-text-inverse);
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -42,7 +42,7 @@
   border: 1px solid rgba(2,181,187,0.4);
   color: $accent-hover;
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   box-shadow: $shadow-sm;
 }
 .detail-insights__mode-chip--unset {
@@ -58,16 +58,16 @@
   border-radius: $r-full;
   background: $surface;
   border: 1px solid rgba(245,158,11,0.4);
-  color: #b45309;
+  color: var(--irp-amber-700);
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   box-shadow: $shadow-sm;
 }
 .detail-insights__confidence-row {
   display: flex;
   align-items: center;
   gap: $sp-2;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-muted;
 }
 .detail-insights__confidence-label { font-weight: 600; }
@@ -93,13 +93,13 @@
   border-radius: $r-md;
   background: $surface-2;
   border: 1px solid $border;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   line-height: 1.5;
   color: $text-2;
 }
 .detail-insights__extracted h4 {
   margin: 0 0 $sp-2 0;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 700;
   color: $text-muted;
   text-transform: uppercase;
@@ -124,18 +124,18 @@
 .detail-insights__extracted-row:hover { background: $surface; }
 .detail-insights__extracted-key {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-muted;
   font-family: ui-monospace, monospace;
 }
 .detail-insights__extracted-val {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text;
   text-align: right;
   word-break: break-word;
 }
 .detail-insights__meta {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-dim;
   display: flex;
   flex-wrap: wrap;
@@ -143,7 +143,7 @@
 }
 .detail-insights__meta code {
   font-family: ui-monospace, monospace;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   background: $surface-2;
   padding: 1px 4px;
   border-radius: $r-xs;
@@ -164,7 +164,7 @@
 }
 .detail-insights__empty-desc {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-muted;
   line-height: 1.5;
 }
@@ -174,7 +174,7 @@
 }
 .detail-insights__manual h4 {
   margin: 0 0 $sp-2 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 600;
   color: $text-2;
 }
@@ -184,7 +184,7 @@
   border: 1px solid $border;
   border-radius: $r-sm;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   resize: vertical;
   &:focus { outline: none; border-color: $accent; box-shadow: 0 0 0 3px $accent-glow; }
 }
@@ -201,9 +201,9 @@
   border: none;
   border-radius: $r-sm;
   background: $accent;
-  color: #fff;
+  color: var(--irp-text-inverse);
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   cursor: pointer;
   transition: background .15s ease;
   &:hover:not(:disabled) { background: $accent-hover; }

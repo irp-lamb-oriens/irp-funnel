@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * ExplorerSection — ask any question of the cube.
    *   Pivot: up to three measures × a Rows dimension (× an optional Columns
@@ -126,7 +127,7 @@
   </label>
   <div class="ex-right">
     {#if !xt}
-      <div class="mh-seg" role="group" aria-label="Show as">
+      <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Show as">
         <button aria-pressed={state.v === 'chart'} on:click={() => (state = { ...state, v: 'chart' })}>Bars</button>
         <button aria-pressed={state.v === 'table'} on:click={() => (state = { ...state, v: 'table' })}>Table</button>
       </div>
@@ -214,9 +215,9 @@
   .ex-controls .mh-control { min-width: 140px; }
   .ex-right { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
   .ex-basis { margin: 0.2rem 0 0.8rem; }
-  .ex-combo { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid #e2e8f0; }
+  .ex-combo { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--irp-line); }
   .ex-combo__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
-  .ex-col-h { margin: 0.4rem 0 0.4rem; font-size: 0.78rem; font-weight: 800; color: #0f172a; }
+  .ex-col-h { margin: 0.4rem 0 0.4rem; font-size: var(--irp-fs-xs); font-weight: 800; color: var(--irp-text); }
   .ex-seg { font-weight: 600 !important; white-space: normal; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

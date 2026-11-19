@@ -306,10 +306,10 @@
 <style>
   /* ── Card shell — light theme ──────────────────────────────────────────── */
   .vmatch-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border: 1px solid var(--irp-line);
+    border-radius: var(--irp-r-md);
     overflow: hidden;
-    background: #ffffff;
+    background: var(--irp-surface);
     margin-top: 0.75rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
     transition: border-color 0.14s;
@@ -325,15 +325,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.65rem 1rem;
-    background: #f8fafc;
+    background: var(--irp-surface-2);
     border: none;
     cursor: pointer;
-    color: #475569;
-    font-size: 0.82rem;
+    color: var(--irp-text-muted);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     transition: background 0.12s, color 0.12s;
   }
-  .vmatch-header:hover { background: #f1f5f9; color: #1e293b; }
+  .vmatch-header:hover { background: var(--irp-surface-3); color: var(--irp-text); }
   .vmatch-header__label {
     display: flex;
     align-items: center;
@@ -343,35 +343,35 @@
     display: inline-flex;
     align-items: center;
     padding: 0.1rem 0.45rem;
-    border-radius: 999px;
-    background: #f1f5f9;
-    color: #64748b;
-    font-size: 0.7rem;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface-3);
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--irp-line);
   }
   .vmatch-badge--green {
-    background: #f0fdf4;
-    color: #16a34a;
-    border-color: #bbf7d0;
+    background: var(--irp-surface-2);
+    color: var(--irp-green-700);
+    border-color: var(--irp-green-200);
   }
   .vmatch-header__chevron {
-    font-size: 1.2rem;
+    font-size: var(--irp-fs-2xl);
     font-weight: 300;
     transition: transform 0.2s;
     display: inline-block;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
   .vmatch-header__chevron.rotated { transform: rotate(90deg); }
 
   /* ── Body ───────────────────────────────────────────────────────────────── */
   .vmatch-body {
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--irp-line);
     padding: 0.75rem 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
-    background: #ffffff;
+    background: var(--irp-surface);
   }
 
   /* ── Context pills ───────────────────────────────────────────────────────── */
@@ -380,11 +380,11 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 0.35rem;
-    font-size: 0.75rem;
+    font-size: var(--irp-fs-xs);
   }
   .vmatch-context__label {
-    color: #94a3b8;
-    font-size: 0.72rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -396,46 +396,46 @@
     align-items: center;
     gap: 0.2rem;
     padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     white-space: nowrap;
   }
-  .vmatch-chip--sm { font-size: 0.68rem; padding: 0.15rem 0.4rem; }
+  .vmatch-chip--sm { font-size: var(--irp-fs-2xs); padding: 0.15rem 0.4rem; }
   /* Dark-enough accent colours → readable on their light bg */
-  .vmatch-chip--cat   { background: rgba(2,181,187,0.1);  color: #02b5bb; border: 1px solid rgba(2,181,187,0.2); }
-  .vmatch-chip--mod   { background: rgba(14,165,233,0.08); color: #0284c7; border: 1px solid rgba(14,165,233,0.2); }
-  .vmatch-chip--route { background: #f1f5f9;               color: #475569; border: 1px solid #e2e8f0; }
+  .vmatch-chip--cat   { background: rgba(2,181,187,0.1);  color: var(--irp-accent-ink); border: 1px solid rgba(2,181,187,0.2); }
+  .vmatch-chip--mod   { background: rgba(14,165,233,0.08); color: var(--irp-blue-600); border: 1px solid rgba(14,165,233,0.2); }
+  .vmatch-chip--route { background: var(--irp-surface-3);               color: var(--irp-text-muted); border: 1px solid var(--irp-line); }
 
   /* ── States ──────────────────────────────────────────────────────────────── */
   .vmatch-error {
-    font-size: 0.78rem;
-    color: #dc2626;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-red-600);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
     padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    border-radius: var(--irp-r-sm);
     font-weight: 600;
   }
   .vmatch-loading {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #64748b;   /* dark-on-white → readable */
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-dim);   /* dark-on-white → readable */
     padding: 0.5rem 0;
   }
   .vmatch-empty {
-    font-size: 0.78rem;
-    color: #64748b;   /* dark-on-white → readable */
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);   /* dark-on-white → readable */
     padding: 0.25rem 0;
   }
   .vmatch-empty a {
-    color: #02b5bb;
+    color: var(--irp-accent-ink);
     text-decoration: underline;
     cursor: pointer;
   }
-  .vmatch-empty a:hover { color: #0a8a8e; }
+  .vmatch-empty a:hover { color: var(--irp-accent-ink); }
 
   /* ── Provider list ───────────────────────────────────────────────────────── */
   .vmatch-list {
@@ -447,17 +447,17 @@
     gap: 0.5rem;
   }
   .vmatch-item {
-    background: #f8fafc;
-    border-radius: 8px;
+    background: var(--irp-surface-2);
+    border-radius: var(--irp-r-sm);
     padding: 0.65rem 0.875rem;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--irp-line);
     transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .vmatch-item:hover { border-color: #9fe3e6; box-shadow: 0 1px 4px rgba(2,181,187,0.08); }
-  .vmatch-item:first-child { border-color: #bbf7d0; background: #f0fdf4; }
+  .vmatch-item:hover { border-color: var(--irp-teal-200); box-shadow: 0 1px 4px rgba(2,181,187,0.08); }
+  .vmatch-item:first-child { border-color: var(--irp-green-200); background: var(--irp-surface-2); }
   .vmatch-item--dim { opacity: 0.55; }
 
   .vmatch-item__head {
@@ -473,28 +473,28 @@
   }
   .vmatch-company {
     font-weight: 700;
-    font-size: 0.875rem;
-    color: #0f172a;   /* dark on light-bg → high contrast */
+    font-size: var(--irp-fs-md);
+    color: var(--irp-text);   /* dark on light-bg → high contrast */
     flex: 1;
   }
   .vmatch-site {
-    font-size: 0.72rem;
-    color: #02b5bb;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-accent-ink);
     text-decoration: none;
     font-weight: 600;
   }
-  .vmatch-site:hover { text-decoration: underline; color: #0a8a8e; }
+  .vmatch-site:hover { text-decoration: underline; color: var(--irp-accent-ink); }
 
   .vmatch-contact {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    font-size: 0.78rem;
-    color: #475569;   /* dark on light-bg → readable */
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-muted);   /* dark on light-bg → readable */
   }
-  .vmatch-email { color: #02b5bb; text-decoration: none; }
-  .vmatch-email:hover { text-decoration: underline; color: #0a8a8e; }
-  .vmatch-phone { color: #94a3b8; }
+  .vmatch-email { color: var(--irp-accent-ink); text-decoration: none; }
+  .vmatch-email:hover { text-decoration: underline; color: var(--irp-accent-ink); }
+  .vmatch-phone { color: var(--irp-text-dim); }
 
   .vmatch-chips {
     display: flex;
@@ -503,8 +503,8 @@
   }
 
   .vmatch-notes {
-    font-size: 0.75rem;
-    color: #64748b;   /* dark on light-bg → readable */
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);   /* dark on light-bg → readable */
     font-style: italic;
     line-height: 1.4;
     margin-top: 0.1rem;
@@ -515,13 +515,13 @@
     display: inline-block;
     width: 12px;
     height: 12px;
-    border: 1.5px solid #e2e8f0;
-    border-top-color: #02b5bb;
+    border: 1.5px solid var(--irp-line);
+    border-top-color: var(--irp-accent);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
   .vmatch-spinner--lg { width: 16px; height: 16px; }
-  .vmatch-spinner--btn { border-color: rgba(255,255,255,0.4); border-top-color: #fff; }
+  .vmatch-spinner--btn { border-color: rgba(255,255,255,0.4); border-top-color: var(--irp-slate-0); }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Manual RFQ send ──────────────────────────────────────────────────────── */
@@ -529,14 +529,14 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    border-top: 1px dashed #e2e8f0;
+    border-top: 1px dashed var(--irp-line);
     padding-top: 0.625rem;
     margin-top: 0.125rem;
   }
   .vmatch-send-note {
     margin: 0;
-    font-size: 0.72rem;
-    color: #64748b;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     line-height: 1.4;
   }
   .vmatch-send-btn {
@@ -545,12 +545,12 @@
     justify-content: center;
     gap: 0.4rem;
     align-self: flex-start;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
+    color: var(--irp-text-inverse);
     border: none;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(2,181,187,0.28);
@@ -563,22 +563,22 @@
   }
   .vmatch-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .vmatch-send-result {
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
-    color: #16a34a;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
+    color: var(--irp-green-700);
+    background: var(--irp-surface-2);
+    border: 1px solid var(--irp-green-200);
+    border-radius: var(--irp-r-sm);
     padding: 0.5rem 0.75rem;
     line-height: 1.4;
   }
   .vmatch-send-error {
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
-    color: #dc2626;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
+    color: var(--irp-red-600);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    border-radius: var(--irp-r-sm);
     padding: 0.5rem 0.75rem;
   }
 </style>

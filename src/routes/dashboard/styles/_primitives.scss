@@ -1,0 +1,77 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   _primitives.scss — ready-made dashboard classes built on _mixins.scss
+   ───────────────────────────────────────────────────────────────────────────
+   Use these in markup instead of writing a new one-off style:
+     .irp-tabs  (+ --segment, --line, --block)   tab bars at every level
+     .irp-btn   (+ --primary, --danger, --ghost, --sm, --icon)
+     .irp-chip  (+ --success, --warning, --danger, --info, --neutral)
+     .irp-card, .irp-overline, .irp-input, .irp-empty, .irp-sr-only
+   Tab bars also take `use:tabs` (utils/a11yTabs.ts) for roles + arrow keys.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+.irp-tabs            { @include irp-tabs-pills; }
+.irp-tabs--segment   { @include irp-tabs-segment('> button:not([data-tab-skip]), > a:not([data-tab-skip])'); }
+.irp-tabs--line      { @include irp-tabs-line('> button:not([data-tab-skip]), > a:not([data-tab-skip])'); }
+.irp-tabs--block     { display: flex; width: 100%; > button, > a { flex: 1 1 0; } }
+// Counter bubble inside any tab: <span class="irp-tabs__count">3</span>
+.irp-tabs__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--irp-r-full);
+  background: var(--irp-accent);
+  color: var(--irp-text-inverse);
+  font-size: var(--irp-fs-2xs);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+// ── Buttons ──────────────────────────────────────────────────────────────────
+.irp-btn {
+  @include irp-btn;
+  &--primary { @include irp-btn-primary; }
+  &--danger  { @include irp-btn-danger; }
+  &--ghost   { @include irp-btn-ghost; }
+  &--sm      { min-height: var(--irp-control-sm); padding: 0 0.7rem; font-size: var(--irp-fs-xs); border-radius: var(--irp-r-sm); }
+  &--icon    { width: var(--irp-control-md); padding: 0; }
+}
+
+// ── Chips ────────────────────────────────────────────────────────────────────
+.irp-chip {
+  @include irp-chip(accent);
+  &--neutral { @include irp-chip(neutral); }
+  &--success { @include irp-chip(success); }
+  &--warning { @include irp-chip(warning); }
+  &--danger  { @include irp-chip(danger); }
+  &--info    { @include irp-chip(info); }
+}
+
+// ── Surfaces / text ──────────────────────────────────────────────────────────
+.irp-card     { @include irp-card; }
+.irp-overline { @include irp-overline; }
+.irp-input    { @include irp-input; }
+.irp-empty {
+  display: grid;
+  place-items: center;
+  gap: var(--irp-sp-2);
+  padding: var(--irp-sp-7) var(--irp-sp-5);
+  border: 1px dashed var(--irp-line-strong);
+  border-radius: var(--irp-r-lg);
+  background: var(--irp-surface-2);
+  color: var(--irp-text-dim);
+  font-size: var(--irp-fs-sm);
+  text-align: center;
+}
+.irp-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

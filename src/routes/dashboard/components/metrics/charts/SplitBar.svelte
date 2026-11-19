@@ -51,9 +51,9 @@
 <style>
   .sb { display: grid; gap: 4px; }
   .sb-row { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 6px; }
-  .sb-k { font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
-  .sb-bar { display: flex; height: 18px; border-radius: 6px; overflow: hidden; background: #f1f5f9; }
+  .sb-k { font-size: var(--irp-fs-2xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--irp-text-dim); }
+  .sb-bar { display: flex; height: 18px; border-radius: var(--irp-r-xs); overflow: hidden; background: var(--irp-surface-3); }
   .sb--compact .sb-bar { height: 14px; }
-  .sb-seg { display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; white-space: nowrap; overflow: hidden; }
-  .sb-none { font-size: 0.68rem; color: #94a3b8; padding: 0 0.4rem; line-height: 18px; }
+  .sb-seg { display: inline-flex; align-items: center; justify-content: center; font-size: var(--irp-fs-2xs); font-weight: 700; white-space: nowrap; overflow: hidden; }
+  .sb-none { font-size: var(--irp-fs-2xs); color: var(--irp-text-dim); padding: 0 0.4rem; line-height: 18px; }
 </style>

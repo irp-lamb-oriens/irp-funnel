@@ -167,7 +167,7 @@
   .star-rating:focus-visible {
     outline: 2px solid rgba(245, 166, 35, 0.55);
     outline-offset: 3px;
-    border-radius: 8px;
+    border-radius: var(--irp-r-sm);
   }
 
   .sr-track {
@@ -194,8 +194,8 @@
   }
 
   .sr-star-base path {
-    fill: #e2e8f0;
-    stroke: #cbd5e1;
+    fill: var(--irp-slate-200);
+    stroke: var(--irp-slate-300);
     stroke-width: 0.6;
     transition: fill 0.15s ease;
   }
@@ -211,36 +211,36 @@
   .sr-star-fill path {
     fill: url(#sr-grad);
     /* gradient fallback via drop-shadow glow */
-    fill: #f5a623;
+    fill: var(--irp-amber-500);
     filter: drop-shadow(0 1px 2px rgba(245, 166, 35, 0.45));
   }
 
   /* Golden gradient via layered background trick on the fill svg */
   .sr-star-fill svg path {
-    fill: #f6b73c;
+    fill: var(--irp-amber-400);
   }
   .star-rating:not(.readonly) .sr-track:hover .sr-star-fill path {
-    fill: #f59e0b;
+    fill: var(--irp-amber-500);
   }
 
   .sr-value {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
-    color: #b45309;
+    color: var(--irp-amber-700);
     min-width: 26px;
     font-variant-numeric: tabular-nums;
   }
-  .sr-value--ro { color: #92400e; }
-  .unrated .sr-value { color: #9ca3af; }
+  .sr-value--ro { color: var(--irp-amber-800); }
+  .unrated .sr-value { color: var(--irp-text-dim); }
 
   .sr-clear {
     border: none;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--irp-surface-3);
+    color: var(--irp-text-dim);
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     line-height: 1;
     cursor: pointer;
     display: inline-flex;
@@ -248,5 +248,5 @@
     justify-content: center;
     transition: background 0.15s ease, color 0.15s ease;
   }
-  .sr-clear:hover { background: #fee2e2; color: #dc2626; }
+  .sr-clear:hover { background: var(--irp-red-100); color: var(--irp-red-600); }
 </style>

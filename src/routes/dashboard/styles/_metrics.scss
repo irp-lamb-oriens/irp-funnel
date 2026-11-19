@@ -26,7 +26,7 @@
   padding: $sp-3 $sp-4;
   color: $text-dim;
   font-weight: 700;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -41,7 +41,7 @@
 
 .list-cell {
   padding: $sp-3 $sp-4;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   text-align: left;
   /* Prevent cell content from overflowing its grid fraction */
   white-space: nowrap;
@@ -59,14 +59,14 @@
   &__name { 
     font-weight: 700; 
     color: $text; 
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   
   &__email { 
-    font-size: 12px; 
+    font-size: var(--irp-fs-xs); 
     color: $text-dim; 
     margin-top: 1px;
     white-space: nowrap;
@@ -85,7 +85,7 @@
     border-radius: $r-full;
     background: rgba($text-muted, 0.18);
     color: $text-muted;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     font-style: normal;
     line-height: 1;
@@ -105,7 +105,7 @@
   text-align: center;
   padding: $sp-7 $sp-4;
   color: $text-dim;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
 }
 
 .stage-badge {
@@ -114,7 +114,7 @@
   gap: $sp-1;
   padding: $sp-1 $sp-3;
   border-radius: $r-full;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: white;
   white-space: nowrap;
@@ -133,7 +133,7 @@
 .metrics-section {
   margin-bottom: $sp-8;
   h2 {
-    font-size: 15px;
+    font-size: var(--irp-fs-lg);
     font-weight: 800;
     color: $text;
     margin: 0 0 $sp-4;
@@ -166,7 +166,7 @@
     line-height: 1.1;
   }
   &__label {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     color: $text-dim;
     margin-top: $sp-1;
@@ -176,7 +176,7 @@
 }
 
 .metric-card__sub {
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 500;
   color: $text-dim;
   margin-top: $sp-1;
@@ -184,10 +184,10 @@
 
 .metric-total {
   margin-top: $sp-4;
-  font-size: 14px;
+  font-size: var(--irp-fs-md);
   color: $text-muted;
   font-weight: 500;
-  strong { color: $text; font-size: 20px; font-weight: 800; }
+  strong { color: $text; font-size: var(--irp-fs-2xl); font-weight: 800; }
 }
 
 /* ── Breakdown Table (models, countries) ──────────────────────────────────── */
@@ -202,7 +202,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   padding: $sp-3 $sp-4;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -219,7 +219,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   padding: $sp-2 $sp-4;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-2;
   border-bottom: 1px solid rgba($border, 0.3);
   transition: background $t-fast;
@@ -237,7 +237,7 @@
 
   &__cost {
     font-weight: 700;
-    color: $warning;
+    color: $warning-ink;
     font-family: $mono;
   }
 }
@@ -274,7 +274,7 @@
   margin-bottom: $sp-3;
 
   label {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     color: $text-dim;
     text-transform: uppercase;
@@ -285,7 +285,7 @@
   input,
   select {
     font-family: $font;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text;
     background: $surface;
     border: 1px solid $border;
@@ -297,37 +297,7 @@
   }
 }
 
-.period-tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: $sp-1;
-  padding: 3px;
-  background: $surface-2;
-  border: 1px solid $border;
-  border-radius: $r-sm;
-
-  button {
-    font-family: $font;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: $text-dim;
-    background: transparent;
-    border: none;
-    border-radius: $r-xs;
-    padding: 5px 10px;
-    cursor: pointer;
-    transition: all $t-fast;
-
-    &:hover { color: $text; }
-    &.active {
-      background: $accent;
-      color: #fff;
-      box-shadow: 0 1px 3px $accent-glow;
-    }
-  }
-}
+.period-tabs { @include irp-tabs-segment; }
 
 .bucket-list {
   display: flex;
@@ -341,7 +311,7 @@
   grid-template-columns: 110px 1fr 56px;
   align-items: center;
   gap: $sp-3;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
 
   &__label {
     font-weight: 600;
@@ -396,7 +366,7 @@
 
 .show-more {
   font-family: $font;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 700;
   color: $accent-hover;
   background: none;
@@ -426,14 +396,14 @@
   }
 
   &__count {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     color: $text;
     margin-bottom: $sp-1;
   }
 
   &__label {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     color: $text-dim;
     margin-top: $sp-2;
@@ -450,7 +420,7 @@
 
 .attribution-module {
   p.metrics-subtle {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     line-height: 1.5;
     color: $text-dim;
     margin: 0 0 $sp-4;
@@ -460,7 +430,7 @@
   .metrics-subtle code,
   .attribution-footnote code {
     font-family: $mono;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     background: $surface-2;
     border: 1px solid $border;
     border-radius: $r-xs;
@@ -472,15 +442,15 @@
 }
 
 .attribution-empty {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-dim;
   margin: 0 0 $sp-3;
 }
 
 .attribution-journey {
   margin: 0 0 $sp-4;
-  font-size: 13px;
-  strong { font-size: 15px; }
+  font-size: var(--irp-fs-sm);
+  strong { font-size: var(--irp-fs-lg); }
 }
 
 .attribution-subhead { margin-top: $sp-2; }
@@ -495,7 +465,7 @@
 }
 
 .attribution-footnote {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-dim;
   font-weight: 500;
 }
@@ -535,12 +505,12 @@
   display: inline-block;
   width: 14px;
   color: $text-dim;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
 }
 
 .attribution-noshow {
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $danger;
 }
 
@@ -557,7 +527,7 @@
   gap: $sp-3;
   align-items: center;
   padding: 6px 0;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-2;
   border-bottom: 1px dashed rgba($border, 0.6);
   &:last-child { border-bottom: none; }
@@ -565,14 +535,14 @@
   &__name { font-weight: 600; color: $text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   &__date { color: $text-dim; }
   &__path { color: $text-muted; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &__money { font-family: $mono; font-weight: 700; color: $warning; text-align: right; }
+  &__money { font-family: $mono; font-weight: 700; color: $warning-ink; text-align: right; }
 
   &__steps {
     display: inline-flex;
     gap: $sp-1;
     i {
       font-style: normal;
-      font-size: 10px;
+      font-size: var(--irp-fs-2xs);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.3px;
@@ -580,8 +550,8 @@
       border-radius: $r-full;
       color: $text-dim;
       background: $surface-3;
-      &.on { color: #fff; background: $accent; }
-      &.off { color: #fff; background: $danger; }
+      &.on { color: var(--irp-text-inverse); background: $accent; }
+      &.off { color: var(--irp-text-inverse); background: $danger; }
     }
   }
 
@@ -615,7 +585,7 @@
     > code {
       flex: 1;
       font-family: $mono;
-      font-size: 12px;
+      font-size: var(--irp-fs-xs);
       color: $text;
       overflow-x: auto;
       white-space: nowrap;
@@ -624,11 +594,11 @@
 
   &__copy {
     font-family: $font;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    color: #fff;
+    color: var(--irp-text-inverse);
     background: $accent;
     border: none;
     border-radius: $r-xs;

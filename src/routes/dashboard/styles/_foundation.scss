@@ -8,6 +8,83 @@
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   *, *::before, *::after { box-sizing: inherit; }
 }
 
+/* ── Accessibility baseline ──────────────────────────────────────────────────
+   Scoped to the dashboard document: `body:has(.dashboard)` also reaches
+   dropdowns, popovers and modals that portal themselves to <body>.
+   :where() keeps specificity at zero so component styles can still refine
+   everything here — EXCEPT the keyboard focus ring, which must never be
+   removed (WCAG 2.4.7), hence the one !important. */
+$irp-scope: ':where(.dashboard, .login-gate, body:has(.dashboard))';
+
+#{$irp-scope} {
+  // Keyboard focus is always visible, whatever a component set on :focus.
+  :focus-visible {
+    outline: 2px solid var(--irp-focus) !important;
+    outline-offset: 2px;
+  }
+  // Containers that receive focus only programmatically (modal shells,
+  // overlays, tabindex=-1 regions) would otherwise wear a ring the size of
+  // the screen. Their interactive children keep theirs.
+  :is([tabindex='-1'], [role='dialog'], [class*='overlay'], [class*='backdrop']):focus-visible {
+    outline: none !important;
+  }
+  // Text fields already show a teal border + glow on focus; keep the outline
+  // tighter there so it hugs the field instead of floating around it.
+  :is(input:not([type='checkbox'], [type='radio'], [type='range']), textarea, select, [contenteditable='true']):focus-visible {
+    outline-offset: 0;
+  }
+
+  ::selection { background: rgba(2, 181, 187, 0.22); color: inherit; }
+
+  // Native controls pick up the brand colour (checkboxes, radios, ranges, progress).
+  accent-color: var(--irp-accent);
+
+  // Form controls never fall back to the UA font.
+  :where(button, input, select, textarea) { font-family: inherit; }
+  :where(button:not(:disabled), [role='button'], [role='tab'], summary, label[for]) { cursor: pointer; }
+  :where(button:disabled, [aria-disabled='true']) { cursor: not-allowed; }
+
+  // Numbers line up in every table, KPI and badge.
+  :where(table, .tabular, [data-num]) { font-variant-numeric: tabular-nums; }
+
+  // Slim, quiet scrollbars that match the slate ramp.
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--irp-slate-300) transparent;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--irp-slate-300);
+    border: 3px solid transparent;
+    border-radius: var(--irp-r-full);
+    background-clip: padding-box;
+    &:hover { background-color: var(--irp-slate-400); }
+  }
+}
+
+// Respect the OS "reduce motion" setting everywhere in the dashboard: keep
+// state changes, drop the travel.
+@media (prefers-reduced-motion: reduce) {
+  // Spinners keep turning (slowly, via their own rules) — a frozen spinner
+  // reads as a hang.
+  #{$irp-scope} *:not([class*='spinner'], [class*='loader']),
+  #{$irp-scope} *:not([class*='spinner'], [class*='loader'])::before,
+  #{$irp-scope} *:not([class*='spinner'], [class*='loader'])::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// High-contrast / forced-colors: keep tab and button states legible.
+@media (forced-colors: active) {
+  #{$irp-scope} :is([aria-selected='true'], [aria-pressed='true'], [aria-current='true'], .active) {
+    outline: 2px solid CanvasText;
+  }
+}

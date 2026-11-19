@@ -324,44 +324,44 @@
     padding: 0.6rem 1rem;
     background: rgba(2, 181, 187, 0.07);
     border: 1px solid rgba(2, 181, 187, 0.2);
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     margin-bottom: 1rem;
-    font-size: 0.82rem;
-    color: #0f172a;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text);
   }
-  .llm-cost-summary__icon { font-size: 1rem; }
+  .llm-cost-summary__icon { font-size: var(--irp-fs-lg); }
   .llm-cost-summary__label {
     font-weight: 600;
-    color: #475569;
-    font-size: 0.78rem;
+    color: var(--irp-text-muted);
+    font-size: var(--irp-fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   .llm-cost-summary__item {
-    font-size: 0.84rem;
-    color: #334155;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-2);
   }
   .llm-cost-summary__item strong {
-    color: #0f172a;
+    color: var(--irp-text);
     font-weight: 700;
   }
-  .llm-cost-summary__item--week strong  { color: #16a34a; }  /* green  */
-  .llm-cost-summary__item--month strong { color: #2563eb; }  /* blue   */
-  .llm-cost-summary__item--total strong { color: #02b5bb; }  /* teal   */
+  .llm-cost-summary__item--week strong  { color: var(--irp-green-700); }  /* green  */
+  .llm-cost-summary__item--month strong { color: var(--irp-blue-600); }  /* blue   */
+  .llm-cost-summary__item--total strong { color: var(--irp-accent-ink); }  /* teal   */
   .llm-cost-summary__sep {
-    color: #cbd5e1;
+    color: var(--irp-text-dim);
     font-weight: 300;
     user-select: none;
   }
 
   /* ── Stage Satisfaction ────────────────────────────────────────────── */
   .metrics-subtle {
-    font-size: 13px;
-    color: #64748b;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-dim);
     margin: 0 0 16px;
     max-width: 680px;
   }
-  .rating-star { color: #f59e0b; margin-left: 2px; }
+  .rating-star { color: var(--irp-amber-700); margin-left: 2px; }
   .stage-ratings {
     display: flex;
     flex-direction: column;
@@ -373,50 +373,50 @@
     grid-template-columns: minmax(140px, 220px) 1fr minmax(96px, 120px);
     align-items: center;
     gap: 12px;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
   }
   .stage-rating-label {
     font-weight: 500;
-    color: #334155;
+    color: var(--irp-text-2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .stage-rating-icon { margin-right: 6px; }
   .stage-rating-bar-wrap {
-    background: #f1f5f9;
+    background: var(--irp-surface-3);
     height: 10px;
-    border-radius: 5px;
+    border-radius: var(--irp-r-xs);
     overflow: hidden;
   }
   .stage-rating-bar {
     height: 100%;
-    border-radius: 5px;
+    border-radius: var(--irp-r-xs);
     transition: width 0.3s ease;
     min-width: 2px;
   }
   .stage-rating-score {
     text-align: right;
-    color: #1e293b;
+    color: var(--irp-text);
     white-space: nowrap;
   }
-  .stage-rating-count { color: #94a3b8; font-size: 12px; margin-left: 2px; }
-  .stage-rating-empty { color: #cbd5e1; font-style: italic; font-size: 12px; }
+  .stage-rating-count { color: var(--irp-text-dim); font-size: var(--irp-fs-xs); margin-left: 2px; }
+  .stage-rating-empty { color: var(--irp-text-dim); font-style: italic; font-size: var(--irp-fs-xs); }
   .sales-link {
     background: none;
     border: none;
     padding: 0;
     margin-left: 12px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: #02868a;
+    color: var(--irp-accent-ink);
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .sales-link:hover { color: #02b5bb; }
-  .sales-link:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; }
+  .sales-link:hover { color: var(--irp-accent-ink); }
+  .sales-link:focus-visible { outline: 2px solid var(--irp-accent); outline-offset: 2px; }
 </style>
 
 

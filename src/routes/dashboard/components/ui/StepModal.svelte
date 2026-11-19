@@ -264,7 +264,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 20px 24px 14px;
-    background: linear-gradient(180deg, #fbfdfd 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--irp-bg) 0%, var(--irp-surface) 100%);
     flex-shrink: 0;
   }
   .sm-head::before {
@@ -274,54 +274,54 @@
     top: 0;
     bottom: 0;
     width: 4px;
-    background: linear-gradient(180deg, #02b5bb 0%, #0b3b3d 100%);
+    background: linear-gradient(180deg, var(--irp-accent) 0%, var(--irp-teal-900) 100%);
   }
   .sm-head__title {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--irp-fs-xl);
     font-weight: 700;
-    color: #111;
+    color: var(--irp-text);
   }
   .sm-head__sub {
     margin: 3px 0 0;
-    font-size: 12.5px;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: #64748b;
+    color: var(--irp-text-dim);
   }
   .sm-head__close {
-    background: #f3f4f6;
+    background: var(--irp-surface-3);
     border: none;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    font-size: 15px;
-    color: #6b7280;
+    border-radius: var(--irp-r-sm);
+    font-size: var(--irp-fs-lg);
+    color: var(--irp-text-dim);
     cursor: pointer;
     flex-shrink: 0;
     transition: background 0.12s, color 0.12s;
   }
-  .sm-head__close:hover { background: #e5e7eb; color: #111; }
+  .sm-head__close:hover { background: var(--irp-surface-4); color: var(--irp-text); }
 
   /* ── Step rail (mirrors ClientImportExportModal) ─────────────────────── */
   .sm-rail {
     padding: 0.2rem 1.8rem 0.9rem;
-    border-bottom: 1px solid #eef0f2;
-    background: #fff;
+    border-bottom: 1px solid var(--irp-slate-100);
+    background: var(--irp-surface);
     flex-shrink: 0;
   }
   .sm-rail-track {
     position: relative;
     height: 3px;
-    border-radius: 3px;
-    background: #eef2f7;
+    border-radius: var(--irp-r-2xs);
+    background: var(--irp-surface-3);
     margin: 0 22px;
     overflow: hidden;
   }
   .sm-rail-fill {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, #02b5bb, #4338ca);
-    border-radius: 3px;
+    background: linear-gradient(90deg, var(--irp-accent), var(--irp-violet-700));
+    border-radius: var(--irp-r-2xs);
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sm-rail-steps {
@@ -352,34 +352,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.72rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
-    background: #fff;
-    border: 2px solid #e2e8f0;
-    color: #94a3b8;
+    background: var(--irp-surface);
+    border: 2px solid var(--irp-line);
+    color: var(--irp-text-faint);
     transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s;
   }
   .sm-rail-step.active .sm-rail-dot {
-    background: linear-gradient(135deg, #02b5bb, #4338ca);
+    background: linear-gradient(135deg, var(--irp-accent), var(--irp-violet-700));
     border-color: transparent;
-    color: #fff;
+    color: var(--irp-text-inverse);
     transform: scale(1.12);
     box-shadow: 0 4px 14px rgba(67, 56, 202, 0.35);
   }
   .sm-rail-step.passed .sm-rail-dot {
-    background: #ecfeff;
-    border-color: #a5f3fc;
-    color: #0e7490;
+    background: var(--irp-surface-2);
+    border-color: var(--irp-teal-200);
+    color: var(--irp-accent-ink);
   }
   .sm-rail-step:not(.active):not(:disabled):hover .sm-rail-dot {
-    border-color: #02b5bb;
-    color: #0e7490;
+    border-color: var(--irp-accent);
+    color: var(--irp-accent-ink);
   }
   .sm-rail-dot__pulse {
     position: absolute;
     inset: -5px;
     border-radius: 50%;
-    border: 2px solid #4338ca;
+    border: 2px solid var(--irp-violet-700);
     opacity: 0.5;
     animation: sm-dot-pulse 1.6s ease-out infinite;
   }
@@ -388,13 +388,13 @@
     100% { transform: scale(1.5); opacity: 0; }
   }
   .sm-rail-label {
-    font-size: 0.72rem;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
-    color: #475569;
+    color: var(--irp-text-muted);
     letter-spacing: 0.01em;
     white-space: nowrap;
   }
-  .sm-rail-step.active .sm-rail-label { color: #3730a3; }
+  .sm-rail-step.active .sm-rail-label { color: var(--irp-violet-800); }
 
   /* ── Stage: arrows flanking the active panel ─────────────────────────── */
   .sm-stage {
@@ -411,10 +411,10 @@
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #475569;
-    font-size: 20px;
+    border: 1px solid var(--irp-line);
+    background: var(--irp-surface);
+    color: var(--irp-text-muted);
+    font-size: var(--irp-fs-2xl);
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -425,8 +425,8 @@
   }
   .sm-arrow:hover:not(:disabled) {
     background: rgba(2, 181, 187, 0.08);
-    border-color: #02b5bb;
-    color: #0b3b3d;
+    border-color: var(--irp-accent);
+    color: var(--irp-teal-900);
     transform: scale(1.08);
     box-shadow: 0 4px 12px rgba(2, 181, 187, 0.2);
   }
@@ -436,14 +436,14 @@
   }
   /* Current step incomplete: the forward arrow reads as gated, not broken. */
   .sm-arrow--blocked:not(:disabled) {
-    border-color: #fde68a;
-    color: #b45309;
-    background: #fffbeb;
+    border-color: var(--irp-amber-200);
+    color: var(--irp-amber-700);
+    background: var(--irp-bg);
   }
   .sm-arrow--blocked:not(:disabled):hover {
-    background: #fef3c7;
-    border-color: #f59e0b;
-    color: #92400e;
+    background: var(--irp-amber-100);
+    border-color: var(--irp-amber-500);
+    color: var(--irp-amber-800);
   }
 
   /* ── Footer nav ──────────────────────────────────────────────────────── */
@@ -462,9 +462,9 @@
 
   .sm-btn {
     padding: 10px 20px;
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     cursor: pointer;
     font-family: inherit;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
@@ -473,15 +473,15 @@
 
   .sm-btn--ghost {
     background: transparent;
-    color: #374151;
-    border: 1px solid #d1d5db;
+    color: var(--irp-text-2);
+    border: 1px solid var(--irp-line-strong);
     font-weight: 500;
   }
-  .sm-btn--ghost:hover:not(:disabled) { background: #f3f4f6; border-color: #cbd5e1; }
+  .sm-btn--ghost:hover:not(:disabled) { background: var(--irp-surface-3); border-color: var(--irp-line-strong); }
 
   .sm-btn--primary {
-    background: linear-gradient(135deg, #0b3b3d 0%, #060D0D 60%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-teal-900) 0%, var(--irp-slate-950) 60%);
+    color: var(--irp-text-inverse);
     border: none;
     box-shadow: 0 2px 8px rgba(6, 13, 13, 0.22);
   }

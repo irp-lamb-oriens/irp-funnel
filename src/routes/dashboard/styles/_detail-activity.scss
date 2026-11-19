@@ -54,36 +54,36 @@
 // ══════════════════════════════════════════════════════════════════════════════
 .card-history {
   // ── Brand colours (Level-2 tokens, inherited from :root --irp-*) ─────────
-  --ch-accent:          var(--irp-accent,         #02b5bb);
-  --ch-accent-hover:    var(--irp-accent-hover,   #02999e);
+  --ch-accent:          var(--irp-accent);
+  --ch-accent-hover:    var(--irp-accent-hover);
   --ch-accent-subtle:   var(--irp-accent-subtle,  rgba(2, 181, 187, .12));
-  --ch-danger:          var(--irp-danger,         #c62426);
-  --ch-success:         var(--irp-success,        #10b981);
-  --ch-warning:         var(--irp-warning,        #f59e0b);
-  --ch-info:            var(--irp-info,           #38bdf8);
+  --ch-danger:          var(--irp-danger);
+  --ch-success:         var(--irp-success);
+  --ch-warning:         var(--irp-warning);
+  --ch-info:            var(--irp-info);
 
   // ── Surface colours ───────────────────────────────────────────────────────
-  --ch-surface:         var(--irp-surface,        #fff);
-  --ch-surface-2:       var(--irp-surface-2,      #f8f9fa);
+  --ch-surface:         var(--irp-surface);
+  --ch-surface-2:       var(--irp-surface-2);
   --ch-border:          var(--irp-border,         rgba(0,0,0,.08));
   --ch-border-hover:    var(--irp-border-hover,   rgba(0,0,0,.15));
 
   // ── Text colours ──────────────────────────────────────────────────────────
-  --ch-text:            var(--irp-text,           #181818);
-  --ch-text-2:          var(--irp-text-2,         #343a40);
-  --ch-text-muted:      var(--irp-text-muted,     #495057);
-  --ch-text-dim:        var(--irp-text-dim,       #868e96);
+  --ch-text:            var(--irp-text);
+  --ch-text-2:          var(--irp-text-2);
+  --ch-text-muted:      var(--irp-text-muted);
+  --ch-text-dim:        var(--irp-text-dim);
   --ch-mono:            var(--irp-mono, 'SF Mono', monospace);
 
   // ── Per event-type accent colours (Level-3 tokens) ───────────────────────
   // Components or parent elements can override these selectively.
-  --ch-type-email:      #3b82f6;   // blue  — emails
+  --ch-type-email:      var(--irp-blue-500);   // blue  — emails
   --ch-type-stage:      var(--ch-accent);          // teal  — stage moves
-  --ch-type-note:       #8b5cf6;   // violet— notes
-  --ch-type-action:     #f59e0b;   // amber — actions
+  --ch-type-note:       var(--irp-violet-500);   // violet— notes
+  --ch-type-action:     var(--irp-amber-500);   // amber — actions
   --ch-type-field:      #ec4899;   // pink  — field edits
   --ch-type-undo:       var(--ch-danger);           // red   — reverts
-  --ch-type-gemini:     #10b981;   // green — AI
+  --ch-type-gemini:     var(--irp-green-500);   // green — AI
   --ch-type-default:    var(--ch-text-dim);
 
   // ── Layout ────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@
   border: 1.5px solid var(--ch-danger);
   background: transparent;
   color: var(--ch-danger);
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   font-family: $font;
   cursor: pointer;
@@ -140,14 +140,14 @@
 
   &::before {
     content: '↩';
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 700;
     line-height: 1;
   }
 
   &:hover:not(:disabled) {
     background: var(--ch-danger);
-    color: #fff;
+    color: var(--irp-text-inverse);
     box-shadow: 0 4px 18px rgba(198, 36, 38, .28);
     transform: translateY(-1px);
   }
@@ -309,7 +309,7 @@
   border-radius: $r-full;
   background: var(--ch-accent-subtle);
   border: 1px solid rgba(2, 181, 187, .18);
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: var(--ch-accent-hover);
   white-space: nowrap;
@@ -321,14 +321,14 @@
   // Initials dot
   &::before {
     content: '⬤';
-    font-size: 6px;
+    font-size: var(--irp-fs-2xs);
     color: var(--ch-accent);
     flex-shrink: 0;
   }
 }
 
 .card-history__what {
-  font-size: 12.5px;
+  font-size: var(--irp-fs-sm);
   color: var(--ch-text-muted);
   line-height: 1.45;
   min-width: 0;
@@ -342,7 +342,7 @@
 
 // Monospace detail — diff / field path / action args
 .card-history__detail {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-family: var(--ch-mono);
   color: var(--ch-text-dim);
   line-height: 1.4;
@@ -358,7 +358,7 @@
 
 // Relative timestamp
 .card-history__when {
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 500;
   color: var(--ch-text-dim);
   font-variant-numeric: tabular-nums;
@@ -381,7 +381,7 @@
   border: 1.5px solid var(--ch-danger);
   background: transparent;
   color: var(--ch-danger);
-  font-size: 15px;
+  font-size: var(--irp-fs-lg);
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -392,7 +392,7 @@
 
   &:hover:not(:disabled) {
     background: var(--ch-danger);
-    color: #fff;
+    color: var(--irp-text-inverse);
     transform: rotate(-18deg) scale(1.15);
     box-shadow: 0 4px 16px rgba(198, 36, 38, .32);
   }
@@ -418,7 +418,7 @@
   border: 1.5px dashed var(--ch-border);
   background: transparent;
   color: var(--ch-accent);
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   font-family: $font;
   cursor: pointer;
@@ -432,7 +432,7 @@
 
   // Expand icon (changes to ↑ when collapsing via sibling selector isn't
   // viable in SCSS — the component adds a CSS class or swaps text content)
-  &::before { content: '↓'; font-size: 13px; margin-right: 2px; }
+  &::before { content: '↓'; font-size: var(--irp-fs-sm); margin-right: 2px; }
 
   &:hover {
     border-color: var(--ch-accent);
@@ -451,7 +451,7 @@
   padding: $sp-9 $sp-4;
   gap: $sp-2;
   color: var(--ch-text-dim);
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-style: italic;
   line-height: 1.55;
 

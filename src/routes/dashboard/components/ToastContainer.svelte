@@ -43,13 +43,13 @@
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    border-radius: 14px;
+    border-radius: var(--irp-r-lg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     font-family: var(--font-paragraph, 'Jost', sans-serif);
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     line-height: 1.4;
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: transform 0.2s ease, opacity 0.2s ease;
@@ -84,7 +84,7 @@
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.2);
     font-weight: 700;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
   }
 
   .toast__message {
@@ -97,7 +97,7 @@
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.7);
-    font-size: 20px;
+    font-size: var(--irp-fs-2xl);
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;

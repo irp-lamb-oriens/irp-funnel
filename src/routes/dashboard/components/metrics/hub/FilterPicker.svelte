@@ -83,15 +83,15 @@
   .fp { position: relative; }
   .fp-pop {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; width: 300px; max-width: calc(100vw - 32px);
-    padding: 0.8rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    padding: 0.8rem; background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
     display: grid; gap: 0.6rem;
   }
   .fp-search { width: 100%; box-sizing: border-box; }
   .fp-values { border: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; display: grid; gap: 1px; }
-  .fp-val { display: grid; grid-template-columns: 18px 1fr auto; gap: 0.45rem; align-items: center; padding: 0.28rem 0.35rem; border-radius: 6px; font-size: 0.8rem; color: #334155; cursor: pointer; }
-  .fp-val:hover { background: #f8fafc; }
-  .fp-val input { accent-color: #02b5bb; }
+  .fp-val { display: grid; grid-template-columns: 18px 1fr auto; gap: 0.45rem; align-items: center; padding: 0.28rem 0.35rem; border-radius: var(--irp-r-xs); font-size: var(--irp-fs-sm); color: var(--irp-text-2); cursor: pointer; }
+  .fp-val:hover { background: var(--irp-surface-2); }
+  .fp-val input { accent-color: var(--irp-accent); }
   .fp-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fp-count { font-size: 0.72rem; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  .fp-count { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); font-variant-numeric: tabular-nums; }
   .fp-actions { display: flex; justify-content: flex-end; gap: 0.4rem; }
 </style>

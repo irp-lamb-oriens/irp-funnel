@@ -12,14 +12,14 @@
   &__list {
     // Smooth scrollable list when overflow occurs
     scrollbar-width: thin;
-    scrollbar-color: #374151 transparent;
+    scrollbar-color: var(--irp-slate-700) transparent;
   }
 }
 
 .quote-list-item {
   // Hover highlight that respects the dashboard dark theme
   &:focus-visible {
-    outline: 2px solid #02b5bb;
+    outline: 2px solid var(--irp-accent);
     outline-offset: 1px;
   }
 }
@@ -27,10 +27,10 @@
 .quote-status-badge {
   display: inline-flex;
   align-items: center;
-  font-size: 0.72rem;
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   padding: 0.15rem 0.5rem;
-  border-radius: 100px;
+  border-radius: var(--irp-r-full);
   border: 1px solid currentColor;
   white-space: nowrap;
 }
@@ -67,9 +67,9 @@
     top: calc(100% + 4px);
     left: 0; right: 0;
     z-index: 20;
-    background: #1f2937;
-    border: 1px solid #374151;
-    border-radius: 6px;
+    background: var(--irp-slate-800);
+    border: 1px solid var(--irp-slate-700);
+    border-radius: var(--irp-r-xs);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     max-height: 200px;
     overflow-y: auto;

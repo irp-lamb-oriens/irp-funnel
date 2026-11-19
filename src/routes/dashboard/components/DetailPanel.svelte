@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../utils/a11yTabs.ts';
   import { onMount } from 'svelte';
   import {
     selectedClient, detailPanelOpen,
@@ -1009,7 +1010,7 @@
     </div>
 
     <!-- Tabs — PendingBadge renders nothing when count=0, so no conditional needed -->
-    <nav class="detail-tabs">
+    <nav class="detail-tabs" use:tabs={{ label: 'Client record sections' }}>
       <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>
         Overview
         <PendingBadge count={pendingTabCounts.overview ?? 0} variant="tab" />
@@ -2579,49 +2580,49 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0.35rem 0.85rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
+    border-radius: var(--irp-r-full);
+    font-size: var(--irp-fs-sm);
     font-weight: 800;
     letter-spacing: 0.01em;
     border: 1px solid transparent;
   }
   .service-type-badge--relocation {
-    color: #0b7285;
+    color: var(--irp-accent-ink);
     background: rgba(2, 181, 187, 0.12);
     border-color: rgba(2, 181, 187, 0.3);
   }
   .service-type-badge--relocation_tour {
-    color: #7c3aed;
+    color: var(--irp-violet-600);
     background: rgba(139, 92, 246, 0.12);
     border-color: rgba(139, 92, 246, 0.35);
   }
   .service-type-badge--both {
-    color: #b45309;
+    color: var(--irp-amber-700);
     background: rgba(245, 158, 11, 0.14);
     border-color: rgba(245, 158, 11, 0.4);
   }
   .service-type-badge--immigration {
-    color: #047857;
+    color: var(--irp-green-700);
     background: rgba(16, 185, 129, 0.12);
     border-color: rgba(16, 185, 129, 0.35);
   }
   .service-type-badge--legal {
-    color: #7c3aed;
+    color: var(--irp-violet-600);
     background: rgba(139, 92, 246, 0.12);
     border-color: rgba(139, 92, 246, 0.35);
   }
   .service-type-badge--realty {
-    color: #b45309;
+    color: var(--irp-amber-700);
     background: rgba(245, 158, 11, 0.14);
     border-color: rgba(245, 158, 11, 0.4);
   }
   .service-type-badge--coaching {
-    color: #0b7285;
+    color: var(--irp-accent-ink);
     background: rgba(2, 181, 187, 0.12);
     border-color: rgba(2, 181, 187, 0.3);
   }
   .service-type-badge--multiple {
-    color: #0f172a;
+    color: var(--irp-text);
     background: rgba(100, 116, 139, 0.12);
     border-color: rgba(100, 116, 139, 0.35);
   }
@@ -2630,14 +2631,14 @@
   .detail-overview__group {
     margin-top: 1.1rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid #eef2f6;
+    border-bottom: 1px solid var(--irp-slate-100);
   }
   .detail-overview__group-title {
-    font-size: 0.68rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────
@@ -2647,7 +2648,7 @@
   .dn-notif {
     background: linear-gradient(180deg, rgba(2, 181, 187, 0.05) 0%, rgba(2, 181, 187, 0.015) 100%);
     border: 1px solid rgba(2, 181, 187, 0.2);
-    border-radius: 12px;
+    border-radius: var(--irp-r-md);
     padding: 0.75rem 0.85rem;
     margin-bottom: 0.9rem;
   }
@@ -2658,9 +2659,9 @@
     margin-bottom: 0.6rem;
   }
   .dn-notif__title {
-    font-size: 0.8rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     letter-spacing: -0.01em;
   }
   .dn-notif__count {
@@ -2670,10 +2671,10 @@
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
-    border-radius: 999px;
-    background: #02b5bb;
-    color: #fff;
-    font-size: 0.66rem;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-accent);
+    color: var(--irp-text-inverse);
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
   }
   .dn-notif__list { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -2681,33 +2682,33 @@
     display: flex;
     align-items: flex-start;
     gap: 0.6rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-left: 3px solid #02b5bb;
-    border-radius: 10px;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-left: 3px solid var(--irp-accent);
+    border-radius: var(--irp-r-md);
     padding: 0.6rem 0.7rem;
   }
-  .dn-notif__item--note_mention { border-left-color: #6366f1; }
-  .dn-notif__ic { font-size: 1rem; line-height: 1.3; flex-shrink: 0; }
+  .dn-notif__item--note_mention { border-left-color: var(--irp-violet-500); }
+  .dn-notif__ic { font-size: var(--irp-fs-lg); line-height: 1.3; flex-shrink: 0; }
   .dn-notif__body { flex: 1; min-width: 0; }
   .dn-notif__label {
-    font-size: 0.82rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
-    color: #1e293b;
+    color: var(--irp-text);
     line-height: 1.3;
   }
   .dn-notif__preview {
     margin-top: 0.15rem;
-    font-size: 0.78rem;
-    color: #475569;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-muted);
     font-style: italic;
     line-height: 1.4;
     overflow-wrap: anywhere;
   }
   .dn-notif__meta {
     margin-top: 0.25rem;
-    font-size: 0.68rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-text-dim);
     font-weight: 600;
   }
   .dn-notif__read {
@@ -2715,10 +2716,10 @@
     align-self: center;
     padding: 0.35rem 0.7rem;
     border: 1px solid rgba(2, 181, 187, 0.3);
-    border-radius: 8px;
+    border-radius: var(--irp-r-sm);
     background: rgba(2, 181, 187, 0.08);
-    color: #02999e;
-    font-size: 0.72rem;
+    color: var(--irp-accent-ink);
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
     cursor: pointer;
     white-space: nowrap;

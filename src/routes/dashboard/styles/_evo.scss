@@ -62,7 +62,7 @@
   border-radius: $r-sm;
   color: $text-muted;
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--irp-fs-lg);
   font-family: $font;
   transition: all $t-fast;
   &:hover { color: $text; background: $surface-4; border-color: $border-hover; }
@@ -71,7 +71,7 @@
 .detail-panel__email,
 .detail-panel__phone {
   display: block;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-muted;
   margin-top: 3px;
   font-weight: 500;
@@ -92,7 +92,7 @@
   border-radius: $r-full;
   background: rgba($text-muted, 0.18);
   color: $text-muted;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 700;
   font-style: normal; /* keep "?" upright even when parent is italic */
   line-height: 1;
@@ -118,7 +118,7 @@
   max-width: 100%;
 }
 .detail-panel__critical-label {
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -127,7 +127,7 @@
   flex-shrink: 0;
 }
 .detail-panel__critical-value {
-  font-size: 12.5px;
+  font-size: var(--irp-fs-sm);
   font-weight: 600;
   color: $text;
   line-height: 1.3;

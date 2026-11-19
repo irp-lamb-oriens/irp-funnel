@@ -112,9 +112,9 @@
 
   /* ── Card ─────────────────────────────────────────────────────────────── */
   .irp-modal {
-    background: var(--irp-surface, #fff);
-    border: 1px solid var(--irp-border, #e5e7eb);
-    border-radius: 18px;
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-border);
+    border-radius: var(--irp-r-xl);
     width: 100%;
     margin: auto;
     max-height: calc(100vh - 80px);
@@ -138,9 +138,9 @@
     justify-content: space-between;
     gap: 12px;
     padding: 20px 24px;
-    border-bottom: 1px solid var(--irp-border, #eef0f2);
+    border-bottom: 1px solid var(--irp-border);
     flex-shrink: 0;
-    background: linear-gradient(180deg, #fbfdfd 0%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--irp-bg) 0%, var(--irp-surface) 100%);
   }
   /* Brand accent bar, matching the existing provider modal. */
   .irp-modal__header::before {
@@ -150,33 +150,33 @@
     top: 0;
     bottom: 0;
     width: 4px;
-    background: linear-gradient(180deg, #02b5bb 0%, #0b3b3d 100%);
+    background: linear-gradient(180deg, var(--irp-accent) 0%, var(--irp-teal-900) 100%);
   }
 
   .irp-modal__title {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--irp-fs-xl);
     font-weight: 700;
-    color: var(--irp-text, #111);
+    color: var(--irp-text);
     line-height: 1.3;
   }
 
   .irp-modal__close {
-    background: #f3f4f6;
+    background: var(--irp-surface-3);
     border: none;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    color: var(--irp-text-muted, #6b7280);
-    font-size: 15px;
+    border-radius: var(--irp-r-sm);
+    color: var(--irp-text-muted);
+    font-size: var(--irp-fs-lg);
     cursor: pointer;
     flex-shrink: 0;
     transition: background 0.12s, color 0.12s;
     line-height: 1;
   }
   .irp-modal__close:hover {
-    background: #e5e7eb;
-    color: var(--irp-text, #111);
+    background: var(--irp-surface-4);
+    color: var(--irp-text);
   }
 
   /* ── Body ─────────────────────────────────────────────────────────────── */
@@ -189,8 +189,8 @@
   /* ── Footer (slot) ───────────────────────────────────────────────────── */
   :global(.irp-modal__footer) {
     padding: 16px 24px;
-    border-top: 1px solid var(--irp-border, #eef0f2);
-    background: #fafbfc;
+    border-top: 1px solid var(--irp-border);
+    background: var(--irp-bg);
     display: flex;
     flex-direction: column;
     gap: 10px;

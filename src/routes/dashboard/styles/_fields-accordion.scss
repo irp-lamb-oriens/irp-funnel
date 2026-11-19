@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: $sp-1;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
 }
 .fields-accordion__group {
   border: 1px solid $border;
@@ -21,17 +21,17 @@
   background: $surface-2;
   cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-2;
   text-align: left;
   transition: background .12s ease;
   &:hover { background: $surface-3; }
 }
-.fields-accordion__group-icon { font-size: 11px; transition: transform .15s ease; }
+.fields-accordion__group-icon { font-size: var(--irp-fs-2xs); transition: transform .15s ease; }
 .fields-accordion__group--open .fields-accordion__group-icon { transform: rotate(90deg); }
 .fields-accordion__group-name { flex: 1; font-family: ui-monospace, monospace; }
 .fields-accordion__group-count {
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 500;
   color: $text-dim;
   background: $surface;
@@ -51,7 +51,7 @@
   flex: 0 0 35%;
   max-width: 35%;
   font-family: ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-muted;
   word-break: break-word;
   padding-top: 4px;
@@ -59,7 +59,7 @@
 .fields-accordion__value { flex: 1; min-width: 0; }
 .fields-accordion__empty {
   padding: $sp-2;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-dim;
   font-style: italic;
 }
@@ -106,7 +106,7 @@
 
   &__label {
     display: block;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
@@ -146,7 +146,7 @@
     background: transparent;
     color: $text;
     font: inherit;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 500;
     line-height: 1.45;
     text-align: left;
@@ -199,7 +199,7 @@
   &__pencil {
     opacity: 0;
     transform: translateY(-1px);
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $accent-hover;
     flex-shrink: 0;
     transition: opacity 200ms $ease-out, transform 200ms $ease-out;
@@ -219,7 +219,7 @@
     background: $surface;
     color: $text;
     font: inherit;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 500;
     line-height: 1.45;
     box-shadow: 0 0 0 3px $accent-glow, 0 1px 2px rgba(0,0,0,0.04);
@@ -237,7 +237,7 @@
       resize: vertical;
       min-height: 84px;
       font-family: $mono;
-      font-size: 13px;
+      font-size: var(--irp-fs-sm);
       line-height: 1.5;
       padding: $sp-2;
     }
@@ -306,11 +306,11 @@
   cursor: pointer;
   font-weight: 600;
   color: $accent-hover;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
 }
 .detail-custom-fields-add__hint {
   margin: $sp-1 0 0 0;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-dim;
   code {
     font-family: ui-monospace, monospace;
@@ -321,7 +321,7 @@
 }
 .detail-fields-tab__desc {
   margin: 0 0 $sp-3 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-muted;
   line-height: 1.5;
 }
@@ -350,7 +350,7 @@
 }
 .fields-accordion-v2__empty {
   padding: $sp-4;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-dim;
   font-style: italic;
   text-align: center;
@@ -395,12 +395,12 @@
   }
 }
 .fields-accordion-v2__group-icon {
-  font-size: 14px;
+  font-size: var(--irp-fs-md);
   text-align: center;
   line-height: 1;
 }
 .fields-accordion-v2__group-label {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 700;
   color: $text;
   letter-spacing: -0.1px;
@@ -409,7 +409,7 @@
   text-overflow: ellipsis;
 }
 .fields-accordion-v2__group-summary {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 500;
   color: $text-muted;
   background: $surface-2;
@@ -423,7 +423,7 @@
   text-overflow: ellipsis;
 }
 .fields-accordion-v2__group-chevron {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-dim;
   transition: transform 200ms $ease-out;
   width: 16px;
@@ -431,7 +431,7 @@
 }
 .fields-accordion-v2__group--open .fields-accordion-v2__group-chevron {
   transform: rotate(180deg);
-  color: $accent;
+  color: $accent-ink;
 }
 .fields-accordion-v2__group-body {
   padding: $sp-2 $sp-3 $sp-3 $sp-3;
@@ -446,7 +446,7 @@
 
 // ── FieldValueViewer — primitives ─────────────────────────────────────────
 .fields-viewer__nullish {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text-dim;
   font-style: italic;
   user-select: none;
@@ -459,7 +459,7 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: $r-full;
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 500;
   text-decoration: none;
   border: 1px solid $border;
@@ -478,7 +478,7 @@
   &--time {
     background: rgba($info, 0.08);
     border-color: rgba($info, 0.25);
-    color: #0369a1;
+    color: var(--irp-blue-700);
   }
   &--link {
     background: rgba($accent, 0.10);
@@ -491,18 +491,18 @@
   &--email {
     background: rgba($warning, 0.10);
     border-color: rgba($warning, 0.30);
-    color: #92400e;
+    color: var(--irp-amber-800);
     cursor: pointer;
   }
   &--phone {
     background: rgba($success, 0.10);
     border-color: rgba($success, 0.30);
-    color: #047857;
+    color: var(--irp-green-700);
     cursor: pointer;
   }
 }
 .fields-viewer__chip-icon {
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   line-height: 1;
 }
 .fields-viewer__chip-text {
@@ -512,7 +512,7 @@
   text-overflow: ellipsis;
 }
 .fields-viewer__chip-sub {
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 400;
   color: $text-dim;
   font-variant-numeric: tabular-nums;
@@ -527,7 +527,7 @@
   border: 1px solid $border;
   color: $text-2;
   font-family: $mono;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   letter-spacing: 0.02em;
   white-space: nowrap;
   max-width: 100%;
@@ -550,7 +550,7 @@
   background: $accent-subtle;
   color: $accent-hover;
   border: 1px solid rgba($accent, 0.22);
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   font-weight: 500;
   white-space: nowrap;
   max-width: 100%;
@@ -611,7 +611,7 @@
   padding: 8px 0;
 }
 .fields-viewer__row-key {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 600;
   color: $text-muted;
   letter-spacing: 0.02em;
@@ -625,13 +625,13 @@
   // small chip-style label so it reads as a section header, not a column.
   display: inline-block;
   align-self: start;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   letter-spacing: 0.06em;
   color: $text-dim;
 }
 .fields-viewer__row-value {
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   color: $text;
   word-break: break-word;
   // Allow nested rich content (transcripts, lists, …) to take the full width.
@@ -680,13 +680,13 @@
   border-radius: $r-full;
   background: $accent;
   color: white;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
 }
 .fields-viewer__array-preview {
-  font-size: 12px;
+  font-size: var(--irp-fs-xs);
   color: $text-2;
   font-weight: 500;
   white-space: nowrap;
@@ -694,7 +694,7 @@
   text-overflow: ellipsis;
 }
 .fields-viewer__array-chevron {
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-dim;
   transition: transform 200ms $ease-out;
   width: 14px;
@@ -702,7 +702,7 @@
 }
 .fields-viewer__array-item[open] .fields-viewer__array-chevron {
   transform: rotate(90deg);
-  color: $accent;
+  color: $accent-ink;
 }
 .fields-viewer__array-body {
   padding: $sp-2 $sp-3 $sp-3;

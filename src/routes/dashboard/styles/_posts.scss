@@ -41,7 +41,7 @@
   }
 
   &__list-title {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     color: $text-2;
     text-transform: uppercase;
@@ -52,11 +52,11 @@
     display: inline-flex;
     align-items: center;
     gap: $sp-1;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     padding: 6px 14px;
     background: $accent;
-    color: #fff;
+    color: var(--irp-text-inverse);
     border: none;
     border-radius: $r-sm;
     cursor: pointer;
@@ -70,7 +70,7 @@
     text-align: center;
     padding: $sp-8 $sp-4;
     color: $text-dim;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
   }
 
   // ── List search + pagination ──────────────────────────────────────────────
@@ -91,7 +91,7 @@
     pointer-events: none;
     transition: color $t-fast;
   }
-  &__list-search:focus-within &__list-search-icon { color: $accent; }
+  &__list-search:focus-within &__list-search-icon { color: $accent-ink; }
 
   &__list-search-input {
     width: 100%;
@@ -101,7 +101,7 @@
     border-radius: $r-full;
     background: $surface-2;
     color: $text;
-    font-size: 12.5px;
+    font-size: var(--irp-fs-sm);
     font-family: $font;
     outline: none;
     transition: border-color $t-fast, box-shadow $t-fast, background $t-fast;
@@ -130,7 +130,7 @@
     border-radius: $r-full;
     background: $surface-4;
     color: $text-muted;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     line-height: 1;
     cursor: pointer;
     transition: background $t-fast, color $t-fast;
@@ -138,7 +138,7 @@
   }
 
   &__list-count {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
     margin: -2px 0 $sp-3 6px;
   }
@@ -186,7 +186,7 @@
   }
 
   &__card-title {
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 700;
     color: $text;
     flex: 1;
@@ -197,7 +197,7 @@
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     padding: 2px 8px;
     border-radius: $r-full;
@@ -215,7 +215,7 @@
     }
     &--dispatched {
       background: rgba($success, 0.1);
-      color: $success;
+      color: $success-ink;
       border: 1px solid rgba($success, 0.25);
     }
   }
@@ -223,7 +223,7 @@
   &__card-meta {
     display: flex;
     gap: $sp-3;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
     flex-wrap: wrap;
   }
@@ -232,8 +232,8 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    &--warn { color: $warning; font-weight: 600; }
-    &--success { color: $success; font-weight: 600; }
+    &--warn { color: $warning-ink; font-weight: 600; }
+    &--success { color: $success-ink; font-weight: 600; }
   }
 
   // ── Right: compose / detail pane ─────────────────────────────────────────
@@ -258,7 +258,7 @@
   }
 
   &__compose-title {
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 800;
     color: $text;
     margin-bottom: $sp-5;
@@ -268,7 +268,7 @@
   }
 
   &__section-label {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     color: $text-muted;
     text-transform: uppercase;
@@ -290,7 +290,7 @@
     padding: 8px 12px;
     border: 1px solid $border;
     border-radius: $r-xs;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-family: $font;
     background: $surface-2;
     color: $text;
@@ -314,7 +314,7 @@
     resize: vertical;
     min-height: 160px;
     font-family: $mono;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     line-height: 1.6;
   }
 
@@ -328,20 +328,20 @@
     border: 1px solid $border;
     border-radius: $r-sm;
     margin-bottom: $sp-4;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-muted;
   }
 
   &__audience-count {
-    font-size: 18px;
+    font-size: var(--irp-fs-xl);
     font-weight: 800;
-    color: $accent;
+    color: $accent-ink;
     margin-left: auto;
   }
 
   &__audience-warn {
-    font-size: 11px;
-    color: $warning;
+    font-size: var(--irp-fs-2xs);
+    color: $warning-ink;
     font-weight: 600;
     margin-top: $sp-1;
     padding: 4px 8px;
@@ -361,7 +361,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     padding: 3px 8px;
     background: $accent-subtle;
@@ -375,7 +375,7 @@
       color: $accent-hover;
       cursor: pointer;
       padding: 0;
-      font-size: 11px;
+      font-size: var(--irp-fs-2xs);
       line-height: 1;
       opacity: 0.6;
       &:hover { opacity: 1; }
@@ -394,7 +394,7 @@
     display: inline-flex;
     align-items: center;
     gap: $sp-1;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     padding: 8px 16px;
     border-radius: $r-sm;
@@ -416,7 +416,7 @@
 
     &--schedule {
       background: $accent;
-      color: #fff;
+      color: var(--irp-text-inverse);
       &:hover { background: $accent-hover; transform: translateY(-1px); }
     }
 
@@ -424,7 +424,7 @@
     // reads as the highest-intent action without clashing with the palette.
     &--sendnow {
       background: linear-gradient(135deg, $success, $accent);
-      color: #fff;
+      color: var(--irp-text-inverse);
       box-shadow: 0 2px 8px rgba($success, 0.35);
       &:hover {
         filter: brightness(1.08);
@@ -436,7 +436,7 @@
 
     &--preview {
       background: transparent;
-      color: $accent;
+      color: $accent-ink;
       border: 1px solid rgba($accent, 0.4);
       &:hover { background: $accent-subtle; border-color: $accent; }
     }
@@ -462,11 +462,11 @@
     background: rgba($success, 0.06);
     border: 1px solid rgba($success, 0.2);
     border-radius: $r-sm;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-muted;
     line-height: 1.6;
 
-    strong { color: $success; }
+    strong { color: $success-ink; }
   }
 }
 
@@ -524,7 +524,7 @@
     display: inline-flex;
     align-items: center;
     gap: $sp-2;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     color: $text;
     white-space: nowrap;
@@ -538,18 +538,18 @@
     align-items: center;
     justify-content: center;
     border-radius: $r-full;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     line-height: 1;
 
     // Darker fills so the count reads with AA contrast on the white panel.
-    &--ok   { background: rgba($success, 0.16); color: #047857; }
+    &--ok   { background: rgba($success, 0.16); color: var(--irp-green-700); }
     &--fail { background: rgba($danger, 0.12);  color: $danger; }
   }
 
   &__chevron {
     flex-shrink: 0;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
     line-height: 1;
     transition: transform $t-med;
@@ -574,7 +574,7 @@
     border: 1px solid $border;
     background: $surface-2;
     color: $text;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-family: $font;
     outline: none;
     transition: border-color $t-fast, box-shadow $t-fast;
@@ -618,7 +618,7 @@
   }
 
   &__name {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     color: $text;
     white-space: nowrap;
@@ -627,7 +627,7 @@
   }
 
   &__email {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-muted;
     white-space: nowrap;
     overflow: hidden;
@@ -637,7 +637,7 @@
   &__row--fail &__email { max-width: none; }
 
   &__reason {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $danger;
     line-height: 1.35;
     word-break: break-word;
@@ -646,7 +646,7 @@
   &__empty {
     padding: $sp-5 $sp-3;
     text-align: center;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
   }
 
@@ -660,7 +660,7 @@
     gap: 2px;
 
     strong { font-size: 22px; font-weight: 800; color: $text; line-height: 1.1; }
-    span   { font-size: 11px; color: $text-dim; }
+    span   { font-size: var(--irp-fs-2xs); color: $text-dim; }
   }
 
   &__error {
@@ -670,12 +670,12 @@
     flex-direction: column;
     align-items: center;
     gap: $sp-2;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $danger;
   }
 
   &__retry {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     padding: 5px 14px;
     border-radius: $r-sm;
@@ -685,7 +685,7 @@
     cursor: pointer;
     font-family: $font;
     transition: border-color $t-fast, color $t-fast;
-    &:hover { border-color: $accent; color: $accent; }
+    &:hover { border-color: $accent; color: $accent-ink; }
   }
 
   &__pager {
@@ -695,7 +695,7 @@
     gap: $sp-3;
     padding: $sp-2;
     border-top: 1px solid $border;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-muted;
 
     button {
@@ -708,7 +708,7 @@
       border: 1px solid $border;
       background: $surface;
       color: $text;
-      font-size: 15px;
+      font-size: var(--irp-fs-lg);
       line-height: 1;
       cursor: pointer;
       transition: background $t-fast, border-color $t-fast;

@@ -64,13 +64,13 @@
 
 <style>
   .hm-wrap { overflow: auto; max-height: 520px; }
-  .hm { border-collapse: separate; border-spacing: 2px; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
-  .hm thead th { position: sticky; top: 0; background: #fff; z-index: 1; padding: 0.35rem 0.45rem; font-size: 0.64rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hm tbody th { position: sticky; left: 0; background: #fff; text-align: left; padding: 0.3rem 0.6rem 0.3rem 0; font-weight: 600; color: #0f172a; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hm td { min-width: 64px; padding: 0.4rem 0.45rem; text-align: center; border-radius: 6px; font-weight: 700; }
-  .hm-empty { background: #f8fafc; color: #cbd5e1; font-weight: 500; }
+  .hm { border-collapse: separate; border-spacing: 2px; font-size: var(--irp-fs-xs); font-variant-numeric: tabular-nums; }
+  .hm thead th { position: sticky; top: 0; background: var(--irp-surface); z-index: 1; padding: 0.35rem 0.45rem; font-size: var(--irp-fs-2xs); font-weight: 800; color: var(--irp-text-dim); text-transform: uppercase; letter-spacing: 0.05em; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm tbody th { position: sticky; left: 0; background: var(--irp-surface); text-align: left; padding: 0.3rem 0.6rem 0.3rem 0; font-weight: 600; color: var(--irp-text); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm td { min-width: 64px; padding: 0.4rem 0.45rem; text-align: center; border-radius: var(--irp-r-xs); font-weight: 700; }
+  .hm-empty { background: var(--irp-surface-2); color: var(--irp-text-dim); font-weight: 500; }
   .hm-corner { text-align: left !important; }
   .hm-pick { all: unset; cursor: pointer; display: block; width: 100%; }
-  .hm-pick:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; border-radius: 4px; }
+  .hm-pick:focus-visible { outline: 2px solid var(--irp-slate-900); outline-offset: 2px; border-radius: var(--irp-r-2xs); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

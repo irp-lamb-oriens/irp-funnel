@@ -56,7 +56,7 @@
     letter-spacing: -0.5px;
   }
   p {
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     color: $text-muted;
     margin: $sp-1 0 0;
     font-weight: 400;
@@ -68,7 +68,7 @@
   margin-bottom: $sp-5;
   span {
     display: block;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     color: $text-muted;
     place-content: center;
@@ -84,7 +84,7 @@
   border: 1px solid $border;
   border-radius: $r-md;
   color: $text;
-  font-size: 15px;
+  font-size: var(--irp-fs-lg);
   font-family: $font;
   outline: none;
   transition: border-color $t-fast, box-shadow $t-fast, background $t-fast;
@@ -127,7 +127,7 @@
     border-left: none;
     border-radius: 0 $r-md $r-md 0;
     color: $text-dim;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     white-space: nowrap;
     user-select: none;
     font-weight: 500;
@@ -147,7 +147,7 @@
   color: white;
   border: none;
   border-radius: $r-md;
-  font-size: 15px;
+  font-size: var(--irp-fs-lg);
   font-weight: 700;
   cursor: pointer;
   font-family: $font;
@@ -170,7 +170,7 @@
   background: none;
   border: none;
   color: $text-dim;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   cursor: pointer;
   font-family: $font;
   transition: color $t-fast;
@@ -178,7 +178,7 @@
 }
 
 .login-sent-message {
-  font-size: 14px;
+  font-size: var(--irp-fs-md);
   color: $text-muted;
   text-align: center;
   margin-bottom: $sp-5;
@@ -192,7 +192,7 @@
   border: 1px solid rgba($danger, 0.2);
   border-radius: $r-sm;
   color: $danger;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   text-align: center;
   font-weight: 500;
   animation: shake 0.4s $ease-out;
@@ -209,8 +209,8 @@
   background: rgba($success, 0.08);
   border: 1px solid rgba($success, 0.2);
   border-radius: $r-sm;
-  color: $success;
-  font-size: 13px;
+  color: $success-ink;
+  font-size: var(--irp-fs-sm);
   text-align: center;
   font-weight: 500;
 }

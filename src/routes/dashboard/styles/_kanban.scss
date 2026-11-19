@@ -36,14 +36,14 @@
   }
 
   &__empty-title {
-    font-size: 16px;
+    font-size: var(--irp-fs-lg);
     font-weight: 600;
     color: $text-2;
     margin: 0 0 $sp-2;
   }
 
   &__empty-desc {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     color: $text-dim;
     margin: 0;
     max-width: 280px;
@@ -66,13 +66,13 @@
     padding: $sp-1 $sp-3;
     border-radius: $r-full;
     color: white;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     letter-spacing: 0.2px;
   }
 
   &__count {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
     font-weight: 500;
   }
@@ -123,13 +123,13 @@
   }
 
   &__name {
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 600;
     color: $text;
   }
 
   &__desc {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
     line-height: 1.4;
     overflow: hidden;
@@ -141,7 +141,7 @@
 
   &__chevron {
     flex-shrink: 0;
-    font-size: 18px;
+    font-size: var(--irp-fs-xl);
     color: $text-dim;
     transition: transform $t-med;
     margin-left: $sp-3;
@@ -171,7 +171,7 @@
   }
 
   &__field-label {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     color: $text-2;
     letter-spacing: 0.2px;
@@ -185,7 +185,7 @@
   &__input {
     width: 100%;
     padding: $sp-2 $sp-3;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-family: $font;
     border: 1px solid $border;
     border-radius: $r-sm;
@@ -258,13 +258,13 @@
   }
 
   &__toggle-label {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     color: $text-2;
     font-weight: 500;
   }
 
   &__no-args {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     color: $text-dim;
     padding: $sp-3 0;
     font-style: italic;
@@ -280,7 +280,7 @@
     width: 100%;
     margin-top: $sp-4;
     padding: $sp-3 $sp-4;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     font-weight: 600;
     font-family: $font;
     color: white;
@@ -338,7 +338,7 @@
   &__search {
     flex: 1;
     padding: $sp-2 $sp-3;
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-family: $font;
     border: 1px solid $border;
     border-radius: $r-sm;
@@ -358,7 +358,7 @@
   }
 
   &__count {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
     white-space: nowrap;
     font-weight: 500;
@@ -369,14 +369,14 @@
   &--action {
     .activity-entry__icon {
       background: rgba($accent, 0.12);
-      color: $accent;
+      color: $accent-ink;
     }
   }
 
   &__fail {
     color: $danger;
     font-weight: 600;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
   }
 
   &__meta-row {
@@ -390,7 +390,7 @@
     display: inline-flex;
     align-items: center;
     gap: $sp-1;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-muted;
     font-weight: 500;
   }
@@ -404,13 +404,13 @@
     border-radius: 50%;
     background: linear-gradient(135deg, $accent, $accent-hover);
     color: white;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     flex-shrink: 0;
   }
 
   &__time {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
   }
 }
@@ -426,10 +426,10 @@
 
   &__btn {
     padding: $sp-1 $sp-3;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 600;
     font-family: $font;
-    color: $accent;
+    color: $accent-ink;
     background: transparent;
     border: 1px solid $border;
     border-radius: $r-sm;
@@ -448,7 +448,7 @@
   }
 
   &__info {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
@@ -482,8 +482,8 @@
 }
 
 @keyframes sla-badge-pulse {
-  0%, 100% { background: #f59e0b; }
-  50%      { background: #ef4444; }
+  0%, 100% { background: var(--irp-amber-500); }
+  50%      { background: var(--irp-red-500); }
 }
 
 .card--overdue {
@@ -493,7 +493,7 @@
 }
 
 .board__column--overdue {
-  border-radius: 12px;
+  border-radius: var(--irp-r-md);
   animation: sla-column-pulse 3.2s ease-in-out infinite;
 
   .board__column-header { border-left-width: 3px; }
@@ -506,12 +506,12 @@
   gap: 2px;
   margin-left: 6px;
   padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 11px;
+  border-radius: var(--irp-r-full);
+  font-size: var(--irp-fs-2xs);
   font-weight: 800;
   line-height: 1.5;
-  color: #fff;
-  background: #f59e0b;
+  color: var(--irp-text-inverse);
+  background: var(--irp-amber-500);
   font-variant-numeric: tabular-nums;
   animation: sla-badge-pulse 2.6s ease-in-out infinite;
 }
@@ -525,7 +525,7 @@
   gap: 3px;
   padding: 1px 7px;
   border-radius: $r-xs;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: $text-dim;
   background: $surface-3;
@@ -533,7 +533,7 @@
   transition: color $t-fast, background $t-fast;
 
   &--overdue {
-    color: #b45309; // amber-700 — readable on the amber-tint chip below
+    color: var(--irp-amber-700); // amber-700 — readable on the amber-tint chip below
     background: rgba($warning, 0.16);
   }
 }
@@ -541,13 +541,13 @@
 /* Column-header info "ⓘ" — hover for the column's purpose/description */
 .board__column-info {
   margin-left: 4px;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text-dim;
   cursor: help;
   user-select: none;
   transition: color $t-fast;
 
-  &:hover { color: $accent; }
+  &:hover { color: $accent-ink; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -556,9 +556,9 @@
   .board__column-overdue {
     animation: none;
   }
-  .card--overdue        { border-color: #ef4444; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.7); }
+  .card--overdue        { border-color: var(--irp-red-500); box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.7); }
   .board__column--overdue { background: rgba(245, 158, 11, 0.07); }
-  .board__column-overdue  { background: #ef4444; }
+  .board__column-overdue  { background: var(--irp-red-500); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -577,13 +577,13 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  font-size: 10px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 800;
   line-height: 1;
   color: $text-dim;
   background: $surface-3;
   border: 1px solid $border;
-  border-radius: 10px;
+  border-radius: var(--irp-r-md);
   cursor: pointer;
   opacity: 0;                       // hidden until card hover (keeps cards clean)
   transition: opacity $t-fast, background $t-fast, color $t-fast, transform $t-fast;
@@ -594,13 +594,13 @@
   width: fit-content;
   margin: auto;
 
-  &:hover { opacity: 1; color: #fff; background: $accent; transform: scale(1.08); }
+  &:hover { opacity: 1; color: var(--irp-text-inverse); background: $accent; transform: scale(1.08); }
 
   // Always visible + accented once a card is actually ranked.
   &--set {
     opacity: 1;
-    color: #fff;
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+    color: var(--irp-text-inverse);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
     border-color: rgba(2, 181, 187, 0.5);
     box-shadow: 0 1px 6px rgba(2, 181, 187, 0.35);
   }
@@ -629,7 +629,7 @@
   gap: 5px;
   width: 100%;
   padding: 5px 7px;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   font-weight: 700;
   color: $text;
   background: $surface-2;
@@ -638,10 +638,10 @@
   cursor: pointer;
   transition: background $t-fast, color $t-fast;
 
-  &:hover:not(:disabled) { background: $accent; color: #fff; border-color: $accent; }
+  &:hover:not(:disabled) { background: $accent; color: var(--irp-text-inverse); border-color: $accent; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  &--clear:hover:not(:disabled) { background: #ef4444; border-color: #ef4444; }
+  &--clear:hover:not(:disabled) { background: var(--irp-red-500); border-color: var(--irp-red-500); }
 }
 
 .card__rank-setrow {
@@ -655,7 +655,7 @@
   width: 100%;
   min-width: 0;
   padding: 4px 6px;
-  font-size: 11px;
+  font-size: var(--irp-fs-2xs);
   color: $text;
   background: $surface-3;
   border: 1px solid $border;

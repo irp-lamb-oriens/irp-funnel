@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * GrowthSection — is the top of the funnel growing, and from where?
    *   1. Leads / quoted leads / won deals per month (click a month → period)
@@ -48,7 +49,7 @@
   <div class="mh-card gr-main">
     <div class="gr-head">
       <h4 class="mh-card__h">Volume by month</h4>
-      <div class="mh-seg" role="group" aria-label="Show as">
+      <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Show as">
         <button aria-pressed={!asTable} on:click={() => (asTable = false)}>Chart</button>
         <button aria-pressed={asTable} on:click={() => (asTable = true)}>Table</button>
       </div>
@@ -77,5 +78,5 @@
   .gr-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
   .gr-chart { padding-top: 1.6rem; }
   .gr-main .gr-chart { padding-top: 1.8rem; }
-  .gr .mh-card { background: #fff; }
+  .gr .mh-card { background: var(--irp-surface); }
 </style>

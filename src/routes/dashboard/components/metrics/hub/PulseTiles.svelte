@@ -74,28 +74,28 @@
 <style>
   .pt { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .pt-group { flex: 1 1 auto; min-width: 0; }
-  .pt-group__h { font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin: 0 0 0.35rem 0.15rem; }
+  .pt-group__h { font-size: var(--irp-fs-2xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--irp-text-dim); margin: 0 0 0.35rem 0.15rem; }
   .pt-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 0.7rem; }
   .pt-tile {
-    position: relative; padding: 0.85rem 0.95rem 0.8rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-    border-left: 4px solid #02b5bb; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); min-width: 0; display: flex; flex-direction: column;
+    position: relative; padding: 0.85rem 0.95rem 0.8rem; background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-lg);
+    border-left: 4px solid var(--irp-accent); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); min-width: 0; display: flex; flex-direction: column;
   }
-  .pt-tile--cohort { border-left-color: #6250d6; }
-  .pt-tile--asOf { border-left-color: #f59e0b; }
+  .pt-tile--cohort { border-left-color: var(--irp-violet-600); }
+  .pt-tile--asOf { border-left-color: var(--irp-amber-500); }
   .pt-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
-  .pt-label { margin: 0; font-size: 0.68rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pt-info { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font: italic 700 0.68rem/1 Georgia, serif; cursor: pointer; padding: 0; }
-  .pt-value { margin-top: 0.3rem; font-size: 1.5rem; font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-  .pt-delta { margin-top: 0.25rem; font-size: 0.72rem; font-weight: 700; }
-  .pt-delta__vs { font-weight: 500; color: #94a3b8; }
-  .pt-delta--better { color: #047857; }
-  .pt-delta--worse { color: #b91c1c; }
-  .pt-delta--neutral { color: #334155; }
-  .pt-delta--flat { color: #94a3b8; }
-  .pt-note { margin-top: 0.2rem; font-size: 0.7rem; color: #b45309; }
+  .pt-label { margin: 0; font-size: var(--irp-fs-2xs); font-weight: 800; color: var(--irp-text-dim); text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pt-info { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--irp-line); background: var(--irp-surface-2); color: var(--irp-text-dim); font: italic 700 0.68rem/1 Georgia, serif; cursor: pointer; padding: 0; }
+  .pt-value { margin-top: 0.3rem; font-size: 1.5rem; font-weight: 800; color: var(--irp-text); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .pt-delta { margin-top: 0.25rem; font-size: var(--irp-fs-xs); font-weight: 700; }
+  .pt-delta__vs { font-weight: 500; color: var(--irp-text-dim); }
+  .pt-delta--better { color: var(--irp-green-700); }
+  .pt-delta--worse { color: var(--irp-red-700); }
+  .pt-delta--neutral { color: var(--irp-text-2); }
+  .pt-delta--flat { color: var(--irp-text-dim); }
+  .pt-note { margin-top: 0.2rem; font-size: var(--irp-fs-2xs); color: var(--irp-amber-700); }
   .pt-spark { margin-top: auto; padding-top: 0.45rem; }
-  .pt-more { margin-top: 0.4rem; font-size: 0.72rem; align-self: flex-start; }
-  .pt-def { margin: 0.5rem 0 0; padding: 0.5rem 0.6rem; background: #f8fafc; border-radius: 8px; font-size: 0.74rem; line-height: 1.4; color: #334155; }
+  .pt-more { margin-top: 0.4rem; font-size: var(--irp-fs-xs); align-self: flex-start; }
+  .pt-def { margin: 0.5rem 0 0; padding: 0.5rem 0.6rem; background: var(--irp-surface-2); border-radius: var(--irp-r-sm); font-size: var(--irp-fs-xs); line-height: 1.4; color: var(--irp-text-2); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   @media (max-width: 1100px) { .pt-row { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
 </style>

@@ -66,17 +66,17 @@
      ──────────────────────────────────────────────────────────────────────── */
   .transcript-paster {
     // ── Level-2 tokens ────────────────────────────────────────────────────
-    --tp-accent:        var(--irp-accent,         #02b5bb);
-    --tp-accent-hover:  var(--irp-accent-hover,   #02999e);
+    --tp-accent:        var(--irp-accent);
+    --tp-accent-hover:  var(--irp-accent-hover);
     --tp-accent-subtle: var(--irp-accent-subtle,  rgba(2,181,187,.1));
-    --tp-danger:        var(--irp-danger,         #c62426);
-    --tp-surface:       var(--irp-surface,        #fff);
-    --tp-surface-2:     var(--irp-surface-2,      #f8f9fa);
+    --tp-danger:        var(--irp-danger);
+    --tp-surface:       var(--irp-surface);
+    --tp-surface-2:     var(--irp-surface-2);
     --tp-border:        var(--irp-border,         rgba(0,0,0,.08));
-    --tp-text:          var(--irp-text,           #181818);
-    --tp-text-2:        var(--irp-text-2,         #343a40);
-    --tp-text-muted:    var(--irp-text-muted,     #495057);
-    --tp-text-dim:      var(--irp-text-dim,       #868e96);
+    --tp-text:          var(--irp-text);
+    --tp-text-2:        var(--irp-text-2);
+    --tp-text-muted:    var(--irp-text-muted);
+    --tp-text-dim:      var(--irp-text-dim);
     --tp-mono:          var(--irp-mono, 'SF Mono', 'JetBrains Mono', monospace);
     --tp-r-sm:          var(--irp-r-sm,   8px);
     --tp-r-md:          var(--irp-r-md,   12px);
@@ -139,7 +139,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     letter-spacing: .055em;
     text-transform: uppercase;
@@ -147,7 +147,7 @@
 
     &::before {
       content: '🎙';
-      font-size: 13px;
+      font-size: var(--irp-fs-sm);
       letter-spacing: 0;
       text-transform: none;
       filter: drop-shadow(0 0 4px rgba(2,181,187,.4));
@@ -162,7 +162,7 @@
     padding: 10px 12px;
     border: 1.5px solid var(--tp-border);
     border-radius: var(--tp-r-sm);
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-family: var(--tp-mono);
     line-height: 1.7;
     color: var(--tp-text-2);
@@ -205,8 +205,8 @@
     border: none;
     border-radius: var(--tp-r-sm);
     background: linear-gradient(135deg, var(--tp-accent) 0%, var(--tp-accent-hover) 100%);
-    color: #fff;
-    font-size: 13px;
+    color: var(--irp-text-inverse);
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     font-family: inherit;
     letter-spacing: .03em;
@@ -248,7 +248,7 @@
     }
 
     &:disabled {
-      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+      background: linear-gradient(135deg, var(--irp-slate-400) 0%, var(--irp-slate-500) 100%);
       cursor: not-allowed;
       transform: none;
       box-shadow: none;

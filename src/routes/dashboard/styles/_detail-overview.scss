@@ -39,7 +39,7 @@
 
     &__label {
       display: block;
-      font-size: 10px;
+      font-size: var(--irp-fs-2xs);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.6px;
@@ -47,7 +47,7 @@
       margin-bottom: $sp-2;
     }
     &__value {
-      font-size: 14px;
+      font-size: var(--irp-fs-md);
       color: $text;
       font-weight: 500;
       &--readonly {
@@ -64,7 +64,7 @@
       flex-wrap: wrap;
       align-items: center;
       gap: $sp-1 $sp-2;
-      font-size: 14px;
+      font-size: var(--irp-fs-md);
     }
     &__route-sep,
     &__route-arrow {
@@ -73,8 +73,8 @@
       user-select: none;
     }
     &__route-arrow {
-      color: $accent;
-      font-size: 16px;
+      color: $accent-ink;
+      font-size: var(--irp-fs-lg);
       margin: 0 $sp-1;
     }
     /*
@@ -89,7 +89,7 @@
       min-width: 0;
     }
     &__sub-label {
-      font-size: 9px;
+      font-size: var(--irp-fs-2xs);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -99,7 +99,7 @@
 
     &__tag {
       display: inline-block;
-      font-size: 12px;
+      font-size: var(--irp-fs-xs);
       font-weight: 600;
       padding: 3px $sp-2;
       background: $surface-3;
@@ -108,7 +108,7 @@
       color: $text-2;
     }
     &__transcript {
-      font-size: 13px;
+      font-size: var(--irp-fs-sm);
       color: $text-muted;
       background: $surface-2;
       border-radius: $r-sm;
@@ -142,7 +142,7 @@
       // "Call Transcript" label stays teal + slightly larger
       .detail-field__label {
         color: $accent-hover;
-        font-size: 11px;
+        font-size: var(--irp-fs-2xs);
         display: flex;
         align-items: center;
         gap: 5px;
@@ -150,7 +150,7 @@
         // Waveform icon prefix — matches the tp-title microphone treatment
         &::before {
           content: '🎙';
-          font-size: 13px;
+          font-size: var(--irp-fs-sm);
           text-transform: none;
           letter-spacing: 0;
           opacity: .8;
@@ -175,13 +175,13 @@
     }
     &__role {
       font-weight: 700;
-      font-size: 12px;
+      font-size: var(--irp-fs-xs);
       color: $text-2;
       white-space: nowrap;
     }
     &__content {
       color: $text-muted;
-      font-size: 13px;
+      font-size: var(--irp-fs-sm);
     }
     &--assistant .chat-msg__role {
       color: $accent-hover;
@@ -201,7 +201,7 @@
 .detail-field__value--muted {
   color: $text-muted;
   font-style: italic;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
 }
 
 .detail-field__reschedule-btn {
@@ -209,11 +209,11 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 8px;
+  border-radius: var(--irp-r-sm);
   border: 1.5px solid rgba($accent, 0.35);
   background: rgba($accent, 0.07);
-  color: $accent;
-  font-size: 12px;
+  color: $accent-ink;
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -251,10 +251,10 @@
   gap: 12px;
   padding: 12px 14px;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
-  border: 1px solid #bfdbfe;
-  border-left: 4px solid #2563eb;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--irp-surface-3) 0%, var(--irp-surface-2) 100%);
+  border: 1px solid var(--irp-blue-200);
+  border-left: 4px solid var(--irp-blue-600);
+  border-radius: var(--irp-r-sm);
   grid-column: 1 / -1;
 
   &-body {
@@ -266,21 +266,21 @@
   }
 
   &-icon {
-    font-size: 18px;
+    font-size: var(--irp-fs-xl);
     flex-shrink: 0;
     margin-top: 1px;
   }
 
   &-title {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: #1e40af;
+    color: var(--irp-blue-800);
     margin-bottom: 2px;
   }
 
   &-desc {
-    font-size: 11px;
-    color: #3b82f6;
+    font-size: var(--irp-fs-2xs);
+    color: var(--irp-blue-600);
     line-height: 1.4;
   }
 }
@@ -288,11 +288,11 @@
 .detail-overview__pricing-btn {
   flex-shrink: 0;
   padding: 7px 13px;
-  background: #2563eb;
-  color: #fff;
+  background: var(--irp-blue-600);
+  color: var(--irp-text-inverse);
   border: none;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--irp-r-xs);
+  font-size: var(--irp-fs-xs);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -302,7 +302,7 @@
   transition: background 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--irp-blue-700);
   }
 
   &:disabled {
@@ -318,17 +318,17 @@
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #166534;
+  background: var(--irp-surface-2);
+  border: 1px solid var(--irp-green-200);
+  border-radius: var(--irp-r-xs);
+  font-size: var(--irp-fs-xs);
+  color: var(--irp-green-800);
   font-weight: 500;
   grid-column: 1 / -1;
 
   &-time {
-    color: #4ade80;
-    font-size: 11px;
+    color: var(--irp-green-700);
+    font-size: var(--irp-fs-2xs);
     font-weight: 400;
   }
 }
@@ -361,12 +361,12 @@
     align-items: center;
     gap: 4px;
     padding: 3px 10px;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
     line-height: 1;
-    color: #fff;
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
-    border-radius: 999px;
+    color: var(--irp-text-inverse);
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
+    border-radius: var(--irp-r-full);
     box-shadow: 0 1px 6px rgba(2, 181, 187, 0.35);
     font-variant-numeric: tabular-nums;
 
@@ -378,7 +378,7 @@
   }
 
   &__hint {
-    font-size: 11.5px;
+    font-size: var(--irp-fs-xs);
     color: $text-dim;
 
     strong { color: $text; font-weight: 700; }
@@ -400,7 +400,7 @@
   &__input {
     width: 62px;
     padding: 5px 8px;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-variant-numeric: tabular-nums;
     color: $text;
     background: $surface-3;
@@ -415,7 +415,7 @@
     align-items: center;
     gap: 5px;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     color: $text;
     background: $surface-3;
@@ -426,7 +426,7 @@
 
     &:hover:not(:disabled) {
       background: $accent;
-      color: #fff;
+      color: var(--irp-text-inverse);
       border-color: $accent;
       transform: translateY(-1px);
     }
@@ -434,14 +434,14 @@
     &:disabled { opacity: 0.55; cursor: wait; }
 
     &--top {
-      color: #fff;
-      background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
+      color: var(--irp-text-inverse);
+      background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
       border-color: rgba(2, 181, 187, 0.5);
 
-      &:hover:not(:disabled) { filter: brightness(1.06); background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%); }
+      &:hover:not(:disabled) { filter: brightness(1.06); background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%); }
     }
 
-    &--clear:hover:not(:disabled) { background: #ef4444; border-color: #ef4444; }
+    &--clear:hover:not(:disabled) { background: var(--irp-red-500); border-color: var(--irp-red-500); }
   }
 }
 

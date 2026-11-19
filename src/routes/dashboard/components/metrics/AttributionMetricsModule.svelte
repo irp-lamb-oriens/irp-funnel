@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../utils/a11yTabs.ts';
   import type { AttributionMetric, AttributionTouch } from '../../store.ts';
   import { formatMoney } from '$lib/money.ts';
   import {
@@ -128,7 +129,7 @@
       <p class="attribution-empty">Attribution data isn't available yet — the server needs the latest deploy.</p>
     {:else}
       <div class="segment-bar">
-        <div class="period-tabs">
+        <div class="period-tabs" use:tabs={{ label: 'Period' }}>
           {#each PERIODS as p}
             <button class:active={period === p.key} on:click={() => (period = p.key)}>{p.label}</button>
           {/each}
@@ -143,7 +144,7 @@
       </div>
 
       <div class="segment-bar">
-        <div class="period-tabs" role="tablist" aria-label="Attribution model">
+        <div class="period-tabs" role="tablist" aria-label="Attribution model" use:tabs>
           {#each MODELS as m}
             <button class:active={model === m.key} title={m.hint} on:click={() => (model = m.key)}>{m.label}</button>
           {/each}

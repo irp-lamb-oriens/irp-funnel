@@ -61,9 +61,9 @@
 <style>
   .fp { margin: 0; min-width: 0; max-width: 100%; }
   .fp-scroll { overflow-x: auto; }
-  .fp-label { font-size: 12px; font-weight: 700; fill: #0f172a; }
-  .fp-val { font-size: 12px; font-weight: 700; fill: #334155; font-variant-numeric: tabular-nums; }
-  .fp-ref, .fp-axis { font-size: 10px; fill: #94a3b8; font-weight: 600; }
+  .fp-label { font-size: var(--irp-fs-xs); font-weight: 700; fill: var(--irp-slate-900); }
+  .fp-val { font-size: var(--irp-fs-xs); font-weight: 700; fill: var(--irp-slate-700); font-variant-numeric: tabular-nums; }
+  .fp-ref, .fp-axis { font-size: var(--irp-fs-2xs); fill: var(--irp-slate-400); font-weight: 600; }
   .fp-table { margin-top: 0.4rem; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

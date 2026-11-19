@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
+  import { tabs } from './utils/a11yTabs.ts';
   import Header from '../../components/Header/Header.svelte';
   import Footer from '../../components/Footer/Footer.svelte';
   import {
@@ -766,8 +767,8 @@
     <!-- ── Top Bar ───────────────────────────────────────────── -->
     <header class="topbar">
       <div class="topbar__left">
-        <img src="/IRP-LOGO.jpg" alt="logo" height="40">
-        <nav class="topbar__nav" class:has-pill={navPill.w > 0} bind:this={navEl}>
+        <img src="/IRP-LOGO.jpg" alt="International Relocation Partners" height="40">
+        <nav class="topbar__nav" class:has-pill={navPill.w > 0} bind:this={navEl} use:tabs={{ label: 'Dashboard views' }}>
           <span class="topbar__nav-pill" aria-hidden="true" style="transform:translateX({navPill.x}px);width:{navPill.w}px"></span>
           {#if allowedViews.includes('board')}
             <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>
@@ -810,7 +811,8 @@
       <div class="topbar__right">
         <div class="topbar__search">
           <input
-            type="text"
+            type="search"
+            aria-label="Search clients"
             placeholder="Search clients… (Enter: find by email or Ref.)"
             bind:value={$searchQuery}
             on:input={() => searchLookupIds.set([])}
@@ -1311,12 +1313,12 @@
     gap: 0.6rem;
     max-width: 560px;
     padding: 0.7rem 1rem;
-    background: linear-gradient(135deg, #b91c1c, #dc2626);
-    color: #fff;
-    border-radius: 14px;
+    background: linear-gradient(135deg, var(--irp-red-700), var(--irp-red-600));
+    color: var(--irp-text-inverse);
+    border-radius: var(--irp-r-lg);
     box-shadow: 0 8px 30px rgba(185, 28, 28, 0.4);
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    font-size: 0.85rem;
+    font-size: var(--irp-fs-md);
     font-weight: 700;
     cursor: pointer;
     z-index: 9500;
@@ -1326,11 +1328,11 @@
     from { opacity: 0; transform: translateX(-50%) translateY(12px); }
     to   { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
-  .sgblock-pill__icon { font-size: 1rem; }
+  .sgblock-pill__icon { font-size: var(--irp-fs-lg); }
   .sgblock-pill__text { flex: 1; }
   .sgblock-pill__close {
-    background: rgba(255, 255, 255, 0.18); border: none; color: #fff; cursor: pointer;
-    width: 22px; height: 22px; border-radius: 50%; font-size: 0.8rem; flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.18); border: none; color: var(--irp-text-inverse); cursor: pointer;
+    width: 22px; height: 22px; border-radius: 50%; font-size: var(--irp-fs-sm); flex-shrink: 0;
   }
   .sgblock-pill__close:hover { background: rgba(255, 255, 255, 0.3); }
 
@@ -1340,7 +1342,7 @@
     z-index: 9600; padding: 1rem;
   }
   .sgblock-modal {
-    background: #fff; border-radius: 18px; max-width: 480px; width: 100%;
+    background: var(--irp-surface); border-radius: var(--irp-r-xl); max-width: 480px; width: 100%;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
     overflow: hidden;
@@ -1352,28 +1354,28 @@
   }
   .sgblock-modal__head {
     display: flex; align-items: center; gap: 0.6rem;
-    padding: 1.1rem 1.25rem; border-bottom: 1px solid #f1f5f9;
+    padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--irp-slate-100);
   }
-  .sgblock-modal__icon { font-size: 1.15rem; }
-  .sgblock-modal__title { margin: 0; flex: 1; font-size: 1.02rem; font-weight: 800; color: #0f172a; }
+  .sgblock-modal__icon { font-size: var(--irp-fs-xl); }
+  .sgblock-modal__title { margin: 0; flex: 1; font-size: var(--irp-fs-lg); font-weight: 800; color: var(--irp-text); }
   .sgblock-modal__close {
-    background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem;
-    padding: 4px 8px; border-radius: 8px;
+    background: none; border: none; color: var(--irp-text-faint); cursor: pointer; font-size: var(--irp-fs-lg);
+    padding: 4px 8px; border-radius: var(--irp-r-sm);
   }
-  .sgblock-modal__close:hover { background: #f1f5f9; color: #475569; }
+  .sgblock-modal__close:hover { background: var(--irp-surface-3); color: var(--irp-text-muted); }
   .sgblock-modal__body { padding: 1.1rem 1.25rem; max-height: 60vh; overflow-y: auto; }
-  .sgblock-modal__lead { margin: 0 0 0.85rem; color: #475569; font-size: 0.88rem; line-height: 1.5; }
+  .sgblock-modal__lead { margin: 0 0 0.85rem; color: var(--irp-text-muted); font-size: var(--irp-fs-md); line-height: 1.5; }
   .sgblock-rule {
-    background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+    background: var(--irp-surface-3); border: 1px solid var(--irp-red-200); border-radius: var(--irp-r-md);
     padding: 0.75rem 0.9rem; margin-bottom: 0.7rem;
   }
-  .sgblock-rule__msg { margin: 0; color: #7f1d1d; font-size: 0.88rem; font-weight: 600; line-height: 1.45; }
-  .sgblock-rule__unmet { margin: 0.4rem 0 0; padding-left: 1.15rem; color: #b91c1c; font-size: 0.82rem; }
+  .sgblock-rule__msg { margin: 0; color: var(--irp-red-900); font-size: var(--irp-fs-md); font-weight: 600; line-height: 1.45; }
+  .sgblock-rule__unmet { margin: 0.4rem 0 0; padding-left: 1.15rem; color: var(--irp-red-700); font-size: var(--irp-fs-sm); }
   .sgblock-rule__unmet li { margin: 0.12rem 0; }
   .sgblock-modal__foot { padding: 0.9rem 1.25rem 1.15rem; display: flex; justify-content: flex-end; }
   .sgblock-modal__ok {
-    background: linear-gradient(135deg, #02b5bb, #0d9488); color: #fff; border: none;
-    border-radius: 10px; padding: 0.55rem 1.4rem; font-weight: 800; font-size: 0.88rem;
+    background: linear-gradient(135deg, var(--irp-accent), var(--irp-accent-hover)); color: var(--irp-text-inverse); border: none;
+    border-radius: var(--irp-r-md); padding: 0.55rem 1.4rem; font-weight: 800; font-size: var(--irp-fs-md);
     cursor: pointer; font-family: inherit;
   }
   .sgblock-modal__ok:hover { filter: brightness(1.07); }
@@ -1383,11 +1385,11 @@
 
     margin-left: 0.75rem;
     padding: 0.3rem 0.9rem;
-    background: #ef4444;
-    color: #fff;
+    background: var(--irp-red-500);
+    color: var(--irp-text-inverse);
     border: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
+    border-radius: var(--irp-r-sm);
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     cursor: pointer;
     transition: filter 0.15s, transform 0.12s;
@@ -1422,30 +1424,30 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.32rem 0.8rem;
-    background: #fff;
-    color: #334155;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 0.78rem;
+    background: var(--irp-surface);
+    color: var(--irp-text-2);
+    border: 1px solid var(--irp-line-strong);
+    border-radius: var(--irp-r-sm);
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s, border-color 0.15s, transform 0.12s, box-shadow 0.15s;
   }
   .ie-btn:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
+    background: var(--irp-surface-3);
+    border-color: var(--irp-slate-400);
     transform: translateY(-1px);
   }
   .ie-btn--primary {
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);
+    color: var(--irp-text-inverse);
     border-color: transparent;
     box-shadow: 0 2px 10px rgba(2, 181, 187, 0.3);
   }
   .ie-btn--primary:hover {
     filter: brightness(1.08);
-    color: #000;
+    color: var(--irp-text);
     box-shadow: 0 5px 16px rgba(2, 181, 187, 0.42);
   }
 
@@ -1460,11 +1462,11 @@
     align-items: center;
     gap: 0.42rem;
     padding: 0.38rem 1rem;
-    background: linear-gradient(135deg, #02b5bb 0%, #0a8a8e 60%, #076f72 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 60%, var(--irp-teal-800) 100%);
+    color: var(--irp-text-inverse);
     border: 1px solid rgba(2,181,187,.3);
-    border-radius: 10px;
-    font-size: 0.8rem;
+    border-radius: var(--irp-r-md);
+    font-size: var(--irp-fs-sm);
     font-weight: 800;
     letter-spacing: 0.03em;
     cursor: pointer;
@@ -1519,7 +1521,7 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, var(--irp-slate-800) 0%, var(--irp-slate-900) 100%);
     border: 1px solid rgba(99, 102, 241, 0.4);
     display: flex;
     align-items: center;
@@ -1543,7 +1545,7 @@
 
   /* label below the circle */
   .bug-fab__label {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -1557,7 +1559,7 @@
   .bug-fab:hover .bug-fab__inner {
     background: linear-gradient(135deg, rgba(2,181,187,0.9) 0%, rgba(10,138,142,0.95) 100%);
     border-color: rgba(99, 102, 241, 0.8);
-    color: #fff;
+    color: var(--irp-text-inverse);
     transform: scale(1.1) translateY(-2px);
     box-shadow:
       0 8px 32px rgba(99, 102, 241, 0.45),

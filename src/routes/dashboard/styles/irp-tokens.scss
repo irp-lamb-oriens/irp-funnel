@@ -1,0 +1,5 @@
+/* Standalone entry: emits the dashboard :root --irp-* tokens for pages that
+   render dashboard components without loading dashboard.scss (e.g. the client
+   status portal renders EmailPreviewDrawer). Compiled on its own, so its SCSS
+   $vars never collide with the host page's. */
+@import 'tokens';

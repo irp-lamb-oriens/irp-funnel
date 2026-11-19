@@ -11,23 +11,23 @@
 // Mobile
 @media (max-width: 768px) {
   .login-card { padding: $sp-7 $sp-6; border-radius: $r-lg; }
-  .login-email-combo__domain { font-size: 11px; padding: 0 $sp-2; }
+  .login-email-combo__domain { font-size: var(--irp-fs-2xs); padding: 0 $sp-2; }
 
   .topbar {
     padding: 0 $sp-3;
     height: 52px;
     &__title { display: none; }
     &__nav {
-      button { padding: $sp-1 $sp-2; font-size: 12px; }
+      button { padding: $sp-1 $sp-2; font-size: var(--irp-fs-xs); }
     }
     &__search input {
       width: 120px;
-      font-size: 12px;
+      font-size: var(--irp-fs-xs);
       padding: 6px $sp-2;
       &:focus { width: 160px; }
     }
     &__user { display: none; }
-    &__logout { padding: $sp-1 $sp-2; font-size: 11px; }
+    &__logout { padding: $sp-1 $sp-2; font-size: var(--irp-fs-2xs); }
   }
 
   .board {
@@ -57,14 +57,14 @@
   }
 
   .detail-panel__header { padding: $sp-4 $sp-4 $sp-3; }
-  .detail-panel__header h2 { font-size: 18px; }
+  .detail-panel__header h2 { font-size: var(--irp-fs-xl); }
   .detail-content { padding: $sp-4; }
   .detail-fields { grid-template-columns: 1fr; gap: $sp-3; }
-  .detail-tabs button { padding: $sp-2 $sp-3; font-size: 12px; }
+  .detail-tabs button { padding: $sp-2 $sp-3; font-size: var(--irp-fs-xs); }
   .detail-stage { padding: $sp-3 $sp-4; }
 
   .list-view { padding: $sp-3; }
-  .list-col-header, .list-cell { padding: $sp-2 $sp-3; font-size: 12px; }
+  .list-col-header, .list-cell { padding: $sp-2 $sp-3; font-size: var(--irp-fs-xs); }
 
   .metrics-view { padding: $sp-4; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
@@ -75,7 +75,7 @@
   .login-gate { padding: $sp-4; }
   .login-card { padding: $sp-6 $sp-5; }
   .login-input--code { font-size: 22px; letter-spacing: 6px; }
-  .login-email-combo__domain { font-size: 10px; }
+  .login-email-combo__domain { font-size: var(--irp-fs-2xs); }
 
   .board__column { flex: 0 0 85vw; min-width: 85vw; }
   .metrics-grid { grid-template-columns: 1fr 1fr; gap: $sp-2; }
@@ -113,7 +113,7 @@
   }
 
   &__title {
-    font-size: 12px;
+    font-size: var(--irp-fs-xs);
     font-weight: 800;
     margin: 0;
     color: $text-2;
@@ -123,12 +123,12 @@
 
   &__id {
     font-family: $mono;
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     color: $text-dim;
   }
 
   &__date {
-    font-size: 11px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     color: $text-dim;
   }
@@ -147,7 +147,7 @@
 
   // Custom scrollbar
   &::-webkit-scrollbar { width: 5px; }
-  &::-webkit-scrollbar-thumb { background: rgba($border, 0.5); border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba($border, 0.5); border-radius: var(--irp-r-2xs); }
 
   .chat-bubble-wrapper {
     display: flex;
@@ -165,14 +165,14 @@
     &--left {
       align-self: flex-start;
       .chat-bubble__avatar { order: 0; }
-      .chat-bubble { order: 1; border-bottom-left-radius: 4px; }
+      .chat-bubble { order: 1; border-bottom-left-radius: var(--irp-r-2xs); }
     }
 
     &--right {
       align-self: flex-end;
       flex-direction: row-reverse;
       .chat-bubble__avatar { order: 1; }
-      .chat-bubble { order: 0; border-bottom-right-radius: 4px; }
+      .chat-bubble { order: 0; border-bottom-right-radius: var(--irp-r-2xs); }
     }
   }
 
@@ -183,7 +183,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: var(--irp-fs-md);
     background: $surface-3;
     border: 1px solid $border;
     flex-shrink: 0;
@@ -210,7 +210,7 @@
     &--status {
       background: rgba(#0d9488, 0.10);
       border: 1px solid rgba(#0d9488, 0.22);
-      .chat-bubble__role { color: #0d9488; }
+      .chat-bubble__role { color: var(--irp-accent-ink); }
     }
 
     &--user {
@@ -221,7 +221,7 @@
 
     &__role {
       display: block;
-      font-size: 10px;
+      font-size: var(--irp-fs-2xs);
       font-weight: 700;
       margin-bottom: 2px;
       text-transform: uppercase;
@@ -230,7 +230,7 @@
 
     &__text {
       margin: 0;
-      font-size: 13px;
+      font-size: var(--irp-fs-sm);
       color: $text;
       line-height: 1.4;
       // overflow-wrap: anywhere breaks at any character when there is no other
@@ -245,7 +245,7 @@
 
     &__ts {
       display: block;
-      font-size: 10px;
+      font-size: var(--irp-fs-2xs);
       color: $text-dim;
       margin-top: 4px;
       text-align: right;
@@ -262,7 +262,7 @@
   }
 }
 .detail-thread__id--teal {
-  color: #0d9488;
+  color: var(--irp-accent-ink);
   font-weight: 600;
 }
 
@@ -289,7 +289,7 @@
   background: transparent;
   color: $text-2;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--irp-fs-sm);
   font-weight: 600;
   transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
 
@@ -309,12 +309,12 @@
   &--active.conv-source-pill--has-data {
     background: rgba(#0d9488, 0.13);
     border-color: rgba(#0d9488, 0.35);
-    color: #0d9488;
+    color: var(--irp-accent-ink);
     box-shadow: 0 0 0 3px rgba(#0d9488, 0.09);
   }
 
   &__icon {
-    font-size: 15px;
+    font-size: var(--irp-fs-lg);
     line-height: 1;
   }
 
@@ -329,21 +329,21 @@
     min-width: 20px;
     height: 18px;
     padding: 0 5px;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     background: rgba($accent, 0.18);
     color: $accent-hover;
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     line-height: 1;
 
     &--teal {
       background: rgba(#0d9488, 0.2);
-      color: #0d9488;
+      color: var(--irp-accent-ink);
     }
   }
 
   &__empty {
-    font-size: 10px;
+    font-size: var(--irp-fs-2xs);
     font-weight: 600;
     color: $text-dim;
     letter-spacing: 0.2px;
@@ -362,7 +362,7 @@
   border: 1px solid $border;
   background: transparent;
   color: $text-dim;
-  font-size: 16px;
+  font-size: var(--irp-fs-lg);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.2s;
   flex-shrink: 0;
@@ -393,14 +393,14 @@
   }
 
   &__title {
-    font-size: 15px;
+    font-size: var(--irp-fs-lg);
     font-weight: 700;
     color: $text-2;
     margin: 0;
   }
 
   &__desc {
-    font-size: 13px;
+    font-size: var(--irp-fs-sm);
     color: $text-dim;
     margin: 0;
     max-width: 320px;

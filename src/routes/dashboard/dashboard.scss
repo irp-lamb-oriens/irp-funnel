@@ -6,8 +6,10 @@
 
    IMPORT ORDER (matters for SCSS $var availability)
    ──────────────────────────────────────────────────
-   1. _tokens      — SCSS $vars + :root CSS --irp-* custom properties
-   2. _foundation  — base reset (.dashboard, .login-gate)
+   1. _tokens      — ramps + semantics: SCSS $vars + :root CSS --irp-* vars
+   1c. _mixins     — irp-tabs-*, irp-btn, irp-chip, irp-input … (no output)
+   2. _foundation  — base reset + a11y baseline (focus, motion, scrollbars)
+   2b. _primitives — .irp-tabs / .irp-btn / .irp-chip / .irp-card classes
    3. Feature partials — each references $vars defined by tokens
       (safe because @import is additive / global-scope in SCSS)
 
@@ -43,8 +45,14 @@
 // ── 1b. Shared chat UI tokens (--chat-* CSS vars + global keyframes) ─────────
 @import '../styles/chat';
 
-// ── 2. Foundation reset ──────────────────────────────────────────────────────
+// ── 1c. Shared mixins (emit nothing; read only --irp-* vars) ─────────────────
+@import './styles/mixins';
+
+// ── 2. Foundation reset + accessibility baseline ────────────────────────────
 @import './styles/foundation';
+
+// ── 2b. Ready-made primitives (.irp-tabs, .irp-btn, .irp-chip …) ─────────────
+@import './styles/primitives';
 
 // ── 3. Auth / Login ──────────────────────────────────────────────────────────
 @import './styles/login';

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../utils/a11yTabs.ts';
   /**
    * FinanceView — the money view of the pipeline.
    *
@@ -115,7 +116,7 @@
     </div>
   </header>
 
-  <nav class="finance__sections">
+  <nav class="finance__sections irp-tabs" use:tabs={{ label: 'Finance sections' }}>
     <button class:active={section === 'quotes'} on:click={() => (section = 'quotes')}>Quotes</button>
     <button class:active={section === 'money'} on:click={() => (section = 'money')}>Money in and out</button>
     <button class:active={section === 'invoices'} on:click={() => (section = 'invoices')}>Invoices</button>
@@ -255,6 +256,9 @@
 </div>
 
 <style>
+  /* Section tabs: shared .irp-tabs (styles/_primitives.scss) */
+  .finance__sections { margin-bottom: 1.25rem; }
+
   /* Palette and rhythm are taken from AdminView so Finance reads as the same
      product: #fafbfc canvas, white cards on #e2e8f0 borders, teal #02b5bb
      accent, Jost via --font-paragraph. Every custom property has a literal
@@ -263,8 +267,8 @@
     padding: 2.5rem 2rem;
     max-width: 1140px;
     margin: 0 auto;
-    background: var(--irp-bg, #fafbfc);
-    color: var(--irp-text, #181818);
+    background: var(--irp-bg);
+    color: var(--irp-text);
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
@@ -282,58 +286,29 @@
     margin: 0;
     font-size: 1.55rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     letter-spacing: -0.025em;
   }
 
   .finance__head p {
     margin: 0.3rem 0 0;
-    color: #64748b;
-    font-size: 0.8rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     letter-spacing: 0.01em;
   }
 
-  .finance__sections {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 1.25rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 4px;
-    width: fit-content;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  }
 
-  .finance__sections button {
-    padding: 0.46rem 1.1rem;
-    background: none;
-    border: none;
-    border-radius: 7px;
-    color: #64748b;
-    font-family: inherit;
-    font-size: 0.84rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: color 0.14s cubic-bezier(0.4, 0, 0.2, 1), background 0.14s cubic-bezier(0.4, 0, 0.2, 1);
-  }
 
-  .finance__sections button:hover { background: #f1f5f9; color: #475569; }
 
-  .finance__sections button.active {
-    background: linear-gradient(135deg, rgba(2, 181, 187, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
-    color: #02999e;
-    border: 1px solid rgba(2, 181, 187, 0.2);
-  }
 
   .finance__meta {
     margin-left: 0.5rem;
     padding: 0.18em 0.7em;
-    border-radius: 999px;
+    border-radius: var(--irp-r-full);
     background: linear-gradient(135deg, rgba(2, 181, 187, 0.1), rgba(139, 92, 246, 0.07));
     border: 1px solid rgba(2, 181, 187, 0.2);
-    color: #02999e;
-    font-size: 0.72rem;
+    color: var(--irp-accent-ink);
+    font-size: var(--irp-fs-xs);
     font-weight: 700;
     white-space: nowrap;
   }
@@ -348,22 +323,22 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
   }
 
   .finance__controls input {
     width: 76px;
     padding: 0.5rem 0.7rem;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    color: #0f172a;
+    border-radius: var(--irp-r-sm);
+    border: 1px solid var(--irp-line);
+    background: var(--irp-surface-2);
+    color: var(--irp-text);
     font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     text-transform: uppercase;
     transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -376,12 +351,12 @@
 
   .finance__controls button {
     padding: 0.52rem 1.2rem;
-    border-radius: 10px;
+    border-radius: var(--irp-r-md);
     border: none;
-    background: linear-gradient(135deg, #02b5bb 0%, #02999e 100%);
-    color: #fff;
+    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
+    color: var(--irp-text-inverse);
     font-family: inherit;
-    font-size: 0.84rem;
+    font-size: var(--irp-fs-sm);
     font-weight: 700;
     letter-spacing: 0.02em;
     cursor: pointer;
@@ -407,18 +382,18 @@
 
   .finance__error {
     padding: 0.6rem 1rem;
-    border-radius: 8px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    font-size: 0.82rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-surface-3);
+    border: 1px solid var(--irp-red-200);
+    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
   }
 
   .finance__empty {
-    color: #94a3b8;
-    font-size: 0.85rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-md);
     font-style: italic;
     letter-spacing: 0.02em;
   }
@@ -432,10 +407,10 @@
 
   .card {
     padding: 1.25rem 1.35rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-top: 3px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
+    border-top: 3px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     transition: box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1), transform 0.14s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -445,24 +420,24 @@
     transform: translateY(-2px);
   }
 
-  .card--won { border-top-color: #10b981; }
-  .card--openPipeline { border-top-color: #02b5bb; }
-  .card--draft { border-top-color: #f59e0b; }
-  .card--rate { border-top-color: #8b5cf6; }
+  .card--won { border-top-color: var(--irp-green-500); }
+  .card--openPipeline { border-top-color: var(--irp-accent); }
+  .card--draft { border-top-color: var(--irp-amber-500); }
+  .card--rate { border-top-color: var(--irp-violet-500); }
 
   .card h3 {
     margin: 0;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
 
   .card__hint {
     margin: 0.3rem 0 0.7rem;
-    font-size: 0.72rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     font-style: italic;
   }
 
@@ -470,7 +445,7 @@
     margin: 0 0 0.85rem;
     font-size: 1.7rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--irp-text);
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
   }
@@ -480,21 +455,21 @@
     display: grid;
     gap: 0.32rem;
     padding-top: 0.7rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--irp-slate-100);
   }
 
   .card dl div {
     display: flex;
     justify-content: space-between;
     gap: 0.7rem;
-    font-size: 0.78rem;
+    font-size: var(--irp-fs-xs);
   }
 
-  .card dt { color: #94a3b8; }
+  .card dt { color: var(--irp-text-dim); }
 
   .card dd {
     margin: 0;
-    color: #334155;
+    color: var(--irp-text-2);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -507,18 +482,18 @@
 
   .panel {
     padding: 1.5rem;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    border-radius: var(--irp-r-lg);
+    background: var(--irp-surface);
+    border: 1px solid var(--irp-line);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     margin-bottom: 1rem;
   }
 
   .panel h3 {
     margin: 0 0 1rem;
-    font-size: 0.7rem;
+    font-size: var(--irp-fs-2xs);
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--irp-text-dim);
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
@@ -526,32 +501,32 @@
   .panel table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.83rem;
+    font-size: var(--irp-fs-sm);
   }
 
-  .panel thead tr { background: #f8fafc; }
+  .panel thead tr { background: var(--irp-surface-2); }
 
   .panel th {
     text-align: left;
     padding: 0.65rem 0.85rem;
-    color: #94a3b8;
-    font-size: 0.69rem;
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     white-space: nowrap;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--irp-line);
   }
 
   .panel td {
     padding: 0.65rem 0.85rem;
-    color: #334155;
-    border-bottom: 1px solid #f1f5f9;
+    color: var(--irp-text-2);
+    border-bottom: 1px solid var(--irp-slate-100);
     font-variant-numeric: tabular-nums;
   }
 
   .panel tbody tr { transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1); }
-  .panel tbody tr:hover { background: #fafbff; }
+  .panel tbody tr:hover { background: var(--irp-bg); }
 
   .bars {
     list-style: none;
@@ -565,11 +540,11 @@
     display: flex;
     justify-content: space-between;
     gap: 0.7rem;
-    font-size: 0.81rem;
+    font-size: var(--irp-fs-sm);
   }
 
   .bars__label {
-    color: #334155;
+    color: var(--irp-text-2);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -577,7 +552,7 @@
   }
 
   .bars__value {
-    color: #0f172a;
+    color: var(--irp-text);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
@@ -586,39 +561,39 @@
   .bars__track {
     height: 6px;
     margin: 0.35rem 0 0.28rem;
-    border-radius: 999px;
-    background: #f1f5f9;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-surface-3);
     overflow: hidden;
   }
 
   .bars__fill {
     height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #02b5bb 0%, #02999e 100%);
+    border-radius: var(--irp-r-full);
+    background: linear-gradient(90deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
   }
 
   .bars__sub {
-    font-size: 0.72rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
   }
 
   .panel--skipped {
-    background: #f8fafc;
+    background: var(--irp-surface-2);
   }
 
   .panel--skipped ul {
     margin: 0;
     padding-left: 1.15rem;
-    font-size: 0.8rem;
-    color: #475569;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-muted);
     display: grid;
     gap: 0.28rem;
   }
 
   .panel__foot {
     margin: 0.9rem 0 0;
-    font-size: 0.72rem;
-    color: #94a3b8;
+    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
     font-style: italic;
     line-height: 1.5;
   }

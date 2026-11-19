@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tabs } from '../../../utils/a11yTabs.ts';
   /**
    * MarketingSection — channel economics: for each source, how many leads,
    * how many show up, how many buy, and what a lead is worth. The existing
@@ -48,7 +49,7 @@
 </script>
 
 <div class="mk-tools">
-  <div class="mh-seg" role="group" aria-label="Attribution field">
+  <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Attribution field">
     {#each FIELDS as f}<button aria-pressed={field === f.key} on:click={() => (field = f.key)}>{f.label}</button>{/each}
   </div>
   <p class="mh-hint">Leads of the period · booked and margin per lead count every lead, including those that never bought</p>

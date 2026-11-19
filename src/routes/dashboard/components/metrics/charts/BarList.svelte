@@ -59,22 +59,22 @@
 
 <style>
   .bl-wrap { overflow-x: auto; }
-  .bl { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  .bl thead th { text-align: left; padding: 0.35rem 0.5rem; color: #94a3b8; font-size: 0.64rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; border-bottom: 1px solid #e2e8f0; }
-  .bl tbody th, .bl td { padding: 0.32rem 0.5rem; border-bottom: 1px solid #f1f5f9; font-variant-numeric: tabular-nums; color: #334155; }
-  .bl tbody th { text-align: left; font-weight: 600; color: #0f172a; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bl { width: 100%; border-collapse: collapse; font-size: var(--irp-fs-sm); }
+  .bl thead th { text-align: left; padding: 0.35rem 0.5rem; color: var(--irp-text-dim); font-size: var(--irp-fs-2xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; border-bottom: 1px solid var(--irp-line); }
+  .bl tbody th, .bl td { padding: 0.32rem 0.5rem; border-bottom: 1px solid var(--irp-slate-100); font-variant-numeric: tabular-nums; color: var(--irp-text-2); }
+  .bl tbody th { text-align: left; font-weight: 600; color: var(--irp-text); max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bl .num { text-align: right; white-space: nowrap; }
   .bl-barcol { width: 42%; min-width: 140px; }
   .bl-bar { display: flex; align-items: center; gap: 0.5rem; }
-  .bl-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 0 5px 5px 0; overflow: hidden; }
-  .bl-fill { display: block; height: 100%; border-radius: 0 4px 4px 0; transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
-  .bl-val { min-width: 64px; text-align: right; font-weight: 700; color: #0f172a; }
-  .bl-pick { background: none; border: none; padding: 0; font: inherit; font-weight: 600; color: #0f172a; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(2, 181, 187, 0.4); text-underline-offset: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-  .bl-pick:hover { color: #02868a; }
-  .bl-pick:focus-visible { outline: 2px solid #02b5bb; outline-offset: 2px; border-radius: 3px; }
-  .bl-muted th, .bl-muted td { color: #94a3b8; }
-  .bl-good { color: #047857 !important; font-weight: 700; }
-  .bl-bad { color: #b91c1c !important; font-weight: 700; }
+  .bl-track { flex: 1; height: 10px; background: var(--irp-surface-3); border-radius: 0 var(--irp-r-xs) var(--irp-r-xs) 0; overflow: hidden; }
+  .bl-fill { display: block; height: 100%; border-radius: 0 var(--irp-r-2xs) var(--irp-r-2xs) 0; transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  .bl-val { min-width: 64px; text-align: right; font-weight: 700; color: var(--irp-text); }
+  .bl-pick { background: none; border: none; padding: 0; font: inherit; font-weight: 600; color: var(--irp-text); cursor: pointer; text-decoration: underline; text-decoration-color: rgba(2, 181, 187, 0.4); text-underline-offset: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .bl-pick:hover { color: var(--irp-accent-ink); }
+  .bl-pick:focus-visible { outline: 2px solid var(--irp-accent); outline-offset: 2px; border-radius: var(--irp-r-2xs); }
+  .bl-muted th, .bl-muted td { color: var(--irp-text-dim); }
+  .bl-good { color: var(--irp-green-700) !important; font-weight: 700; }
+  .bl-bad { color: var(--irp-red-700) !important; font-weight: 700; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   @media (prefers-reduced-motion: reduce) { .bl-fill { transition: none; } }
 </style>
