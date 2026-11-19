@@ -148,10 +148,16 @@
       } else if (m) metricsError = 'Lead data format changed.';
       loadDecisions();
     } catch (err: any) {
-      if (t === ticket) error = err?.message ?? 'Could not load Evo data.';
+      if (t === ticket) error = plainLoadError(err?.message);
     } finally {
       if (t === ticket) loading = false;
     }
+  }
+  /** The browser's own wording for a request that got no answer is "Failed to fetch" (Chrome), "Load failed" (Safari) or "NetworkError…" (Firefox). */
+  function plainLoadError(msg: string | undefined): string {
+    if (!msg) return 'Could not load Evo data.';
+    if (/failed to fetch|load failed|networkerror/i.test(msg)) return "The server didn't answer (it may have timed out or been restarting).";
+    return msg;
   }
   async function loadDecisions() {
     if (fixture) return;
@@ -298,7 +304,7 @@
       <button class="mh-link" on:click={() => { period = 'all'; clearFilters(); }}>Show all</button>
     </div>
   {/if}
-  {#if error}<div class="mh-alert mh-alert--error" role="alert"><span>{error}</span><button class="mh-btn mh-btn--sm" on:click={() => load(true)}>Retry</button></div>{/if}
+  {#if error}<div class="mh-alert mh-alert--error" role="alert"><span>{#if evo}The last refresh failed: {error} Showing the data from {new Date(evo.generatedAt).toLocaleTimeString('en-US', { timeZone: 'America/Costa_Rica', hour: 'numeric', minute: '2-digit' })}.{:else}{error}{/if}</span><button class="mh-btn mh-btn--sm" on:click={() => load(true)}>Retry</button></div>{/if}
   {#if metricsError}<div class="mh-alert mh-alert--warn"><span>Lead and money data is unavailable ({metricsError}). Only on-page steps (clicks, messages) can be shown.</span></div>{/if}
 
   <nav class="mh-nav" aria-label="Evo Lab sections">
