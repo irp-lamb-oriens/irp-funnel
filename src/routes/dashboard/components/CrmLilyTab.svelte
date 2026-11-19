@@ -7,37 +7,44 @@
    *
    * Styles use --chat-* tokens from _chat.scss (no hardcoded hex values).
    */
-  import { tick, onMount } from 'svelte';
+  import { tick, onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
   import { irpStaffToken, getApiUrl } from '../../../lib/auth/irpStaff.ts';
-  import { editField } from '../store.ts';
+  import { editField, selectedClient } from '../store.ts';
+  import LilyProposalPanel from './LilyProposalPanel.svelte';
+  import {
+    collectPendingRows,
+    conflictValue,
+    messageProposalSummary,
+    sameValue,
+    undoPlan,
+    type Decision,
+    type FieldProposal,
+    type ProposalRow,
+    type ProposalValue,
+    type Receipt,
+    type ReceiptItem,
+  } from './lilyProposals.ts';
 
   export let clientId: string;
 
   const API_BASE = getApiUrl();
 
   // ─── State ────────────────────────────────────────────────────────────────
-  /**
-   * A field change Lily proposed. Lily never writes: each proposal is approved
-   * or skipped here, and an approval goes through the same `editField` store
+  /*
+   * Field changes Lily proposed. Lily never writes: every pending proposal is
+   * gathered into the panel above the message box, where staff edit, switch
+   * on/off and apply them. Applying goes through the same `editField` store
    * action as a manual edit (activity log, concurrency guard, undo, and the
    * Overview updating in place).
    */
-  type FieldProposal = {
-    id: string;
-    key: string;
-    label: string;
-    path: string;
-    oldValue: unknown;
-    newValue: string | number | boolean;
-    status: 'pending' | 'applied' | 'rejected';
-  };
   type Msg = { role: 'user' | 'assistant'; content: string; timestamp: string; fieldProposals?: FieldProposal[]; };
   let messages: Msg[] = [];
   let input = '';
   let loading = false;
   let historyLoaded = false;
   let scrollEl: HTMLDivElement;
+  let inputEl: HTMLTextAreaElement;
 
   async function apiFetch(endpoint: string, opts: RequestInit = {}) {
     const token = get(irpStaffToken);
@@ -70,7 +77,7 @@
   onMount(() => { loadHistory(); });
 
   // Reset when clientId changes
-  $: if (clientId) { messages = []; historyLoaded = false; loadHistory(); }
+  $: if (clientId) { messages = []; historyLoaded = false; resetProposalState(); loadHistory(); }
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -97,63 +104,182 @@
     }
   }
 
-  // ─── Field proposals ─────────────────────────────────────────
-  let proposalBusy: Record<string, boolean> = {};
-  let proposalError: Record<string, string> = {};
+  // ─── Field proposals (confirmation panel) ─────────────────────────────────
+  // Everything here is deterministic: which rows show, what gets written and
+  // how the outcome is recorded. Lily's only input is the proposal itself.
+  let panel: LilyProposalPanel;
+  let applying = false;
+  let savingId: string | null = null;
+  let proposalErrors: Record<string, string> = {};
+  /** Values the server reported in a 409, by path; they win over the store until saved. */
+  let overrides: Record<string, unknown> = {};
+  let receipt: Receipt | null = null;
+  let receiptTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function isEmptyValue(v: unknown): boolean {
-    return v === undefined || v === null || v === '';
+  $: pendingRows = collectPendingRows(messages);
+  $: clientDoc = $selectedClient?.id === clientId ? $selectedClient?.rawDoc : undefined;
+
+  function resetProposalState() {
+    proposalErrors = {};
+    overrides = {};
+    savingId = null;
+    showReceipt(null);
   }
 
-  function formatValue(v: unknown): string {
-    if (typeof v === 'boolean') return v ? 'Yes' : 'No';
-    return typeof v === 'string' ? v : JSON.stringify(v);
+  /** The receipt stays until dismissed, the next Apply, or 15 s without Undo. */
+  function showReceipt(next: Receipt | null) {
+    clearTimeout(receiptTimer);
+    receipt = next;
+    if (next) receiptTimer = setTimeout(() => { if (receipt === next && next.undo !== 'working') receipt = null; }, 15_000);
+  }
+  onDestroy(() => clearTimeout(receiptTimer));
+
+  function findProposal(id: string): FieldProposal | undefined {
+    for (const m of messages) {
+      const p = m.fieldProposals?.find((x) => x.id === id);
+      if (p) return p;
+    }
+    return undefined;
   }
 
-  function pendingProposals(msg: Msg): FieldProposal[] {
-    return (msg.fieldProposals ?? []).filter((p) => p.status === 'pending');
-  }
-
-  /** Persist the decision so the card shows the same outcome after a reload. */
-  async function recordDecision(p: FieldProposal, status: 'applied' | 'rejected') {
-    p.status = status;
-    messages = [...messages];
-    try {
-      await apiFetch(`/api/dashboard/clients/${clientId}/lily/proposals/${encodeURIComponent(p.id)}`, {
-        method: 'POST',
-        body: JSON.stringify({ status }),
-      });
-    } catch { /* the decision already took effect; only its bookkeeping failed */ }
-  }
-
-  async function approveProposal(p: FieldProposal) {
-    if (p.status !== 'pending' || proposalBusy[p.id]) return;
-    proposalBusy = { ...proposalBusy, [p.id]: true };
-    proposalError = { ...proposalError, [p.id]: '' };
-    try {
-      await editField(clientId, p.path, p.newValue, p.oldValue ?? '');
-      await recordDecision(p, 'applied');
-    } catch (err: any) {
-      const text = String(err?.message ?? '');
-      proposalError = {
-        ...proposalError,
-        [p.id]: /concurrent|changed/i.test(text)
-          ? 'This field was changed after Lily read it. Check the Overview, then ask Lily again.'
-          : (text || 'Could not save this field. Try again.'),
-      };
-    } finally {
-      proposalBusy = { ...proposalBusy, [p.id]: false };
+  /**
+   * Persist the decision so the panel and chat show the same outcome after a
+   * reload. Retried once; if it still fails the field is already saved, and
+   * the row would come back after a reload as "Already set", so applying it
+   * again only marks it done.
+   */
+  async function recordDecision(forClient: string, id: string, status: 'applied' | 'rejected', value?: ProposalValue) {
+    const p = findProposal(id);
+    if (p && forClient === clientId) {
+      p.status = status;
+      if (status === 'applied' && value !== undefined && !sameValue(p.newValue, value)) p.appliedValue = value;
+      messages = [...messages];
+    }
+    const body = JSON.stringify(value === undefined ? { status } : { status, value });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await apiFetch(`/api/dashboard/clients/${forClient}/lily/proposals/${encodeURIComponent(id)}`, { method: 'POST', body });
+        return;
+      } catch { /* retry once */ }
     }
   }
 
-  async function skipProposal(p: FieldProposal) {
-    if (p.status !== 'pending' || proposalBusy[p.id]) return;
-    await recordDecision(p, 'rejected');
+  /** Resolve a row and the older duplicate proposals hidden behind it. */
+  async function resolveRow(forClient: string, row: ProposalRow, status: 'applied' | 'rejected', value?: ProposalValue) {
+    await recordDecision(forClient, row.proposal.id, status, value);
+    for (const id of row.hiddenIds) await recordDecision(forClient, id, 'rejected');
   }
 
-  /** Approve one at a time so each write sees the previous one. */
-  async function approveAll(msg: Msg) {
-    for (const p of pendingProposals(msg)) await approveProposal(p);
+  function saveErrorText(err: any): string {
+    if (conflictValue(err)) return 'Someone changed this field while you were reviewing. The current value is updated above; apply again to overwrite it.';
+    return String(err?.message ?? '') || 'Could not save this field. Try again.';
+  }
+
+  /**
+   * Apply one at a time so each write sees the previous one. Every write goes
+   * through editField (activity log, concurrency guard, undo). Stops early if
+   * the staff member switches to another client mid-way.
+   */
+  async function applyDecisions(decisions: Decision[]) {
+    if (applying || loading) return;
+    const forClient = clientId;
+    applying = true;
+    proposalErrors = {};
+    showReceipt(null);
+    const items: ReceiptItem[] = [];
+    try {
+      for (const d of decisions) {
+        if (forClient !== clientId) break;
+        const p = d.row.proposal;
+        const base = { id: p.id, label: p.label, path: p.path, before: d.current, after: d.value };
+        if (!d.include) {
+          await resolveRow(forClient, d.row, 'rejected');
+          items.push({ ...base, outcome: 'skipped' });
+          continue;
+        }
+        savingId = p.id;
+        try {
+          const unchanged = sameValue(d.current, d.value);
+          if (!unchanged) await editField(forClient, p.path, d.value, d.current ?? '');
+          const { [p.path]: _resolved, ...rest } = overrides;
+          overrides = rest;
+          await resolveRow(forClient, d.row, 'applied', d.value);
+          items.push({ ...base, outcome: unchanged ? 'unchanged' : 'saved' });
+        } catch (err: any) {
+          const conflict = conflictValue(err);
+          if (conflict) overrides = { ...overrides, [p.path]: conflict.current };
+          proposalErrors = { ...proposalErrors, [p.id]: saveErrorText(err) };
+          items.push({ ...base, outcome: 'failed' });
+        }
+      }
+    } finally {
+      savingId = null;
+      applying = false;
+    }
+    if (forClient !== clientId) return;
+    showReceipt({ items, undo: 'idle' });
+    await tick();
+    if (!Object.keys(proposalErrors).length) inputEl?.focus();
+  }
+
+  /**
+   * Undo puts back the value each saved field had before Apply, newest first.
+   * Each revert is guarded by the value Apply wrote, so a field someone has
+   * changed since is left alone and reported.
+   */
+  async function undoReceipt() {
+    if (!receipt || receipt.undo !== 'idle' || applying) return;
+    const forClient = clientId;
+    const current = receipt;
+    current.undo = 'working';
+    receipt = { ...current };
+    applying = true;
+    const failed: string[] = [];
+    try {
+      for (const item of undoPlan(current.items)) {
+        try {
+          await editField(forClient, item.path, item.before === undefined ? null : item.before, item.after ?? '');
+        } catch {
+          failed.push(item.label);
+        }
+      }
+    } finally {
+      applying = false;
+    }
+    if (forClient !== clientId) return;
+    showReceipt({
+      ...current,
+      undo: failed.length ? 'failed' : 'done',
+      undoError: failed.length ? `Not reverted (changed since): ${failed.join(', ')}.` : undefined,
+    });
+  }
+
+  async function discardRows(rows: ProposalRow[]) {
+    if (applying || loading) return;
+    const forClient = clientId;
+    applying = true;
+    const items: ReceiptItem[] = [];
+    try {
+      for (const row of rows) {
+        if (forClient !== clientId) break;
+        await resolveRow(forClient, row, 'rejected');
+        items.push({ id: row.proposal.id, label: row.proposal.label, path: row.proposal.path, outcome: 'skipped', before: null, after: null });
+      }
+    } finally {
+      applying = false;
+    }
+    if (forClient !== clientId) return;
+    showReceipt({ items, undo: 'idle' });
+    await tick();
+    inputEl?.focus();
+  }
+
+  function reviewProposal(msg: Msg) {
+    const first = msg.fieldProposals?.find((p) => p.status === 'pending');
+    if (!first) return;
+    // A repeated proposal is shown under the newest row for its field.
+    const row = pendingRows.find((r) => r.proposal.id === first.id || r.hiddenIds.includes(first.id));
+    if (row) panel?.focusProposal(row.proposal.id);
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -249,7 +375,7 @@
   <div class="crm-lily__messages" bind:this={scrollEl}>
     {#if messages.length === 0}
       <div class="crm-lily__empty" role="status">
-        <p>Start a conversation. Try <em>"Summarize this project"</em>, <em>"Draft a follow-up email"</em>, or give Lily details to fill in: <em>"Origin is Panama City, phone +1 502 435 1958"</em>. She asks you to confirm each field before anything is saved.</p>
+        <p>Start a conversation. Try <em>"Summarize this project"</em>, <em>"Draft a follow-up email"</em>, or give Lily details to fill in: <em>"Origin is Panama City, phone +1 502 435 1958"</em>. Her proposed changes wait in a panel above the message box, where you can edit them before anything is saved.</p>
       </div>
     {/if}
 
@@ -265,56 +391,13 @@
           </div>
         </div>
         {#if msg.fieldProposals?.length}
-          {@const pending = pendingProposals(msg)}
-          <section class="lily-prop" aria-label="Field changes proposed by Lily">
-            <header class="lily-prop__head">
-              <span class="lily-prop__title">
-                {#if pending.length}
-                  Lily wants to update {pending.length} {pending.length === 1 ? 'field' : 'fields'}
-                {:else}
-                  Field changes reviewed
-                {/if}
-              </span>
-              {#if pending.length > 1}
-                <button type="button" class="lily-prop__btn lily-prop__btn--approve" disabled={loading} on:click={() => approveAll(msg)}>
-                  Approve all
-                </button>
-              {/if}
-            </header>
-            <ul class="lily-prop__list">
-              {#each msg.fieldProposals as p (p.id)}
-                <li class="lily-prop__item" class:lily-prop__item--done={p.status !== 'pending'}>
-                  <div class="lily-prop__field">
-                    <span class="lily-prop__label">{p.label}</span>
-                    <span class="lily-prop__change">
-                      <span class="lily-prop__old" class:lily-prop__old--empty={isEmptyValue(p.oldValue)}>
-                        {isEmptyValue(p.oldValue) ? 'Empty' : formatValue(p.oldValue)}
-                      </span>
-                      <span class="lily-prop__arrow" aria-hidden="true">→</span>
-                      <span class="lily-prop__new">{formatValue(p.newValue)}</span>
-                    </span>
-                    {#if proposalError[p.id]}
-                      <span class="lily-prop__error" role="alert">{proposalError[p.id]}</span>
-                    {/if}
-                  </div>
-                  <div class="lily-prop__actions">
-                    {#if p.status === 'applied'}
-                      <span class="lily-prop__state lily-prop__state--applied">✓ Saved</span>
-                    {:else if p.status === 'rejected'}
-                      <span class="lily-prop__state">Skipped</span>
-                    {:else}
-                      <button type="button" class="lily-prop__btn" disabled={loading || proposalBusy[p.id]} on:click={() => skipProposal(p)}>
-                        Skip
-                      </button>
-                      <button type="button" class="lily-prop__btn lily-prop__btn--approve" disabled={loading || proposalBusy[p.id]} on:click={() => approveProposal(p)}>
-                        {proposalBusy[p.id] ? 'Saving…' : 'Approve'}
-                      </button>
-                    {/if}
-                  </div>
-                </li>
-              {/each}
-            </ul>
-          </section>
+          <p class="lily-prop-note" role="status">
+            <span class="lily-prop-note__dot" class:lily-prop-note__dot--pending={msg.fieldProposals.some((p) => p.status === 'pending')} aria-hidden="true"></span>
+            {messageProposalSummary(msg.fieldProposals)}
+            {#if msg.fieldProposals.some((p) => p.status === 'pending')}
+              <button type="button" class="lily-prop-note__review" on:click={() => reviewProposal(msg)}>Review</button>
+            {/if}
+          </p>
         {/if}
       {:else}
         <div class="crm-lily__row crm-lily__row--staff">
@@ -360,9 +443,26 @@
     {/each}
   </div>
 
+  <!-- ── Confirmation panel: Lily's pending field changes ─────────────── -->
+  <LilyProposalPanel
+    bind:this={panel}
+    rows={pendingRows}
+    doc={clientDoc}
+    {overrides}
+    {savingId}
+    {receipt}
+    disabled={loading || applying}
+    errors={proposalErrors}
+    onApply={applyDecisions}
+    onDiscard={discardRows}
+    onUndo={undoReceipt}
+    onDismissReceipt={() => showReceipt(null)}
+  />
+
   <!-- ── Input form ────────────────────────────────────────────────────── -->
   <form class="crm-lily__form" on:submit={handleSubmit}>
     <textarea
+      bind:this={inputEl}
       class="crm-lily__input"
       bind:value={input}
       on:keydown={handleKeydown}
@@ -479,116 +579,38 @@
   }
   .crm-lily__row--staff { flex-direction: row-reverse; }
 
-  /* ── Field proposals ──────────────────────────────────────────
-     Lily proposes, staff confirms. The card sits under Lily's bubble, aligned
-     with it, and uses the same glass surface and teal accent. */
-  .lily-prop {
-    margin-left: calc(24px + 0.4rem); /* clear the avatar pip */
-    max-width: calc(82% + 2rem);
-    border: 1px solid var(--chat-bubble-lily-border, rgba(2,181,187,0.18));
-    border-left: 2px solid var(--chat-color-lily, var(--irp-accent));
-    border-radius: var(--irp-r-sm);
-    background: var(--chat-bubble-lily, rgba(255,255,255,0.06));
-    overflow: hidden;
-  }
-  .lily-prop__head {
+  /* ── Field proposals: one status line under the Lily bubble that proposed them.
+     The editable list itself lives in LilyProposalPanel, above the message box. */
+  .lily-prop-note {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--chat-glass-border, rgba(255,255,255,0.07));
-  }
-  .lily-prop__title {
-    font-size: var(--irp-fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--chat-color-lily, var(--irp-accent-ink));
-  }
-  .lily-prop__list { list-style: none; margin: 0; padding: 0; }
-  .lily-prop__item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.55rem 0.75rem;
-  }
-  .lily-prop__item + .lily-prop__item {
-    border-top: 1px solid var(--chat-glass-border, rgba(255,255,255,0.07));
-  }
-  .lily-prop__item--done { opacity: 0.72; }
-  .lily-prop__field { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-  .lily-prop__label {
+    gap: 0.4rem;
+    margin: -0.2rem 0 0 calc(24px + 0.4rem); /* clear the avatar pip */
     font-size: var(--irp-fs-2xs);
     font-weight: 600;
     color: var(--chat-text-secondary, rgba(255,255,255,0.55));
   }
-  .lily-prop__change {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.35rem;
-    font-size: var(--irp-fs-sm);
-    line-height: 1.4;
-    overflow-wrap: anywhere;
+  .lily-prop-note__dot {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--chat-text-dim, rgba(255,255,255,0.35));
   }
-  .lily-prop__old {
-    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
-    text-decoration: line-through;
-  }
-  .lily-prop__old--empty {
-    color: var(--irp-text-dim);
-    font-style: normal;
-    text-decoration: none;
-    font-size: var(--irp-fs-sm);
-  }
-  .lily-prop__arrow { color: var(--chat-text-dim, rgba(255,255,255,0.35)); }
-  .lily-prop__new { color: var(--chat-text-primary, rgba(255,255,255,0.92)); font-weight: 600; }
-  .lily-prop__error { font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); font-weight: 600; font-style: normal; }
-  .lily-prop__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
-  .lily-prop__btn {
+  .lily-prop-note__dot--pending { background: var(--chat-color-lily, var(--irp-accent)); box-shadow: 0 0 6px rgba(2,181,187,0.7); }
+  .lily-prop-note__review {
+    padding: 0 0.3rem;
+    border: none;
+    border-radius: var(--irp-r-2xs);
+    background: none;
     font: inherit;
-    font-size: var(--irp-fs-xs);
-    font-weight: 600;
-    padding: 0.3rem 0.7rem;
-    border-radius: var(--irp-r-xs);
-    border: 1px solid var(--chat-glass-border, rgba(255,255,255,0.14));
-    background: transparent;
-    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
+    color: var(--chat-color-lily, var(--irp-accent-ink));
+    text-decoration: underline;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
-  .lily-prop__btn:hover:not(:disabled) {
-    color: var(--chat-text-primary, rgba(255,255,255,0.92));
-    border-color: var(--chat-text-secondary, rgba(255,255,255,0.55));
-  }
-  .lily-prop__btn--approve {
-    background: var(--chat-color-lily, var(--irp-accent));
-    border-color: var(--chat-color-lily, var(--irp-accent));
-    color: var(--irp-text);
-  }
-  .lily-prop__btn--approve:hover:not(:disabled) {
-    color: var(--irp-text);
-    border-color: var(--chat-color-lily, var(--irp-accent));
-    filter: brightness(1.12);
-  }
-  .lily-prop__btn:focus-visible {
+  .lily-prop-note__review:focus-visible {
     outline: 2px solid var(--chat-color-lily, var(--irp-accent));
     outline-offset: 2px;
-  }
-  .lily-prop__btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .lily-prop__state {
-    font-size: var(--irp-fs-xs);
-    font-weight: 600;
-    color: var(--chat-text-secondary, rgba(255,255,255,0.55));
-  }
-  .lily-prop__state--applied { color: var(--chat-color-lily, var(--irp-accent-ink)); }
-  @media (max-width: 520px) {
-    .lily-prop { margin-left: 0; max-width: 100%; }
-    .lily-prop__item { flex-direction: column; align-items: stretch; }
-    .lily-prop__actions { justify-content: flex-end; }
   }
 
   /* ── Avatar pip ──────────────────────────────────────────────────────── */
