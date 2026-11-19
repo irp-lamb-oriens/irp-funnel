@@ -79,7 +79,7 @@
         {#if Object.keys(bt.otherCurrencies).length}<br />Not included: {Object.entries(bt.otherCurrencies).map(([c, o]) => `${o.deals} deal${o.deals === 1 ? '' : 's'} in ${c}`).join(', ')}.{/if}
       </p>
     {:else}
-      <p class="mh-empty">No {book.currency} deals {book.allTime ? '' : `won in ${book.rangeLabel}`}.</p>
+      <p class="mh-empty" role="status">No {book.currency} deals {book.allTime ? '' : `won in ${book.rangeLabel}`}.</p>
     {/if}
   </div>
 
@@ -134,9 +134,9 @@
   <div>
     <h4 class="mh-sub">Receivables by client <span class="mh-muted">· sent invoices with a balance, oldest first</span></h4>
     {#if !book.v2?.receivables}
-      <p class="mh-empty">Needs the server update (per-invoice receivables).</p>
+      <p class="mh-empty" role="status">Needs the server update (per-invoice receivables).</p>
     {:else if !open.length}
-      <p class="mh-empty">No sent {book.currency} invoice is waiting for payment.</p>
+      <p class="mh-empty" role="status">No sent {book.currency} invoice is waiting for payment.</p>
     {:else}
       <div class="mh-table-wrap">
         <table class="mh-table sb-cards">
@@ -166,11 +166,11 @@
   <div>
     <h4 class="mh-sub">Cash by payment method <span class="mh-muted">· {book.rangeLabel}</span></h4>
     {#if !hasPayments}
-      <p class="mh-empty">Needs the server update (dated payments).</p>
+      <p class="mh-empty" role="status">Needs the server update (dated payments).</p>
     {:else if methodRows.length}
       <BarList rows={methodRows} labelHeader="Method" valueLabel="Cash" columns={['Share']} caption="Cash by payment method" />
     {:else}
-      <p class="mh-empty">No cash received in {book.rangeLabel}.</p>
+      <p class="mh-empty" role="status">No cash received in {book.rangeLabel}.</p>
     {/if}
     {#if refunds.length}<p class="mh-hint">Refunds: {refunds.length} · {money(refunds.reduce((a, r) => a - r.amount, 0))}</p>{/if}
   </div>
@@ -179,9 +179,9 @@
 <div class="sb-mt">
   <h4 class="mh-sub">Post-sale collection curve <span class="mh-muted">· share of booked collected k months after acceptance, by acceptance month</span></h4>
   {#if !curve}
-    <p class="mh-empty">{book.cubeOk ? 'Needs the server update (dated payments).' : 'Segment data unavailable.'}</p>
+    <p class="mh-empty" role="status">{book.cubeOk ? 'Needs the server update (dated payments).' : 'Segment data unavailable.'}</p>
   {:else if !curve.rows.length}
-    <p class="mh-empty">No {book.currency} deals accepted in the last 12 complete months.</p>
+    <p class="mh-empty" role="status">No {book.currency} deals accepted in the last 12 complete months.</p>
   {:else}
     <Heatmap rowLabels={curve.rows.map((r) => ({ key: r.month, label: `${monthLabel(r.month, true)} · ${r.deals}` }))} colLabels={curveCols} cells={curveCells} rowHeader="Accepted · deals" domain={[0, 1]} caption="Cumulative share of booked collected by months after acceptance" />
     <Heatmap rowLabels={[{ key: 'avg', label: 'Weighted average' }]} colLabels={curveCols} cells={avgRow} rowHeader="" domain={[0, 1]} caption="Average collection curve" />

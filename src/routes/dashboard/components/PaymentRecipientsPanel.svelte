@@ -193,8 +193,8 @@
       {/if}
       {#if error}<p class="pr__error" role="alert">{error}</p>{/if}
       <div class="pr__actions">
-        <button type="button" class="pr__btn" on:click={load} disabled={saving || !dirty}>Undo changes</button>
-        <button type="button" class="pr__btn pr__btn--primary" on:click={save} disabled={saving || !dirty || missing.length > 0}>{saving ? 'Saving…' : 'Save list'}</button>
+        <button type="button" class="pr__btn" on:click={load} disabled={saving || !dirty} title={!dirty ? 'No changes to undo' : undefined}>Undo changes</button>
+        <button type="button" class="pr__btn pr__btn--primary" on:click={save} disabled={saving || !dirty || missing.length > 0} title={!dirty ? 'No changes to save' : missing.length > 0 ? 'Some required recipients are missing' : undefined}>{saving ? 'Saving…' : 'Save list'}</button>
       </div>
     {/if}
   {/if}
@@ -210,7 +210,7 @@
   .pr__table th, .pr__table td { padding: 8px 10px; border-bottom: 1px solid var(--irp-slate-100); text-align: center; vertical-align: middle; }
   .pr__table thead th { background: var(--irp-surface-2); font-size: var(--irp-fs-xs); font-weight: 800; color: var(--irp-text-2); vertical-align: bottom; }
   .pr__table thead th span { display: block; }
-  .pr__help { font-weight: 500; color: var(--irp-text-dim); font-size: var(--irp-fs-2xs); margin-top: 2px; max-width: 170px; margin-inline: auto; }
+  .pr__help { font-weight: 500; color: var(--irp-text-dim); font-size: var(--irp-fs-2xs); margin-top: 2px; max-width: 170px; margin-inline: auto; font-style: normal; }
   .pr__table th[scope='row'], .pr__table thead th:first-child { text-align: left; font-weight: 600; color: var(--irp-text); }
   .pr__table input[type='checkbox'] { width: 18px; height: 18px; accent-color: var(--irp-teal-700); cursor: pointer; }
   .pr__table input:disabled { cursor: not-allowed; }
@@ -225,7 +225,7 @@
   .pr__btn { min-height: 34px; padding: 0 14px; border-radius: var(--irp-r-sm); border: 1px solid var(--irp-line-strong); background: var(--irp-surface); font: inherit; font-size: var(--irp-fs-sm); font-weight: 700; cursor: pointer; }
   .pr__btn--primary { background: var(--irp-teal-700); border-color: var(--irp-teal-700); color: var(--irp-text-inverse); }
   .pr__btn:disabled { opacity: 0.55; cursor: not-allowed; }
-  .pr__error { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-red-700); }
+  .pr__error { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); font-weight: 600; font-style: normal; }
   .pr__muted { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-text-dim); }
   .pr__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

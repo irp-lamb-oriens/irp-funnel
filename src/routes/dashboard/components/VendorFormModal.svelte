@@ -179,7 +179,8 @@
 
       <!-- Basic info -->
       <div class="form-section">
-        <h3 class="section-label">Company Info</h3>
+        <h3 class="section-label">Company</h3>
+        <p class="section-hint">Who the vendor is and who we talk to there.</p>
         <div class="form-row form-row--2">
           <div class="form-field">
             <label for="v-company">Company Name *</label>
@@ -208,8 +209,8 @@
 
       <!-- Service Categories (pill multi-select) -->
       <div class="form-section">
-        <h3 class="section-label">Service Categories *</h3>
-        <p class="section-hint">Select all categories this vendor can fulfill.</p>
+        <h3 class="section-label">What they do <span aria-hidden="true">*</span></h3>
+        <p class="section-hint">Pick every kind of work this vendor can take on. Required: we use it to suggest them for the right quotes.</p>
         <div class="pill-group">
           {#each SERVICE_CATEGORIES as cat}
             <button
@@ -232,8 +233,8 @@
 
       <!-- Shipping Modalities (pill multi-select) -->
       <div class="form-section">
-        <h3 class="section-label">Shipping Modalities *</h3>
-        <p class="section-hint">Modes of transport this vendor handles.</p>
+        <h3 class="section-label">How they ship <span aria-hidden="true">*</span></h3>
+        <p class="section-hint">Sea, air, road… Pick every way this vendor moves goods. Required.</p>
         <div class="pill-group">
           {#each MODALITIES as mod}
             <button
@@ -251,10 +252,10 @@
 
       <!-- Geographic coverage -->
       <div class="form-section">
-        <h3 class="section-label">Geographic Coverage</h3>
+        <h3 class="section-label">Where they work</h3>
         <p class="section-hint">
-          Enter ISO Alpha-2 country codes separated by commas (e.g. <code>US, CR, CO</code>).
-          Leave blank to indicate this vendor services all countries.
+          Use two-letter country codes separated by commas, for example <code>US, CR, CO</code>.
+          Leave a box empty if they work with every country.
         </p>
         <div class="form-row form-row--2">
           <div class="form-field">
@@ -284,7 +285,8 @@
 
       <!-- Notes -->
       <div class="form-section">
-        <h3 class="section-label">Notes</h3>
+        <h3 class="section-label">Notes for the team</h3>
+        <p class="section-hint">Only staff see this. Rates, conditions, who to call and when.</p>
         <div class="form-field">
           <textarea id="v-notes" bind:value={notes} rows="3" placeholder="Rates, special conditions, preferred contact hours…"></textarea>
         </div>
@@ -314,7 +316,7 @@
     <!-- Footer -->
     <div class="vendor-modal__footer">
       {#if saveError}
-        <span class="save-error">{saveError}</span>
+        <span class="save-error" role="alert">{saveError}</span>
       {/if}
       <div class="footer-actions">
         <button class="btn btn--ghost" on:click={() => dispatch('close')} disabled={isSaving}>
@@ -410,20 +412,8 @@
     align-items: center;
     gap: 1rem;
   }
-  .section-label {
-    margin: 0;
-    font-size: var(--irp-fs-sm);
-    font-weight: 700;
-    color: var(--irp-text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .section-hint {
-    margin: 0;
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-text-dim);
-    line-height: 1.4;
-  }
+  .section-label { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin: 0; }
+  .section-hint { /* shared anatomy */ margin: 0.2rem 0 0; max-width: 68ch; font-size: var(--irp-fs-xs); font-weight: 400; line-height: 1.5; color: var(--irp-text-dim); text-transform: none; letter-spacing: 0; font-style: normal; margin: 0; }
 
   /* ── Form fields ─────────────── */
   .form-row { display: flex; gap: 0.75rem; }
@@ -572,7 +562,9 @@
   .save-error {
     flex: 1;
     font-size: var(--irp-fs-sm);
-    color: var(--irp-red-300);
+    color: var(--irp-danger-ink);
+    font-weight: 600;
+    font-style: normal;
   }
   .footer-actions {
     display: flex;

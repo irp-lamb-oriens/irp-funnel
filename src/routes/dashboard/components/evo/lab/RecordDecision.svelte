@@ -76,7 +76,7 @@
     {#if error}<p class="mh-bad">{error}</p>{/if}
     <div class="evo-modal__btns">
       <button class="mh-btn" on:click={() => dispatch('close')}>Cancel</button>
-      <button class="mh-btn mh-btn--primary" on:click={save} disabled={busy || !note.trim()}>{busy ? 'Saving…' : 'Record decision'}</button>
+      <button class="mh-btn mh-btn--primary" on:click={save} disabled={busy || !note.trim()} title={!note.trim() ? 'Add a short note explaining the decision' : undefined}>{busy ? 'Saving…' : 'Record decision'}</button>
     </div>
   </div>
 </div>

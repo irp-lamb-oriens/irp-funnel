@@ -75,3 +75,263 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GROUPS — one anatomy for every cluster of components
+   ───────────────────────────────────────────────────────────────────────────
+   <section class="irp-group" aria-labelledby={id}>
+     <GroupHeader {id} title description info status>…actions…</GroupHeader>
+     <div class="irp-toolbar">…filters…</div>
+     …content…
+     <p class="irp-group__foot">…how the numbers were worked out…</p>
+   </section>
+   Components: ui/GroupHeader, ui/InfoTip, ui/StatusLine, ui/EmptyState.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.irp-group {
+  @include irp-group;
+  &--flush  { padding: 0; gap: 0; overflow: hidden; > .irp-group__head { padding: var(--irp-sp-4) var(--irp-sp-5); border-bottom: 1px solid var(--irp-line); } }
+  &--plain  { background: none; border: 0; box-shadow: none; padding: 0; }
+  &--soft   { background: var(--irp-surface-2); box-shadow: none; }
+  &--warning { border-color: var(--irp-warning-line); background: var(--irp-warning-bg); }
+  &[aria-busy='true'] > :not(.irp-group__head) { opacity: 0.55; pointer-events: none; transition: opacity var(--irp-t-med); }
+}
+.irp-group + .irp-group { margin-top: var(--irp-sp-4); }
+.irp-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--irp-sp-4);
+  > .irp-group + .irp-group { margin-top: 0; }
+}
+
+.irp-group__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--irp-sp-2) var(--irp-sp-4);
+  flex-wrap: wrap;
+  min-width: 0;
+  &--compact .irp-group__title { font-size: var(--irp-fs-md); }
+  &--compact .irp-group__desc  { font-size: var(--irp-fs-xs); }
+}
+.irp-group__titles { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; flex: 1 1 260px; }
+.irp-group__title  { @include irp-group-title; }
+.irp-group__desc   { @include irp-group-desc; }
+.irp-group__aside  { display: flex; align-items: center; gap: var(--irp-sp-2); flex-wrap: wrap; }
+.irp-group__foot {
+  margin: 0;
+  padding-top: var(--irp-sp-3);
+  border-top: 1px dashed var(--irp-line);
+  font-size: var(--irp-fs-xs);
+  line-height: 1.5;
+  color: var(--irp-text-dim);
+}
+
+// Filters and actions that belong to one group: filters left, actions right.
+.irp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--irp-sp-2) var(--irp-sp-3);
+  flex-wrap: wrap;
+  &__spacer { flex: 1 1 auto; }
+  &__label  { @include irp-overline; }
+}
+
+// ── Form groups ──────────────────────────────────────────────────────────────
+// <fieldset class="irp-fieldset"><legend>Contact</legend><p class="irp-fieldset__hint">…</p>…</fieldset>
+.irp-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: var(--irp-sp-4);
+  border: 1px solid var(--irp-line);
+  border-radius: var(--irp-r-md);
+  background: var(--irp-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--irp-sp-3);
+  > legend {
+    float: left;          // lets the legend take part in the flex column
+    width: 100%;
+    padding: 0;
+    @include irp-group-title;
+    font-size: var(--irp-fs-md);
+    + * { clear: both; }
+  }
+  &__hint { @include irp-group-desc; font-size: var(--irp-fs-xs); margin-top: -0.4rem; }
+  &--step > legend::before {
+    content: attr(data-step);
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-accent-subtle);
+    color: var(--irp-accent-ink);
+    font-size: var(--irp-fs-xs);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+}
+.irp-fieldset + .irp-fieldset { margin-top: var(--irp-sp-3); }
+// Label → control → help/error, always in that order.
+.irp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  > label, &__label { font-size: var(--irp-fs-xs); font-weight: 700; color: var(--irp-text-2); }
+  &__help  { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.45; }
+  &__error { font-size: var(--irp-fs-xs); color: var(--irp-danger-ink); font-weight: 600; }
+  &__req   { color: var(--irp-danger-ink); margin-left: 0.15em; }
+}
+
+// ── InfoTip ──────────────────────────────────────────────────────────────────
+.irp-infotip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  &__btn {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--irp-r-full);
+    background: none;
+    color: var(--irp-text-faint);
+    cursor: help;
+    transition: color var(--irp-t-fast), background-color var(--irp-t-fast);
+    &:hover, &:focus-visible { color: var(--irp-accent-ink); background: var(--irp-accent-subtle); }
+  }
+  &__bubble {
+    position: absolute;
+    z-index: var(--irp-z-dropdown);
+    left: 50%;
+    bottom: calc(100% + 8px);
+    width: max-content;
+    max-width: min(280px, 70vw);
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-slate-900);
+    color: var(--irp-text-inverse);
+    box-shadow: var(--irp-shadow-lg);
+    font-size: var(--irp-fs-xs);
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: 0;
+    text-transform: none;
+    text-align: left;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 4px);
+    transition: opacity var(--irp-t-fast), transform var(--irp-t-fast), visibility var(--irp-t-fast);
+    pointer-events: none;
+  }
+  &[data-placement='bottom'] &__bubble { bottom: auto; top: calc(100% + 8px); transform: translate(-50%, -4px); }
+  &:hover &__bubble,
+  &:focus-within &__bubble,
+  &.is-open &__bubble { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+}
+
+// ── StatusLine ───────────────────────────────────────────────────────────────
+.irp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--irp-fs-xs);
+  font-weight: 600;
+  color: var(--irp-text-dim);
+  white-space: nowrap;
+  &--idle { display: none; }
+  &__icon { width: 8px; height: 8px; border-radius: var(--irp-r-full); background: currentColor; flex: none; }
+  &--loading &__icon,
+  &--saving &__icon {
+    width: 12px; height: 12px; background: none;
+    border: 2px solid var(--irp-surface-4); border-top-color: var(--irp-accent);
+    animation: spin 0.7s linear infinite;
+  }
+  &--saved { color: var(--irp-success-ink); }
+  &--stale { color: var(--irp-warning-ink); }
+  &--error { color: var(--irp-danger-ink); white-space: normal; }
+  &__retry {
+    border: 0; background: none; padding: 0; font: inherit; font-weight: 700;
+    color: var(--irp-accent-ink); text-decoration: underline; text-underline-offset: 2px;
+  }
+}
+
+// ── EmptyState ───────────────────────────────────────────────────────────────
+.irp-empty--rich {
+  gap: var(--irp-sp-1);
+  .irp-empty__icon   { font-size: var(--irp-fs-2xl); line-height: 1; margin-bottom: var(--irp-sp-1); }
+  .irp-empty__title  { margin: 0; font-size: var(--irp-fs-md); font-weight: 700; color: var(--irp-text-2); }
+  .irp-empty__body   { margin: 0; max-width: 46ch; font-size: var(--irp-fs-sm); line-height: 1.5; color: var(--irp-text-dim); }
+  .irp-empty__action { margin-top: var(--irp-sp-3); display: flex; gap: var(--irp-sp-2); flex-wrap: wrap; justify-content: center; }
+}
+.irp-empty--compact { padding: var(--irp-sp-4); }
+
+// A disabled control that says WHY: <span class="irp-why" data-why="Add a price first"><button disabled>…
+.irp-why { position: relative; display: inline-flex;
+  &::after {
+    content: attr(data-why);
+    position: absolute; z-index: var(--irp-z-dropdown); left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
+    width: max-content; max-width: 240px; padding: 0.4rem 0.6rem; border-radius: var(--irp-r-sm);
+    background: var(--irp-slate-900); color: var(--irp-text-inverse); font-size: var(--irp-fs-xs); line-height: 1.4;
+    opacity: 0; visibility: hidden; transition: opacity var(--irp-t-fast); pointer-events: none;
+  }
+  &:hover::after, &:focus-within::after { opacity: 1; visibility: visible; }
+  &:not([data-why])::after, &[data-why='']::after { display: none; }
+}
+
+// ── View header (top of each dashboard view) ─────────────────────────────────
+// <header class="irp-view-head"><div><h2>Finance</h2><p>…one sentence…</p></div><div class="irp-view-head__actions">…</div></header>
+.irp-view-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--irp-sp-3) var(--irp-sp-5);
+  flex-wrap: wrap;
+  margin-bottom: var(--irp-sp-5);
+  h2 { @include irp-view-title; }
+  p  { @include irp-group-desc; margin-top: 0.3rem; }
+  &__actions { display: flex; align-items: center; gap: var(--irp-sp-2); flex-wrap: wrap; }
+}
+.irp-note  { @include irp-note; }
+.irp-error { @include irp-error-line; }
+
+// ── KPI tile: label → number → what it means ────────────────────────────────
+.irp-kpi {
+  @include irp-card(var(--irp-sp-4));
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  &__label { @include irp-overline; display: flex; align-items: center; gap: 0.25rem; margin: 0; min-height: 22px; }
+  &__value { margin: 0.15rem 0 0; font-size: 1.625rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; color: var(--irp-text); font-variant-numeric: tabular-nums; }
+  &__hint  { margin: 0; font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.45; }
+  &--accent  { border-top: 3px solid var(--irp-accent); }
+  &--success { border-top: 3px solid var(--irp-success); }
+  &--warning { border-top: 3px solid var(--irp-warning); }
+  &--danger  { border-top: 3px solid var(--irp-danger); }
+  &--neutral { border-top: 3px solid var(--irp-slate-300); }
+}
+.irp-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: var(--irp-sp-3); }
+// Label/value pairs inside a tile or card.
+.irp-facts {
+  margin: var(--irp-sp-2) 0 0;
+  padding-top: var(--irp-sp-2);
+  border-top: 1px solid var(--irp-line);
+  display: grid;
+  gap: 0.25rem;
+  > div { display: flex; justify-content: space-between; gap: var(--irp-sp-3); font-size: var(--irp-fs-xs); }
+  dt { color: var(--irp-text-dim); display: inline-flex; align-items: center; gap: 0.2rem; }
+  dd { margin: 0; font-weight: 700; color: var(--irp-text-2); font-variant-numeric: tabular-nums; text-align: right; }
+}
+
+// One sentence under a tab row saying what the selected tab is for.
+.irp-tab-lede {
+  @include irp-group-desc;
+  margin: calc(var(--irp-sp-3) * -1) 0 var(--irp-sp-5);
+  padding-left: var(--irp-sp-3);
+  border-left: 3px solid var(--irp-accent-subtle);
+}

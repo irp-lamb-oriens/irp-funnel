@@ -103,7 +103,7 @@
   {#if error}
     <p class="op__error" role="alert">{error}</p>
   {:else if loading && !report}
-    <p class="op__empty">Loading…</p>
+    <p class="op__empty" role="status">Loading…</p>
   {:else if report}
     <div class="op__cards">
       <div class="op-card"><span>Paid online</span><strong>{fmt(report.totals.gross)}</strong><small>{report.totals.count} payment{report.totals.count === 1 ? '' : 's'} received</small></div>
@@ -127,7 +127,7 @@
     </div>
 
     {#if rows.length === 0}
-      <p class="op__empty">{report.payments.length ? 'Nothing matches this filter.' : 'No online payments yet. They appear here the moment a client pays on their project page.'}</p>
+      <p class="op__empty" role="status">{report.payments.length ? 'Nothing matches this filter.' : 'No online payments yet. They appear here the moment a client pays on their project page.'}</p>
     {:else}
       <div class="op__tablewrap">
         <table class="op__table">
@@ -220,8 +220,8 @@
   .op__mode.is-test { color: var(--irp-amber-800); background: var(--irp-bg); border-color: var(--irp-amber-200); }
   .op__mode.is-off { color: var(--irp-text-muted); background: var(--irp-surface-3); border-color: var(--irp-line); }
   .op__warn { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-amber-800); background: var(--irp-bg); border: 1px solid var(--irp-amber-200); border-radius: var(--irp-r-md); padding: 8px 12px; }
-  .op__error { color: var(--irp-red-700); font-size: var(--irp-fs-sm); }
-  .op__empty { color: var(--irp-text-dim); font-size: var(--irp-fs-sm); padding: 18px; text-align: center; background: var(--irp-surface-2); border-radius: var(--irp-r-md); }
+  .op__error { color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
+  .op__empty { color: var(--irp-text-dim); font-size: var(--irp-fs-sm); padding: 18px; text-align: center; background: var(--irp-surface-2); border-radius: var(--irp-r-md); font-style: normal; }
 
   .op__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
   .op-card { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); }

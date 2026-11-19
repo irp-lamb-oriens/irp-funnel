@@ -387,7 +387,7 @@
 
       <div class="qt-template__row">
         {#if templatesLoading}
-          <div class="qt-template__loading">
+          <div class="qt-template__loading" role="status">
             <span class="qt-template__dot"></span>
             <span>Loading templates…</span>
           </div>
@@ -459,17 +459,17 @@
 
     {#if loading}
 
-      <div class="quotes-tab__loading">
+      <div class="quotes-tab__loading" role="status">
         <div class="quotes-tab__spinner"></div>
         <span>Loading quotes…</span>
       </div>
     {:else if error}
-      <div class="quotes-tab__error">
+      <div class="quotes-tab__error" role="alert">
         ⚠️ {error}
         <button class="quotes-tab__retry" on:click={loadQuotes}>Retry</button>
       </div>
     {:else if $quotes.length === 0 && !showEditor}
-      <div class="quotes-tab__empty">
+      <div class="quotes-tab__empty" role="status">
         <span class="quotes-tab__empty-icon">💰</span>
         <p class="quotes-tab__empty-title">No quotes yet</p>
         <p class="quotes-tab__empty-desc">Create the first quote for this client.</p>
@@ -712,6 +712,7 @@
     font-size: var(--irp-fs-2xs);
     line-height: 1.5;
     color: var(--irp-text-dim);
+    font-style: normal;
   }
 
   /* ── Toolbar ──────────────────────────────────────────────────────────── */
@@ -724,13 +725,7 @@
   }
 
 
-  .quotes-tab__heading {
-    margin: 0;
-    font-size: var(--irp-fs-lg);
-    font-weight: 700;
-    color: var(--irp-text);
-    letter-spacing: -0.01em;
-  }
+  .quotes-tab__heading { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin: 0; }
 
   .quotes-tab__new-btn {
     background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-teal-700) 100%);

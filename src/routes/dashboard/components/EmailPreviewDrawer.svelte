@@ -609,7 +609,7 @@
         <h2 class="email-preview-drawer__title email-preview-drawer__title--loading">Loading…</h2>
       {:else if error}
         <h2 class="email-preview-drawer__title">Couldn't load email</h2>
-        <p class="email-preview-drawer__error">{error}</p>
+        <p class="email-preview-drawer__error" role="alert">{error}</p>
       {:else if snapshot}
         <div class="email-preview-drawer__title-row">
           <span class="email-preview-drawer__icon" aria-hidden="true">{snapshot.inferred ? '🔮' : '📧'}</span>

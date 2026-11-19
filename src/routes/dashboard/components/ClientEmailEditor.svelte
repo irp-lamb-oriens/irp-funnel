@@ -185,7 +185,7 @@
   }
   .email-editor__btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .email-editor__notice { margin: 0; font-size: 0.82em; color: var(--color-highlight-2, var(--irp-accent-ink)); }
-  .email-editor__error { margin: 0; font-size: 0.82em; color: var(--chat-color-staff, var(--irp-amber-700)); }
+  .email-editor__error { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); font-weight: 600; font-style: normal; }
   .email-editor__history { list-style: none; margin: 0.2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
   .email-editor__history li { display: flex; flex-direction: column; font-size: 0.82em; }
   .email-editor__history-change { overflow-wrap: anywhere; }

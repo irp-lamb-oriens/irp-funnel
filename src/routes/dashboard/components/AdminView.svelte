@@ -1,4 +1,12 @@
 <script lang="ts">
+  // One plain sentence per tab, shown under the tab row.
+  const TAB_LEDE: Record<string, string> = {
+    access: 'Choose which views of the dashboard each staff member can open. Someone not listed here cannot sign in.',
+    sessions: 'Who is signed in right now and who signed in before. Use it to spot a session that should not be there.',
+    activity: 'What one staff member did in the dashboard, step by step. Pick a person to see their history.',
+    permissions: 'Sensitive actions, like approving a quote or deleting a client, and who is allowed to do each one.',
+    collaborators: 'Outside people who help on specific clients. They only see what you share with them.',
+  };
   import { tabs } from '../utils/a11yTabs.ts';
   import { onMount } from 'svelte';
   import {
@@ -146,7 +154,7 @@
       }
       await saveAccessConfig(serialised);
       configSource = 'live';
-      configSaveMsg = '✓ Access config saved to Firestore — changes are live immediately.';
+      configSaveMsg = '✓ Saved. The new access rules apply right away.';
     } catch (err: any) {
       configError = '✗ Save failed: ' + (err?.message ?? 'unknown error');
     } finally {
@@ -485,8 +493,8 @@
 
 <div class="admin-view">
   <div class="admin-view__header">
-    <h2 class="admin-view__title">Admin Panel</h2>
-    <p class="admin-view__subtitle">Manage CRM access and monitor staff sessions · Only visible to admins</p>
+    <h2 class="admin-view__title">Admin</h2>
+    <p class="admin-view__subtitle">Decide who on the team can see and do what, and review who signed in and when. Only admins see this view.</p>
   </div>
 
   <!-- Tabs -->
@@ -496,14 +504,14 @@
       class:admin-tab--active={activeTab === 'access'}
       on:click={() => activeTab = 'access'}
     >
-      🔑 Access Config
+      🔑 Who can see what
     </button>
     <button
       class="admin-tab"
       class:admin-tab--active={activeTab === 'sessions'}
       on:click={() => { activeTab = 'sessions'; loadSessions(); }}
     >
-      👥 Session Log
+      👥 Sign-ins
       {#if activeSessions.length > 0}
         <span class="admin-tab__badge">{activeSessions.length}</span>
       {/if}
@@ -513,14 +521,14 @@
       class:admin-tab--active={activeTab === 'activity'}
       on:click={() => (activeTab = 'activity')}
     >
-      👣 Staff Activity
+      👣 Staff activity
     </button>
     <button
       class="admin-tab"
       class:admin-tab--active={activeTab === 'permissions'}
       on:click={() => { activeTab = 'permissions'; if (permSource === 'loading') loadPermissions(); }}
     >
-      🛡️ Action Permissions
+      🛡️ Who can do what
     </button>
     <button
       class="admin-tab"
@@ -531,19 +539,21 @@
     </button>
   </div>
 
+  <p class="irp-tab-lede">{TAB_LEDE[activeTab] ?? ''}</p>
+
   <!-- ════════ ACCESS CONFIG TAB ════════ -->
   {#if activeTab === 'access'}
     <div class="admin-section">
 
       {#if configSource === 'loading'}
-        <div class="admin-loading">Loading config…</div>
+        <div class="admin-loading" role="status">Loading config…</div>
       {:else}
         <!-- Config source indicator -->
         <div class="config-source">
           {#if configSource === 'live'}
-            <span class="badge badge--live">🟢 Live · Stored in Firestore</span>
+            <span class="badge badge--live">🟢 Saved · these settings are in use right now</span>
           {:else}
-            <span class="badge badge--static">🟡 Static fallback · Edit below and save to go live</span>
+            <span class="badge badge--static">🟡 Using the built-in defaults · Edit below and save to replace them</span>
           {/if}
           <span class="config-source__note">Changes take effect immediately for all staff — no deploy needed.</span>
         </div>
@@ -561,7 +571,7 @@
         </div>
 
         {#if accessGroups.length === 0}
-          <div class="admin-empty">No staff match your search.</div>
+          <div class="admin-empty" role="status">No staff match your search.</div>
         {:else}
           {#each accessGroups as group (group.key)}
             <section class="admin-group">
@@ -648,7 +658,7 @@
               />
               <span class="add-staff__domain">{DOMAIN}</span>
             </div>
-            <button class="add-staff__btn" on:click={addStaffMember} disabled={!newStaffUsername.trim()}>
+            <button class="add-staff__btn" on:click={addStaffMember} disabled={!newStaffUsername.trim()} title={!newStaffUsername.trim() ? 'Type a username first' : undefined}>
               + Add
             </button>
           </div>
@@ -660,12 +670,12 @@
           <div class="save-msg save-msg--success">{configSaveMsg}</div>
         {/if}
         {#if configError}
-          <div class="save-msg save-msg--error">{configError}</div>
+          <div class="save-msg save-msg--error" role="alert">{configError}</div>
         {/if}
 
         <div class="save-bar">
           <button class="save-btn" on:click={handleSaveConfig} disabled={configSaving}>
-            {configSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
+            {configSaving ? '⏳ Saving…' : '💾 Save changes'}
           </button>
           <button class="reload-btn" on:click={loadConfig} disabled={configSaving}>
 
@@ -694,13 +704,13 @@
       </div>
 
       {#if sessionsError}
-        <div class="save-msg save-msg--error">{sessionsError}</div>
+        <div class="save-msg save-msg--error" role="alert">{sessionsError}</div>
       {/if}
 
       {#if sessionsLoading && sessions.length === 0}
-        <div class="admin-loading">Loading sessions…</div>
+        <div class="admin-loading" role="status">Loading sessions…</div>
       {:else if sessions.length === 0}
-        <div class="admin-empty">No sessions found.</div>
+        <div class="admin-empty" role="status">No sessions found.</div>
       {:else}
         <div class="sessions-table-wrapper">
           <table class="sessions-table">
@@ -753,14 +763,14 @@
     <div class="admin-section">
 
       {#if permSource === 'loading'}
-        <div class="admin-loading">Loading permissions…</div>
+        <div class="admin-loading" role="status">Loading permissions…</div>
       {:else}
         <!-- Source indicator -->
         <div class="config-source">
           {#if permSource === 'live'}
-            <span class="badge badge--live">🟢 Live · Stored in Firestore</span>
+            <span class="badge badge--live">🟢 Saved · these settings are in use right now</span>
           {:else}
-            <span class="badge badge--static">🟡 No overrides saved — only static QUOTE_APPROVERS active</span>
+            <span class="badge badge--static">🟡 Nothing saved yet · only the built-in quote approvers have extra permissions</span>
           {/if}
           <span class="config-source__note">
             Toggling a permission here updates the live store immediately for all open tabs after save.
@@ -811,12 +821,12 @@
           <div class="save-msg save-msg--success">{permSaveMsg}</div>
         {/if}
         {#if permError}
-          <div class="save-msg save-msg--error">{permError}</div>
+          <div class="save-msg save-msg--error" role="alert">{permError}</div>
         {/if}
 
         <div class="save-bar">
           <button class="save-btn" on:click={handleSavePermissions} disabled={permSaving}>
-            {permSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
+            {permSaving ? '⏳ Saving…' : '💾 Save changes'}
           </button>
           <button class="reload-btn" on:click={loadPermissions} disabled={permSaving}>
 
@@ -825,9 +835,8 @@
         </div>
 
         <p class="add-staff__hint" style="margin-top:0.6rem">
-          New permission gates (e.g. <code>can_send_quotes</code>) are added to
-          <code>ACTION_KEYS</code> in this file and to the corresponding <code>can*</code>
-          derived store in <code>store.ts</code> — zero Firestore schema migration needed.
+          Need to control an action that is not listed here? Ask a developer to add it;
+          it will then show up in this list for you to assign.
         </p>
       {/if}
     </div>
@@ -842,13 +851,13 @@
   {#if activeTab === 'collaborators'}
     <div class="admin-section">
       {#if collabSource === 'loading'}
-        <div class="admin-loading">Loading collaborators…</div>
+        <div class="admin-loading" role="status">Loading collaborators…</div>
       {:else}
         <div class="config-source">
           {#if collabSource === 'live'}
-            <span class="badge badge--live">🟢 Live · Stored in Firestore</span>
+            <span class="badge badge--live">🟢 Saved · these settings are in use right now</span>
           {:else}
-            <span class="badge badge--static">🟡 Seed defaults · Edit below and save to go live</span>
+            <span class="badge badge--static">🟡 Using the built-in defaults · Edit below and save to replace them</span>
           {/if}
           <span class="config-source__note">
             The AI router reads this list to decide who to email when a client answers. Describe each
@@ -868,7 +877,7 @@
         </div>
 
         {#if collabGroups.length === 0}
-          <div class="admin-empty">No collaborators match your search.</div>
+          <div class="admin-empty" role="status">No collaborators match your search.</div>
         {:else}
           {#each collabGroups as group (group.key)}
             <section class="admin-group">
@@ -931,12 +940,12 @@
           <div class="save-msg save-msg--success">{collabSaveMsg}</div>
         {/if}
         {#if collabError}
-          <div class="save-msg save-msg--error">{collabError}</div>
+          <div class="save-msg save-msg--error" role="alert">{collabError}</div>
         {/if}
 
         <div class="save-bar">
           <button class="save-btn" on:click={handleSaveCollaborators} disabled={collabSaving}>
-            {collabSaving ? '⏳ Saving…' : '💾 Save to Firestore'}
+            {collabSaving ? '⏳ Saving…' : '💾 Save changes'}
           </button>
           <button class="reload-btn" on:click={loadCollaborators} disabled={collabSaving}>
             ↺ Reload
@@ -983,20 +992,20 @@
 
       <!-- Error -->
       {#if activityError}
-        <div class="save-msg save-msg--error">{activityError}</div>
+        <div class="save-msg save-msg--error" role="alert">{activityError}</div>
       {/if}
 
       <!-- Loading -->
       {#if activityLoading}
-        <div class="admin-loading">Scanning all client records…</div>
+        <div class="admin-loading" role="status">Scanning all client records…</div>
 
       <!-- No user selected -->
       {:else if !activityUser}
-        <div class="admin-empty">Select a staff member above to see their complete action history across all clients.</div>
+        <div class="admin-empty" role="status">Select a staff member above to see their complete action history across all clients.</div>
 
       <!-- Empty -->
       {:else if activityEntries.length === 0}
-        <div class="admin-empty">No recorded actions found for {activityUser.split('@')[0]}.</div>
+        <div class="admin-empty" role="status">No recorded actions found for {activityUser.split('@')[0]}.</div>
 
       <!-- Timeline feed -->
       {:else}
@@ -1062,20 +1071,9 @@
     gap: 0.3rem;
   }
 
-  .admin-view__title {
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: var(--irp-text);
-    margin: 0;
-    letter-spacing: -0.025em;
-  }
+  .admin-view__title { /* shared anatomy */ margin: 0; font-size: 1.375rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--irp-text); }
 
-  .admin-view__subtitle {
-    font-size: var(--irp-fs-sm);
-    color: var(--irp-text-dim);
-    margin: 0;
-    letter-spacing: 0.01em;
-  }
+  .admin-view__subtitle { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 
@@ -1166,12 +1164,7 @@
     font-weight: 800;
     flex-shrink: 0;
   }
-  .admin-group__title {
-    font-size: var(--irp-fs-md);
-    font-weight: 700;
-    color: var(--irp-text);
-    letter-spacing: -0.01em;
-  }
+  .admin-group__title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
   .admin-group__count {
     font-size: var(--irp-fs-2xs);
     font-weight: 800;
@@ -1509,7 +1502,7 @@
     font-size: var(--irp-fs-xs);
     color: var(--irp-text-dim);
     margin: 0.45rem 0 0;
-    font-style: italic;
+    font-style: normal;
   }
 
   /* ─── Collaborators (light theme — cohesive with the admin panel) ─────────── */
@@ -1658,9 +1651,12 @@
     border: 1px solid var(--irp-green-200);
   }
   .save-msg--error {
-    background: var(--irp-surface-3);
-    color: var(--irp-red-600);
-    border: 1px solid var(--irp-red-200);
+    background: var(--irp-danger-bg);
+    color: var(--irp-danger-ink);
+    border: 1px solid var(--irp-danger-line);
+    font-size: var(--irp-fs-sm);
+    font-weight: 600;
+    font-style: normal;
   }
 
   /* ─── Sessions ───────────────────────────────────────────────────────────── */

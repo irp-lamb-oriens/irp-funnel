@@ -153,7 +153,7 @@
 <div class="vendors-view">
   <div class="vendors-toolbar">
     <div class="vendors-toolbar__left">
-      <h2 class="vendors-title">🏢 Vendors</h2>
+      <h2 class="vendors-title">Vendors</h2>
       <span class="vendors-count">{displayed.length} provider{displayed.length === 1 ? '' : 's'}</span>
     </div>
     <div class="vendors-toolbar__right">
@@ -193,17 +193,17 @@
 
   <!-- ─── Error ─────────────────────────────────────────────────────────── -->
   {#if fetchError}
-    <div class="vendors-error">{fetchError}</div>
+    <div class="vendors-error" role="alert">{fetchError}</div>
   {/if}
 
   <!-- ─── Loading ───────────────────────────────────────────────────────── -->
   {#if isLoading}
-    <div class="vendors-loading">
+    <div class="vendors-loading" role="status">
       <div class="spinner"></div>
       <span>Loading vendors…</span>
     </div>
   {:else if displayed.length === 0}
-    <div class="vendors-empty">
+    <div class="vendors-empty" role="status">
       {#if vendors.length === 0}
         <p>No vendors registered yet.</p>
         <button class="vendors-add-btn vendors-add-btn--large" on:click={openCreate}>＋ Add your first vendor</button>
@@ -357,12 +357,7 @@
     align-items: baseline;
     gap: 0.75rem;
   }
-  .vendors-title {
-    margin: 0;
-    font-size: var(--irp-fs-2xl);
-    font-weight: 700;
-    color: var(--color-text-primary, var(--irp-slate-100));
-  }
+  .vendors-title { /* shared anatomy */ margin: 0; font-size: 1.375rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--irp-text); }
   .vendors-count {
     font-size: var(--irp-fs-sm);
     color: var(--color-text-muted, var(--irp-text-dim));
@@ -444,7 +439,8 @@
     gap: 1rem;
     padding: 3rem;
     color: var(--irp-text-dim);
-    font-size: var(--irp-fs-md);
+    font-size: var(--irp-fs-sm);
+    font-style: normal;
   }
 
   /* ── Table ───────────────────────── */

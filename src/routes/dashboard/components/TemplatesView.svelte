@@ -544,11 +544,11 @@
 
     {#if loadingList}
 
-      <div class="tv-empty">Loading…</div>
+      <div class="tv-empty" role="status">Loading…</div>
     {:else if listError}
-      <div class="tv-error-msg">{listError}</div>
+      <div class="tv-error-msg" role="alert">{listError}</div>
     {:else if templates.length === 0}
-      <div class="tv-empty">
+      <div class="tv-empty" role="status">
         <p>No templates yet.</p>
         <p>Create one to build Qwilr-style proposal documents.</p>
       </div>
@@ -593,7 +593,7 @@
           </li>
         {/each}
         {#if filteredTemplates.length === 0 && sidebarSearch}
-          <div class="tv-empty tv-empty--sm">No templates match "{sidebarSearch}"</div>
+          <div class="tv-empty tv-empty--sm" role="status">No templates match "{sidebarSearch}"</div>
         {/if}
       </ul>
     {/if}
@@ -632,10 +632,10 @@
         </div>
 
         {#if mapMsg}<div class="tv-success-msg">{mapMsg}</div>{/if}
-        {#if mapError}<div class="tv-error-msg">{mapError}</div>{/if}
+        {#if mapError}<div class="tv-error-msg" role="alert">{mapError}</div>{/if}
 
         {#if mapLoading}
-          <div class="tv-empty">Loading configuration…</div>
+          <div class="tv-empty" role="status">Loading configuration…</div>
         {:else}
           <!-- ── Default fallback template ──────────────────────────────────── -->
           <div class="tv-config__section">
@@ -665,7 +665,7 @@
             </div>
 
             {#if mapRules.length === 0}
-              <div class="tv-config__empty">
+              <div class="tv-config__empty" role="status">
                 No rules yet — every client falls back to the default template.
                 Add a rule to route a destination to a tailored proposal.
               </div>
@@ -776,7 +776,7 @@
           <textarea class="tv-textarea tv-textarea--sm" bind:value={newDescription} placeholder="Describe when to use this template…" rows="2"></textarea>
         </div>
 
-        {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
+        {#if saveError}<div class="tv-error-msg" role="alert">{saveError}</div>{/if}
 
         <div class="tv-save-bar">
           <button class="tv-btn tv-btn--primary" on:click={handleCreateNew} disabled={saving}>
@@ -811,14 +811,14 @@
           <div class="tv-panel__actions">
             <button class="tv-btn tv-btn--danger-ghost" on:click={handleDelete} title="Delete this template">🗑 Delete</button>
             <button class="tv-btn tv-btn--ghost" on:click={cancelEdit} disabled={saving} title="Discard unsaved changes">↺ Revert</button>
-            <button class="tv-btn tv-btn--primary" on:click={handleSave} disabled={saving || !editName.trim()}>
+            <button class="tv-btn tv-btn--primary" on:click={handleSave} disabled={saving || !editName.trim()} title={!editName.trim() ? 'Give the template a name first' : undefined}>
               {saving ? '⏳ Saving…' : '💾 Save'}
             </button>
           </div>
         </div>
 
         {#if saveMsg}<div class="tv-success-msg">{saveMsg}</div>{/if}
-        {#if saveError}<div class="tv-error-msg">{saveError}</div>{/if}
+        {#if saveError}<div class="tv-error-msg" role="alert">{saveError}</div>{/if}
 
         {#if selectedTemplate}
           <div class="tv-meta-row">
@@ -1024,7 +1024,7 @@
   }
   .tv-placeholder__icon { font-size: 3rem; }
   .tv-placeholder p { margin: 0; font-size: var(--irp-fs-md); line-height: 1.7; }
-  .tv-placeholder__hint { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); max-width: 380px; }
+  .tv-placeholder__hint { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); max-width: 380px; font-style: normal; }
 
   /* ─── Panel ──────────────────────────────────────────────────────────────── */
   .tv-panel {
@@ -1047,20 +1047,9 @@
 
   .tv-panel__titles { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
 
-  .tv-panel__title {
-    font-size: var(--irp-fs-xl);
-    font-weight: 800;
-    color: var(--irp-text);
-    margin: 0;
-    letter-spacing: -0.02em;
-  }
+  .tv-panel__title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-lg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
 
-  .tv-panel__desc {
-    font-size: var(--irp-fs-sm);
-    color: var(--irp-text-dim);
-    margin: 0.2rem 0 0;
-    font-style: italic;
-  }
+  .tv-panel__desc { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   .tv-panel__actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center; }
 
@@ -1142,12 +1131,7 @@
     gap: 0.7rem;
   }
   .tv-config__section-head { display: flex; flex-direction: column; gap: 0.15rem; }
-  .tv-config__section-title {
-    font-size: var(--irp-fs-md);
-    font-weight: 800;
-    color: var(--irp-text);
-    letter-spacing: -0.01em;
-  }
+  .tv-config__section-title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
   .tv-config__section-sub { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.5; }
   .tv-config__default-select { max-width: 460px; }
 
@@ -1160,6 +1144,7 @@
     border-radius: var(--irp-r-md);
     font-size: var(--irp-fs-sm);
     line-height: 1.6;
+    font-style: normal;
   }
 
   .tv-config__rules { display: flex; flex-direction: column; gap: 0.7rem; }
@@ -1283,7 +1268,8 @@
     border-radius: var(--irp-r-sm);
     padding: 0.7rem 1rem;
     font-size: var(--irp-fs-sm);
-    color: var(--irp-accent-ink);
+    color: var(--irp-text-dim);
+    font-style: normal;
   }
 
   /* ─── Status messages ────────────────────────────────────────────────────── */
@@ -1298,12 +1284,13 @@
   }
   .tv-error-msg {
     padding: 0.55rem 0.9rem;
-    background: var(--irp-surface-3);
-    color: var(--irp-red-600);
-    border: 1px solid var(--irp-red-200);
+    background: var(--irp-danger-bg);
+    color: var(--irp-danger-ink);
+    border: 1px solid var(--irp-danger-line);
     border-radius: var(--irp-r-sm);
     font-size: var(--irp-fs-sm);
     font-weight: 600;
+    font-style: normal;
   }
 
   .tv-save-bar { display: flex; gap: 0.5rem; }
@@ -1314,6 +1301,7 @@
     color: var(--irp-text-dim);
     font-size: var(--irp-fs-sm);
     line-height: 1.6;
+    font-style: normal;
   }
   .tv-empty p { margin: 0.2rem 0; }
   .tv-empty--sm { padding: 0.7rem 1.2rem; }

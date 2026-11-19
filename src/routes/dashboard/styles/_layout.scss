@@ -40,6 +40,11 @@
   &::-webkit-scrollbar { display: none; }
 }
 
+.filters-bar__label { @include irp-overline; flex: none; }
+.filters-bar__group { display: flex; align-items: center; gap: $sp-2; }
+.filters-bar__sep   { flex: none; width: 1px; height: 22px; background: var(--irp-line-strong); }
+.filters-bar__count { flex: none; margin-left: auto; font-size: var(--irp-fs-xs); font-weight: 600; color: var(--irp-text-dim); font-variant-numeric: tabular-nums; }
+
 .filter-select {
   background: $surface;
   border: 1px solid $border;

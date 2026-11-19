@@ -90,7 +90,17 @@ One visual system for every dashboard tab, panel and modal. Spec: IRP project do
 - **Chips** — `.irp-chip` + `--success | --warning | --danger | --info | --neutral`.
 - **Surfaces / text** — `.irp-card`, `.irp-input`, `.irp-overline`, `.irp-empty`, `.irp-sr-only`.
 - **Mixins** — `_mixins.scss` (`irp-tabs-pills/segment/line`, `irp-btn*`, `irp-chip($tone)`, `irp-input`, `irp-card`, `irp-focus-ring`). CSS-var only, so a component can `@import 'routes/dashboard/styles/mixins';` inside `<style lang="scss">`.
-- **Guard** — `src/routes/dashboard/styles.guard.test.ts` (in `npm test`) fails on raw hex, literal font sizes ≤ 21px, literal radii 3–30px, or a removed focus outline. Fix most hits with `npm run tokens:dashboard`.
+- **Groups** — every cluster of components reads the same way: title → one plain sentence → status → actions → content.
+  - `ui/GroupHeader.svelte` (`title`, `description` *(required by the guard)*, `info`, `eyebrow`, `status`, `level`, `compact`, slot `actions`) inside `<section class="irp-group">` (+ `--plain | --soft | --flush | --warning`, `aria-busy`), `.irp-group-grid`, `.irp-group__foot`, `.irp-toolbar`.
+  - `ui/InfoTip.svelte` — ⓘ with a plain-language definition (hover, focus, tap; Escape closes).
+  - `ui/StatusLine.svelte` — `loading | saving | saved | error | stale`, announced to screen readers, optional Retry.
+  - `ui/EmptyState.svelte` — what is missing + what to do next (slot `action`).
+  - View top: `.irp-view-head`. Under a tab row: `.irp-tab-lede`. KPI tiles: `.irp-kpi` (+ tones), `.irp-kpi-grid`, `.irp-facts`.
+  - Forms: `<fieldset class="irp-fieldset">` + `<legend>` + `.irp-fieldset__hint` (`--step` with `data-step`), `.irp-field` (label → control → `__help` / `__error`).
+  - One-liners: `.irp-note`, `.irp-error`. A disabled button says why: `title={cond ? 'reason' : undefined}`.
+  - Reference implementation: `components/FinanceView.svelte`.
+  - `scripts/dashboard-states.py` normalises every `…empty / …error / …hint` style and adds the missing `role`.
+- **Guard** — `src/routes/dashboard/styles.guard.test.ts` (in `npm test`) fails on raw hex, literal font sizes ≤ 21px, literal radii 3–30px, a removed focus outline, a `<GroupHeader>` without a description, or an error/empty/loading message without a role. Fix most hits with `npm run tokens:dashboard`.
 
 ## To-Do
 

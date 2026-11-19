@@ -1002,7 +1002,7 @@
                 {/if}
               </button>
             {:else}
-              <div class="detail-panel__stage-empty">No stages match "{stageSearch}"</div>
+              <div class="detail-panel__stage-empty" role="status">No stages match "{stageSearch}"</div>
             {/each}
           </div>
         </div>
@@ -1011,40 +1011,40 @@
 
     <!-- Tabs — PendingBadge renders nothing when count=0, so no conditional needed -->
     <nav class="detail-tabs" use:tabs={{ label: 'Client record sections' }}>
-      <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'}>
+      <button class:active={detailTab === 'overview'} on:click={() => detailTab = 'overview'} title="The key facts about this client and their move">
         Overview
         <PendingBadge count={pendingTabCounts.overview ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'journey'} on:click={() => detailTab = 'journey'}>🛣 Journey</button>
-      <button class:active={detailTab === 'insights'} on:click={() => detailTab = 'insights'}>📝 Insights</button>
-      <button class:active={detailTab === 'lily'} on:click={() => detailTab = 'lily'}>
+      <button class:active={detailTab === 'journey'} on:click={() => detailTab = 'journey'} title="Every stage this client has been through, and when">🛣 Journey</button>
+      <button class:active={detailTab === 'insights'} on:click={() => detailTab = 'insights'} title="What we learned about this client from calls and messages">📝 Insights</button>
+      <button class:active={detailTab === 'lily'} on:click={() => detailTab = 'lily'} title="Ask Lily, the assistant, about this client">
         🌿 Lily
       </button>
-      <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'}>
+      <button class:active={detailTab === 'actions'} on:click={() => detailTab = 'actions'} title="What needs doing next for this client">
         ⚡ Actions
         <PendingBadge count={pendingTabCounts.actions ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'conversations'} on:click={() => detailTab = 'conversations'}>Conversations</button>
-      <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'}>
+      <button class:active={detailTab === 'conversations'} on:click={() => detailTab = 'conversations'} title="Calls and chats with this client">Conversations</button>
+      <button class:active={detailTab === 'notes'} on:click={() => detailTab = 'notes'} title="Notes the team has written about this client">
         Notes ({($selectedClient.agentNotes?.length || 0) + ($selectedClient.chatbotNotes?.length || 0)})
         <PendingBadge count={pendingTabCounts.notes ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'}>
+      <button class:active={detailTab === 'activity'} on:click={() => detailTab = 'activity'} title="A log of everything that changed on this record">
         Activity
         <PendingBadge count={pendingTabCounts.activity ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'}>
+      <button class:active={detailTab === 'emails'} on:click={() => detailTab = 'emails'} title="Send an email, and see the ones already sent">
         Emails
         <PendingBadge count={pendingTabCounts.emails ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'quotes'} on:click={() => detailTab = 'quotes'}>
+      <button class:active={detailTab === 'quotes'} on:click={() => detailTab = 'quotes'} title="Price quotes for this client">
         💰 Quotes
         <PendingBadge count={pendingTabCounts.quotes ?? 0} variant="tab" />
       </button>
-      <button class:active={detailTab === 'charges'} on:click={() => detailTab = 'charges'}>
+      <button class:active={detailTab === 'charges'} on:click={() => detailTab = 'charges'} title="Extra charges added after a quote was accepted">
         🧾 Charges
       </button>
-      <button class:active={detailTab === 'providers'} on:click={() => detailTab = 'providers'}>
+      <button class:active={detailTab === 'providers'} on:click={() => detailTab = 'providers'} title="Price requests sent to providers for this client">
         📨 Providers
         <PendingBadge count={(pendingTabCounts.providers ?? 0) + providersPendingCount} variant="tab" />
       </button>
@@ -1382,7 +1382,7 @@
                   <form class="detail-custom-fields__form" on:submit|preventDefault={handleAddCustomField}>
                     <input type="text" bind:value={newFieldKey} placeholder="Field name (e.g. petPolicy)" class="detail-cf-input" />
                     <input type="text" bind:value={newFieldValue} placeholder="Value" class="detail-cf-input" />
-                    <button type="submit" disabled={!newFieldKey.trim() || !newFieldValue.trim()}>Add</button>
+                    <button type="submit" disabled={!newFieldKey.trim() || !newFieldValue.trim()} title={!newFieldKey.trim() || !newFieldValue.trim() ? 'Fill in both the field name and its value' : undefined}>Add</button>
                   </form>
                   <p class="detail-custom-fields-add__hint">
                     The new field will be added under <code>customFields.&lt;name&gt;</code>.
@@ -1653,7 +1653,7 @@
 
         <div class="detail-journey">
           {#if events.length === 0}
-            <div class="detail-journey__empty">
+            <div class="detail-journey__empty" role="status">
               <span class="detail-journey__empty-icon">🛣</span>
               <p class="detail-journey__empty-title">No journey events yet</p>
               <p class="detail-journey__empty-desc">
@@ -1745,7 +1745,7 @@
               the Gemini-extractor hasn't been triggered, or it ran and
               returned no_source_text. Tell the operator and let them re-run.
             -->
-            <div class="detail-insights__empty">
+            <div class="detail-insights__empty" role="status">
               <span class="detail-insights__empty-icon">⚙️</span>
               <p class="detail-insights__empty-title">Transcript ready — insights pending</p>
               <p class="detail-insights__empty-desc">
@@ -1761,7 +1761,7 @@
               point the operator at the right action instead of saying
               the misleading "no transcript yet".
             -->
-            <div class="detail-insights__empty">
+            <div class="detail-insights__empty" role="status">
               <span class="detail-insights__empty-icon">⏳</span>
               <p class="detail-insights__empty-title">Waiting for Gemini meeting notes</p>
               <p class="detail-insights__empty-desc">
@@ -1773,7 +1773,7 @@
             </div>
           {:else}
             <!-- Pre-call client — insights aren't expected yet. -->
-            <div class="detail-insights__empty">
+            <div class="detail-insights__empty" role="status">
               <span class="detail-insights__empty-icon">📝</span>
               <p class="detail-insights__empty-title">No call yet — no insights expected</p>
               <p class="detail-insights__empty-desc">
@@ -1824,13 +1824,13 @@
       {:else if detailTab === 'actions'}
         <div class="actions-tab">
           {#if actionsLoading}
-            <div class="actions-tab__loading">
+            <div class="actions-tab__loading" role="status">
               <div class="actions-tab__skeleton"></div>
               <div class="actions-tab__skeleton actions-tab__skeleton--short"></div>
               <div class="actions-tab__skeleton"></div>
             </div>
           {:else if Object.keys(actionsPayload).length === 0}
-            <div class="actions-tab__empty">
+            <div class="actions-tab__empty" role="status">
               <span class="actions-tab__empty-icon">⚡</span>
               <p class="actions-tab__empty-title">No actions configured</p>
               <p class="actions-tab__empty-desc">
@@ -1987,7 +1987,7 @@
               {#if statusChatThread.length > 0}
                 <span class="conv-source-pill__count conv-source-pill__count--teal">{statusChatThread.length}</span>
               {:else}
-                <span class="conv-source-pill__empty">none</span>
+                <span class="conv-source-pill__empty" role="status">none</span>
               {/if}
             </button>
             <button
@@ -2001,7 +2001,7 @@
           </div>
 
           {#if conversationsLoading}
-            <div class="dashboard__loading" style="padding: 2rem 0;">
+            <div class="dashboard__loading" style="padding: 2rem 0;" role="status">
               <div class="spinner" style="width: 24px; height: 24px; border-width: 2px;"></div>
               <p style="margin-top: 8px; font-size: 0.85rem; color: #94a3b8;">Loading conversations…</p>
             </div>
@@ -2009,7 +2009,7 @@
           {:else if convSource === 'consultation'}
             <!-- ── Consultation (HeroForm Lily) ── -->
             {#if conversations.length === 0}
-              <div class="conv-empty">
+              <div class="conv-empty" role="status">
                 <span class="conv-empty__icon">🤖</span>
                 <p class="conv-empty__title">No HeroForm sessions found</p>
                 <p class="conv-empty__desc">This client hasn't completed a chatbot consultation yet, or the session wasn't linked to this email.</p>
@@ -2044,7 +2044,7 @@
           {:else}
             <!-- ── Status Chat (Lily on the /status page) ── -->
             {#if statusChatThread.length === 0}
-              <div class="conv-empty">
+              <div class="conv-empty" role="status">
                 <span class="conv-empty__icon">💬</span>
                 <p class="conv-empty__title">No status-page chat yet</p>
                 <p class="conv-empty__desc">This client hasn't started a conversation with Lily on their status portal yet.</p>
@@ -2162,7 +2162,7 @@
               {#if noteRecipientPickerOpen}
                 <div class="dn-menu">
                   {#if noteTeammates.length === 0}
-                    <div class="dn-menu__empty">No teammates found in Admin.</div>
+                    <div class="dn-menu__empty" role="status">No teammates found in Admin.</div>
                   {:else}
                     {#each noteTeammates as c (c.email)}
                       <button
@@ -2184,7 +2184,7 @@
               {/if}
             </div>
 
-            <button type="submit" class="detail-notes__btn" disabled={noteLoading || !newNote.trim()}>
+            <button type="submit" class="detail-notes__btn" disabled={noteLoading || !newNote.trim()} title={!newNote.trim() ? 'Write the note first' : undefined}>
               {noteLoading ? 'Adding…' : (noteRecipients.length ? `Add & notify ${noteRecipients.length}` : 'Add Note')}
             </button>
           </form>
@@ -2308,7 +2308,7 @@
             {/each}
             
             {#if !($selectedClient.agentNotes?.length) && !($selectedClient.chatbotNotes?.length)}
-              <p class="detail-empty">No notes yet.</p>
+              <p class="detail-empty" role="status">No notes yet.</p>
             {/if}
           </div>
         </div>
@@ -2400,7 +2400,7 @@
               📨 Sent emails ({sentEmails.length})
             </h4>
             {#if sentEmails.length === 0}
-              <p class="detail-empty">No emails sent yet.</p>
+              <p class="detail-empty" role="status">No emails sent yet.</p>
             {:else}
               <ol class="detail-emails__history-list">
                 {#each sentEmails as e}
@@ -2454,7 +2454,7 @@
                (the email auto-fires when its scheduled time arrives).
           ─────────────────────────────────────────────────────────────────── -->
           {#if pendingQueueLoading}
-            <div class="detail-emails__queue-loading">
+            <div class="detail-emails__queue-loading" role="status">
               <span class="actions-card__spinner"></span> Loading scheduled emails…
             </div>
           {:else if pendingQueue.filter(i => i.status === 'pending').length > 0}
@@ -2519,7 +2519,7 @@
                 class="detail-emails__btn detail-emails__btn--preview"
                 disabled={emailPreviewing || !selectedEmailType}
                 on:click={handlePreviewEmail}
-                title="Preview the rendered email before it's sent"
+                title={!selectedEmailType ? 'Choose which email to send first' : "See exactly what the client will receive before it's sent"}
               >
                 {#if emailPreviewing}
                   <span class="actions-card__spinner"></span>
@@ -2633,13 +2633,7 @@
     padding-bottom: 0.4rem;
     border-bottom: 1px solid var(--irp-slate-100);
   }
-  .detail-overview__group-title {
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--irp-text-dim);
-  }
+  .detail-overview__group-title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
 
   /* ── "Needs attention" — in-app notifications panel (Notes tab) ──────────
      Cohesive with the dashboard admin dialect: teal accent (#02b5bb), slate

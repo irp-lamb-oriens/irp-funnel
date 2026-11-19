@@ -222,7 +222,7 @@
   </header>
 
   {#if error}
-    <div class="ofe-msg ofe-msg--error">{error}</div>
+    <div class="ofe-msg ofe-msg--error" role="alert">{error}</div>
   {/if}
 
   {#if showNewForm}
@@ -277,7 +277,7 @@
         </label>
       {/if}
       <div class="ofe-add-actions">
-        <button class="save-btn" disabled={creating || !newLabel.trim()} on:click={createField}>
+        <button class="save-btn" disabled={creating || !newLabel.trim()} title={!newLabel.trim() ? 'Give the field a name first' : undefined} on:click={createField}>
           {creating ? 'Adding…' : 'Add field'}
         </button>
       </div>
@@ -285,9 +285,9 @@
   {/if}
 
   {#if loading}
-    <div class="ofe-empty">Loading Overview fields…</div>
+    <div class="ofe-empty" role="status">Loading Overview fields…</div>
   {:else if fields.length === 0}
-    <div class="ofe-empty">No Overview fields configured yet. Add one to get started.</div>
+    <div class="ofe-empty" role="status">No Overview fields configured yet. Add one to get started.</div>
   {:else}
     <div class="ofe-table-wrap">
       <table class="ofe-table">

@@ -47,6 +47,6 @@
       </table>
     </div>
   {:else}
-    <p class="mh-empty">No decisions recorded yet. They appear here with the evidence as it stood.</p>
+    <p class="mh-empty" role="status">No decisions recorded yet. They appear here with the evidence as it stood.</p>
   {/if}
 </section>

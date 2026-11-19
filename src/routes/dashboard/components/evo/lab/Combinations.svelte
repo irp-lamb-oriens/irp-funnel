@@ -56,7 +56,7 @@
 
   <h4 class="mh-card__h">Do the tests affect each other?</h4>
   {#if !pairs.length}
-    <p class="mh-empty">Needs at least two web or chat tests running at the same time.</p>
+    <p class="mh-empty" role="status">Needs at least two web or chat tests running at the same time.</p>
   {:else if sig.length}
     {#each sig as p}
       {@const h = heat(p)}
@@ -67,7 +67,7 @@
     {/each}
     <p class="mh-hint">{lab.pairs.tested} pair tests run, {lab.pairs.survivors} survive false-discovery control (q = {COMBO_RULES.q}).</p>
   {:else if lab.pairs.tested}
-    <p class="mh-empty">No test changes another's effect ({lab.pairs.tested} pair tests run). You can read each test on its own.</p>
+    <p class="mh-empty" role="status">No test changes another's effect ({lab.pairs.tested} pair tests run). You can read each test on its own.</p>
   {:else if closest}
     <LockedPanel title="Interaction check: {defOf(closest.a).title} × {defOf(closest.b).title}" need="Needs {COMBO_RULES.minCellConversions} {metricDef(closest.metric).label.toLowerCase()}s in every combination; the smallest has {closest.minCell}." have={closest.minCell} target={COMBO_RULES.minCellConversions} />
   {/if}
@@ -82,7 +82,7 @@
     </label>
   </div>
   {#if !table}
-    <p class="mh-empty">Pick 2 to 4 tests.</p>
+    <p class="mh-empty" role="status">Pick 2 to 4 tests.</p>
   {:else if table.locked}
     <LockedPanel title="Configuration ranking" need="Needs at least {COMBO_RULES.configMinCells} combinations with {COMBO_RULES.configMinConversions}+ {metricDef(metric).label.toLowerCase()}s; {table.readyCells} of {table.tested} have that." have={table.readyCells} target={COMBO_RULES.configMinCells} />
   {:else}

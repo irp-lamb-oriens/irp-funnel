@@ -144,11 +144,9 @@
 }
 
 .board__empty {
+  @include irp-note;
   text-align: center;
   padding: $sp-7 $sp-2;
-  color: $text-dim;
-  font-size: var(--irp-fs-xs);
-  font-weight: 500;
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────────── */

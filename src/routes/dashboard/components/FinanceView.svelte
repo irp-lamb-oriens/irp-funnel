@@ -1,5 +1,10 @@
 <script lang="ts">
   import { tabs } from '../utils/a11yTabs.ts';
+  import GroupHeader from './ui/GroupHeader.svelte';
+  import InfoTip from './ui/InfoTip.svelte';
+  import StatusLine from './ui/StatusLine.svelte';
+  import EmptyState from './ui/EmptyState.svelte';
+  import Alert from './ui/Alert.svelte';
   /**
    * FinanceView — the money view of the pipeline.
    *
@@ -41,7 +46,7 @@
     errorMsg = '';
     try {
       await fetchFinanceMetrics(currency);
-      loadedAt = Date.now();
+      loadedAt = now = Date.now();
     } catch (err: any) {
       errorMsg = err?.message ?? 'Could not load the finance metrics.';
     } finally {
@@ -83,46 +88,68 @@
     return `${Math.max(2, Math.round((value / max) * 100))}%`;
   }
 
-  const CARD_DEFS: Array<{ key: 'won' | 'openPipeline' | 'draft'; label: string; hint: string }> = [
-    { key: 'won', label: 'Won', hint: 'Quotes the client accepted' },
-    { key: 'openPipeline', label: 'Open pipeline', hint: 'Sent or awaiting the client' },
-    { key: 'draft', label: 'Draft', hint: 'Still being built internally' },
+  type CardKey = 'won' | 'openPipeline' | 'draft';
+  const CARD_DEFS: Array<{ key: CardKey; label: string; hint: string; info: string; tone: string }> = [
+    { key: 'won', label: 'Accepted', hint: 'The client said yes', tone: 'success',
+      info: 'Quotes a client accepted. This is the revenue we can count on.' },
+    { key: 'openPipeline', label: 'Waiting on the client', hint: 'Sent, no answer yet', tone: 'accent',
+      info: 'Quotes that were sent and are still open. Some of this will be won and some will not.' },
+    { key: 'draft', label: 'Still drafting', hint: 'Not sent to the client yet', tone: 'warning',
+      info: 'Quotes the team is still building. The client has not seen them.' },
   ];
 
-  function stats(key: 'won' | 'openPipeline' | 'draft'): FinanceMoneyStats | null {
+  const BREAKDOWNS: Array<{ key: 'byRoute' | 'byService' | 'byProvider' | 'byStage'; title: string; description: string; empty: string }> = [
+    { key: 'byRoute', title: 'By route', description: 'Origin → destination of the move.', empty: 'No accepted quote has a route yet.' },
+    { key: 'byService', title: 'By service', description: 'What we were hired to do.', empty: 'No accepted quote lists a service yet.' },
+    { key: 'byProvider', title: 'By provider', description: 'Who carries out the work.', empty: 'No accepted quote has a provider yet.' },
+    { key: 'byStage', title: 'By client stage', description: 'Where those clients are on the board today.', empty: 'Nothing recorded yet.' },
+  ];
+
+  // "Updated 3 min ago" in the header, so stale figures are never mistaken for live ones.
+  let now = Date.now();
+  onMount(() => {
+    const t = setInterval(() => (now = Date.now()), 30_000);
+    return () => clearInterval(t);
+  });
+  $: updatedLabel = (() => {
+    const mins = Math.floor((now - loadedAt) / 60_000);
+    return mins < 1 ? 'just now' : mins === 1 ? '1 min ago' : mins < 60 ? `${mins} min ago` : 'over an hour ago';
+  })();
+
+  function stats(key: CardKey): FinanceMoneyStats | null {
     return $financeMetrics ? $financeMetrics.totals[key] : null;
   }
 </script>
 
 <div class="finance">
-  <header class="finance__head">
+  <header class="irp-view-head">
     <div>
       <h2>Finance</h2>
       <p>
-        Revenue, provider cost and margin across every quote.
+        What the quotes are worth, what they cost us, and what is left over.
         {#if $financeMetrics}
-          <span class="finance__meta">
-            {$financeMetrics.quotesRead} quotes · {$financeMetrics.clientsRead} clients
-          </span>
+          <span class="irp-chip">{$financeMetrics.quotesRead} quotes · {$financeMetrics.clientsRead} clients</span>
         {/if}
       </p>
     </div>
-    <div class="finance__controls">
-      <label>
-        Currency
-        <input type="text" maxlength="3" bind:value={currency} on:change={load} />
-      </label>
-      <button on:click={load} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button>
+    <div class="irp-view-head__actions">
+      <StatusLine state={loading ? 'loading' : errorMsg ? 'error' : loadedAt ? 'saved' : 'idle'}
+        message={loading ? 'Reading the quotes…' : errorMsg ? 'Could not refresh' : loadedAt ? `Updated ${updatedLabel}` : ''} />
+      <div class="irp-field finance__currency">
+        <label for="finance-currency">Currency <InfoTip text="Three-letter code, like USD or EUR. Only quotes in this currency are added up; nothing is converted." label="About the currency filter" placement="bottom" /></label>
+        <input id="finance-currency" class="irp-input" type="text" maxlength="3" autocomplete="off" spellcheck="false" bind:value={currency} on:change={load} />
+      </div>
+      <button class="irp-btn irp-btn--primary" on:click={load} disabled={loading} aria-busy={loading}>{loading ? 'Refreshing…' : 'Refresh'}</button>
     </div>
   </header>
 
   <nav class="finance__sections irp-tabs" use:tabs={{ label: 'Finance sections' }}>
-    <button class:active={section === 'quotes'} on:click={() => (section = 'quotes')}>Quotes</button>
-    <button class:active={section === 'money'} on:click={() => (section = 'money')}>Money in and out</button>
-    <button class:active={section === 'invoices'} on:click={() => (section = 'invoices')}>Invoices</button>
-    <button class:active={section === 'online'} on:click={() => (section = 'online')}>Online payments</button>
-    <button class:active={section === 'log'} on:click={() => (section = 'log')}>Payment log</button>
-    <button class:active={section === 'config'} on:click={() => (section = 'config')}>Configuration</button>
+    <button class:active={section === 'quotes'} on:click={() => (section = 'quotes')} title="What the pipeline promises">Quotes</button>
+    <button class:active={section === 'money'} on:click={() => (section = 'money')} title="What was actually paid and what is still owed">Money in and out</button>
+    <button class:active={section === 'invoices'} on:click={() => (section = 'invoices')} title="Invoices sent to clients">Invoices</button>
+    <button class:active={section === 'online'} on:click={() => (section = 'online')} title="Card and bank payments made through Stripe">Online payments</button>
+    <button class:active={section === 'log'} on:click={() => (section = 'log')} title="Every payment event, in order">Payment log</button>
+    <button class:active={section === 'config'} on:click={() => (section = 'config')} title="The routes, services and categories the figures are grouped by">Configuration</button>
   </nav>
 
   {#if section === 'money'}
@@ -138,117 +165,124 @@
   {:else}
 
   {#if errorMsg}
-    <p class="finance__error">{errorMsg}</p>
+    <Alert type="error">{errorMsg} <button type="button" class="irp-status__retry" on:click={load}>Try again</button></Alert>
   {/if}
 
   {#if !$financeMetrics && loading}
-    <p class="finance__empty">Reading the quotes…</p>
+    <EmptyState title="Reading the quotes…" body="This looks at every quote of every client, so the first load can take a few seconds." />
   {:else if !$financeMetrics}
-    <p class="finance__empty">No finance data yet.</p>
+    <EmptyState title="No finance figures yet" body="Figures appear here as soon as at least one quote has a price. Create a quote from a client's Quotes tab, then refresh.">
+      <button slot="action" class="irp-btn" on:click={load}>Refresh</button>
+    </EmptyState>
   {:else}
-    <section class="finance__cards">
-      {#each CARD_DEFS as def}
-        {@const s = stats(def.key)}
-        <article class="card card--{def.key}">
-          <h3>{def.label}</h3>
-          <p class="card__hint">{def.hint}</p>
-          <p class="card__big">{money(s?.revenue)}</p>
-          <dl>
-            <div><dt>Cost</dt><dd>{money(s?.cost)}</dd></div>
-            <div><dt>Margin</dt><dd>{money(s?.margin)} ({pct(s?.marginPct)})</dd></div>
-            <div><dt>Quotes</dt><dd>{s?.n ?? 0}</dd></div>
-            <div><dt>Avg deal</dt><dd>{money(s?.avgDealSize)}</dd></div>
+    <section class="irp-group irp-group--plain" aria-labelledby="fin-totals-h" aria-busy={loading}>
+      <GroupHeader id="fin-totals-h" title="Where the quotes stand" description="Every priced quote falls into one of three piles. Each pile shows what clients would pay (revenue), what providers charge us (cost) and what we keep (margin)." />
+      <div class="irp-kpi-grid">
+        {#each CARD_DEFS as def}
+          {@const s = stats(def.key)}
+          <article class="irp-kpi irp-kpi--{def.tone}">
+            <h4 class="irp-kpi__label">{def.label}<InfoTip text={def.info} label={`About ${def.label}`} /></h4>
+            <p class="irp-kpi__value">{money(s?.revenue)}</p>
+            <p class="irp-kpi__hint">{def.hint}</p>
+            <dl class="irp-facts">
+              <div><dt>Provider cost</dt><dd>{money(s?.cost)}</dd></div>
+              <div><dt>Margin</dt><dd>{money(s?.margin)} ({pct(s?.marginPct)})</dd></div>
+              <div><dt>Quotes</dt><dd>{s?.n ?? 0}</dd></div>
+              <div><dt>Average quote</dt><dd>{money(s?.avgDealSize)}</dd></div>
+            </dl>
+          </article>
+        {/each}
+
+        <article class="irp-kpi irp-kpi--neutral">
+          <h4 class="irp-kpi__label">Win rate<InfoTip text="Accepted quotes divided by all quotes that were sent to a client. Drafts are left out because the client never saw them." label="About win rate" /></h4>
+          <p class="irp-kpi__value">{pct($financeMetrics.winRate.pct)}</p>
+          <p class="irp-kpi__hint">Of the quotes a client actually saw</p>
+          <dl class="irp-facts">
+            <div><dt>Accepted</dt><dd>{$financeMetrics.winRate.won}</dd></div>
+            <div><dt>Sent to a client</dt><dd>{$financeMetrics.winRate.sentOrBeyond}</dd></div>
+            <div>
+              <dt>Typical days to close <InfoTip text="The median: half of the accepted quotes closed faster than this, half slower." label="About days to close" /></dt>
+              <dd>{$financeMetrics.cycleDays.median ?? '—'}</dd>
+            </div>
           </dl>
         </article>
-      {/each}
-
-      <article class="card card--rate">
-        <h3>Win rate</h3>
-        <p class="card__hint">Of the quotes that reached a client</p>
-        <p class="card__big">{pct($financeMetrics.winRate.pct)}</p>
-        <dl>
-          <div><dt>Won</dt><dd>{$financeMetrics.winRate.won}</dd></div>
-          <div><dt>Reached a client</dt><dd>{$financeMetrics.winRate.sentOrBeyond}</dd></div>
-          <div>
-            <dt>Median days to close</dt>
-            <dd>{$financeMetrics.cycleDays.median ?? '—'}</dd>
-          </div>
-        </dl>
-      </article>
+      </div>
     </section>
 
     {#if $financeMetrics.byMonth.length > 0}
-      <section class="panel">
-        <h3>Won revenue by month</h3>
-        <table>
-          <thead>
-            <tr><th>Month</th><th>Revenue</th><th>Cost</th><th>Margin</th><th>%</th><th>Deals</th></tr>
-          </thead>
-          <tbody>
-            {#each $financeMetrics.byMonth as p (p.month)}
-              <tr>
-                <td>{p.month}</td>
-                <td>{money(p.revenue)}</td>
-                <td>{money(p.cost)}</td>
-                <td>{money(p.margin)}</td>
-                <td>{pct(p.marginPct)}</td>
-                <td>{p.n}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+      <section class="irp-group" aria-labelledby="fin-month-h">
+        <GroupHeader id="fin-month-h" title="Accepted quotes by month" description="Revenue, cost and margin of the quotes clients accepted, by the month they accepted them." />
+        <div class="finance__tablewrap">
+          <table class="finance__table">
+            <thead>
+              <tr><th scope="col">Month</th><th scope="col">Revenue</th><th scope="col">Provider cost</th><th scope="col">Margin</th><th scope="col">Margin %</th><th scope="col">Quotes</th></tr>
+            </thead>
+            <tbody>
+              {#each $financeMetrics.byMonth as p (p.month)}
+                <tr>
+                  <th scope="row">{p.month}</th>
+                  <td>{money(p.revenue)}</td>
+                  <td>{money(p.cost)}</td>
+                  <td>{money(p.margin)}</td>
+                  <td>{pct(p.marginPct)}</td>
+                  <td>{p.n}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </section>
     {/if}
 
-    <div class="panel-grid">
-      {#each [
-        { title: 'By route', buckets: $financeMetrics.byRoute },
-        { title: 'By service', buckets: $financeMetrics.byService },
-        { title: 'By provider', buckets: $financeMetrics.byProvider },
-        { title: 'By stage', buckets: $financeMetrics.byStage },
-      ] as group}
-        <section class="panel">
-          <h3>{group.title}</h3>
-          {#if group.buckets.length === 0}
-            <p class="finance__empty">Nothing recorded yet.</p>
-          {:else}
-            <ul class="bars">
-              {#each group.buckets as b (b.key)}
-                <li>
-                  <div class="bars__row">
-                    <span class="bars__label" title={b.label}>{b.label}</span>
-                    <span class="bars__value">{money(b.revenue)}</span>
-                  </div>
-                  <div class="bars__track">
-                    <div class="bars__fill" style="width: {barWidth(group.buckets, b.revenue)}"></div>
-                  </div>
-                  <div class="bars__sub">{b.n} quotes · margin {money(b.margin)} ({pct(b.marginPct)})</div>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </section>
-      {/each}
-    </div>
+    <section class="irp-group irp-group--plain" aria-labelledby="fin-split-h">
+      <GroupHeader id="fin-split-h" title="Where accepted revenue comes from" description="The same accepted revenue, split four ways. Longer bars bring in more money." />
+      <div class="irp-group-grid">
+        {#each BREAKDOWNS as group}
+          {@const buckets = $financeMetrics[group.key]}
+          <section class="irp-group" aria-labelledby="fin-{group.key}-h">
+            <GroupHeader id="fin-{group.key}-h" level={4} compact title={group.title} description={group.description} />
+            {#if buckets.length === 0}
+              <p class="irp-note" role="status">{group.empty}</p>
+            {:else}
+              <ul class="bars">
+                {#each buckets as b (b.key)}
+                  <li>
+                    <div class="bars__row">
+                      <span class="bars__label" title={b.label}>{b.label}</span>
+                      <span class="bars__value">{money(b.revenue)}</span>
+                    </div>
+                    <div class="bars__track" aria-hidden="true">
+                      <div class="bars__fill" style="width: {barWidth(buckets, b.revenue)}"></div>
+                    </div>
+                    <div class="bars__sub">{b.n} {b.n === 1 ? 'quote' : 'quotes'} · margin {money(b.margin)} ({pct(b.marginPct)})</div>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </section>
+        {/each}
+      </div>
+    </section>
 
-    <section class="panel panel--skipped">
-      <h3>Not counted above</h3>
-      <ul>
+    <section class="irp-group irp-group--soft" aria-labelledby="fin-skipped-h">
+      <GroupHeader id="fin-skipped-h" title="Left out of the totals" description="If a number above looks low, the reason is usually here. These quotes exist but are not added in." />
+      <ul class="finance__skipped">
         <li>
-          {$financeMetrics.skipped.currency} quotes in another currency
+          <b>{$financeMetrics.skipped.currency}</b> in another currency
           {#if Object.keys($financeMetrics.skipped.currencies).length > 0}
             ({Object.entries($financeMetrics.skipped.currencies)
               .map(([c, n]) => `${c}: ${n}`)
               .join(', ')})
           {/if}
+          <span>— switch the currency above to see them</span>
         </li>
-        <li>{$financeMetrics.skipped.zeroTotal} quotes never priced</li>
-        <li>{$financeMetrics.skipped.exclusiveAlternates} discarded either/or options</li>
-        <li>{$financeMetrics.marginUnknown} quotes counted with no provider cost recorded</li>
+        <li><b>{$financeMetrics.skipped.zeroTotal}</b> with no price yet <span>— add prices in the quote editor</span></li>
+        <li><b>{$financeMetrics.skipped.exclusiveAlternates}</b> either/or options the client did not pick</li>
+        <li><b>{$financeMetrics.marginUnknown}</b> counted with no provider cost <span>— their margin shows as the full price until a cost is entered</span></li>
       </ul>
-      <p class="panel__foot">
-        Figures are measured in {$financeMetrics.baseCurrency}. Nothing is converted, so a quote in
-        another currency is listed here instead of being added in at the wrong rate.
+      <p class="irp-group__foot">
+        All figures are in {$financeMetrics.baseCurrency}. Nothing is converted, so a quote in another
+        currency is listed here instead of being added in at the wrong rate.
       </p>
     </section>
   {/if}
@@ -256,13 +290,9 @@
 </div>
 
 <style>
-  /* Section tabs: shared .irp-tabs (styles/_primitives.scss) */
-  .finance__sections { margin-bottom: 1.25rem; }
-
-  /* Palette and rhythm are taken from AdminView so Finance reads as the same
-     product: #fafbfc canvas, white cards on #e2e8f0 borders, teal #02b5bb
-     accent, Jost via --font-paragraph. Every custom property has a literal
-     fallback, so the view renders correctly even where the tokens are absent. */
+  /* Built on the shared group anatomy (styles/_primitives.scss): .irp-view-head,
+     .irp-group + GroupHeader, .irp-kpi, .irp-facts, EmptyState, StatusLine.
+     Only what is specific to Finance lives here. */
   .finance {
     padding: 2.5rem 2rem;
     max-width: 1140px;
@@ -270,263 +300,46 @@
     background: var(--irp-bg);
     color: var(--irp-text);
     font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
-
-  .finance__head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .finance__head h2 {
-    margin: 0;
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: var(--irp-text);
-    letter-spacing: -0.025em;
-  }
-
-  .finance__head p {
-    margin: 0.3rem 0 0;
-    color: var(--irp-text-dim);
-    font-size: var(--irp-fs-sm);
-    letter-spacing: 0.01em;
-  }
-
-
-
-
-
-  .finance__meta {
-    margin-left: 0.5rem;
-    padding: 0.18em 0.7em;
-    border-radius: var(--irp-r-full);
-    background: linear-gradient(135deg, rgba(2, 181, 187, 0.1), rgba(139, 92, 246, 0.07));
-    border: 1px solid rgba(2, 181, 187, 0.2);
-    color: var(--irp-accent-ink);
-    font-size: var(--irp-fs-xs);
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .finance__controls {
-    display: flex;
-    align-items: flex-end;
-    gap: 0.55rem;
-  }
-
-  .finance__controls label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
+  .finance__sections { margin-bottom: 1.25rem; }
+  .finance__currency { flex-direction: row; align-items: center; gap: 0.5rem; }
+  .finance__currency label { display: inline-flex; align-items: center; gap: 0.15rem; }
+  .finance__currency input {
+    width: 72px;
+    font-family: var(--irp-mono);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--irp-text-dim);
   }
 
-  .finance__controls input {
-    width: 76px;
-    padding: 0.5rem 0.7rem;
-    border-radius: var(--irp-r-sm);
-    border: 1px solid var(--irp-line);
-    background: var(--irp-surface-2);
-    color: var(--irp-text);
-    font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: var(--irp-fs-sm);
-    text-transform: uppercase;
-    transition: border-color 0.14s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .finance__controls input:focus {
-    outline: none;
-    border-color: rgba(2, 181, 187, 0.48);
-    box-shadow: 0 0 0 3px rgba(2, 181, 187, 0.1);
-  }
-
-  .finance__controls button {
-    padding: 0.52rem 1.2rem;
-    border-radius: var(--irp-r-md);
-    border: none;
-    background: linear-gradient(135deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
-    color: var(--irp-text-inverse);
-    font-family: inherit;
-    font-size: var(--irp-fs-sm);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(2, 181, 187, 0.3);
-    transition: filter 0.14s cubic-bezier(0.4, 0, 0.2, 1), transform 0.14s cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .finance__controls button:hover:not(:disabled) {
-    filter: brightness(1.06);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(2, 181, 187, 0.4);
-  }
-
-  .finance__controls button:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  .finance__controls button:disabled {
-    opacity: 0.55;
-    cursor: wait;
-  }
-
-  .finance__error {
-    padding: 0.6rem 1rem;
-    border-radius: var(--irp-r-sm);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
-    color: var(--irp-red-600);
-    font-size: var(--irp-fs-sm);
-    font-weight: 600;
-    margin-bottom: 0.8rem;
-  }
-
-  .finance__empty {
-    color: var(--irp-text-dim);
-    font-size: var(--irp-fs-md);
-    font-style: italic;
-    letter-spacing: 0.02em;
-  }
-
-  .finance__cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .card {
-    padding: 1.25rem 1.35rem;
-    border-radius: var(--irp-r-lg);
-    background: var(--irp-surface);
-    border: 1px solid var(--irp-line);
-    border-top: 3px solid var(--irp-line);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
-    transition: box-shadow 0.14s cubic-bezier(0.4, 0, 0.2, 1), transform 0.14s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 10px 28px rgba(0, 0, 0, 0.04);
-    transform: translateY(-2px);
-  }
-
-  .card--won { border-top-color: var(--irp-green-500); }
-  .card--openPipeline { border-top-color: var(--irp-accent); }
-  .card--draft { border-top-color: var(--irp-amber-500); }
-  .card--rate { border-top-color: var(--irp-violet-500); }
-
-  .card h3 {
-    margin: 0;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    color: var(--irp-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .card__hint {
-    margin: 0.3rem 0 0.7rem;
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-text-dim);
-    font-style: italic;
-  }
-
-  .card__big {
-    margin: 0 0 0.85rem;
-    font-size: 1.7rem;
-    font-weight: 800;
-    color: var(--irp-text);
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .card dl {
-    margin: 0;
-    display: grid;
-    gap: 0.32rem;
-    padding-top: 0.7rem;
-    border-top: 1px solid var(--irp-slate-100);
-  }
-
-  .card dl div {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.7rem;
-    font-size: var(--irp-fs-xs);
-  }
-
-  .card dt { color: var(--irp-text-dim); }
-
-  .card dd {
-    margin: 0;
-    color: var(--irp-text-2);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .panel-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-    gap: 1rem;
-  }
-
-  .panel {
-    padding: 1.5rem;
-    border-radius: var(--irp-r-lg);
-    background: var(--irp-surface);
-    border: 1px solid var(--irp-line);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
-    margin-bottom: 1rem;
-  }
-
-  .panel h3 {
-    margin: 0 0 1rem;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    color: var(--irp-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .panel table {
+  .finance__tablewrap { overflow-x: auto; margin: 0 calc(var(--irp-sp-2) * -1); }
+  .finance__table {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--irp-fs-sm);
   }
-
-  .panel thead tr { background: var(--irp-surface-2); }
-
-  .panel th {
-    text-align: left;
-    padding: 0.65rem 0.85rem;
+  .finance__table thead tr { background: var(--irp-surface-2); }
+  .finance__table thead th {
+    text-align: right;
+    padding: 0.6rem 0.85rem;
     color: var(--irp-text-dim);
     font-size: var(--irp-fs-2xs);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.08em;
     white-space: nowrap;
     border-bottom: 1px solid var(--irp-line);
   }
-
-  .panel td {
-    padding: 0.65rem 0.85rem;
+  .finance__table thead th:first-child { text-align: left; }
+  .finance__table td,
+  .finance__table tbody th {
+    padding: 0.6rem 0.85rem;
     color: var(--irp-text-2);
     border-bottom: 1px solid var(--irp-slate-100);
-    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-weight: 500;
   }
-
-  .panel tbody tr { transition: background 0.14s cubic-bezier(0.4, 0, 0.2, 1); }
-  .panel tbody tr:hover { background: var(--irp-bg); }
+  .finance__table tbody th { text-align: left; font-weight: 700; color: var(--irp-text); }
+  .finance__table tbody tr:hover { background: var(--irp-bg); }
+  .finance__table tbody tr:last-child > * { border-bottom: 0; }
 
   .bars {
     list-style: none;
@@ -535,14 +348,12 @@
     display: grid;
     gap: 0.9rem;
   }
-
   .bars__row {
     display: flex;
     justify-content: space-between;
     gap: 0.7rem;
     font-size: var(--irp-fs-sm);
   }
-
   .bars__label {
     color: var(--irp-text-2);
     font-weight: 600;
@@ -550,14 +361,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
   .bars__value {
     color: var(--irp-text);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-
   .bars__track {
     height: 6px;
     margin: 0.35rem 0 0.28rem;
@@ -565,42 +374,28 @@
     background: var(--irp-surface-3);
     overflow: hidden;
   }
-
   .bars__fill {
     height: 100%;
     border-radius: var(--irp-r-full);
     background: linear-gradient(90deg, var(--irp-accent) 0%, var(--irp-accent-hover) 100%);
   }
-
   .bars__sub {
     font-size: var(--irp-fs-xs);
     color: var(--irp-text-dim);
   }
 
-  .panel--skipped {
-    background: var(--irp-surface-2);
-  }
-
-  .panel--skipped ul {
+  .finance__skipped {
     margin: 0;
     padding-left: 1.15rem;
     font-size: var(--irp-fs-sm);
-    color: var(--irp-text-muted);
+    color: var(--irp-text-2);
     display: grid;
-    gap: 0.28rem;
+    gap: 0.35rem;
   }
-
-  .panel__foot {
-    margin: 0.9rem 0 0;
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-text-dim);
-    font-style: italic;
-    line-height: 1.5;
-  }
+  .finance__skipped b { font-variant-numeric: tabular-nums; }
+  .finance__skipped span { color: var(--irp-text-dim); }
 
   @media (max-width: 640px) {
     .finance { padding: 1.5rem 1rem; }
-    .finance__controls { width: 100%; }
-    .panel { padding: 1.15rem; }
   }
 </style>

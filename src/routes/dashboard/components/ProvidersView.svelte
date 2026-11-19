@@ -514,9 +514,9 @@
   <!-- Header -->
   <div class="providers-header">
     <div class="providers-title-group">
-      <h2>🏢 Provider Registry</h2>
+      <h2>Providers</h2>
       <p class="providers-subtitle">
-        Shipping and relocation companies for quote requests
+        The shipping and relocation companies we ask for prices. Add one here and it becomes available when you request quotes.
       </p>
     </div>
     <button class="btn-primary" on:click={() => { showForm = !showForm; editingId = null; form = emptyForm(); error = ''; }}>
@@ -583,10 +583,9 @@
             <button
               type="button"
               class="contact-remove"
-              title="Remove contact"
               aria-label="Remove contact"
               on:click={() => removeContactRow(i)}
-              disabled={form.contacts.length <= 1}
+              disabled={form.contacts.length <= 1} title={form.contacts.length <= 1 ? 'A provider needs at least one contact' : 'Remove contact'}
             >✕</button>
           </div>
         {/each}
@@ -688,7 +687,7 @@
               type="button"
               class="btn-add-field"
               on:click={addCustomFieldRow}
-              disabled={!newCustomFieldName.trim()}
+              disabled={!newCustomFieldName.trim()} title={!newCustomFieldName.trim() ? 'Give the field a name first' : undefined}
             >
               + Add Field
             </button>
@@ -771,9 +770,9 @@
 
   <!-- Table -->
   {#if loading && providers.length === 0}
-    <div class="providers-loading">Loading providers…</div>
+    <div class="providers-loading" role="status">Loading providers…</div>
   {:else if filteredProviders.length === 0}
-    <div class="providers-empty">
+    <div class="providers-empty" role="status">
       {providers.length === 0
         ? 'No providers registered yet. Click "+ Add Provider" to get started.'
         : 'No providers match the current filters.'}
@@ -911,18 +910,9 @@
     flex-wrap: wrap;
   }
 
-  .providers-title-group h2 {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--irp-text);
-  }
+  .providers-title-group h2 { /* shared anatomy */ margin: 0; font-size: 1.375rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--irp-text); }
 
-  .providers-subtitle {
-    margin: 0;
-    font-size: var(--irp-fs-md);
-    color: var(--irp-text-dim);
-  }
+  .providers-subtitle { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   /* ── Buttons ─────────────────────────────────────────────── */
   .btn-primary {

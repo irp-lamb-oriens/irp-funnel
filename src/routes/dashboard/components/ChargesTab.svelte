@@ -174,13 +174,13 @@
   </div>
 
   {#if errorMsg}
-    <p class="ct__error">{errorMsg}</p>
+    <p class="ct__error" role="alert">{errorMsg}</p>
   {/if}
 
   {#if loading && clientInvoices.length === 0 && quoteSummaries.length === 0}
-    <p class="ct__empty">Reading this client&rsquo;s charges&hellip;</p>
+    <p class="ct__empty" role="status">Reading this client&rsquo;s charges&hellip;</p>
   {:else if clientInvoices.length === 0 && quoteSummaries.length === 0}
-    <p class="ct__empty">
+    <p class="ct__empty" role="status">
       No charges yet. Create an invoice from the Quotes tab, or from Finance for
       work that was never quoted.
     </p>
@@ -342,7 +342,7 @@
                       <div class="ct__payments">
                         <h5>Payments received</h5>
                         {#if receivedPayments(inv).length === 0}
-                          <p class="ct__empty">No received payments recorded.</p>
+                          <p class="ct__empty" role="status">No received payments recorded.</p>
                         {:else}
                           <table class="ct__payments-table">
                             <thead>
@@ -425,18 +425,19 @@
   .ct__error {
     padding: 0.55rem 0.9rem;
     border-radius: var(--irp-r-sm);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
-    color: var(--irp-red-600);
+    background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line);
+    color: var(--irp-danger-ink);
     font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
+    font-style: normal;
   }
 
   .ct__empty {
     color: var(--irp-text-dim);
     font-size: var(--irp-fs-sm);
-    font-style: italic;
+    font-style: normal;
     padding: 0.4rem 0;
     max-width: 46ch;
     line-height: 1.55;

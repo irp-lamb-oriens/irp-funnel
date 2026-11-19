@@ -92,11 +92,9 @@
 }
 
 .detail-empty {
-  font-size: var(--irp-fs-sm);
-  color: $text-dim;
+  @include irp-note;
   text-align: center;
   padding: $sp-7 0;
-  font-weight: 500;
 }
 
 /* ── Scheduled drip-email queue (operator control panel) ─────────────────── */
@@ -133,9 +131,7 @@
   }
 
   &__queue-title {
-    font-size: var(--irp-fs-sm);
-    font-weight: 700;
-    color: $text;
+    @include irp-group-title(var(--irp-fs-md));
     margin: 0;
     padding: $sp-3 $sp-4;
     background: $surface-2;
@@ -143,8 +139,7 @@
   }
 
   &__queue-hint {
-    font-size: var(--irp-fs-2xs);
-    color: $text-muted;
+    @include irp-group-desc(var(--irp-fs-xs));
     margin: 0;
     padding: $sp-2 $sp-4;
     background: $surface-2;

@@ -271,7 +271,7 @@
 
         <footer class="iem-foot">
           <button class="iem-btn" on:click={close}>Cancel</button>
-          <button class="iem-btn iem-btn--primary" disabled={exportCount === 0} on:click={runExport}>
+          <button class="iem-btn iem-btn--primary" disabled={exportCount === 0} title={exportCount === 0 ? 'No clients match this selection' : undefined} on:click={runExport}>
             <span class="iem-btn__shine" aria-hidden="true"></span>
             <span class="iem-btn__label">⬇ Download {exportCount} record{exportCount === 1 ? '' : 's'}</span>
           </button>
@@ -364,11 +364,11 @@
             placeholder={'[\n  { "docId": "jane_doe_gmail_com", "dripEmail": "jane@doe.com", "consultations": [ ... ] }\n]'}
             bind:value={rawText}
           ></textarea>
-          {#if parseError}<div class="iem-error" in:fade>⚠️ {parseError}</div>{/if}
+          {#if parseError}<div class="iem-error" in:fade role="alert">⚠️ {parseError}</div>{/if}
         </div>
         <footer class="iem-foot">
           <button class="iem-btn" on:click={close}>Cancel</button>
-          <button class="iem-btn iem-btn--primary" disabled={!rawText.trim()} on:click={runValidate}>
+          <button class="iem-btn iem-btn--primary" disabled={!rawText.trim()} title={!rawText.trim() ? 'Paste or upload the data first' : undefined} on:click={runValidate}>
             <span class="iem-btn__shine" aria-hidden="true"></span>
             <span class="iem-btn__label">Check records →</span>
           </button>
@@ -491,11 +491,11 @@
               </tbody>
             </table>
           </div>
-          {#if parseError}<div class="iem-error" in:fade>⚠️ {parseError}</div>{/if}
+          {#if parseError}<div class="iem-error" in:fade role="alert">⚠️ {parseError}</div>{/if}
         </div>
         <footer class="iem-foot">
           <button class="iem-btn" on:click={resetImport}>← Back</button>
-          <button class="iem-btn iem-btn--primary" disabled={willWrite === 0} on:click={runCommit}>
+          <button class="iem-btn iem-btn--primary" disabled={willWrite === 0} title={willWrite === 0 ? 'Nothing would change, so there is nothing to import' : undefined} on:click={runCommit}>
             <span class="iem-btn__shine" aria-hidden="true"></span>
             <span class="iem-btn__label">Import {willWrite} record{willWrite === 1 ? '' : 's'}</span>
           </button>
@@ -1115,12 +1115,14 @@
 
   .iem-error {
     margin-top: 0.8rem;
-    background: linear-gradient(135deg, var(--irp-surface-3), var(--irp-surface-2));
-    color: var(--irp-red-700);
-    border: 1px solid var(--irp-red-200);
+    background: var(--irp-danger-bg);
+    color: var(--irp-danger-ink);
+    border: 1px solid var(--irp-danger-line);
     border-radius: var(--irp-r-md);
     padding: 0.6rem 0.8rem;
     font-size: var(--irp-fs-sm);
+    font-weight: 600;
+    font-style: normal;
   }
 
   /* ══════════════════════════════════════════════════════════════════════

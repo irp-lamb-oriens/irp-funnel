@@ -60,4 +60,4 @@
 {#if anon}
   <p class="mh-hint">Plus {int(anon)} anonymous visitor{anon === 1 ? '' : 's'} (never listed): {byDevice.map(([d, n]) => `${d} ${n}`).join(' · ')}.</p>
 {/if}
-{#if !units.length}<p class="mh-empty">Nobody yet.</p>{/if}
+{#if !units.length}<p class="mh-empty" role="status">Nobody yet.</p>{/if}

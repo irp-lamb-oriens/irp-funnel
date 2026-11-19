@@ -94,7 +94,7 @@
   <div class="mh-card">
     <h4 class="mh-card__h">Test records · {excludeTest ? 'hidden' : 'shown'} ({tests.length})</h4>
     {#if !v2?.testRecords}
-      <p class="mh-empty">Needs the server update.</p>
+      <p class="mh-empty" role="status">Needs the server update.</p>
     {:else if tests.length}
       <table class="mh-table mh-table--compact sb-cards">
         <thead><tr><th scope="col">Record</th><th scope="col">Caught by</th><th scope="col" class="num">Booked</th><th scope="col" class="num">Cash</th></tr></thead>

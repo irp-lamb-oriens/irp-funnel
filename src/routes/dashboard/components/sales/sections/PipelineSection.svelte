@@ -53,7 +53,7 @@
   <div>
     <h4 class="mh-sub">Open quotes by age <span class="mh-muted">· {book.currency}, largest option per lead</span></h4>
     {#if !book.cubeOk}
-      <p class="mh-empty">Segment data unavailable.</p>
+      <p class="mh-empty" role="status">Segment data unavailable.</p>
     {:else}
       <table class="mh-table mh-table--compact">
         <thead><tr><th scope="col">Age</th><th scope="col" class="num">Quotes</th><th scope="col" class="num">Value</th><th scope="col" class="num">Chance to win</th><th scope="col" class="num">Expected</th></tr></thead>
@@ -84,7 +84,7 @@
         </tbody>
       </table>
     {:else}
-      <p class="mh-empty">No open quotes.</p>
+      <p class="mh-empty" role="status">No open quotes.</p>
     {/if}
   </div>
 </div>
@@ -98,7 +98,7 @@
           <li><button class="sb-name" on:click={() => open1(d.consultationId)} disabled={!d.consultationId}>{d.name}</button><span>{money(d.booked, d.currency)}{#if d.service} · {d.service}{/if}</span></li>
         {/each}
       </ul>
-    {:else}<p class="mh-empty">None.</p>{/if}
+    {:else}<p class="mh-empty" role="status">None.</p>{/if}
   </div>
   <div>
     <h4 class="mh-sub">Lost in {book.rangeLabel} <span class="mh-muted">· {lost.length}</span></h4>
@@ -108,7 +108,7 @@
           <li><button class="sb-name" on:click={() => open1(d.consultationId)} disabled={!d.consultationId}>{d.name}</button><span>{d.firstQuoteTotal ? money(d.firstQuoteTotal, d.currency) : d.firstQuoteOptions ? optionsLabel(d.firstQuoteOptions) : 'no quote'} · {d.cancelledAfterAcceptance ? 'after acceptance' : d.stageLabel ?? '—'}</span></li>
         {/each}
       </ul>
-    {:else}<p class="mh-empty">None.</p>{/if}
+    {:else}<p class="mh-empty" role="status">None.</p>{/if}
   </div>
 </div>
 
@@ -121,7 +121,7 @@
         <tbody>{#each loss.byReason as x}<tr><th scope="row">{x.label}</th><td class="num">{x.deals}</td><td class="num">{money(x.value)}</td></tr>{/each}</tbody>
       </table>
       <p class="mh-hint">Quoted value = the largest option of the first quote. By stage they sat in: {loss.byStage.slice(0, 4).map((x) => `${x.key} ${x.deals}`).join(' · ')}.</p>
-    {:else}<p class="mh-empty">No deals lost after a quote.</p>{/if}
+    {:else}<p class="mh-empty" role="status">No deals lost after a quote.</p>{/if}
     <p class="mh-hint">
       Cancelled after acceptance: {loss.cancelledAfterAcceptance.deals} deal{loss.cancelledAfterAcceptance.deals === 1 ? '' : 's'} ({money(loss.cancelledAfterAcceptance.booked)} booked){#if loss.cancelledAfterAcceptance.rate !== null} · {fmtStat('rate', loss.cancelledAfterAcceptance.rate, wonAll.filter((d) => d.currency === book.currency).length, { num: loss.cancelledAfterAcceptance.deals }).text} of deals won{/if}.
       {#if loss.cancelledAfterAcceptance.deals}<button class="mh-link" on:click={() => onView('cancelled')}>See them →</button>{/if}

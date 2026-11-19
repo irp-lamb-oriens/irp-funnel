@@ -54,7 +54,7 @@
 
 <div class="card-history">
   {#if rows.length === 0}
-    <p class="card-history__empty">No history yet.</p>
+    <p class="card-history__empty" role="status">No history yet.</p>
   {:else}
     {#if hasUndoable}
       <div class="card-history__toolbar">

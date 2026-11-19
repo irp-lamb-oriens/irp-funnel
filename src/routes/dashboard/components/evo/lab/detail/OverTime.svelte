@@ -58,7 +58,7 @@
     <button class="mh-btn mh-btn--sm" aria-pressed={table} on:click={() => (table = !table)}>{table ? 'Chart' : 'Table'}</button>
   </div>
   {#if weekly.every((w) => w.d === null)}
-    <p class="mh-empty">No mature results yet. The first point appears once visitors are {m.lag(windowDays)} days old.</p>
+    <p class="mh-empty" role="status">No mature results yet. The first point appears once visitors are {m.lag(windowDays)} days old.</p>
   {:else}
     <TrendChart labels={weekly.map((w) => w.label)} showTable={table} format={(v) => per100(v)} caption="Cumulative difference by week"
       series={[

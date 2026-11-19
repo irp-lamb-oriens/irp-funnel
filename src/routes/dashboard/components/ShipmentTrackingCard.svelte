@@ -346,7 +346,7 @@
     line-height: 1.5;
   }
   .stc__empty p { margin: 0 0 6px; }
-  .stc__empty-hint { font-size: var(--irp-fs-xs); color: var(--irp-text-faint); }
+  .stc__empty-hint { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); font-style: normal; }
 
   /* Row of cells */
   .stc__row {

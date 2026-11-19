@@ -343,11 +343,7 @@
   }
 
   &__empty {
-    font-size: var(--irp-fs-2xs);
-    font-weight: 600;
-    color: $text-dim;
-    letter-spacing: 0.2px;
-    text-transform: uppercase;
+    @include irp-note;
   }
 }
 

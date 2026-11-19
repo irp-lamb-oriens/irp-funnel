@@ -121,7 +121,7 @@
 
 <div class="fields-accordion-v2">
   {#if entries.length === 0}
-    <p class="fields-accordion-v2__empty">No document fields available.</p>
+    <p class="fields-accordion-v2__empty" role="status">No document fields available.</p>
   {:else}
     {#each entries as [key, value] (key)}
       {@const complex = isComplex(value)}

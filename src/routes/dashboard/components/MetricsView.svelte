@@ -401,7 +401,7 @@
     white-space: nowrap;
   }
   .stage-rating-count { color: var(--irp-text-dim); font-size: var(--irp-fs-xs); margin-left: 2px; }
-  .stage-rating-empty { color: var(--irp-text-dim); font-style: italic; font-size: var(--irp-fs-xs); }
+  .stage-rating-empty { color: var(--irp-text-dim); font-style: normal; font-size: var(--irp-fs-sm); }
   .sales-link {
     background: none;
     border: none;

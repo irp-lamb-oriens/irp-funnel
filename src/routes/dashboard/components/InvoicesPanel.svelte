@@ -212,7 +212,7 @@
   <div class="ip__head">
     <div>
       <h3>Invoices</h3>
-      <p>Bills generated from accepted quotes, and the payments against them.</p>
+      <p>The bills we send clients for accepted quotes, and what has been paid against each one.</p>
     </div>
     <div class="ip__head-actions">
       <button class="ip__reload" on:click={load} disabled={loading}>
@@ -223,7 +223,7 @@
   </div>
 
   {#if errorMsg}
-    <p class="ip__error">{errorMsg}</p>
+    <p class="ip__error" role="alert">{errorMsg}</p>
   {/if}
 
   {#if creating}
@@ -256,9 +256,9 @@
     </div>
   {:else}
     {#if !$invoices}
-      <p class="ip__empty">{loading ? 'Reading the invoices…' : 'No invoices yet.'}</p>
+      <p class="ip__empty" role="status">{loading ? 'Reading the invoices…' : 'No invoices yet. Use “New invoice” to bill an accepted quote.'}</p>
     {:else if $invoices.length === 0}
-      <p class="ip__empty">No invoices yet. Create one from an accepted quote.</p>
+      <p class="ip__empty" role="status">No invoices yet. Use “New invoice” above to bill an accepted quote.</p>
     {:else}
       <div class="ip__search">
         <input
@@ -373,7 +373,7 @@
                     <div class="ip__payments">
                       <h4>Payments received</h4>
                       {#if receivedPayments(inv).length === 0}
-                        <p class="ip__empty">No received payments recorded.</p>
+                        <p class="ip__empty" role="status">No received payments recorded.</p>
                       {:else}
                         <table class="ip__payments-table">
                           <thead>
@@ -428,18 +428,9 @@
     flex-wrap: wrap;
   }
 
-  .ip__head h3 {
-    margin: 0;
-    font-size: var(--irp-fs-lg);
-    font-weight: 800;
-    color: var(--irp-text);
-  }
+  .ip__head h3 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-lg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
 
-  .ip__head p {
-    margin: 0.3rem 0 0;
-    font-size: var(--irp-fs-sm);
-    color: var(--irp-text-dim);
-  }
+  .ip__head p { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   .ip__head-actions {
     display: flex;
@@ -481,18 +472,19 @@
   .ip__error {
     padding: 0.6rem 1rem;
     border-radius: var(--irp-r-sm);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
-    color: var(--irp-red-600);
+    background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line);
+    color: var(--irp-danger-ink);
     font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
+    font-style: normal;
   }
 
   .ip__empty {
     color: var(--irp-text-dim);
-    font-size: var(--irp-fs-md);
-    font-style: italic;
+    font-size: var(--irp-fs-sm);
+    font-style: normal;
     padding: 0.5rem 0;
   }
 

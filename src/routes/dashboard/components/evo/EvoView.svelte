@@ -331,7 +331,7 @@
     <DecisionsLog {decisions} cube={evo} onOpen={selectExperiment} />
     <Operations cube={evo} lab={full} bind:open={opsOpen} />
   {:else if !error}
-    <p class="mh-empty">Loading Evo…</p>
+    <p class="mh-empty" role="status">Loading Evo…</p>
   {/if}
 
   {#if recordFor}

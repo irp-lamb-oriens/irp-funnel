@@ -434,14 +434,7 @@
     margin: 0 0 2px;
   }
 
-  .scm__subtitle {
-    font-size: var(--irp-fs-sm);
-    color: var(--irp-text-dim);
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .scm__subtitle { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; margin: 0; }
 
   .scm__close {
     width: 28px;

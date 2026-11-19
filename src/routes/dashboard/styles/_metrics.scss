@@ -102,10 +102,9 @@
 
 
 .list-empty {
+  @include irp-note;
   text-align: center;
   padding: $sp-7 $sp-4;
-  color: $text-dim;
-  font-size: var(--irp-fs-sm);
 }
 
 .stage-badge {
@@ -442,8 +441,7 @@
 }
 
 .attribution-empty {
-  font-size: var(--irp-fs-xs);
-  color: $text-dim;
+  @include irp-note;
   margin: 0 0 $sp-3;
 }
 

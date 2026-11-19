@@ -674,6 +674,10 @@
     if (e.key !== 'Enter') return;
     lookupClients($searchQuery).catch(() => { /* the typed filter still applies */ });
   }
+
+  // How many board/list filters are switched on — shown next to the filters so a
+  // short list is never mistaken for "that's everyone".
+  $: activeFilterCount = Object.values($filters ?? {}).filter((v) => v !== '' && v != null).length;
 </script>
 
 <svelte:head>
@@ -688,7 +692,7 @@
 
 {#if $isCheckingAuth}
   <!-- ═══════════════════════ INITIAL LOADING STATE ═══════════════════════ -->
-  <div class="dashboard__loading" style="min-height: 100dvh;">
+  <div class="dashboard__loading" style="min-height: 100dvh;" role="status">
     <div class="spinner"></div>
     <p>Authenticating session...</p>
   </div>
@@ -722,7 +726,7 @@
               <span class="login-email-combo__domain">{DOMAIN}</span>
             </div>
           </label>
-          <button type="submit" class="login-btn" disabled={loginLoading || !loginUsername.trim()}>
+          <button type="submit" class="login-btn" disabled={loginLoading || !loginUsername.trim()} title={!loginUsername.trim() ? 'Type your username first' : undefined}>
             {loginLoading ? 'Sending…' : 'Get Login Code'}
           </button>
         </form>
@@ -752,7 +756,7 @@
       {/if}
 
       {#if loginError}
-        <div class="login-error">{loginError}</div>
+        <div class="login-error" role="alert">{loginError}</div>
       {/if}
       {#if loginMessage && loginStep === 'code'}
         <div class="login-success">{loginMessage}</div>
@@ -771,13 +775,13 @@
         <nav class="topbar__nav" class:has-pill={navPill.w > 0} bind:this={navEl} use:tabs={{ label: 'Dashboard views' }}>
           <span class="topbar__nav-pill" aria-hidden="true" style="transform:translateX({navPill.x}px);width:{navPill.w}px"></span>
           {#if allowedViews.includes('board')}
-            <button class:active={$activeView === 'board'} on:click={() => switchView('board')}>Board</button>
+            <button class:active={$activeView === 'board'} on:click={() => switchView('board')} title="Every client as a card, in the column for their current stage">Board</button>
           {/if}
           {#if allowedViews.includes('list')}
-            <button class:active={$activeView === 'list'} on:click={() => switchView('list')}>List</button>
+            <button class:active={$activeView === 'list'} on:click={() => switchView('list')} title="Every client in one sortable table">List</button>
           {/if}
           {#if allowedViews.includes('metrics')}
-            <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')}>Metrics</button>
+            <button class:active={$activeView === 'metrics'} on:click={() => switchView('metrics')} title="How leads, calls and sales are trending">Metrics</button>
           {/if}
           {#if allowedViews.includes('finance')}
             <button class:active={$activeView === 'finance'} on:click={() => switchView('finance')} title="Revenue, provider cost and margin across every quote">Finance</button>
@@ -839,14 +843,17 @@
         <!-- List-section Import/Export of clients as JSON. Kept to the List
               view per the CRM workflow; validated against the Overview fields
               registry and non-destructive on the server. -->
-        <div class="ie-actions">
-          <button class="ie-btn" on:click={() => openImportExport('export')} title="Export clients to JSON">
+        <div class="ie-actions" role="group" aria-label="Import and export clients">
+          <button class="ie-btn" on:click={() => openImportExport('export')} title="Download clients as a file you can keep or edit">
             ⬇ Export
           </button>
-          <button class="ie-btn ie-btn--primary" on:click={() => openImportExport('import')} title="Import clients from JSON">
+          <button class="ie-btn ie-btn--primary" on:click={() => openImportExport('import')} title="Add or update clients from a file. Nothing is deleted.">
             ⬆ Import
           </button>
         </div>
+        <span class="filters-bar__sep" aria-hidden="true"></span>
+        <span class="filters-bar__label" id="filters-label">Show only</span>
+        <div class="filters-bar__group" role="group" aria-labelledby="filters-label">
         <div class="filter-select-wrap">
           <Select
             options={stageFilterOptions()}
@@ -903,7 +910,13 @@
             ariaLabel="Filter by move size"
           />
         </div>
-        <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: '', serviceCategory: ''}}>Clear</button>
+        </div>
+        {#if activeFilterCount > 0}
+          <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: '', serviceCategory: ''}} title="Remove every filter and show all clients">Clear filters</button>
+        {/if}
+        <span class="filters-bar__count" role="status" aria-live="polite">
+          {#if activeFilterCount > 0}{$filteredClients.length} of {$clients.length} clients · {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} on{:else}{$clients.length} clients{/if}
+        </span>
       </div>
     {/if}
 
@@ -911,7 +924,7 @@
     <!-- On the board, the Kanban column skeletons are the loading signal, so the
          standalone spinner is only shown for the other (non-board) views. -->
     {#if $loading && $clients.length === 0 && $activeView !== 'board'}
-      <div class="dashboard__loading">
+      <div class="dashboard__loading" role="status">
         <div class="spinner"></div>
         <p>Loading clients…</p>
       </div>
@@ -919,7 +932,7 @@
 
 
     {#if $error}
-      <div class="dashboard__error">
+      <div class="dashboard__error" role="alert">
         <span>{$error}</span>
         {#if boardLoadError}
           <button class="dashboard__retry" on:click={() => fetchClients()}>Retry</button>
@@ -1091,7 +1104,7 @@
                 </button>
               {/if}
               {#if filteredCards.length === 0 && $clientsLoadedOnce}
-                <div class="board__empty">{colQuery ? 'No matches' : 'No clients'}</div>
+                <div class="board__empty" role="status">{colQuery ? 'No matches' : 'No clients'}</div>
               {/if}
               {/if}
 
@@ -1158,7 +1171,7 @@
             </div>
           {/each}
           {#if $filteredClients.length === 0}
-            <div class="list-empty">No clients found matching filters.</div>
+            <div class="list-empty" role="status">No clients found matching filters.</div>
           {/if}
         </div>
       </div>

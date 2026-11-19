@@ -217,7 +217,7 @@
 </script>
 
 {#if loading && !rows.length}
-  <div class="qp qp--loading" aria-busy="true">Loading payments…</div>
+  <div class="qp qp--loading" aria-busy="true" role="status">Loading payments…</div>
 {:else if error}
   <div class="qp qp--error" role="alert">⚠️ {error} <button type="button" on:click={() => load()}>Retry</button></div>
 {:else if rows.length}
@@ -295,8 +295,8 @@
                 <span class="qp-list__amt">{fmt(p.amount, p.currency)}</span>
                 <span class="qp-list__meta">
                   {[p.methodLabel ?? 'Online', day(p.createdAt), p.invoiceNumber, p.fee || p.otherFees ? `fees ${fmt((p.fee ?? 0) + (p.otherFees ?? 0), p.currency)}` : null].filter(Boolean).join(' · ')}
-                  {#if p.failureMessage && p.status !== 'succeeded'}<br /><span class="qp-list__err">{p.failureMessage}</span>{/if}
-                  {#if p.disputedAt}<br /><span class="qp-list__err">Disputed {day(p.disputedAt)}</span>{/if}
+                  {#if p.failureMessage && p.status !== 'succeeded'}<br /><span class="qp-list__err" role="alert">{p.failureMessage}</span>{/if}
+                  {#if p.disputedAt}<br /><span class="qp-list__err" role="alert">Disputed {day(p.disputedAt)}</span>{/if}
                 </span>
                 <StatusPill status={statusOfPayment(p.status, !!p.disputedAt)} size="sm" />
                 {#if p.dashboardUrl}<a class="qp-link" href={p.dashboardUrl} target="_blank" rel="noopener noreferrer">Stripe ↗</a>{/if}
@@ -365,7 +365,7 @@
     box-shadow: 0 1px 3px rgba(15,23,42,0.05), 0 1px 10px rgba(2,181,187,0.04);
   }
   .qp--loading, .qp--error { font-size: var(--irp-fs-sm); color: var(--irp-text-dim); }
-  .qp--error { color: var(--irp-red-700); }
+  .qp--error { color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   .qp--error button { margin-left: 8px; font: inherit; font-size: var(--irp-fs-xs); cursor: pointer; }
   .qp__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .qp__title { margin: 0; display: flex; align-items: center; gap: 7px; font-size: var(--irp-fs-xs); font-weight: 800; color: var(--irp-text); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -385,7 +385,7 @@
   .qp-card:first-of-type { border-top: 0; margin-top: 0; padding-top: 4px; }
   .qp-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
   .qp-card__name { display: flex; flex-direction: column; min-width: 0; }
-  .qp-card__title { font-size: var(--irp-fs-md); font-weight: 700; color: var(--irp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qp-card__title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
   .qp-card__sub { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); }
 
   .qp-pill { font-size: var(--irp-fs-2xs); font-weight: 800; padding: 3px 10px; border-radius: var(--irp-r-full); white-space: nowrap; }
@@ -425,7 +425,7 @@
   .qp-list li { display: flex; align-items: center; gap: 10px; font-size: var(--irp-fs-sm); padding: 8px 10px; border: 1px solid var(--irp-slate-100); border-radius: var(--irp-r-md); }
   .qp-list__amt { font-weight: 800; color: var(--irp-text); font-variant-numeric: tabular-nums; min-width: 84px; }
   .qp-list__meta { flex: 1; color: var(--irp-text-muted); line-height: 1.4; }
-  .qp-list__err { color: var(--irp-red-700); }
+  .qp-list__err { color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   .qp-chip { font-size: var(--irp-fs-2xs); font-weight: 800; padding: 2px 8px; border-radius: var(--irp-r-full); background: var(--irp-surface-3); color: var(--irp-text-2); }
   .qp-chip--succeeded { background: var(--irp-green-100); color: var(--irp-green-800); }
   .qp-chip--processing { background: var(--irp-surface-3); color: var(--irp-blue-800); }
@@ -447,7 +447,7 @@
   .qp-btn:focus-visible, .qp-link:focus-visible { outline: 2px solid var(--irp-teal-700); outline-offset: 2px; }
 
   .qp-form { margin-top: 10px; padding: 12px; border-radius: var(--irp-r-md); background: var(--irp-surface-2); border: 1px solid var(--irp-line); }
-  .qp-form__hint { margin: 0 0 10px; font-size: var(--irp-fs-xs); color: var(--irp-text-muted); line-height: 1.45; }
+  .qp-form__hint { margin: 0 0 10px; font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.45; font-style: normal; }
   .qp-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px; }
   .qp-form label { display: flex; flex-direction: column; gap: 4px; font-size: var(--irp-fs-xs); font-weight: 700; color: var(--irp-text-2); }
   .qp-form input, .qp-form select { min-height: 34px; padding: 0 10px; border: 1px solid var(--irp-line-strong); border-radius: var(--irp-r-sm); font: inherit; font-size: var(--irp-fs-sm); font-weight: 500; background: var(--irp-surface); color: var(--irp-text); }
@@ -456,5 +456,5 @@
   .qp-form__check input { min-height: auto; width: 16px; height: 16px; accent-color: var(--irp-teal-700); }
   .qp-form__warn { margin: 0 0 10px; padding: 8px 10px; border-radius: var(--irp-r-sm); background: var(--irp-bg); border: 1px solid var(--irp-amber-200); font-size: var(--irp-fs-xs); color: var(--irp-amber-900); }
   .qp-form__warn p { margin: 0 0 6px; line-height: 1.45; }
-  .qp-form__err { margin: 0 0 8px; color: var(--irp-red-700); font-size: var(--irp-fs-xs); }
+  .qp-form__err { margin: 0 0 8px; color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
 </style>

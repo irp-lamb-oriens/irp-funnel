@@ -277,9 +277,9 @@
   </p>
 
   {#if loading}
-    <div class="pr-loading">Loading pricing requests…</div>
+    <div class="pr-loading" role="status">Loading pricing requests…</div>
   {:else if error}
-    <div class="pr-error">⚠️ {error} <button class="pr-retry" on:click={load}>Retry</button></div>
+    <div class="pr-error" role="alert">⚠️ {error} <button class="pr-retry" on:click={load}>Retry</button></div>
   {/if}
 
   <!-- ── Draft authoring ─────────────────────────────────────────────────── -->

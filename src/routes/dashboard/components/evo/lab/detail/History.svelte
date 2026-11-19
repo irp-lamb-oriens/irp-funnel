@@ -40,7 +40,7 @@
     <tbody>{#each mine as d}<tr class:evo-reverted={d.revertedBy}><th scope="row">{String(d.at).slice(0, 10)}</th><td>{d.decision}{d.variant ? ` · ${armLabel(a.def, d.variant)}` : ''}{d.revertedBy ? ' (reverted)' : ''}</td><td>{d.by}</td><td>{d.note}</td></tr>{/each}</tbody>
   </table></div>
 {:else}
-  <p class="mh-empty">No decision recorded for this experiment.</p>
+  <p class="mh-empty" role="status">No decision recorded for this experiment.</p>
 {/if}
 {#if legacy.length}
   <p class="mh-hint">Before the restart this component had {legacy.reduce((s, r) => s + r.visitors, 0)} visitors (descriptive only; see Operations → Before Evo Lab).</p>

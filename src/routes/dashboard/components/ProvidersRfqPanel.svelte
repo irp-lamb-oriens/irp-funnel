@@ -926,7 +926,7 @@
 
 <div class="rfq">
   {#if !client}
-    <p class="rfq-empty">Select a client to compose a provider RFQ.</p>
+    <p class="rfq-empty" role="status">Select a client to compose a provider RFQ.</p>
   {:else}
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
     <header class="rfq-head">
@@ -1034,7 +1034,7 @@
               <div class="rfq-results">
                 {#each searchResults as p (p.id)}
                   {@const hits = regionHits(p)}
-                  <button type="button" class="rfq-result" on:click={() => addProvider(p.id)} disabled={!p.email}>
+                  <button type="button" class="rfq-result" on:click={() => addProvider(p.id)} disabled={!p.email} title={!p.email ? 'This provider has no email address. Add one in Providers.' : undefined}>
                     <span class="rfq-result__main">
                       <span class="rfq-result__name">{p.name}</span>
                       <span class="rfq-result__email">{p.email ?? 'no email on file'}</span>
@@ -1057,7 +1057,7 @@
             <p class="rfq-hint">No active provider matches these filters.</p>
           {/if}
           {#if providersLoading}<p class="rfq-hint">Loading providers…</p>{/if}
-          {#if loadError}<p class="rfq-err">⚠ {loadError}</p>{/if}
+          {#if loadError}<p class="rfq-err" role="alert">⚠ {loadError}</p>{/if}
         </div>
 
         <!-- Language -->
@@ -1318,7 +1318,7 @@
     color: var(--rfq-text);
   }
 
-  .rfq-empty { color: var(--rfq-text-dim); font-size: var(--irp-fs-md); padding: var(--irp-sp-5, 20px); }
+  .rfq-empty { color: var(--irp-text-dim); font-size: var(--irp-fs-sm); padding: var(--irp-sp-5, 20px); font-style: normal; }
 
   .rfq-head { margin-bottom: var(--irp-sp-4, 16px); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .rfq-title { margin: 0 0 var(--irp-sp-1, 4px); font-size: var(--irp-fs-lg); font-weight: 800; color: var(--rfq-text); }
@@ -1355,8 +1355,8 @@
   .rfq-field > span { display: block; font-size: var(--irp-fs-xs); font-weight: 600; color: var(--rfq-text-muted); margin-bottom: 3px; }
   .rfq-field--missing .rfq-input { border-color: var(--rfq-warning); background: var(--irp-bg); }
 
-  .rfq-hint { font-size: var(--irp-fs-xs); color: var(--rfq-text-dim); margin: var(--irp-sp-1, 4px) 0; }
-  .rfq-err { font-size: var(--irp-fs-xs); color: var(--rfq-danger); margin: var(--irp-sp-1, 4px) 0; }
+  .rfq-hint { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); margin: var(--irp-sp-1, 4px) 0; font-style: normal; }
+  .rfq-err { font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); margin: var(--irp-sp-1, 4px) 0; font-weight: 600; font-style: normal; }
 
   .rfq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--irp-sp-2, 8px); }
   .rfq-chip {
@@ -1496,7 +1496,7 @@
   .rfq-toolbar button { border: 1px solid var(--rfq-border); background: var(--rfq-surface); border-radius: var(--irp-r-xs); padding: 3px 10px; font-size: var(--irp-fs-xs); cursor: pointer; color: var(--rfq-text-2); transition: background var(--rfq-t), border-color var(--rfq-t); }
   .rfq-toolbar button:hover { background: var(--rfq-accent-subtle); border-color: var(--rfq-border-focus); }
   .rfq-toolbar__sep { width: 1px; height: 18px; background: var(--rfq-border); margin: 0 4px; }
-  .rfq-toolbar__hint { font-size: var(--irp-fs-2xs); color: var(--rfq-text-dim); margin-left: auto; }
+  .rfq-toolbar__hint { font-size: var(--irp-fs-2xs); color: var(--irp-text-dim); margin-left: auto; font-style: normal; }
   .rfq-toolbar__hint code { background: var(--rfq-surface-3); padding: 1px 4px; border-radius: var(--irp-r-2xs); font-size: var(--irp-fs-2xs); }
 
   .rfq-iframe { width: 100%; height: 460px; border: 1px solid var(--rfq-border); border-radius: var(--irp-r-md); background: var(--irp-surface-3); }

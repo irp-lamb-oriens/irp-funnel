@@ -132,7 +132,7 @@
         <button aria-pressed={state.v === 'table'} on:click={() => (state = { ...state, v: 'table' })}>Table</button>
       </div>
     {/if}
-    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!grouped.length}>Export CSV</button>
+    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!grouped.length} title={!grouped.length ? 'Nothing to export for this selection' : undefined}>Export CSV</button>
   </div>
 </div>
 {#if first}<p class="mh-hint ex-basis">{first.label}: {basisLabel(first)} — {first.def}</p>{/if}
@@ -201,7 +201,7 @@
               </tbody>
             </table>
           {:else}
-            <p class="mh-empty">None.</p>
+            <p class="mh-empty" role="status">None.</p>
           {/if}
         </div>
       {/each}

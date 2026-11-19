@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from './ui/InfoTip.svelte';
   import { tabs } from '../utils/a11yTabs.ts';
   /**
    * FinanceLedgerPanel — what actually happened to the money.
@@ -408,17 +409,17 @@
       Ledger
       {#if $financeLedger}<span class="fl__count">{$financeLedger.entries.length}</span>{/if}
     </button>
-    <button class="fl__reload" data-tab-skip on:click={load} disabled={loading}>
+    <button class="fl__reload" data-tab-skip on:click={load} disabled={loading} aria-busy={loading}>
       {loading ? 'Loading…' : 'Refresh'}
     </button>
   </div>
 
   {#if errorMsg}
-    <p class="fl__error">{errorMsg}</p>
+    <p class="fl__error" role="alert">{errorMsg}</p>
   {/if}
 
   {#if !$financeLedger}
-    <p class="fl__empty">{loading ? 'Reading the accepted quotes…' : 'No data yet.'}</p>
+    <p class="fl__empty" role="status">{loading ? 'Reading the accepted quotes…' : 'Nothing to show yet. Payments and bills appear here once a client accepts a quote.'}</p>
   {:else if tab === 'settlements'}
     <div class="fl__filters">
       <input
@@ -448,22 +449,22 @@
     {@const t = $financeLedger.settlementTotals}
     <section class="fl__cards">
       <article class="c c--in">
-        <h4>Collected</h4>
+        <h4>Collected<InfoTip text="Money clients have actually paid us for accepted quotes." label="About collected" /></h4>
         <p class="c__big">{money(t.collected)}</p>
         <span>of {money(t.billedTotal)} billed</span>
       </article>
       <article class="c c--owed">
-        <h4>Clients still owe</h4>
+        <h4>Clients still owe<InfoTip text="What clients were billed for accepted quotes and have not paid yet." label="About clients still owe" /></h4>
         <p class="c__big">{money(t.clientOutstanding)}</p>
         <span>{t.n - t.fullySettled} of {t.n} quotes open</span>
       </article>
       <article class="c c--out">
-        <h4>We still owe providers</h4>
+        <h4>We still owe providers<InfoTip text="Provider bills on accepted quotes that we have not paid yet." label="About we still owe providers" /></h4>
         <p class="c__big">{money(t.providerOutstanding)}</p>
         <span>{money(t.providerPaid)} already paid</span>
       </article>
       <article class="c c--cash">
-        <h4>Net cash</h4>
+        <h4>Net cash<InfoTip text="Collected from clients, minus what we paid providers, minus card and bank fees." label="About net cash" /></h4>
         <p class="c__big">{money(t.netCashAfterFees ?? t.netCash)}</p>
         <span>after {money(t.fees ?? 0)} in payment fees · margin {money(t.marginAfterFees ?? t.expectedMargin)} after fees</span>
       </article>
@@ -471,7 +472,7 @@
 
     <div class="fl__panel">
       {#if $financeLedger.settlements.length === 0}
-        <p class="fl__empty">No accepted quotes yet.</p>
+        <p class="fl__empty" role="status">No accepted quotes yet.</p>
       {:else}
         <table class="fl__table">
           <thead>
@@ -633,12 +634,12 @@
     </p>
     <section class="fl__cards">
       <article class="c c--in">
-        <h4>Payments received</h4>
+        <h4>Payments received<InfoTip text="The total of the payments in the list below, after your filter." label="About payments received" /></h4>
         <p class="c__big">{money(paymentsTotal)}</p>
         <span>{visiblePayments.length} payment{visiblePayments.length === 1 ? '' : 's'}</span>
       </article>
       <article class="c c--cash">
-        <h4>Clients</h4>
+        <h4>Paying clients</h4>
         <p class="c__big">{paymentsClients}</p>
         <span>with at least one received payment</span>
       </article>
@@ -646,7 +647,7 @@
 
     <div class="fl__panel">
       {#if visiblePayments.length === 0}
-        <p class="fl__empty">No received payments match this filter.</p>
+        <p class="fl__empty" role="status">No received payments match this filter.</p>
       {:else}
         <table class="fl__table">
           <thead>
@@ -683,22 +684,22 @@
     {@const r = $financeLedger}
     <section class="fl__cards">
       <article class="c c--cash">
-        <h4>Left to reinvest</h4>
+        <h4>Left to reinvest<InfoTip text="Margin already in the bank, minus what was spent or invested from it." label="About left to reinvest" /></h4>
         <p class="c__big">{money(r.reinvestable.remaining)}</p>
         <span>{money(r.reinvestable.realisedMargin)} banked, {money(r.reinvestable.spent)} spent</span>
       </article>
       <article class="c c--out">
-        <h4>Expenses</h4>
+        <h4>Expenses<InfoTip text="Running costs recorded in the ledger that are not tied to a quote." label="About expenses" /></h4>
         <p class="c__big">{money(r.totals.expense)}</p>
         <span>{money(r.totals.recurringMonthly)} committed per month</span>
       </article>
       <article class="c c--inv">
-        <h4>Invested</h4>
+        <h4>Invested<InfoTip text="Money put into something expected to pay back, like ads or equipment." label="About invested" /></h4>
         <p class="c__big">{money(r.totals.investment)}</p>
         <span>{money(r.totals.investmentReturn)} earned back</span>
       </article>
       <article class="c c--in">
-        <h4>Other income</h4>
+        <h4>Other income<InfoTip text="Money received that does not come from a client quote." label="About other income" /></h4>
         <p class="c__big">{money(r.totals.income)}</p>
         <span>outside any quote</span>
       </article>
@@ -706,7 +707,10 @@
 
     <div class="fl__panel">
       <div class="fl__panel-head">
-        <h4>Entries</h4>
+        <div>
+          <h4>Ledger entries</h4>
+          <p class="fl__desc">Money in or out that is not part of a client quote: expenses, investments and other income.</p>
+        </div>
         <button class="ed__save" on:click={() => (formOpen = !formOpen)}>
           {formOpen ? 'Cancel' : '+ Add entry'}
         </button>
@@ -751,7 +755,7 @@
       {/if}
 
       {#if r.entries.length === 0}
-        <p class="fl__empty">Nothing recorded yet.</p>
+        <p class="fl__empty" role="status">Nothing recorded yet.</p>
       {:else}
         <table class="fl__table">
           <thead>
@@ -789,7 +793,8 @@
 
     {#if r.byCategory.length > 0}
       <div class="fl__panel">
-        <h4>By category</h4>
+        <h4>Ledger totals by category</h4>
+        <p class="fl__desc fl__desc--gap">The entries above, added up per category.</p>
         <table class="fl__table">
           <thead>
             <tr><th>Type</th><th>Category</th><th>Entries</th><th>Amount</th><th>Earned back</th><th>Net</th><th>ROI</th></tr>
@@ -814,7 +819,7 @@
     {/if}
 
     {#if r.skippedCurrency > 0}
-      <p class="fl__empty">
+      <p class="fl__empty" role="status">
         {r.skippedCurrency} entries are in another currency and are not counted in {r.baseCurrency}.
       </p>
     {/if}
@@ -920,17 +925,18 @@
   .fl__error {
     padding: 0.6rem 1rem;
     border-radius: var(--irp-r-sm);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
-    color: var(--irp-red-600);
+    background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line);
+    color: var(--irp-danger-ink);
     font-size: var(--irp-fs-sm);
     font-weight: 600;
+    font-style: normal;
   }
 
   .fl__empty {
     color: var(--irp-text-dim);
-    font-size: var(--irp-fs-md);
-    font-style: italic;
+    font-size: var(--irp-fs-sm);
+    font-style: normal;
     padding: 0.5rem 0;
   }
 
@@ -956,14 +962,7 @@
   .c--cash { border-top-color: var(--irp-accent); }
   .c--inv { border-top-color: var(--irp-violet-500); }
 
-  .c h4 {
-    margin: 0 0 0.5rem;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    color: var(--irp-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+  .c h4 { /* shared anatomy */ font-size: var(--irp-fs-2xs); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--irp-text-dim); margin: 0 0 0.4rem; display: flex; align-items: center; gap: 0.25rem; }
 
   .c__big {
     margin: 0 0 0.3rem;
@@ -993,16 +992,11 @@
     margin-bottom: 1rem;
   }
 
-  .fl__panel h4 {
-    margin: 0 0 1rem;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    color: var(--irp-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+  .fl__panel h4 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-lg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin-bottom: 1rem; }
 
   .fl__panel-head h4 { margin: 0; }
+  .fl__desc { margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
+  .fl__desc--gap { margin: -0.7rem 0 1rem; }
 
   .fl__table {
     width: 100%;
@@ -1092,18 +1086,13 @@
     padding: 0.5rem 0;
   }
 
-  .ed h5 {
-    margin: 0 0 0.3rem;
-    font-size: var(--irp-fs-xs);
-    font-weight: 800;
-    color: var(--irp-text);
-  }
+  .ed h5 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin-bottom: 0.3rem; }
 
   .ed__hint {
     margin: 0 0 0.6rem;
     font-size: var(--irp-fs-xs);
     color: var(--irp-text-dim);
-    font-style: italic;
+    font-style: normal;
     line-height: 1.5;
   }
 

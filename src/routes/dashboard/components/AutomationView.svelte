@@ -1,4 +1,11 @@
 <script lang="ts">
+  // One plain sentence per tab, shown under the tab row. Tabs that already
+  // open with their own explanation are left out.
+  const TAB_LEDE: Record<string, string> = {
+    stages: 'The columns of the board, in order, and the emails each one sends. Add a rule to a stage to send an email when a client arrives there.',
+    templates: 'The wording of every automatic email. Open one to edit its subject and text.',
+    fields: 'The fields shown at the top of a client record, their order, and which ones the client can see or edit.',
+  };
   import { tabs } from '../utils/a11yTabs.ts';
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
@@ -849,16 +856,16 @@
     <div>
       <h2 class="av-title">Email Automations</h2>
       <p class="av-subtitle">
-        Configure — per pipeline stage — which email fires, under which condition, and whether it
-        sends automatically or waits for you to confirm. The retired “private feedback” columns are
-        now just automatic rules attached to the preceding real stage.
+        For each stage of the board, choose which email goes out, when, and whether it sends by itself
+        or waits for someone to approve it. The old “private feedback” columns are now ordinary rules
+        on the stage that comes before them.
       </p>
     </div>
-    <button class="reload-btn" on:click={loadAll} disabled={loading}>↺ Refresh</button>
+    <button class="reload-btn" on:click={loadAll} disabled={loading} aria-busy={loading}>{loading ? 'Refreshing…' : '↺ Refresh'}</button>
   </div>
 
   {#if error}
-    <div class="av-msg av-msg--error">{error}</div>
+    <div class="av-msg av-msg--error" role="alert">{error}</div>
   {/if}
 
   <div class="av-tabs irp-tabs" use:tabs={{ label: 'Automation sections' }}>
@@ -872,13 +879,13 @@
       🧩 Overview fields
     </button>
     <button class="av-tab" class:av-tab--active={tab === 'recipients'} on:click={() => (tab = 'recipients')}>
-      🚫 Recipients
+      📬 Who gets which email
     </button>
     <button class="av-tab" class:av-tab--active={tab === 'offer'} on:click={() => (tab = 'offer')}>
       🎁 Client offer
     </button>
     <button class="av-tab" class:av-tab--active={tab === 'approvers'} on:click={() => (tab = 'approvers')}>
-      ✅ Approvers
+      ✅ Quote approvers
     </button>
     <button class="av-tab" class:av-tab--active={tab === 'tours'} on:click={() => (tab = 'tours')}>
       🗓️ Tour schedule
@@ -891,12 +898,14 @@
 
 
 
+  {#if TAB_LEDE[tab]}<p class="irp-tab-lede">{TAB_LEDE[tab]}</p>{/if}
+
   {#if loading}
-    <div class="av-loading">Loading automation config…</div>
+    <div class="av-loading" role="status" aria-busy="true">Loading the automation settings…</div>
   {:else if tab === 'templates'}
     <!-- ── Templates (grouped by category, searchable) ────────────────── -->
     {#if templates.length === 0}
-      <div class="av-empty">No email templates found.</div>
+      <div class="av-empty" role="status">No email templates yet. Templates are created by the system when a new kind of email is added; use Refresh if you expected to see some.</div>
     {:else}
       <div class="av-group-search">
         <input
@@ -914,7 +923,7 @@
       </div>
 
       {#if templatesByCategory.length === 0}
-        <div class="av-empty">No templates match your search.</div>
+        <div class="av-empty" role="status">No templates match your search.</div>
       {:else}
         {#each templatesByCategory as group (group.cat)}
           <section class="av-card av-group">
@@ -995,7 +1004,7 @@
     </p>
 
     {#if templates.length === 0 || teamRecipients.length === 0}
-      <div class="av-empty">No email types or team recipients to configure.</div>
+      <div class="av-empty" role="status">No email types or team recipients to configure.</div>
     {:else}
       <div class="av-group-search">
         <input
@@ -1008,7 +1017,7 @@
       </div>
 
       {#if filteredTeamRecipients.length === 0}
-        <div class="av-empty">No teammates match your search.</div>
+        <div class="av-empty" role="status">No teammates match your search.</div>
       {:else}
       <div class="av-recip-list">
         {#each filteredTeamRecipients as tr (tr.email)}
@@ -1148,7 +1157,7 @@
       </div>
 
       {#if approvers.length === 0}
-        <div class="av-empty">No approvers configured — no one can approve quotes.</div>
+        <div class="av-empty" role="status">No approvers configured — no one can approve quotes.</div>
       {:else}
         <ul class="av-approver-list">
           {#each approvers as email (email)}
@@ -1173,10 +1182,9 @@
   {:else if tab === 'tours'}
     <!-- ── Relocation-tour schedule (alternating-week cadence) ─────────── -->
     <p class="av-subtitle" style="margin-bottom:1.1rem">
-      Relocation tours run on an alternating-week cadence (every other week by
-      default). Set the cadence and the Monday that starts a “tour” week — the
-      public tour landing page and the booking gate derive the active weeks from
-      this one place. Every saved change is logged below.
+      Relocation tours run every other week by default. Choose how often they run and
+      which Monday starts a tour week. The public tour page and the booking form both
+      read the dates from here. Every change you save is listed in the change log below.
     </p>
 
     <section class="av-card av-offer">
@@ -1277,8 +1285,8 @@
     <p class="av-subtitle" style="margin-bottom:1.1rem">
       When a client's destination country is in this list, their status page
       shows three extra tabs: Relocation tours, Immigration advice, and
-      Intercultural coaching. Add or remove countries below — matching is
-      case-insensitive and accepts ISO codes (e.g. "CR").
+      Intercultural coaching. Add or remove countries below. You can type the country
+      name or its two-letter code (for example “CR”); capital letters do not matter.
     </p>
 
     <section class="av-card av-offer">
@@ -1312,7 +1320,7 @@
       </div>
 
       {#if destServices.countries.length === 0}
-        <div class="av-empty">No countries configured — the extra tabs are hidden for everyone.</div>
+        <div class="av-empty" role="status">No countries configured — the extra tabs are hidden for everyone.</div>
       {:else}
         <ul class="av-approver-list">
           {#each destServices.countries as name (name)}
@@ -1367,7 +1375,7 @@
       ever falls off the board.
     </p>
 
-    {#if stageError}<div class="av-msg av-msg--error">{stageError}</div>{/if}
+    {#if stageError}<div class="av-msg av-msg--error" role="alert">{stageError}</div>{/if}
 
     <!-- Add a stage -->
     <section class="av-card av-add">
@@ -1393,7 +1401,7 @@
     </section>
 
     {#if activeStages.length === 0}
-      <div class="av-empty">No stages configured yet.</div>
+      <div class="av-empty" role="status">No stages configured yet.</div>
     {:else}
       {#each activeStages as stage, i (stage.id)}
         <section class="av-card av-stage-card">
@@ -1606,7 +1614,7 @@
         {:else}
           <p class="av-modal-note">This column has no clients. It can be deleted safely.</p>
         {/if}
-        {#if deleteError}<div class="av-msg av-msg--error av-msg--sm">{deleteError}</div>{/if}
+        {#if deleteError}<div class="av-msg av-msg--error av-msg--sm" role="alert">{deleteError}</div>{/if}
       </div>
       <footer class="av-drawer__foot">
         <button class="reload-btn" on:click={closeDeleteModal}>Cancel</button>
@@ -1643,11 +1651,11 @@
           </select>
         </label>
         {#if migrateResult}<div class="av-msg av-msg--sm" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">{migrateResult}</div>{/if}
-        {#if migrateError}<div class="av-msg av-msg--error av-msg--sm">{migrateError}</div>{/if}
+        {#if migrateError}<div class="av-msg av-msg--error av-msg--sm" role="alert">{migrateError}</div>{/if}
       </div>
       <footer class="av-drawer__foot">
         <button class="reload-btn" on:click={closeMigrateModal}>Close</button>
-        <button class="save-btn" on:click={confirmMigrate} disabled={migrateBusy || migrateClientCount === 0}>
+        <button class="save-btn" on:click={confirmMigrate} disabled={migrateBusy || migrateClientCount === 0} title={migrateClientCount === 0 ? 'There are no clients in this stage to move' : undefined}>
           {migrateBusy ? 'Moving…' : 'Move all clients'}
         </button>
       </footer>
@@ -1727,7 +1735,7 @@
       </header>
       <div class="av-modal__body av-modal__body--preview">
         {#if recipientPreviewLoading}
-          <div class="av-loading">Rendering preview…</div>
+          <div class="av-loading" role="status">Rendering preview…</div>
         {:else}
           <div class="av-preview-frame">{@html recipientPreviewHtml}</div>
         {/if}
@@ -1760,20 +1768,8 @@
     gap: 1.25rem;
     margin-bottom: 1.5rem;
   }
-  .av-title {
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: var(--irp-text);
-    margin: 0 0 0.3rem;
-    letter-spacing: -0.025em;
-  }
-  .av-subtitle {
-    margin: 0;
-    color: var(--irp-text-dim);
-    font-size: var(--irp-fs-sm);
-    max-width: 680px;
-    line-height: 1.5;
-  }
+  .av-title { /* shared anatomy */ margin: 0; font-size: 1.375rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--irp-text); }
+  .av-subtitle { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   /* ── Tabs (mirrors .admin-tabs) ─────────────────────────────────────── */
 
@@ -1787,13 +1783,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
     overflow: auto;
   }
-  .av-card-title {
-    margin: 0 0 0.9rem;
-    font-size: var(--irp-fs-lg);
-    font-weight: 700;
-    color: var(--irp-text);
-    letter-spacing: -0.01em;
-  }
+  .av-card-title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-lg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
   .av-loading,
   .av-empty {
     text-align: center;
@@ -1954,12 +1944,7 @@
     font-weight: 800;
     flex-shrink: 0;
   }
-  .av-group__title {
-    font-size: var(--irp-fs-md);
-    font-weight: 700;
-    color: var(--irp-text);
-    letter-spacing: -0.01em;
-  }
+  .av-group__title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
   .av-group .av-table-wrap { border: none; border-radius: 0; }
 
   /* ── Recipients whitelist (list of lists) ──────────────────────────── */

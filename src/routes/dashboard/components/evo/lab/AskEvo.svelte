@@ -79,7 +79,7 @@
   <form class="evo-ask" on:submit|preventDefault={() => ask()}>
     <label class="sr-only" for="evo-ask-q">Question</label>
     <input id="evo-ask-q" class="mh-input" placeholder="e.g. Which hero version gets more leads on mobile?" bind:value={q} disabled={busy} maxlength="300" />
-    <button class="mh-btn mh-btn--primary" type="submit" disabled={busy || !q.trim()}>{busy ? 'Thinking…' : 'Ask'}</button>
+    <button class="mh-btn mh-btn--primary" type="submit" disabled={busy || !q.trim()} title={!q.trim() ? 'Type a question first' : undefined}>{busy ? 'Thinking…' : 'Ask'}</button>
   </form>
   <div class="mh-filters evo-ask__examples">
     {#each EXAMPLES as e}<button class="mh-btn mh-btn--sm" on:click={() => ask(e)} disabled={busy}>{e}</button>{/each}

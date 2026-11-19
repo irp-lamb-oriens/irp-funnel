@@ -9,7 +9,11 @@
  *   4. removes the outline in a :focus-visible rule without drawing a ring
  *      another way (box-shadow) — keyboard users would lose their place
  *
+ *   5. uses <GroupHeader> without a description
+ *   6. shows an error / empty / loading message with no ARIA role
+ *
  * Most violations are fixed automatically by:  python3 scripts/dashboard-tokenize.py
+ * (rules 1–3) and python3 scripts/dashboard-states.py (rule 6).
  * The few colours that are deliberately off-palette are listed, with a reason,
  * in ALLOWED_HEX below. That list may only shrink.
  */
@@ -64,7 +68,7 @@ type Hit = { file: string; line: string };
 const scan = () => {
   const out = { hex: [] as Hit[], font: [] as Hit[], radius: [] as Hit[], focus: [] as Hit[] };
   for (const path of files(ROOT)) {
-    const file = relative(ROOT, path).replaceAll('\\', '/');
+    const file = relative(ROOT, path).split('\\').join('/');
     if (EXEMPT.has(file)) continue;
     const css = styleOf(path);
     const allowed = ALLOWED_HEX[file] ?? {};
@@ -96,6 +100,35 @@ const scan = () => {
   return out;
 };
 
+// ── Comprehension rules (markup) ─────────────────────────────────────────────
+// 5. Every <GroupHeader> explains itself: a group with a title and no sentence
+//    of context is what the component exists to prevent.
+// 6. Every error / empty / loading message is announced: it carries a role
+//    (fix automatically with: python3 scripts/dashboard-states.py).
+const scanMarkup = () => {
+  const out = { noDesc: [] as Hit[], noRole: [] as Hit[] };
+  for (const path of files(ROOT)) {
+    if (!path.endsWith('.svelte')) continue;
+    const file = relative(ROOT, path).split('\\').join('/');
+    if (file.startsWith('components/ui/') || EXEMPT.has(file)) continue;
+    const src = readFileSync(path, 'utf8');
+    const end = src.search(/<style[\s>]/);
+    const start = src.lastIndexOf('</script>', end < 0 ? src.length : end);
+    const markup = src.slice(start < 0 ? 0 : start, end < 0 ? src.length : end);
+    for (const m of markup.matchAll(/<GroupHeader\b[^>]*>/g)) {
+      if (!/\bdescription=/.test(m[0]) && !/slot="description"/.test(markup.slice(m.index!, m.index! + 600))) {
+        out.noDesc.push({ file, line: m[0].replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+    for (const m of markup.matchAll(/<(p|div|span)(\s[^<>]*?)?\sclass="([^"{}]*)"([^<>]*?)>/g)) {
+      if (/role=|aria-hidden/.test(m[0])) continue;
+      const stateful = m[3].split(/\s+/).some((c) => /(?:__|-)(?:error|err|empty|loading)(?:-state|-msg|-text)?$/.test(c));
+      if (stateful) out.noRole.push({ file, line: m[0].slice(0, 120) });
+    }
+  }
+  return out;
+};
+
 const fmt = (hits: Hit[]) => hits.slice(0, 25).map((h) => `  ${h.file}: ${h.line}`).join('\n');
 
 describe('dashboard styles stay on the design tokens', () => {
@@ -108,6 +141,13 @@ describe('dashboard styles stay on the design tokens', () => {
   });
   it('uses the radius scale (var(--irp-r-…))', () => {
     expect(r.radius, `Off-scale radii:\n${fmt(r.radius)}`).toEqual([]);
+  });
+  const mk = scanMarkup();
+  it('gives every <GroupHeader> a plain-language description', () => {
+    expect(mk.noDesc, `GroupHeader without a description:\n${fmt(mk.noDesc)}`).toEqual([]);
+  });
+  it('announces every error / empty / loading message (role=alert|status)', () => {
+    expect(mk.noRole, `Missing role — run scripts/dashboard-states.py:\n${fmt(mk.noRole)}`).toEqual([]);
   });
   it('never removes the keyboard focus outline', () => {
     expect(r.focus, `outline: none inside :focus-visible:\n${fmt(r.focus)}`).toEqual([]);

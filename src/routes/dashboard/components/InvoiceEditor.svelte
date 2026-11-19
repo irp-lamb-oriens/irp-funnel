@@ -473,7 +473,7 @@
     </div>
 
     {#if errorMsg}
-      <p class="ie__error">{errorMsg}</p>
+      <p class="ie__error" role="alert">{errorMsg}</p>
     {/if}
 
     {#if !invoice}
@@ -496,7 +496,7 @@
           <select
             bind:value={selectedQuoteId}
             on:change={onQuoteChange}
-            disabled={!selectedClientId || loadingQuotes}
+            disabled={!selectedClientId || loadingQuotes} title={!selectedClientId ? 'Choose a client first' : undefined}
           >
             <option value="">No quote — custom charge</option>
             {#each billableQuotes as q (q.quoteId)}
@@ -625,7 +625,7 @@
       </div>
 
       {#if lineItems.length === 0}
-        <p class="ie__empty">No line items yet. Add one to start building the invoice.</p>
+        <p class="ie__empty" role="status">No line items yet. Add one to start building the invoice.</p>
       {:else}
         {#each lineItems as li (li.id)}
           <div class="ie__line">
@@ -782,12 +782,13 @@
   .ie__error {
     padding: 0.6rem 1rem;
     border-radius: var(--irp-r-sm);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
-    color: var(--irp-red-600);
+    background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line);
+    color: var(--irp-danger-ink);
     font-size: var(--irp-fs-sm);
     font-weight: 600;
     margin-bottom: 0.8rem;
+    font-style: normal;
   }
 
   .ie__grid {
@@ -867,6 +868,7 @@
     color: var(--irp-text-dim);
     font-size: var(--irp-fs-sm);
     line-height: 1.5;
+    font-style: normal;
   }
 
   .ie__quote {
@@ -1071,7 +1073,7 @@
   .ie__empty {
     color: var(--irp-text-dim);
     font-size: var(--irp-fs-sm);
-    font-style: italic;
+    font-style: normal;
     padding: 0.5rem 0;
   }
 

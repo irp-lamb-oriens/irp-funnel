@@ -52,7 +52,7 @@
         </table></div>
         <p class="mh-hint">{scan.tested} audience tests run; {shown.length} survive false-discovery control. Effects are shrunk toward the overall effect.</p>
       {:else if scan.tested}
-        <p class="mh-empty">No audience-specific effect ({scan.tested} tests run). The versions work the same for everyone, as far as we can tell.</p>
+        <p class="mh-empty" role="status">No audience-specific effect ({scan.tested} tests run). The versions work the same for everyone, as far as we can tell.</p>
       {/if}
       {#each scan.locked as l}
         <LockedPanel title="{defOf(l.componentKey).title}: audience check" need="Unlocks at {AUDIENCE_RULES.unlockConversions} conversions on the deciding metric, with {AUDIENCE_RULES.minPerArm}+ visitors per version in an audience." have={l.have} target={l.need} />
@@ -70,11 +70,11 @@
             <tbody>{#each splits.slice(0, 10) as r}<tr><th scope="row">{r.value}</th>{#each Object.values(r.arms) as c}<td class="num">{int(c.leads)} · {c.leads ? pct(c.won / c.leads, 0) : '—'}</td>{/each}</tr>{/each}</tbody>
           </table></div>
         {:else}
-          <p class="mh-empty">No leads credited to this test yet.</p>
+          <p class="mh-empty" role="status">No leads credited to this test yet.</p>
         {/if}
         <p class="mh-hint">The version can change who becomes a lead, so these splits describe the leads; they don't prove a version works better for an origin or budget.</p>
       {:else}
-        <p class="mh-empty">Select a web or chat experiment above.</p>
+        <p class="mh-empty" role="status">Select a web or chat experiment above.</p>
       {/if}
     </div>
   </div>

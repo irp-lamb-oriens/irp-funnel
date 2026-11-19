@@ -26,7 +26,7 @@
 </script>
 
 {#if !book.cubeOk}
-  <p class="mh-empty">Segment data unavailable.</p>
+  <p class="mh-empty" role="status">Segment data unavailable.</p>
 {:else}
   <div class="sb-presets" role="group" aria-label="Preset questions">
     {#each PRESETS as p}

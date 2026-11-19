@@ -1295,7 +1295,7 @@
   </div>
 
   {#if loadingQuote}
-    <div class="quote-editor__loading">
+    <div class="quote-editor__loading" role="status">
       <div class="qe-spinner"></div>
       <span>Loading…</span>
     </div>
@@ -1362,7 +1362,7 @@
         </select>
 
         {#if serviceTypeError}
-          <p class="qe-field-error">⚠ Service type is required before saving this quote.</p>
+          <p class="qe-field-error" role="alert">⚠ Service type is required before saving this quote.</p>
         {:else if insightsHint}
           <p class="qe-field-hint">{refreshingInsights ? '⏳' : 'ℹ️'} {insightsHint}</p>
         {/if}
@@ -1620,7 +1620,7 @@
                                 bind:value={providerSearchQuery}
                                 on:input={onProviderSearchInput}
                               />
-                              {#if providerSearchLoading}<div class="qe-prov-pop__loading">Searching…</div>{/if}
+                              {#if providerSearchLoading}<div class="qe-prov-pop__loading" role="status">Searching…</div>{/if}
                               {#if providerSearchResults.length > 0}
                                 <div class="qe-prov-pop__results">
                                   {#each providerSearchResults as provider (provider.id)}
@@ -1663,9 +1663,9 @@
                 </table>
               </div>
             {:else}
-              <div class="qe-group__empty">
+              <div class="qe-group__empty" role="status">
                 <span class="qe-group__empty-icon" aria-hidden="true">⤵</span>
-                <span class="qe-group__empty-text">Drag a line here, or add a new one</span>
+                <span class="qe-group__empty-text" role="status">Drag a line here, or add a new one</span>
               </div>
             {/if}
             <button type="button" class="qe-add-line-btn" on:click={() => addLine(g.groupId)}>
@@ -1790,7 +1790,7 @@
           </div>
 
           {#if scheduleOver}
-            <p class="qe-field-error">⚠ Segments must total no more than 100%.</p>
+            <p class="qe-field-error" role="alert">⚠ Segments must total no more than 100%.</p>
           {:else}
             <p class="qe-field-hint">
               The first segment is the reservation. The split above is recorded in the signed
@@ -1823,7 +1823,7 @@
           rows="4"
           bind:value={clientDescription}
         ></textarea>
-        {#if descError}<p class="qe-field-hint qe-field-hint--err">{descError}</p>{/if}
+        {#if descError}<p class="qe-field-hint qe-field-hint--err" role="alert">{descError}</p>{/if}
         <p class="qe-field-hint">Describe the scope shown to the client — or generate it with AI. Providers, costs, and margins are never shown.</p>
       </div>
 
@@ -1841,7 +1841,7 @@
 
       <!-- Error message -->
       {#if errorMsg}
-        <div class="qe-error">{errorMsg}</div>
+        <div class="qe-error" role="alert">{errorMsg}</div>
       {/if}
 
       <!-- Approval workflow section -->
@@ -1919,7 +1919,7 @@
                 <div class="changes-request-box">
                   <textarea bind:value={changesComment} placeholder="Describe what changes are needed..." rows="3"></textarea>
                   <div class="btn-row">
-                    <button class="btn-changes" on:click={handleRequestChanges} disabled={!changesComment.trim() || saving}>
+                    <button class="btn-changes" on:click={handleRequestChanges} disabled={!changesComment.trim() || saving} title={!changesComment.trim() ? 'Say what needs to change first' : undefined}>
                       Submit change request
                     </button>
                     <button class="btn-cancel-small" on:click={() => { showChangesRequest = false; changesComment = ''; }}>
@@ -1990,7 +1990,7 @@
           <!-- Add comment -->
           <div class="add-comment-section">
             <input type="text" bind:value={newCommentText} placeholder="Add a comment..." on:keydown={e => e.key === 'Enter' && handleAddComment()} />
-            <button class="btn-comment" on:click={handleAddComment} disabled={!newCommentText.trim() || saving}>
+            <button class="btn-comment" on:click={handleAddComment} disabled={!newCommentText.trim() || saving} title={!newCommentText.trim() ? 'Write a comment first' : undefined}>
               💬
             </button>
           </div>
@@ -2029,7 +2029,7 @@
                 types below — they appear in the selector for every quote.
               </p>
 
-              {#if svcError}<p class="qe-svc-error">⚠ {svcError}</p>{/if}
+              {#if svcError}<p class="qe-svc-error" role="alert">⚠ {svcError}</p>{/if}
 
               <!-- Built-in (locked) -->
               <div class="qe-svc-section-label">Built-in</div>
@@ -2046,11 +2046,11 @@
               <!-- Custom (editable) -->
               <div class="qe-svc-section-label">
                 Custom
-                {#if serviceTypesLoading}<span class="qe-svc-loading">· loading…</span>{/if}
+                {#if serviceTypesLoading}<span class="qe-svc-loading" role="status">· loading…</span>{/if}
               </div>
               <div class="qe-svc-list">
                 {#if svcEdits.length === 0}
-                  <div class="qe-svc-empty">No custom service types yet. Add one below ↓</div>
+                  <div class="qe-svc-empty" role="status">No custom service types yet. Add one below ↓</div>
                 {:else}
                   {#each svcEdits as row (row.serviceTypeId)}
                     <div class="qe-svc-row">
@@ -2099,15 +2099,15 @@
                 appear in every quote's group label chooser.
               </p>
 
-              {#if labelError}<p class="qe-svc-error">⚠ {labelError}</p>{/if}
+              {#if labelError}<p class="qe-svc-error" role="alert">⚠ {labelError}</p>{/if}
 
               <div class="qe-svc-section-label">
                 Your labels
-                {#if labelsLoading}<span class="qe-svc-loading">· loading…</span>{/if}
+                {#if labelsLoading}<span class="qe-svc-loading" role="status">· loading…</span>{/if}
               </div>
               <div class="qe-svc-list">
                 {#if labelEdits.length === 0}
-                  <div class="qe-svc-empty">No labels yet. Add one below ↓</div>
+                  <div class="qe-svc-empty" role="status">No labels yet. Add one below ↓</div>
                 {:else}
                   {#each labelEdits as row (row.labelId)}
                     <div class="qe-svc-row">
@@ -2157,9 +2157,9 @@
                   <button type="button" class="qe-tmpl-newbtn" class:is-active={tmplEditingId === null} on:click={openCreateTemplate}>+ New</button>
                 </div>
                 {#if lineTemplatesLoading}
-                  <div class="qe-tmpl-empty">Loading…</div>
+                  <div class="qe-tmpl-empty" role="status">Loading…</div>
                 {:else if lineTemplates.length === 0}
-                  <div class="qe-tmpl-empty">No templates yet. Create your first one →</div>
+                  <div class="qe-tmpl-empty" role="status">No templates yet. Create your first one →</div>
                 {:else}
                   <div class="qe-tmpl-list">
                     {#each lineTemplates as t (t.templateId)}
@@ -2224,7 +2224,7 @@
                     bind:value={tmplDescription}
                   ></textarea>
                 </div>
-                {#if tmplError}<p class="qe-field-error">⚠ {tmplError}</p>{/if}
+                {#if tmplError}<p class="qe-field-error" role="alert">⚠ {tmplError}</p>{/if}
 
               </div>
             </div>
@@ -2990,8 +2990,9 @@
   }
   .contract-section__hint {
     font-size: var(--irp-fs-xs);
-    color: var(--irp-green-700);
+    color: var(--irp-text-dim);
     line-height: 1.45;
+    font-style: normal;
   }
   .btn-download-contract {
     background: linear-gradient(135deg, var(--irp-green-600) 0%, var(--irp-green-700) 100%);
@@ -3028,6 +3029,7 @@
     color: var(--irp-text-dim);
     margin: 0;
     font-weight: 500;
+    font-style: normal;
   }
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -3208,14 +3210,7 @@
     flex-direction: column;
     gap: 8px;
   }
-  .section-title {
-    font-size: var(--irp-fs-2xs);
-    font-weight: 700;
-    color: var(--irp-text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: 0 0 4px;
-  }
+  .section-title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin: 0 0 4px; }
 
   .comment-item {
     background: var(--irp-surface);
@@ -3354,20 +3349,25 @@
   .qe-select--error {
     border-color: var(--irp-red-500) !important;
     box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important;
+    color: var(--irp-danger-ink);
+    font-size: var(--irp-fs-sm);
+    font-weight: 600;
+    font-style: normal;
   }
   .qe-field-error {
     margin: 5px 0 0;
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-red-600);
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-danger-ink);
     font-weight: 600;
     animation: qe-shake 0.3s ease;
+    font-style: normal;
   }
   @keyframes qe-shake {
     0%,100% { transform: translateX(0); }
     25%      { transform: translateX(-4px); }
     75%      { transform: translateX(4px); }
   }
-  .qe-field-hint { margin: 5px 0 0; font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.4; }
+  .qe-field-hint { margin: 5px 0 0; font-size: var(--irp-fs-xs); color: var(--irp-text-dim); line-height: 1.4; font-style: normal; }
   .qe-insights-spinner {
     display: inline-block;
     width: 12px; height: 12px;
@@ -3468,7 +3468,7 @@
   }
   .qe-finance-value--accent { color: var(--irp-teal-500); }
   .qe-finance-value--earn   { color: var(--irp-green-500); }
-  .qe-finance-hint { font-size: var(--irp-fs-2xs); color: var(--irp-text-faint); font-weight: 500; }
+  .qe-finance-hint { font-size: var(--irp-fs-2xs); color: var(--irp-text-dim); font-weight: 500; font-style: normal; }
 
   /* ── Options footer: one row per option instead of a summed total ───── */
   .qe-options-footer {
@@ -3775,7 +3775,7 @@
     overflow-y: auto;
   }
   .qe-svc-intro { margin: 0; font-size: var(--irp-fs-sm); line-height: 1.5; color: var(--qe-text-muted); }
-  .qe-svc-error { margin: 0; font-size: var(--irp-fs-sm); font-weight: 600; color: var(--qe-danger); }
+  .qe-svc-error { margin: 0; font-size: var(--irp-fs-sm); font-weight: 600; color: var(--irp-danger-ink); font-style: normal; }
   .qe-svc-section-label {
     margin-top: 4px;
     font-size: var(--irp-fs-2xs);
@@ -3788,10 +3788,11 @@
   .qe-svc-list { display: flex; flex-direction: column; gap: 6px; }
   .qe-svc-empty {
     font-size: var(--irp-fs-sm);
-    color: var(--qe-text-muted);
+    color: var(--irp-text-dim);
     padding: 8px 10px;
     border: 1px dashed var(--qe-border);
     border-radius: var(--qe-r-sm);
+    font-style: normal;
   }
   .qe-svc-row {
     display: flex;
@@ -3895,6 +3896,7 @@
     color: var(--irp-text-dim); font-size: var(--irp-fs-sm); font-weight: 600;
     background: repeating-linear-gradient(45deg, var(--irp-surface-2), var(--irp-surface-2) 10px, var(--irp-surface-3) 10px, var(--irp-surface-3) 20px);
     transition: border-color .16s ease, color .16s ease, background .16s ease;
+    font-style: normal;
   }
   .qe-group--dropactive .qe-group__empty {
     border-color: rgba(2,181,187,.7); color: var(--irp-accent-ink);
@@ -3926,7 +3928,7 @@
     display: inline-block; animation: qeAiSpin .7s linear infinite;
   }
   @keyframes qeAiSpin { to { transform: rotate(360deg); } }
-  .qe-field-hint--err { color: var(--irp-red-600); font-weight: 600; }
+  .qe-field-hint--err { color: var(--irp-danger-ink); font-weight: 600; font-size: var(--irp-fs-sm); font-style: normal; }
 
   /* ── Unsaved-draft restored banner ──────────────────────────────────────── */
   .qe-draft-banner {
@@ -4091,9 +4093,10 @@
 
   .qe-tmpl-empty {
     padding: 18px 14px;
-    color: var(--qe-text-dim);
-    font-size: var(--irp-fs-xs);
+    color: var(--irp-text-dim);
+    font-size: var(--irp-fs-sm);
     line-height: 1.5;
+    font-style: normal;
   }
 
   .qe-tmpl-list {
@@ -4201,7 +4204,7 @@
   .qe-tmpl-form__row { display: flex; gap: 10px; align-items: flex-end; }
   .qe-tmpl-form__field { display: flex; flex-direction: column; gap: 5px; }
   .qe-tmpl-form__field--grow { flex: 1; }
-  .qe-tmpl-form__hint { text-transform: none; letter-spacing: 0; color: var(--qe-text-faint); font-weight: 600; margin-left: 4px; }
+  .qe-tmpl-form__hint { text-transform: none; letter-spacing: 0; color: var(--irp-text-dim); font-weight: 600; margin-left: 4px; font-style: normal; }
   .qe-tmpl-textarea {
     font-family: var(--qe-mono);
     font-size: var(--irp-fs-sm);

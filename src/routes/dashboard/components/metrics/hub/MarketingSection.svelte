@@ -58,7 +58,7 @@
   <BarList rows={barRows} labelHeader={FIELDS.find((f) => f.key === field)?.label} valueLabel="Leads" columns={['Win rate', 'Show rate', 'Booked / lead', 'Margin / lead']} selectable caption="Lead economics by {field}"
     on:select={(e) => addFilter({ dim: field, values: [e.detail.key] })} />
 {:else}
-  <p class="mh-empty">No leads in this period.</p>
+  <p class="mh-empty" role="status">No leads in this period.</p>
 {/if}
 <div class="mk-slot"><slot /></div>
 

@@ -1117,7 +1117,7 @@
           class="posts-view__btn posts-view__btn--preview"
           on:click={isWebPost ? openArticlePreview : openPreview}
 
-          disabled={saving || !bodyHtml.trim()}
+          disabled={saving || !bodyHtml.trim()} title={!bodyHtml.trim() ? 'Write the post first' : undefined}
         >👁 Preview</button>
 
         <button
@@ -1131,13 +1131,13 @@
             class="posts-view__btn posts-view__btn--schedule"
             on:click={publishArticle}
 
-            disabled={saving || !title.trim() || !bodyHtml.trim() || !slug.trim()}
+            disabled={saving || !title.trim() || !bodyHtml.trim() || !slug.trim()} title={!title.trim() || !bodyHtml.trim() || !slug.trim() ? 'A post needs a title, some text and a web address (slug)' : undefined}
           >{saving ? 'Publishing…' : '🌐 Publish'}</button>
         {:else}
           <button
             class="posts-view__btn posts-view__btn--schedule"
             on:click={schedulePost}
-            disabled={saving || !title.trim() || !bodyHtml.trim()}
+            disabled={saving || !title.trim() || !bodyHtml.trim()} title={!title.trim() || !bodyHtml.trim() ? 'A post needs a title and some text' : undefined}
           >{saving ? 'Scheduling…' : (selectedPost?.status === 'dispatched' ? '📅 Reschedule' : '📅 Schedule')}</button>
           <button
             class="posts-view__btn posts-view__btn--sendnow"

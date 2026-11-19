@@ -182,9 +182,9 @@
     {/if}
   </div>
 
-  {#if error}<div class="sg__err">{error}</div>{/if}
+  {#if error}<div class="sg__err" role="alert">{error}</div>{/if}
   {#if loading}
-    <div class="sg__loading">Loading gates…</div>
+    <div class="sg__loading" role="status">Loading gates…</div>
   {/if}
 
   <!-- ── New gate draft ──────────────────────────────────────────────────── -->
@@ -251,7 +251,7 @@
 
   <!-- ── Existing gates, grouped by stage ────────────────────────────────── -->
   {#if !loading && rules.length === 0 && !draftOpen}
-    <div class="sg__empty">No move-in gates yet. Moves are never blocked until you add one.</div>
+    <div class="sg__empty" role="status">No move-in gates yet. Moves are never blocked until you add one.</div>
   {/if}
 
   {#each Object.keys(rulesByStage) as stageId (stageId)}

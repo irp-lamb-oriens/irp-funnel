@@ -593,7 +593,7 @@
           </div>
 
           {#if transcriptError}
-            <div class="pad-error">⚠️ {transcriptError}</div>
+            <div class="pad-error" role="alert">⚠️ {transcriptError}</div>
           {/if}
 
           <div class="pad-wrap">
@@ -674,13 +674,13 @@
 
         <div class="review-header">
           <div>
-            <h2>Review &amp; Create</h2>
+            <h2>Check the details, then create</h2>
             {#if extracted && !extractError}
               <p class="review-sub">✨ AI filled <strong>{aiFilledFields.size}</strong> field{aiFilledFields.size !== 1 ? 's' : ''}</p>
             {:else if extractError}
-              <p class="review-sub review-sub-err">AI issue — fill manually</p>
+              <p class="review-sub review-sub-err" role="alert">We couldn’t read the dictation. Please fill in the fields by hand.</p>
             {:else}
-              <p class="review-sub">Fill in the client details</p>
+              <p class="review-sub">Fill in what you know. You can add the rest later from the client’s record.</p>
             {/if}
           </div>
           {#if rawTranscript}
@@ -694,6 +694,9 @@
         <div class="review-body">
 
           <!-- Progressive standard fields — only visible ones render -->
+          <fieldset class="irp-fieldset irp-fieldset--step">
+          <legend data-step="1">Client details</legend>
+          <p class="irp-fieldset__hint">Who they are and how to reach them. Fields marked * are required{#if aiFilledFields.size > 0}; highlighted fields were filled in from your dictation, so check them{/if}.</p>
           <div class="acm-fields">
             {#each visibleFieldList as field, i (field.key)}
               <div
@@ -735,12 +738,12 @@
             </div>
           {/if}
 
+          </fieldset>
+
           <!-- Custom fields (user-defined free key-value pairs) -->
-          <div class="custom-fields-section">
-            <div class="custom-fields-header">
-              <span class="custom-fields-label">Custom Fields</span>
-              <!-- <button class="btn-add-cf" on:click={addCustomField}>+ Add field</button> -->
-            </div>
+          <fieldset class="irp-fieldset irp-fieldset--step">
+            <legend data-step="2">Anything else worth recording <span class="acm-optional">(optional)</span></legend>
+            <p class="irp-fieldset__hint">Your own label and value, for details that have no field above. For example “Pets” → “2 dogs”.</p>
             {#each customFieldRows as row, i}
               <div class="cf-row">
                 <input class="cf-key" bind:value={row.key} placeholder="Field name" />
@@ -753,17 +756,14 @@
                 + Add a custom field
               </button>
             {/if}
-          </div>
+          </fieldset>
 
           <!-- ── Additional attendees (optional) ────────────────────────────── -->
-          <div class="acm-attendees-section">
-            <p class="acm-attendees-label">
-              Additional attendees
-              <span class="acm-attendees-optional">(optional)</span>
-            </p>
-            <p class="acm-attendees-hint">
-              Primary client lead: <strong>{getField('email').trim() || '—'}</strong>.
-              Add extra people to be invited to the same call.
+          <fieldset class="irp-fieldset irp-fieldset--step">
+            <legend data-step="3">Other people on the call <span class="acm-optional">(optional)</span></legend>
+            <p class="irp-fieldset__hint">
+              The invitation always goes to the client: <strong>{getField('email').trim() || 'add their email above'}</strong>.
+              Add a partner, spouse or colleague who should get the same invitation.
             </p>
             {#each extraAttendees as _att, i}
               <div class="acm-attendee-row">
@@ -776,16 +776,14 @@
               </div>
             {/each}
             <button type="button" class="acm-add-attendee" on:click={addExtraAttendee}>
-              + Add attendee
+              + Add another person
             </button>
-          </div>
+          </fieldset>
   
           <!-- ── Schedule a call (optional) ──────────────────────────────── -->
-          <div class="acm-schedule-section">
-            <p class="acm-schedule-label">
-              📅 Schedule a consultation call
-              <span class="acm-schedule-optional">(optional)</span>
-            </p>
+          <fieldset class="irp-fieldset irp-fieldset--step">
+            <legend data-step="4">Book the consultation call <span class="acm-optional">(optional)</span></legend>
+            <p class="irp-fieldset__hint">Pick a free slot and the client gets a calendar invitation. Skip this to create the client without a call.</p>
             <AvailabilityPicker
               theme="light"
               slotTheme="light"
@@ -800,7 +798,7 @@
                 })} (CR time)
               </p>
             {/if}
-          </div>
+          </fieldset>
 
         </div><!-- .review-body -->
 
@@ -811,7 +809,7 @@
               Schedule a call from the client card.
             </div>
           {:else if submitError}
-            <div class="rfoot-error">{submitError}</div>
+            <div class="rfoot-error" role="alert">{submitError}</div>
           {/if}
           <button class="btn-back"
             on:click={() => { resetForm(); step = 'dictate'; rawTranscript = ''; }}>
@@ -824,7 +822,7 @@
             </button>
           {:else}
             <button class="btn-create" on:click={handleSubmit}
-              disabled={submitting || !getField('email').trim()}>
+              disabled={submitting || !getField('email').trim()} title={!getField('email').trim() ? 'Add the client’s email first' : undefined}>
               {#if submitting}
                 <span class="btn-spin"></span>
                 <span>{selectedSlot ? 'Creating + Booking…' : 'Creating…'}</span>
@@ -850,6 +848,7 @@
      STYLES
 ════════════════════════════════════════════════════════ -->
 <style>
+  .acm-optional { font-weight: 500; color: var(--irp-text-dim); font-size: var(--irp-fs-xs); }
   /* ── Overlay ── */
   .acm-overlay {
     position: fixed; inset: 0;
@@ -904,6 +903,7 @@
   .rec-hint {
     font-size: var(--irp-fs-sm); color: var(--irp-text-dim); text-align: center;
     max-width: 340px; line-height: 1.55; margin: 0;
+    font-style: normal;
   }
 
   /* ── Orb ── */
@@ -1035,9 +1035,11 @@
   .pad-meta { display:flex; align-items:center; margin-top:.28rem; min-height:1.2em; }
   .pad-char { font-size:var(--irp-fs-xs); color:var(--irp-text-dim); margin-left:auto; }
   .pad-error {
-    font-size: var(--irp-fs-sm); color: var(--irp-red-600); background: var(--irp-surface-2);
-    border: 1px solid var(--irp-red-200); border-radius: var(--irp-r-sm); padding: .5rem .85rem;
+    font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line); border-radius: var(--irp-r-sm); padding: .5rem .85rem;
     width: 100%; max-width: 440px; line-height: 1.45; box-sizing: border-box;
+    font-weight: 600;
+    font-style: normal;
   }
   .dictate-footer {
     display: flex; align-items: center; justify-content: space-between;
@@ -1090,7 +1092,7 @@
   .review-header h2 { margin:0; font-size:var(--irp-fs-xl); font-weight:800; color:var(--irp-text); }
   .review-sub { margin:.2rem 0 0; font-size:var(--irp-fs-sm); color:var(--irp-text-dim); }
   .review-sub strong { color:var(--irp-accent-ink); }
-  .review-sub-err { color:var(--irp-red-600); }
+  .review-sub-err { color:var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   .ts-details summary { font-size:var(--irp-fs-xs); color:var(--irp-text-dim); cursor:pointer; }
   .ts-details[open] summary { color:var(--irp-text-dim); }
   .ts-detail-body { margin-top:.4rem; font-size:var(--irp-fs-xs); color:var(--irp-text-dim); line-height:1.55; max-height:110px; overflow-y:auto; }
@@ -1152,9 +1154,6 @@
   }
 
   /* Custom fields */
-  .custom-fields-section { display:flex; flex-direction:column; gap:.48rem; padding-top:.1rem; }
-  .custom-fields-header { display:flex; align-items:center; justify-content:space-between; }
-  .custom-fields-label { font-size:var(--irp-fs-2xs); font-weight:800; color:var(--irp-text-dim); text-transform:uppercase; letter-spacing:.055em; }
   .cf-row { display:flex; gap:.48rem; align-items:center; }
   .cf-key { flex:1; min-width:0; }
   .cf-val { flex:2; min-width:0; }
@@ -1171,14 +1170,14 @@
     transition:border-color .15s,color .15s;
   }
   .btn-add-cf:hover { border-color:var(--irp-accent); color:var(--irp-accent-ink); }
-  .btn-add-cf-empty { width:100%; text-align:center; padding:.5rem; }
+  .btn-add-cf-empty { width:100%; text-align:center; padding:.5rem; color: var(--irp-text-dim); font-size: var(--irp-fs-sm); font-style: normal; }
 
   /* Review footer */
   .review-footer {
     display:flex; align-items:center; justify-content:flex-end; gap:.7rem;
     padding:1rem 1.6rem; border-top:1px solid var(--irp-line); background:var(--irp-surface-2); flex-shrink:0;
   }
-  .rfoot-error { flex:1; font-size:var(--irp-fs-xs); color:var(--irp-red-600); }
+  .rfoot-error { flex:1; font-size:var(--irp-fs-sm); color:var(--irp-danger-ink); font-weight: 600; font-style: normal; }
   .btn-back {
     padding:.5rem 1.1rem; background:var(--irp-surface-3); border:1px solid var(--irp-line-strong);
     color:var(--irp-text-muted); border-radius:var(--irp-r-md); cursor:pointer; font-size:var(--irp-fs-sm); font-weight:700;
@@ -1205,29 +1204,6 @@
   }
   @keyframes btn-rotate { to{transform:rotate(360deg)} }
   /* ── Additional attendees section ─────────────────────────────────── */
-  .acm-attendees-section {
-    padding: 0.75rem 1.25rem;
-    border-top: 1px solid var(--irp-slate-100);
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .acm-attendees-label {
-    font-size: var(--irp-fs-xs);
-    font-weight: 700;
-    color: var(--irp-text-muted);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
-  .acm-attendees-optional { font-weight: 400; color: var(--irp-text-dim); font-style: italic; }
-  .acm-attendees-hint {
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-text-dim);
-    margin: 0;
-    line-height: 1.4;
-  }
   .acm-attendee-row {
     display: flex;
     align-items: center;
@@ -1294,24 +1270,6 @@
   }
 
   /* ── Scheduling section (Review & Create step) ────────────────────── */
-  .acm-schedule-section {
-    padding: 1rem 1.25rem;
-    border-top: 1px solid var(--irp-slate-100);
-  }
-  .acm-schedule-label {
-    font-size: var(--irp-fs-sm);
-    font-weight: 700;
-    color: var(--irp-text-muted);
-    margin: 0 0 0.65rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .acm-schedule-optional {
-    font-weight: 400;
-    color: var(--irp-text-dim);
-    font-style: italic;
-  }
   .acm-slot-preview {
     margin: 0.5rem 0 0;
     font-size: var(--irp-fs-sm);

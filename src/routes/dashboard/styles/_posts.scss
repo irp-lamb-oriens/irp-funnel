@@ -67,10 +67,9 @@
   }
 
   &__empty {
+    @include irp-note;
     text-align: center;
     padding: $sp-8 $sp-4;
-    color: $text-dim;
-    font-size: var(--irp-fs-sm);
   }
 
   // ── List search + pagination ──────────────────────────────────────────────
@@ -258,9 +257,7 @@
   }
 
   &__compose-title {
-    font-size: var(--irp-fs-md);
-    font-weight: 800;
-    color: $text;
+    @include irp-group-title;
     margin-bottom: $sp-5;
     display: flex;
     align-items: center;
@@ -644,10 +641,9 @@
   }
 
   &__empty {
+    @include irp-note;
     padding: $sp-5 $sp-3;
     text-align: center;
-    font-size: var(--irp-fs-xs);
-    color: $text-dim;
   }
 
   // Count-only fallback — shown when a send predates per-recipient tracking

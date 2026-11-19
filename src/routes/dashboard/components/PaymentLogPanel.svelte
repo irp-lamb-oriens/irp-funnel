@@ -98,7 +98,7 @@
     </div>
     <div class="pl__controls">
       <button type="button" on:click={load} disabled={loading}>Refresh</button>
-      <button type="button" on:click={exportCsv} disabled={!shown.length}>Export {shown.length} to spreadsheet</button>
+      <button type="button" on:click={exportCsv} disabled={!shown.length} title={!shown.length ? 'Nothing to export for this filter' : undefined}>Export {shown.length} to spreadsheet</button>
     </div>
   </header>
 
@@ -114,9 +114,9 @@
   {#if error}
     <p class="pl__error" role="alert">{error}</p>
   {:else if loading}
-    <p class="pl__empty" aria-busy="true">Loading…</p>
+    <p class="pl__empty" aria-busy="true" role="status">Loading…</p>
   {:else if !shown.length}
-    <p class="pl__empty">{events.length ? 'Nothing matches.' : 'No payment events yet. The first one appears the moment a client pays or reports a wire.'}</p>
+    <p class="pl__empty" role="status">{events.length ? 'Nothing matches.' : 'No payment events yet. The first one appears the moment a client pays or reports a wire.'}</p>
   {:else}
     <div class="pl__wrap">
       <table class="pl__table">
@@ -181,7 +181,7 @@
   .pl__client { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--irp-text); cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: var(--irp-text-dim); text-underline-offset: 3px; }
   .pl__subtle { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); margin-top: 2px; line-height: 1.4; }
   .pl__details { max-width: 420px; }
-  .pl__empty { color: var(--irp-text-dim); font-size: var(--irp-fs-sm); padding: 18px; text-align: center; background: var(--irp-surface-2); border-radius: var(--irp-r-md); margin: 0; }
-  .pl__error { color: var(--irp-red-700); font-size: var(--irp-fs-sm); }
+  .pl__empty { color: var(--irp-text-dim); font-size: var(--irp-fs-sm); padding: 18px; text-align: center; background: var(--irp-surface-2); border-radius: var(--irp-r-md); margin: 0; font-style: normal; }
+  .pl__error { color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   .pl__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

@@ -74,7 +74,7 @@
       </table></div>
       <p class="mh-hint">*Apple Mail pre-loads images, so opens are overstated.</p>
     {:else}
-      <p class="mh-empty">No drip assignments since the restart.</p>
+      <p class="mh-empty" role="status">No drip assignments since the restart.</p>
     {/if}
 
     <h4 class="mh-card__h" style="margin-top: 1rem">Before Evo Lab (descriptive)</h4>
@@ -85,7 +85,7 @@
       </table></div>
       <p class="mh-hint">Old events had unknown assignment odds and counted email opens as exposures, so they never reach verdicts.</p>
     {:else}
-      <p class="mh-empty">No events from before the restart.</p>
+      <p class="mh-empty" role="status">No events from before the restart.</p>
     {/if}
   </div>
 </details>

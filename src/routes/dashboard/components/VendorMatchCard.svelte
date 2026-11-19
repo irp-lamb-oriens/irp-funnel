@@ -210,14 +210,14 @@
       {/if}
 
       {#if error}
-        <div class="vmatch-error">{error}</div>
+        <div class="vmatch-error" role="alert">{error}</div>
       {:else if isLoading}
-        <div class="vmatch-loading">
+        <div class="vmatch-loading" role="status">
           <div class="vmatch-spinner vmatch-spinner--lg"></div>
           <span>Looking up compatible vendors…</span>
         </div>
       {:else if vendors.length === 0}
-        <div class="vmatch-empty">
+        <div class="vmatch-empty" role="status">
           No vendors registered yet.
           <a href="/dashboard" on:click|preventDefault={() => {}}>Go to Vendors tab to add providers.</a>
         </div>
@@ -280,14 +280,14 @@
             </div>
           {:else}
             {#if sendError}
-              <div class="vmatch-send-error">{sendError}</div>
+              <div class="vmatch-send-error" role="alert">{sendError}</div>
             {/if}
             <p class="vmatch-send-note">Provider contact is manual — review the matched vendors above, then send the quote request.</p>
             <button
               type="button"
               class="vmatch-send-btn"
               on:click={handleSendRfq}
-              disabled={sending || sendTargets.length === 0}
+              disabled={sending || sendTargets.length === 0} title={sendTargets.length === 0 ? 'Select at least one provider first' : undefined}
             >
               {#if sending}
                 <span class="vmatch-spinner vmatch-spinner--btn"></span> Sending…
@@ -426,9 +426,10 @@
     padding: 0.5rem 0;
   }
   .vmatch-empty {
-    font-size: var(--irp-fs-xs);
+    font-size: var(--irp-fs-sm);
     color: var(--irp-text-dim);   /* dark-on-white → readable */
     padding: 0.25rem 0;
+    font-style: normal;
   }
   .vmatch-empty a {
     color: var(--irp-accent-ink);
@@ -573,13 +574,14 @@
     line-height: 1.4;
   }
   .vmatch-send-error {
-    font-size: var(--irp-fs-xs);
+    font-size: var(--irp-fs-sm);
     font-weight: 600;
-    color: var(--irp-red-600);
-    background: var(--irp-surface-3);
-    border: 1px solid var(--irp-red-200);
+    color: var(--irp-danger-ink);
+    background: var(--irp-danger-bg);
+    border: 1px solid var(--irp-danger-line);
     border-radius: var(--irp-r-sm);
     padding: 0.5rem 0.75rem;
+    font-style: normal;
   }
 </style>
 

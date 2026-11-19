@@ -232,7 +232,7 @@
       <div class="dfe__grid">
         {#each gridDays as d, i (i)}
           {#if d === null}
-            <span class="dfe__cell dfe__cell--empty"></span>
+            <span class="dfe__cell dfe__cell--empty" role="status"></span>
           {:else}
             <button
               type="button"
@@ -294,7 +294,7 @@
         <div class="dfe__actions-right">
 
           <button class="dfe__cancel-btn" type="button" on:click={onClose}>Cancel</button>
-          <button class="dfe__confirm-btn" type="button" on:click={confirm} disabled={!hasSelection}>
+          <button class="dfe__confirm-btn" type="button" on:click={confirm} disabled={!hasSelection} title={!hasSelection ? 'Pick a date first' : undefined}>
             ✓ Confirm
           </button>
         </div>
@@ -367,7 +367,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .dfe__subtitle { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); margin: 0; }
+  .dfe__subtitle { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; margin: 0; }
   .dfe__close {
     width: 28px;
     height: 28px;

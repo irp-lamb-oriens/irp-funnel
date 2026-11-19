@@ -18,6 +18,7 @@
   transition: border-color .18s ease, transform .18s ease;
 }
 .card__insights--empty {
+  @include irp-note;
   background: $surface-2;
   border-color: $border;
   opacity: .65;
@@ -99,9 +100,7 @@
   overflow: hidden;
 }
 .card__insights-empty {
-  font-size: var(--irp-fs-2xs);
-  color: $text-dim;
-  font-style: italic;
+  @include irp-note;
 }
 
 /* ─── Card expanders (▾ All fields / 🕘 History) ───────────────────────── */

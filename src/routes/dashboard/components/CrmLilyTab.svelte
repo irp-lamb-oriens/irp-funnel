@@ -248,7 +248,7 @@
   <!-- ── Messages ──────────────────────────────────────────────────────── -->
   <div class="crm-lily__messages" bind:this={scrollEl}>
     {#if messages.length === 0}
-      <div class="crm-lily__empty">
+      <div class="crm-lily__empty" role="status">
         <p>Start a conversation. Try <em>"Summarize this project"</em>, <em>"Draft a follow-up email"</em>, or give Lily details to fill in: <em>"Origin is Panama City, phone +1 502 435 1958"</em>. She asks you to confirm each field before anything is saved.</p>
       </div>
     {/if}
@@ -370,7 +370,7 @@
       rows="2"
       disabled={loading}
     ></textarea>
-    <button class="crm-lily__send" type="submit" disabled={!input.trim() || loading}>
+    <button class="crm-lily__send" type="submit" disabled={!input.trim() || loading} title={!input.trim() ? 'Type a message first' : undefined}>
       {#if loading}
         <span class="crm-lily__spinner"></span>
       {:else}
@@ -465,10 +465,10 @@
 
   .crm-lily__empty {
     text-align: center;
-    color: var(--chat-text-secondary, rgba(255,255,255,0.5));
+    color: var(--irp-text-dim);
     font-size: var(--irp-fs-sm);
     padding: 1.5rem 1rem;
-    font-style: italic;
+    font-style: normal;
   }
   .crm-lily__empty p { margin: 0; }
 
@@ -538,13 +538,14 @@
     text-decoration: line-through;
   }
   .lily-prop__old--empty {
-    color: var(--chat-text-dim, rgba(255,255,255,0.35));
-    font-style: italic;
+    color: var(--irp-text-dim);
+    font-style: normal;
     text-decoration: none;
+    font-size: var(--irp-fs-sm);
   }
   .lily-prop__arrow { color: var(--chat-text-dim, rgba(255,255,255,0.35)); }
   .lily-prop__new { color: var(--chat-text-primary, rgba(255,255,255,0.92)); font-weight: 600; }
-  .lily-prop__error { font-size: var(--irp-fs-xs); color: var(--chat-color-staff, var(--irp-amber-700)); }
+  .lily-prop__error { font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); font-weight: 600; font-style: normal; }
   .lily-prop__actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
   .lily-prop__btn {
     font: inherit;

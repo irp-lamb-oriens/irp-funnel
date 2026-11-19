@@ -59,6 +59,6 @@
       </table>
     </div>
   {:else}
-    <p class="mh-empty">No tested visitor has become a client yet.</p>
+    <p class="mh-empty" role="status">No tested visitor has become a client yet.</p>
   {/if}
 </div>

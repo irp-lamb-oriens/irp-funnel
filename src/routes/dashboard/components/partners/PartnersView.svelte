@@ -1,4 +1,5 @@
 <script lang="ts">
+  import InfoTip from '../ui/InfoTip.svelte';
   /**
    * PartnersView — the UTM / referral-partner program (Partners tab).
    *
@@ -126,7 +127,7 @@
   <header class="pv__head">
     <div>
       <h2>Partners</h2>
-      <p class="pv__sub">Tagged links for influencers, media and experts. Every client they bring, what it earned them, and what we have paid.</p>
+      <p class="pv__sub">People who send us clients through their own tracked link. See who each partner brought in, what they earned, and what we have already paid them.</p>
     </div>
     <div class="pv__actions">
       <button class="btn btn--ghost" on:click={() => load(true)} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button>
@@ -134,18 +135,18 @@
     </div>
   </header>
 
-  {#if errorMsg}<div class="pv__error">{errorMsg} <button class="link" on:click={() => load(true)}>Retry</button></div>{/if}
+  {#if errorMsg}<div class="pv__error" role="alert">{errorMsg} <button class="link" on:click={() => load(true)}>Retry</button></div>{/if}
 
   {#if !report && loading}
-    <div class="pv__empty">Reading clients, quotes and payments…</div>
+    <div class="pv__empty" role="status" aria-busy="true">Reading clients, quotes and payments…</div>
   {:else if report}
     <section class="kpis">
-      <div class="kpi"><span>Active partners</span><b>{t?.partners ?? 0}</b></div>
-      <div class="kpi"><span>Referrals {year}</span><b>{t?.yearLeads ?? 0}</b><small>{t?.monthLeads ?? 0} this month</small></div>
-      <div class="kpi"><span>Closed {year}</span><b>{t?.yearClosed ?? 0}</b><small>{t?.closed ?? 0} all time</small></div>
-      <div class="kpi"><span>Commission earned {year}</span><b>{money(t?.yearEarned)}</b><small>{money(t?.earned)} all time</small></div>
+      <div class="kpi"><span>Active partners<InfoTip text="Partners with at least one working link." label="About active partners" /></span><b>{t?.partners ?? 0}</b></div>
+      <div class="kpi"><span>Clients referred {year}<InfoTip text="People who reached us through a partner link this year." label="About referrals" /></span><b>{t?.yearLeads ?? 0}</b><small>{t?.monthLeads ?? 0} this month</small></div>
+      <div class="kpi"><span>Became customers {year}<InfoTip text="Referred clients who accepted a quote this year." label="About closed referrals" /></span><b>{t?.yearClosed ?? 0}</b><small>{t?.closed ?? 0} all time</small></div>
+      <div class="kpi"><span>Commission earned {year}<InfoTip text="What partners earned on those sales, by each partner’s own commission plan." label="About commission earned" /></span><b>{money(t?.yearEarned)}</b><small>{money(t?.earned)} all time</small></div>
       <div class="kpi"><span>Paid out {year}</span><b>{money(t?.yearPaid)}</b><small>{money(t?.paid)} all time</small></div>
-      <div class="kpi kpi--accent"><span>Owed now</span><b>{money(t?.balance)}</b><small>{money(t?.pipeline)} more in pipeline</small></div>
+      <div class="kpi kpi--accent"><span>Owed now<InfoTip text="Earned and not yet paid. “In pipeline” is commission on quotes that are sent but not accepted yet." label="About owed now" /></span><b>{money(t?.balance)}</b><small>{money(t?.pipeline)} more in pipeline</small></div>
     </section>
 
     {#if suggestions.length}
@@ -171,7 +172,7 @@
       </div>
 
       {#if rows.length === 0}
-        <div class="pv__empty">
+        <div class="pv__empty" role="status">
           {#if (report.partners ?? []).length === 0}
             No partners yet. Add the first one: they get a link to share, a private page with their numbers, and a monthly statement by email.
           {:else}No partner matches.{/if}
@@ -220,6 +221,7 @@
   <div class="overlay" on:click|self={() => (showNew = false)}>
     <form class="modal" on:submit|preventDefault={submitNew}>
       <h3>New partner</h3>
+      <p class="modal__desc">Creates the partner and their first tracked link. You can change the commission plan and add bank details later.</p>
       <div class="grid2">
         <label>Name<input class="input" bind:value={form.name} required placeholder="Sara Lena" /></label>
         <label>Email<input class="input" type="email" bind:value={form.email} placeholder="For their link and monthly statement" /></label>
@@ -253,7 +255,7 @@
       <label>Notes<textarea class="input" rows="2" bind:value={form.notes} placeholder="How we met, what we agreed…"></textarea></label>
       <div class="modal__foot">
         <button type="button" class="btn btn--ghost" on:click={() => (showNew = false)}>Cancel</button>
-        <button type="submit" class="btn btn--primary" disabled={saving || !form.name.trim()}>{saving ? 'Creating…' : 'Create partner'}</button>
+        <button type="submit" class="btn btn--primary" disabled={saving || !form.name.trim()} title={!form.name.trim() ? 'Give the partner a name first' : undefined}>{saving ? 'Creating…' : 'Create partner'}</button>
       </div>
     </form>
   </div>
@@ -262,11 +264,11 @@
 <style>
   .pv { font-family: var(--font-paragraph, 'Jost'), system-ui, sans-serif; color: var(--irp-text); padding: 1.25rem 1.5rem 3rem; max-width: 1400px; margin: 0 auto; }
   .pv__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
-  .pv__head h2 { margin: 0; font-size: 1.35rem; }
-  .pv__sub { margin: 0.25rem 0 0; color: var(--irp-text-dim); font-size: var(--irp-fs-md); max-width: 640px; }
+  .pv__head h2 { /* shared anatomy */ margin: 0; font-size: 1.375rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--irp-text); }
+  .pv__sub { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
   .pv__actions { display: flex; gap: 0.5rem; }
-  .pv__error { background: var(--irp-surface-3); border: 1px solid var(--irp-red-200); color: var(--irp-red-700); padding: 0.6rem 0.9rem; border-radius: var(--irp-r-sm); margin-bottom: 1rem; }
-  .pv__empty { padding: 2rem 1rem; text-align: center; color: var(--irp-text-dim); }
+  .pv__error { background: var(--irp-danger-bg); border: 1px solid var(--irp-danger-line); color: var(--irp-danger-ink); padding: 0.6rem 0.9rem; border-radius: var(--irp-r-sm); margin-bottom: 1rem; font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
+  .pv__empty { padding: 2rem 1rem; text-align: center; color: var(--irp-text-dim); font-size: var(--irp-fs-sm); font-style: normal; }
 
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
   .kpi { background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); padding: 0.8rem 0.95rem; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -276,7 +278,7 @@
   .kpi--accent { border-color: rgba(2,181,187,.45); background: linear-gradient(135deg, rgba(2,181,187,.07), var(--irp-surface)); }
 
   .card { background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-  .card__title { font-weight: 700; margin-bottom: 0.2rem; }
+  .card__title { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin-bottom: 0.2rem; }
   .sugg { border-color: var(--irp-amber-200); background: var(--irp-bg); }
   .sugg__row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.45rem 0; border-top: 1px solid var(--irp-amber-100); flex-wrap: wrap; }
   .sugg__btns { display: flex; gap: 0.4rem; }
@@ -299,6 +301,7 @@
   .pill--warn { background: var(--irp-amber-100); color: var(--irp-amber-800); }
   .pill--muted { background: var(--irp-surface-3); color: var(--irp-text-dim); }
 
+  .modal__desc { margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; margin-bottom: 0.9rem; }
   .muted { color: var(--irp-text-dim); }
   .small { font-size: var(--irp-fs-sm); }
   .input { width: 100%; box-sizing: border-box; border: 1px solid var(--irp-line-strong); border-radius: var(--irp-r-sm); padding: 0.5rem 0.65rem; font: inherit; font-size: var(--irp-fs-md); background: var(--irp-surface); }

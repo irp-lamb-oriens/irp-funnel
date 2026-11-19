@@ -203,7 +203,7 @@
   .tc-tip__title { font-weight: 800; margin-bottom: 0.3rem; }
   .tc-tip__row { display: grid; grid-template-columns: 10px 1fr auto; gap: 0.45rem; align-items: center; line-height: 1.5; }
   .tc-tip__row strong { font-variant-numeric: tabular-nums; }
-  .tc-tip__hint { margin-top: 0.3rem; color: var(--irp-text-faint); font-size: var(--irp-fs-2xs); }
+  .tc-tip__hint { margin-top: 0.3rem; color: var(--irp-text-dim); font-size: var(--irp-fs-2xs); font-style: normal; }
   .tc-table-wrap { overflow-x: auto; max-height: 360px; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>

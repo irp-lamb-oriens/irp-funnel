@@ -126,7 +126,7 @@
     </p>
 
     {#if !attribution}
-      <p class="attribution-empty">Attribution data isn't available yet — the server needs the latest deploy.</p>
+      <p class="attribution-empty" role="status">Attribution data isn't available yet — the server needs the latest deploy.</p>
     {:else}
       <div class="segment-bar">
         <div class="period-tabs" use:tabs={{ label: 'Period' }}>
@@ -203,7 +203,7 @@
       </div>
       <div class="bucket-list attribution-buckets">
         {#if rows.length === 0}
-          <p class="attribution-empty">No leads in this period.</p>
+          <p class="attribution-empty" role="status">No leads in this period.</p>
         {:else}
           {#each rows.slice(0, 8) as r (r.key)}
             <div class="bucket-row" class:bucket-row--muted={r.key === UNTAGGED}>

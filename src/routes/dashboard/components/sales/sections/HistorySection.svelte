@@ -54,7 +54,7 @@
 </script>
 
 {#if !book.cubeOk}
-  <p class="mh-empty">Segment data unavailable — history needs it.</p>
+  <p class="mh-empty" role="status">Segment data unavailable — history needs it.</p>
 {:else}
   <div class="mh-tools sb-hist-tools">
     <div class="mh-seg" use:tabs={{ mode: 'toggle' }} role="group" aria-label="Group by">
@@ -104,7 +104,7 @@
           <ol>{#each best as h}<li><strong>{label(h.key)}</strong> {money(h.booked)} <span class="mh-muted">· {h.won} won</span></li>{/each}</ol>
           <ol>{#each worst as h}<li><strong>{label(h.key)}</strong> {money(h.booked)} <span class="mh-muted">· {h.won} won</span></li>{/each}</ol>
         </div>
-      {:else}<p class="mh-empty">Not enough history yet.</p>{/if}
+      {:else}<p class="mh-empty" role="status">Not enough history yet.</p>{/if}
     </div>
     <div class="mh-card">
       <h4 class="mh-card__h">Dependence · deals won in {book.rangeLabel}</h4>

@@ -141,7 +141,7 @@
       {/each}
     </div>
   {:else}
-    <span class="veh-editor__empty">No vehicles</span>
+    <span class="veh-editor__empty" role="status">No vehicles</span>
   {/if}
 
   <div class="veh-editor__footer">

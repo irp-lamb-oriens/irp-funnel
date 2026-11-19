@@ -144,7 +144,7 @@
         {#each COLS as c}<label class="mh-toggle"><input type="checkbox" checked={show.has(c.key)} on:change={() => toggleCol(c.key)} /> {c.label}</label>{/each}
       </div>
     </details>
-    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!sorted.length}>Export CSV</button>
+    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!sorted.length} title={!sorted.length ? 'Nothing to export for this selection' : undefined}>Export CSV</button>
   </div>
   <p class="mh-hint" aria-live="polite">{sorted.length} deal{sorted.length === 1 ? '' : 's'} · totals in {book.currency}{#if other.length} · plus {Object.entries(otherByCur).map(([c, n]) => `${n} in ${c}`).join(', ')} (own currency per row){/if}</p>
 

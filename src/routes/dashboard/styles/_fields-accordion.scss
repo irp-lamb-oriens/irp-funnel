@@ -58,10 +58,8 @@
 }
 .fields-accordion__value { flex: 1; min-width: 0; }
 .fields-accordion__empty {
+  @include irp-note;
   padding: $sp-2;
-  font-size: var(--irp-fs-xs);
-  color: $text-dim;
-  font-style: italic;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -320,10 +318,8 @@
   }
 }
 .detail-fields-tab__desc {
+  @include irp-group-desc(var(--irp-fs-xs));
   margin: 0 0 $sp-3 0;
-  font-size: var(--irp-fs-sm);
-  color: $text-muted;
-  line-height: 1.5;
 }
 
 
@@ -349,10 +345,8 @@
   gap: $sp-2;
 }
 .fields-accordion-v2__empty {
+  @include irp-note;
   padding: $sp-4;
-  font-size: var(--irp-fs-sm);
-  color: $text-dim;
-  font-style: italic;
   text-align: center;
 }
 .fields-accordion-v2__group {

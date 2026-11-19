@@ -170,10 +170,11 @@
 <div class="tx">
   <header class="tx__head">
     <div>
-      <h4>Move taxonomy</h4>
+      <h4>Categories used to group quotes</h4>
       <p>
-        The vocabulary the price matrix groups by. The Qwilr analysis pipeline reads this same
-        document, so a category added here is one the categorizer may assign on its next run.
+        The lists of routes, services and move types that prices and reports are grouped by. The
+        automatic quote categorizer reads these same lists, so anything you add here can be
+        assigned to a quote the next time it runs.
       </p>
     </div>
     <div class="tx__actions">
@@ -183,17 +184,17 @@
       <button class="tx__ghost" on:click={resetToSeed} disabled={!$moveTaxonomySeed || saving}>
         Reset to defaults
       </button>
-      <button class="tx__save" on:click={save} disabled={(!dirty && !conflict) || saving}>
+      <button class="tx__save" on:click={save} disabled={(!dirty && !conflict) || saving} title={!dirty && !conflict ? 'No changes to save' : undefined}>
         {saving ? 'Saving…' : conflict ? 'Save anyway' : 'Save'}
       </button>
     </div>
   </header>
 
-  {#if errorMsg}<p class="tx__error">{errorMsg}</p>{/if}
+  {#if errorMsg}<p class="tx__error" role="alert">{errorMsg}</p>{/if}
   {#if savedMsg}<p class="tx__ok">{savedMsg}</p>{/if}
 
   {#if !draft}
-    <p class="tx__empty">{loading ? 'Reading the configuration…' : 'No configuration loaded.'}</p>
+    <p class="tx__empty" role="status">{loading ? 'Reading the configuration…' : 'The categories could not be loaded. Use Reload to try again.'}</p>
   {:else}
     <div class="tx__grid">
       {#each LISTS as list}
@@ -221,7 +222,7 @@
               bind:value={additions[list.key]}
               on:keydown={(e) => e.key === 'Enter' && addValue(list.key)}
             />
-            <button on:click={() => addValue(list.key)} disabled={!toKey(additions[list.key])}>
+            <button on:click={() => addValue(list.key)} disabled={!toKey(additions[list.key])} title={!toKey(additions[list.key]) ? 'Type a name first' : undefined}>
               Add
             </button>
           </div>
@@ -283,22 +284,9 @@
     margin-bottom: 1rem;
   }
 
-  .tx__head h4 {
-    margin: 0;
-    font-size: var(--irp-fs-2xs);
-    font-weight: 800;
-    color: var(--irp-text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+  .tx__head h4 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-lg); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; }
 
-  .tx__head p {
-    margin: 0.4rem 0 0;
-    max-width: 62ch;
-    font-size: var(--irp-fs-xs);
-    color: var(--irp-text-dim);
-    line-height: 1.55;
-  }
+  .tx__head p { /* shared anatomy */ margin: 0.3rem 0 0; max-width: 68ch; font-size: var(--irp-fs-sm); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; }
 
   .tx__actions {
     display: flex;
@@ -350,7 +338,7 @@
     line-height: 1.5;
   }
 
-  .tx__error { background: var(--irp-surface-3); border: 1px solid var(--irp-red-200); color: var(--irp-red-600); }
+  .tx__error { background: var(--irp-danger-bg); border: 1px solid var(--irp-danger-line); color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   .tx__ok { background: var(--irp-surface-2); border: 1px solid var(--irp-green-200); color: var(--irp-green-700); }
 
   .tx__warn {
@@ -363,8 +351,8 @@
 
   .tx__empty {
     color: var(--irp-text-dim);
-    font-size: var(--irp-fs-md);
-    font-style: italic;
+    font-size: var(--irp-fs-sm);
+    font-style: normal;
   }
 
   .tx__grid {
@@ -381,17 +369,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
   }
 
-  .tx__card h5 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 0.35rem;
-    font-size: var(--irp-fs-xs);
-    font-weight: 800;
-    color: var(--irp-text);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-  }
+  .tx__card h5 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
 
   .tx__count {
     background: linear-gradient(135deg, var(--irp-accent), var(--irp-accent-hover));
@@ -406,7 +384,7 @@
     margin: 0 0 0.8rem;
     font-size: var(--irp-fs-xs);
     color: var(--irp-text-dim);
-    font-style: italic;
+    font-style: normal;
     line-height: 1.55;
   }
 

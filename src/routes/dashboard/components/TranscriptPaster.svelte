@@ -52,7 +52,7 @@
     rows="6" 
     class="tp-textarea"
   ></textarea>
-  <button class="tp-button" on:click={handleSave} disabled={parsing || !rawText.trim()}>
+  <button class="tp-button" on:click={handleSave} disabled={parsing || !rawText.trim()} title={!rawText.trim() ? 'Paste the transcript first' : undefined}>
     {parsing ? 'Saving...' : 'Save Transcript'}
   </button>
 

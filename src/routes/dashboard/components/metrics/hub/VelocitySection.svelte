@@ -69,7 +69,7 @@
       </table>
     </div>
   {:else}
-    <p class="mh-empty">No quiet quotes. Every recent quote has had activity in the last two weeks.</p>
+    <p class="mh-empty" role="status">No quiet quotes. Every recent quote has had activity in the last two weeks.</p>
   {/if}
 </div>
 

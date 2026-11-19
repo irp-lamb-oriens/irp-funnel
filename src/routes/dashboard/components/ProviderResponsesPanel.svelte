@@ -281,11 +281,11 @@
   </div>
 
   {#if loadError}
-    <p class="pr-err">⚠ {loadError}</p>
+    <p class="pr-err" role="alert">⚠ {loadError}</p>
   {:else if loading && rows.length === 0}
     <p class="pr-hint">Loading responses…</p>
   {:else if rows.length === 0}
-    <div class="pr-empty">
+    <div class="pr-empty" role="status">
       <span class="pr-empty__icon">📭</span>
       <p>No RFQs have been sent for this client yet. Use “Request rates from providers” above to start.</p>
     </div>
@@ -444,11 +444,11 @@
   .pr-margin__field input { width: 62px; padding: 5px 8px; border: 1px solid var(--pr-border); border-radius: var(--irp-r-xs); font-size: var(--irp-fs-sm); text-align: right; background: var(--pr-surface); color: var(--pr-text); }
   .pr-margin__field input:focus { border-color: var(--pr-accent); outline: none; box-shadow: 0 0 0 3px var(--pr-accent-subtle); }
   .pr-margin__saving { font-size: var(--irp-fs-2xs); color: var(--pr-text-dim); }
-  .pr-margin__hint { font-size: var(--irp-fs-2xs); color: var(--pr-text-dim); flex: 1 1 200px; }
+  .pr-margin__hint { font-size: var(--irp-fs-2xs); color: var(--irp-text-dim); flex: 1 1 200px; font-style: normal; }
 
-  .pr-hint { font-size: var(--irp-fs-xs); color: var(--pr-text-dim); margin: var(--irp-sp-2, 8px) 0; }
-  .pr-err { font-size: var(--irp-fs-xs); color: var(--pr-danger); margin: var(--irp-sp-2, 8px) 0; }
-  .pr-empty { display: flex; align-items: center; gap: 12px; padding: 18px; background: var(--pr-surface-2); border: 1px dashed var(--pr-border); border-radius: var(--irp-r-md); color: var(--pr-text-muted); font-size: var(--irp-fs-sm); }
+  .pr-hint { font-size: var(--irp-fs-xs); color: var(--irp-text-dim); margin: var(--irp-sp-2, 8px) 0; font-style: normal; }
+  .pr-err { font-size: var(--irp-fs-sm); color: var(--irp-danger-ink); margin: var(--irp-sp-2, 8px) 0; font-weight: 600; font-style: normal; }
+  .pr-empty { display: flex; align-items: center; gap: 12px; padding: 18px; background: var(--pr-surface-2); border: 1px dashed var(--pr-border); border-radius: var(--irp-r-md); color: var(--irp-text-dim); font-size: var(--irp-fs-sm); font-style: normal; }
   .pr-empty__icon { font-size: 22px; }
 
   .pr-table { display: flex; flex-direction: column; border: 1px solid var(--pr-border); border-radius: var(--irp-r-md); overflow: hidden; }

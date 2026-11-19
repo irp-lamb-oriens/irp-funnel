@@ -276,7 +276,7 @@
           </button>
         {/each}
         {#if filtered.length === 0}
-          <div class="cps__empty">No matches</div>
+          <div class="cps__empty" role="status">No matches</div>
         {/if}
       </div>
     </div>

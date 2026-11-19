@@ -35,7 +35,7 @@
 </script>
 
 {#if !analyses.length}
-  <p class="mh-empty">No experiments match these filters.</p>
+  <p class="mh-empty" role="status">No experiments match these filters.</p>
 {:else}
   <div class="evo-portfolio">
     {#each analyses as a (a.def.componentKey)}

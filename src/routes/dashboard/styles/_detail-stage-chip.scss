@@ -131,9 +131,8 @@
 .detail-panel__stage-row-label { flex: 1; line-height: 1.3; }
 .detail-panel__stage-row-check { color: var(--stage-color, $accent); font-weight: 700; font-size: var(--irp-fs-sm); }
 .detail-panel__stage-empty {
+  @include irp-note;
   padding: 16px 10px;
-  font-size: var(--irp-fs-xs);
-  color: $text-dim;
   text-align: center;
 }
 

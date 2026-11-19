@@ -139,6 +139,6 @@
   .na__form textarea:focus { outline: 2px solid var(--irp-teal-700); border-color: var(--irp-teal-700); }
   .na__muted { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-text-dim); }
   .na__clear { margin: 0; font-size: var(--irp-fs-sm); color: var(--irp-green-800); background: var(--irp-surface-2); border: 1px solid var(--irp-green-200); border-radius: var(--irp-r-md); padding: 8px 12px; }
-  .na__error { margin: 0; color: var(--irp-red-700); font-size: var(--irp-fs-sm); }
+  .na__error { margin: 0; color: var(--irp-danger-ink); font-size: var(--irp-fs-sm); font-weight: 600; font-style: normal; }
   @media (max-width: 720px) { .na__item { grid-template-columns: 1fr; } .na__actions { justify-content: flex-start; } }
 </style>

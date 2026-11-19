@@ -84,7 +84,7 @@
             {/each}
           </ul>
         {:else}
-          <p class="mh-empty">{combo?.caveat ?? col.empty}</p>
+          <p class="mh-empty" role="status">{combo?.caveat ?? col.empty}</p>
         {/if}
       </section>
     {/each}

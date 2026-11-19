@@ -65,8 +65,11 @@
   }
 
   .toast--error {
-    background: linear-gradient(135deg, rgba(198, 36, 38, 0.92), rgba(220, 38, 38, 0.92));
-    color: white;
+    background: var(--irp-danger-bg);
+    color: var(--irp-danger-ink);
+    font-size: var(--irp-fs-sm);
+    font-weight: 600;
+    font-style: normal;
   }
 
   .toast--info {

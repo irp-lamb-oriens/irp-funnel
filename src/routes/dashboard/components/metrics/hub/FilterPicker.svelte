@@ -68,12 +68,12 @@
             <span class="fp-count">{v.count}</span>
           </label>
         {:else}
-          <p class="mh-empty">No values.</p>
+          <p class="mh-empty" role="status">No values.</p>
         {/each}
       </fieldset>
       <div class="fp-actions">
-        <button class="mh-btn mh-btn--sm mh-btn--ghost" on:click={() => apply(true)} disabled={!picked.size}>Exclude</button>
-        <button class="mh-btn mh-btn--sm mh-btn--primary" on:click={() => apply(false)} disabled={!picked.size}>Show only these</button>
+        <button class="mh-btn mh-btn--sm mh-btn--ghost" on:click={() => apply(true)} disabled={!picked.size} title={!picked.size ? 'Tick at least one value first' : undefined}>Exclude</button>
+        <button class="mh-btn mh-btn--sm mh-btn--primary" on:click={() => apply(false)} disabled={!picked.size} title={!picked.size ? 'Tick at least one value first' : undefined}>Show only these</button>
       </div>
     </div>
   {/if}

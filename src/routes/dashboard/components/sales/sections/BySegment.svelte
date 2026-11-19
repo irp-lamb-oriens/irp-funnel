@@ -50,7 +50,7 @@
 </script>
 
 {#if !t}
-  <p class="mh-empty">Segment data unavailable.</p>
+  <p class="mh-empty" role="status">Segment data unavailable.</p>
 {:else}
   <div class="mh-tools sb-seg-tools">
     <label class="mh-control"><span class="mh-label">Split by</span>
@@ -59,11 +59,11 @@
         <optgroup label="Outcome">{#each DIMENSIONS.filter((d) => d.phase === 'outcome') as d}<option value={d.key}>{d.label}</option>{/each}</optgroup>
       </select>
     </label>
-    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!rows.length}>Export CSV</button>
+    <button class="mh-btn mh-btn--sm" on:click={exportCsv} disabled={!rows.length} title={!rows.length ? 'Nothing to export for this selection' : undefined}>Export CSV</button>
   </div>
   {#if multi}<p class="mh-hint">A deal with several providers appears under each, so rows overlap and there is no total.</p>{/if}
   {#if !rows.length}
-    <p class="mh-empty">No deals won in {book.rangeLabel}{book.filtersActive ? ' with these filters' : ''}.</p>
+    <p class="mh-empty" role="status">No deals won in {book.rangeLabel}{book.filtersActive ? ' with these filters' : ''}.</p>
   {:else}
     <div class="mh-table-wrap">
       <table class="mh-table sb-cards">

@@ -13,7 +13,7 @@
     "smui-light": "smui-theme compile static/smui-light.css -i src/theme",
     "theme": "npm run smui-light && npm run smui-dark",
     "test": "vitest run",
-    "tokens:dashboard": "python3 scripts/dashboard-tokenize.py --report"
+    "tokens:dashboard": "python3 scripts/dashboard-tokenize.py --report && python3 scripts/dashboard-states.py"
   },
   "files": [
     "dist",

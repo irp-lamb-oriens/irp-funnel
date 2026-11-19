@@ -177,6 +177,7 @@
         {/if}
 
         <h4>By year</h4>
+        <p class="g-desc">Clients sent, how many bought, and commission earned and paid, per year.</p>
         <table class="tbl">
           <thead><tr><th>Year</th><th class="num">Referrals</th><th class="num">Closed</th><th class="num">Earned</th><th class="num">Paid</th><th class="num">Reversed</th></tr></thead>
           <tbody>
@@ -187,6 +188,7 @@
         </table>
 
         <h4>By month</h4>
+        <p class="g-desc">The same figures month by month, newest first.</p>
         <table class="tbl">
           <thead><tr><th>Month</th><th class="num">Referrals</th><th class="num">Closed</th><th class="num">Earned</th><th class="num">Paid</th></tr></thead>
           <tbody>
@@ -204,7 +206,7 @@
             <div class="matches">
               {#each clientMatches as c (c.id)}
                 {@const owner = attributed[c.id]}
-                <button class="match" disabled={owner?.partnerId === partner.id} on:click={() => credit(c.id)}>
+                <button class="match" disabled={owner?.partnerId === partner.id} title={owner?.partnerId === partner.id ? 'Already credited to this partner' : undefined} on:click={() => credit(c.id)}>
                   <span>{c.displayName}<span class="muted small"> · {c.email}</span></span>
                   <span class="small muted">{owner ? (owner.partnerId === partner.id ? 'already theirs' : `now: ${report.partners.find((p) => p.id === owner.partnerId)?.name ?? 'other partner'}`) : 'credit'}</span>
                 </button>
@@ -287,7 +289,7 @@
             <label>Channel <span class="muted">(utm_medium)</span><input class="input" bind:value={linkForm.medium} placeholder={partner.type} /></label>
           </div>
           {#if preview}<div class="url url--preview">{preview}</div>{:else}<p class="note">Enter a full landing page address for this product.</p>{/if}
-          <div class="row-btns"><button class="btn btn--primary" disabled={busy || !preview} on:click={addLink}>Create & copy</button></div>
+          <div class="row-btns"><button class="btn btn--primary" disabled={busy || !preview} title={!preview ? 'Fill in where the link will be shared first' : undefined} on:click={addLink}>Create & copy</button></div>
         </div>
         {#if archivedLinks.length}
           <details class="archived"><summary class="muted small">{archivedLinks.length} archived</summary>
@@ -313,6 +315,7 @@
 
         <div class="new-pay">
           <h4>Record a payment we sent</h4>
+          <p class="g-desc">Use this after you have paid the partner. It lowers what we owe them; it does not send any money.</p>
           <div class="grid3">
             <label>Amount ({cur})<input class="input" type="number" min="0" step="0.01" bind:value={payForm.amount} /></label>
             <label>Date<input class="input" type="date" bind:value={payForm.date} /></label>
@@ -359,7 +362,7 @@
           <div class="row-btns">
             <button class="btn btn--small btn--ghost" on:click={() => copy(partner.portalUrl, 'Partner page link copied')}>Copy page link</button>
             <button class="btn btn--small btn--primary" disabled={busy || !partner.email} title={partner.email ? '' : 'Add an email first'} on:click={() => run(() => sendInvite(partner.id), `Invite sent to ${partner.email}`)}>Send invite</button>
-            <button class="btn btn--small btn--ghost" disabled={busy || !partner.email} on:click={() => run(() => sendStatement(partner.id), 'Statement sent')}>Email statement now</button>
+            <button class="btn btn--small btn--ghost" disabled={busy || !partner.email} title={!partner.email ? 'Add the partner’s email in Settings first' : undefined} on:click={() => run(() => sendStatement(partner.id), 'Statement sent')}>Email statement now</button>
             <button class="btn btn--small btn--ghost" disabled={busy} on:click={() => { if (confirm('Make a new partner page link? The old one stops working.')) run(() => rotateToken(partner.id), 'New page link created'); }}>New page link</button>
           </div>
         </div>
@@ -380,6 +383,7 @@
         </div>
 
         <h4>Commission on IRP clients</h4>
+        <p class="g-desc">How this partner is paid for each IRP client they bring who buys.</p>
         <div class="grid3">
           <label>Model<select class="input" bind:value={edit.model}>{#each Object.entries(MODEL_LABELS) as [k, v]}<option value={k}>{v}</option>{/each}</select></label>
           {#if edit.model.startsWith('percent')}
@@ -408,6 +412,7 @@
         {/each}
 
         <h4>Bank details</h4>
+        <p class="g-desc">Where we send their payouts. Only used by the team when making a payment.</p>
         <div class="grid2">
           <label>Account holder<input class="input" bind:value={edit.bank.holderName} /></label>
           <label>Bank<input class="input" bind:value={edit.bank.bankName} /></label>
@@ -437,7 +442,7 @@
   .d__eyebrow { font-size: var(--irp-fs-xs); color: var(--irp-accent-ink); font-weight: 700; }
   .x { border: none; background: none; font-size: 1.7rem; line-height: 1; cursor: pointer; color: var(--irp-text-dim); }
   .d__body { padding: 1.1rem 1.4rem 3rem; overflow-y: auto; flex: 1; }
-  h4 { margin: 1.3rem 0 0.5rem; font-size: var(--irp-fs-md); }
+  h4 { /* shared anatomy */ margin: 0; font-size: var(--irp-fs-md); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--irp-text); text-transform: none; margin: 1.3rem 0 0.5rem; }
 
   .story { background: linear-gradient(135deg, var(--irp-surface-2), var(--irp-surface)); border: 1px solid var(--irp-teal-200); border-radius: var(--irp-r-md); padding: 0.9rem 1.1rem; }
   .story p { margin: 0.25rem 0; font-size: var(--irp-fs-lg); }
@@ -500,6 +505,7 @@
   .btn--ghost { background: var(--irp-surface); border-color: var(--irp-line); color: var(--irp-text-2); }
   .btn--danger { background: var(--irp-surface); border-color: var(--irp-red-200); color: var(--irp-red-700); }
   .btn--small { padding: 0.28rem 0.6rem; font-size: var(--irp-fs-xs); }
+  .g-desc { margin: 0.2rem 0 0; max-width: 68ch; font-size: var(--irp-fs-xs); font-weight: 400; line-height: 1.5; color: var(--irp-text-muted); text-transform: none; letter-spacing: 0; font-style: normal; margin: -0.3rem 0 0.6rem; }
   .muted { color: var(--irp-text-dim); }
   .small { font-size: var(--irp-fs-xs); }
   .b { font-weight: 700; }

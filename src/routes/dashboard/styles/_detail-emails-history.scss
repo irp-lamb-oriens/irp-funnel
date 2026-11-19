@@ -7,10 +7,8 @@
   margin-bottom: $sp-4;
 }
 .detail-emails__history-title {
+  @include irp-group-title(var(--irp-fs-md));
   margin: 0 0 $sp-2 0;
-  font-size: var(--irp-fs-sm);
-  font-weight: 600;
-  color: $text;
 }
 .detail-emails__history-list {
   list-style: none;
@@ -91,10 +89,8 @@
 }
 
 .detail-emails__suggestions-title {
+  @include irp-group-title(var(--irp-fs-md));
   margin: 0 0 $sp-2 0;
-  font-size: var(--irp-fs-sm);
-  font-weight: 700;
-  color: $warning-ink;
   display: flex;
   align-items: center;
   gap: $sp-1;

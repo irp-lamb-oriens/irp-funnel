@@ -23,7 +23,7 @@
     <p class="mh-hint">Verdicts are fixed each Monday 06:00 Costa Rica on all data, so they can't be fished out of a filter or a lucky day.</p>
   </div>
   {#if !waiting.length}
-    <p class="mh-empty">When an experiment reaches a verdict it appears here with what to do.</p>
+    <p class="mh-empty" role="status">When an experiment reaches a verdict it appears here with what to do.</p>
   {:else}
     <div class="evo-cards">
       {#each waiting as a (a.def.componentKey)}
