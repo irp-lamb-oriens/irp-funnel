@@ -21,7 +21,7 @@
   import QuotePaymentsPanel from './QuotePaymentsPanel.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
   import { buildQuoteContext } from '../utils/quoteContext.ts';
-  import { optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
+  import { chosenOptions, isAcceptedQuote, optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
 
 
   export let clientId: string;
@@ -478,6 +478,9 @@
     {:else}
       <ul class="quotes-tab__list">
         {#each $quotes as quote (quote.quoteId)}
+          <!-- Accepted = status client_accepted or an acceptance timestamp (an
+               older editor reset accepted quotes to draft on save). -->
+          {@const shownStatus = isAcceptedQuote(quote) ? 'client_accepted' : quote.status}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <li class="quotes-tab__item" on:click={() => openEdit(quote.quoteId)} role="button" tabindex="0">
@@ -485,18 +488,23 @@
               <span class="quotes-tab__item-title">{quote.title || 'Untitled'}</span>
               <span
                 class="quotes-tab__status-badge"
-                style="background: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}22; color: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}; border-color: {QUOTE_STATUS_LABEL[quote.status]?.color ?? '#64748b'}44;"
+                style="background: {QUOTE_STATUS_LABEL[shownStatus]?.color ?? '#64748b'}22; color: {QUOTE_STATUS_LABEL[shownStatus]?.color ?? '#64748b'}; border-color: {QUOTE_STATUS_LABEL[shownStatus]?.color ?? '#64748b'}44;"
               >
-                {QUOTE_STATUS_LABEL[quote.status]?.label ?? quote.status}
+                {QUOTE_STATUS_LABEL[shownStatus]?.label ?? quote.status}
               </span>
             </div>
             <div class="quotes-tab__item-meta">
               <span class="quotes-tab__item-total">{formatTotal(quote)}</span>
+              {#if chosenOptions(quote).length}
+                <span class="quotes-tab__item-choice" title="The option the client accepted. Invoices bill this one.">
+                  ✓ {chosenOptions(quote).join(' + ')}
+                </span>
+              {/if}
               <span class="quotes-tab__item-lines">{(quote.lineItems ?? []).length} line item{(quote.lineItems ?? []).length !== 1 ? 's' : ''}</span>
               <span class="quotes-tab__item-date">{formatDate(quote.createdAt)}</span>
             </div>
             <!-- Portal link — permanently visible on sent/accepted quotes ── -->
-            {#if quote.status === 'sent_to_client' || quote.status === 'client_accepted'}
+            {#if quote.status === 'sent_to_client' || shownStatus === 'client_accepted'}
               <!-- svelte-ignore a11y-click-events-have-key-events -->
               <div class="quotes-tab__portal-row" on:click|stopPropagation>
                 <svg class="quotes-tab__portal-icon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -539,7 +547,7 @@
                     <span>Copy context</span>
                   {/if}
                 </button>
-                {#if quote.status === 'client_accepted'}
+                {#if shownStatus === 'client_accepted'}
                   <button
                     class="quotes-tab__invoice-btn"
                     title="Create invoice from this accepted quote"
@@ -915,6 +923,14 @@
     border-left: 1px solid var(--irp-line);
   }
 
+  .quotes-tab__item-choice {
+    padding: 1px 8px;
+    border-radius: var(--irp-r-full);
+    background: var(--irp-accent-subtle);
+    color: var(--irp-accent-ink);
+    font-size: var(--irp-fs-xs);
+    font-weight: 700;
+  }
   .quotes-tab__item-total {
     font-weight: 700;
     font-size: var(--irp-fs-sm);

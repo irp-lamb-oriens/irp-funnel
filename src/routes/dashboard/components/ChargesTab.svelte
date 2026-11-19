@@ -30,6 +30,7 @@
     type Quote,
     type QuoteBillingSummary,
   } from '../store.ts';
+  import { isAcceptedQuote } from '$lib/quoteValue.ts';
 
   export let clientId: string;
 
@@ -74,7 +75,7 @@
    */
   $: billableQuotes = quotes.filter(
     (q) =>
-      q.status === 'client_accepted' ||
+      isAcceptedQuote(q) ||
       clientInvoices.some((inv) => inv.quoteId === q.quoteId),
   );
 

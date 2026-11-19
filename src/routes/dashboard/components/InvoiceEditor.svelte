@@ -40,7 +40,7 @@
   } from '../store.ts';
   import InvoiceDocument from './InvoiceDocument.svelte';
   import Select, { type SelectOption } from './ui/Select.svelte';
-  import { optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
+  import { chosenOptions, isAcceptedQuote, optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
 
   export let invoice: Invoice | undefined = undefined;
   /**
@@ -192,12 +192,22 @@
    * not agreed to is a billing mistake, not a shortcut — the client accepted
    * the group totals, so those are the only totals an invoice may carry.
    */
-  $: billableQuotes = clientQuotes.filter(
-    (q) => q.status === 'client_accepted',
-  );
+  // Accepted = status client_accepted OR an acceptance timestamp: an older
+  // editor reset accepted quotes to draft on save, and those must still bill.
+  $: billableQuotes = clientQuotes.filter((q) => isAcceptedQuote(q));
 
   $: selectedQuote = clientQuotes.find((q) => q.quoteId === selectedQuoteId) ?? null;
   $: quoteLines = quoteBillableLines(selectedQuote);
+  /** The option(s) the client picked, when the quote offered a choice. */
+  $: selectedChoice = chosenOptions(selectedQuote);
+  /**
+   * The billable lines must add up to what the client agreed to. They differ
+   * only when the quote was edited after acceptance and has no signed snapshot
+   * to bill from; then the operator has to check the amounts by hand.
+   */
+  $: agreedAmount = quoteValue(selectedQuote);
+  $: quoteLinesTotal = round2(quoteLines.reduce((s, l) => s + l.price, 0));
+  $: linesDisagree = !!selectedQuote && agreedAmount != null && Math.abs(quoteLinesTotal - agreedAmount) > 0.01;
   $: billing = summarizeQuoteBilling(selectedQuote, $invoices);
 
   async function loadQuotes(clientId: string): Promise<void> {
@@ -501,7 +511,7 @@
             <option value="">No quote — custom charge</option>
             {#each billableQuotes as q (q.quoteId)}
               <option value={q.quoteId}>
-                {q.title || 'Untitled quote'} · {shortDate(q.clientAcceptedAt || q.createdAt)} · {quoteValue(q) == null && optionCount(q) > 0 ? optionsLabel(optionCount(q)) : money(quoteValue(q) ?? q.total)} · {QUOTE_STATUS_LABEL[q.status]?.label ?? q.status}
+                {q.title || 'Untitled quote'} · {shortDate(q.clientAcceptedAt || q.createdAt)} · {quoteValue(q) == null && optionCount(q) > 0 ? optionsLabel(optionCount(q)) : money(quoteValue(q) ?? q.total)}{chosenOptions(q).length ? ` · ${chosenOptions(q).join(' + ')}` : ''} · {isAcceptedQuote(q) ? 'Accepted' : (QUOTE_STATUS_LABEL[q.status]?.label ?? q.status)}
               </option>
             {/each}
           </select>
@@ -517,6 +527,18 @@
 
       {#if selectedQuote}
         <div class="ie__quote">
+          {#if selectedChoice.length}
+            <p class="ie__choice" role="status">
+              Option the client accepted: <strong>{selectedChoice.join(' + ')}</strong>
+              {#if agreedAmount != null}· agreed total <strong>{money(agreedAmount)}</strong>{/if}
+            </p>
+          {/if}
+          {#if linesDisagree}
+            <p class="ie__mismatch" role="alert">
+              ⚠ This quote's lines add up to {money(quoteLinesTotal)}, but the client agreed to {money(agreedAmount)}.
+              It was edited after the client accepted it. Check the amounts before you issue this invoice.
+            </p>
+          {/if}
           <div class="ie__quote-stats">
             <div>
               <span>Quote total</span>
@@ -871,6 +893,21 @@
     font-style: normal;
   }
 
+  .ie__choice {
+    margin: 0 0 0.6rem;
+    font-size: var(--irp-fs-sm);
+    color: var(--irp-text-2);
+  }
+  .ie__mismatch {
+    margin: 0 0 0.6rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--irp-r-sm);
+    background: var(--irp-warning-bg);
+    border: 1px solid var(--irp-warning-line);
+    color: var(--irp-warning-ink);
+    font-size: var(--irp-fs-sm);
+    font-weight: 600;
+  }
   .ie__quote {
     border: 1px solid var(--irp-line);
     border-radius: var(--irp-r-md);

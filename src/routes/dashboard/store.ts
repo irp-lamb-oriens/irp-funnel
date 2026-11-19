@@ -1,5 +1,5 @@
 import { cachedRequest, invalidateRequests } from './utils/requestCache.ts';
-import { optionCount, quoteValue } from '../../lib/quoteValue.ts';
+import { agreedServices, optionCount, quoteValue } from '../../lib/quoteValue.ts';
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import store from '../../components/store.ts';
@@ -2781,6 +2781,11 @@ export interface Quote {
   finalBilledTotal?: number | null;
   /** Ordered installment schedule in percent (e.g. [35, 65]). Defaults to 35/65. */
   paymentSchedule?: number[] | null;
+  /** Frozen at acceptance: the services and prices the client signed. Invoices bill these. */
+  contractSnapshot?: {
+    services?: Array<{ id: string; title: string; description: string | null; price: number; role: string }> | null;
+    total?: number | null;
+  } | null;
 }
 
 export const QUOTE_STATUS_LABEL: Record<Quote['status'], { label: string; color: string }> = {
@@ -5403,6 +5408,39 @@ export function quoteBillableLines(quote: Quote | null | undefined): QuoteBillab
   if (!quote) return [];
   const defaultMarginPct = typeof quote.defaultMarginPct === 'number' ? quote.defaultMarginPct : 20;
   const allGroups = Array.isArray(quote.lineGroups) ? quote.lineGroups : [];
+
+  // Accepted quote: bill the services the client signed, at the prices they
+  // signed (contract snapshot), so a later edit to the quote cannot change the
+  // invoice. Same rule as the server's invoicesRouter. Cost stays internal.
+  const signed = agreedServices(quote);
+  if (signed) {
+    return signed.map((s) => {
+      const group = allGroups.find((g) => g.groupId === s.id);
+      const items: QuoteLineItem[] = group && Array.isArray(group.lineItems)
+        ? group.lineItems
+        : (Array.isArray(quote.lineItems) ? quote.lineItems : []).filter((li) => String(li?.lineId ?? '') === s.id);
+      const cost = round2Money(items.reduce((sum, li) => sum + (Number(li.amount) || 0), 0));
+      return {
+        lineId: s.id,
+        label: s.title,
+        price: s.price,
+        cost,
+        margin: round2Money(s.price - cost),
+        groupDescription: s.description,
+        lines: items.map((li) => {
+          const p = quoteLineClientPrice(li, defaultMarginPct);
+          const c = Number(li.amount) || 0;
+          return {
+            lineId: String(li?.lineId ?? ''),
+            label: String(li?.label || li?.notes || 'Relocation services'),
+            price: p,
+            cost: c,
+            margin: round2Money(p - c),
+          };
+        }),
+      };
+    });
+  }
 
   if (allGroups.length) {
     const hasSelection = Array.isArray(quote.selectedGroupIds) && quote.selectedGroupIds.length > 0;

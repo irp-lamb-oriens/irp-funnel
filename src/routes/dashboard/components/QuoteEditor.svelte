@@ -51,7 +51,7 @@
   import StarRating from './StarRating.svelte';
 
   import { aggregateByCurrency } from '$lib/money.ts';
-  import { optionCount, optionsLabel } from '$lib/quoteValue.ts';
+  import { chosenOptions, isAcceptedQuote, optionCount, optionsLabel, quoteValue } from '$lib/quoteValue.ts';
   import { browser } from '$app/environment';
 
   export let clientId: string;
@@ -209,6 +209,15 @@
 
   // ── Approval workflow state ────────────────────────────────────────────────
   let quote: Quote | null = null;
+  /**
+   * The client accepted this quote: its prices, options and status are what
+   * they signed, and invoices bill them. The server refuses those edits
+   * (acceptedQuote.ts); here the pricing section is read-only and Save only
+   * sends the fields that stay editable.
+   */
+  $: acceptedLock = !!quote && isAcceptedQuote(quote);
+  $: acceptedChoice = acceptedLock ? chosenOptions(quote) : [];
+  $: acceptedTotal = acceptedLock ? quoteValue(quote) : null;
   let noteToApprovers = '';
   let sentLink = '';
   let newCommentText = '';
@@ -1067,7 +1076,16 @@
     saving = true;
     errorMsg = '';
     try {
-      const payload: Partial<Quote> = { ...buildFieldsPayload(), status: 'draft' };
+      // An accepted quote keeps its prices, options and status; only the
+      // fields that stay editable are sent (the server refuses the rest).
+      const payload: Partial<Quote> = acceptedLock
+        ? {
+            title: title.trim(),
+            notes,
+            clientDescription: clientDescription.trim() || null,
+            paymentSchedule: paymentSchedule.map((p) => Number(p) || 0),
+          }
+        : { ...buildFieldsPayload(), status: 'draft' };
       if (quoteId) {
         await updateQuote(clientId, quoteId, payload);
       } else {
@@ -1076,7 +1094,7 @@
       clearDraft(); // persisted draft is now saved server-side
       dispatch('saved');
     } catch (err: any) {
-      errorMsg = 'Error saving: ' + (err?.message ?? err);
+      errorMsg = 'Error saving: ' + (err?.data?.message ?? err?.message ?? err);
     } finally {
       saving = false;
     }
@@ -1302,6 +1320,25 @@
   {:else}
     <div class="quote-editor__body">
 
+      {#if acceptedLock && quote}
+        <div class="qe-locked-banner" role="status">
+          <span class="qe-locked-banner__icon" aria-hidden="true">🔒</span>
+          <div class="qe-locked-banner__text">
+            <strong>Accepted by {quote.clientAcceptedBy || 'the client'}{quote.clientAcceptedAt
+              ? ` on ${new Date(quote.clientAcceptedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+              : ''}</strong>
+            <span>
+              {#if acceptedChoice.length}Option chosen: <b>{acceptedChoice.join(' + ')}</b> · {/if}Agreed total:
+              <b>{acceptedTotal != null ? acceptedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'} {quote.currency ?? 'USD'}</b>
+            </span>
+            <span class="qe-locked-banner__hint">
+              Prices and options are locked so invoices match what the client signed. The title, description,
+              notes and payment schedule can still change. To change the price, create a new quote.
+            </span>
+          </div>
+        </div>
+      {/if}
+
       {#if draftRestored}
         <div class="qe-draft-banner">
           <span class="qe-draft-banner__txt">✎ Unsaved draft restored</span>
@@ -1331,6 +1368,8 @@
       </div>
 
 
+      <!-- Pricing: read-only once the client accepted (see acceptedLock). -->
+      <fieldset class="qe-lockable" disabled={acceptedLock}>
       <!-- Service type (required) — auto-populated from AI transcript insights -->
       <div class="qe-field" class:qe-field--error={serviceTypeError}>
         <div class="qe-label-row">
@@ -1732,6 +1771,8 @@
         </div>
       </div>
       {/if}
+
+      </fieldset>
 
       <!-- Payment schedule — installment segments in percent of the agreed total.
            Defaults to 35/65; the first segment is the reservation payment. Add or
@@ -2251,14 +2292,14 @@
           {#if saving}
             <span class="qe-btn-spinner"></span> Saving…
           {:else}
-            💾 Save draft
+            {acceptedLock ? '💾 Save text & schedule' : '💾 Save draft'}
           {/if}
         </button>
 
         <!-- One-click Save + Submit for approval. Shown for new quotes and for
              quotes still in draft / changes_requested (nothing to submit once
              already pending/approved). -->
-        {#if !quote || quote.status === 'draft' || quote.status === 'changes_requested'}
+        {#if !acceptedLock && (!quote || quote.status === 'draft' || quote.status === 'changes_requested')}
           <button
             type="button"
             class="qe-btn qe-btn--submit"
@@ -3931,6 +3972,23 @@
   .qe-field-hint--err { color: var(--irp-danger-ink); font-weight: 600; font-size: var(--irp-fs-sm); font-style: normal; }
 
   /* ── Unsaved-draft restored banner ──────────────────────────────────────── */
+  .qe-locked-banner {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: var(--irp-r-md);
+    background: var(--irp-accent-subtle, var(--irp-bg));
+    border: 1px solid var(--irp-accent);
+    color: var(--irp-text);
+    font-size: var(--irp-fs-sm);
+  }
+  .qe-locked-banner__icon { font-size: var(--irp-fs-md); line-height: 1.3; }
+  .qe-locked-banner__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .qe-locked-banner__hint { color: var(--irp-text-muted); font-size: var(--irp-fs-xs); }
+  /* A plain wrapper: no fieldset chrome, only the disabled state. */
+  .qe-lockable { border: 0; margin: 0; padding: 0; min-width: 0; display: contents; }
+  .qe-lockable:disabled :global(input),
+  .qe-lockable:disabled :global(select),
+  .qe-lockable:disabled :global(textarea),
+  .qe-lockable:disabled :global(button) { cursor: not-allowed; }
   .qe-draft-banner {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 8px 14px; border-radius: var(--irp-r-md);

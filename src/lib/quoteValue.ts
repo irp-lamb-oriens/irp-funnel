@@ -20,6 +20,9 @@ type QuoteLike = {
   lineGroups?: GroupLike[] | null;
   /** Set by the finance/sales endpoints, which already resolved the value. */
   optionCount?: number | null;
+  selectedGroupIds?: string[] | null;
+  /** Frozen at acceptance: the services and prices the client signed. */
+  contractSnapshot?: { services?: unknown[] | null } | null;
 };
 
 const WON_STATUS = 'client_accepted';
@@ -58,4 +61,50 @@ export function quoteValue(q: QuoteLike | null | undefined): number | null {
   if (isAcceptedQuote(q)) return num(q.finalBilledTotal) ?? num(q.total);
   if (optionCount(q) > 0) return null;
   return num(q.total);
+}
+
+// ── Accepted quotes are fixed ──────────────────────────────────────────────
+// Mirror of irp-funnel-server API/dashboard/acceptedQuote.ts (keep in step).
+// Once the client accepts, the server refuses price/option/status edits, and
+// invoices bill the services from the contract snapshot taken at acceptance.
+
+export type AgreedService = { id: string; title: string; description: string | null; price: number; role: string };
+
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/**
+ * The services the client signed for, at the prices they signed, or null when
+ * the quote is not accepted, has no contract snapshot, or the snapshot does not
+ * add up to the agreed total (then the quote's own lines are used).
+ */
+export function agreedServices(q: QuoteLike | null | undefined): AgreedService[] | null {
+  if (!q || !isAcceptedQuote(q)) return null;
+  const services = q.contractSnapshot?.services;
+  if (!Array.isArray(services) || services.length === 0) return null;
+  const valid = services.every(
+    (s: any) => s && typeof s.id === 'string' && typeof s.price === 'number' && Number.isFinite(s.price),
+  );
+  if (!valid) return null;
+  const list = services as Array<{ id: string; title?: string; description?: string | null; price: number; role?: string }>;
+  const sum = round2(list.reduce((acc, s) => acc + s.price, 0));
+  const agreed = quoteValue(q);
+  if (agreed != null && Math.abs(sum - agreed) > 0.01) return null;
+  return list.map((s) => ({
+    id: s.id,
+    title: String(s.title || 'Relocation services'),
+    description: typeof s.description === 'string' && s.description.trim() ? s.description.trim() : null,
+    price: round2(s.price),
+    role: String(s.role || 'line'),
+  }));
+}
+
+/** Titles of the option(s) the client chose on an accepted quote; [] otherwise. */
+export function chosenOptions(q: QuoteLike | null | undefined): string[] {
+  if (!q || !isAcceptedQuote(q)) return [];
+  const agreed = agreedServices(q);
+  if (agreed) return agreed.filter((s) => s.role === 'required' || s.role === 'optional').map((s) => s.title);
+  const chosen = new Set(Array.isArray(q.selectedGroupIds) ? q.selectedGroupIds : []);
+  return groupsOf(q)
+    .filter((g) => g.role !== 'fixed' && chosen.has(String(g.groupId ?? '')))
+    .map((g) => String(g.title ?? '').trim() || 'Option');
 }
