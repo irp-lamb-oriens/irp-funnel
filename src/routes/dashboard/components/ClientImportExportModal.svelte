@@ -25,6 +25,7 @@
     clients,
     filteredClients,
     serializeClientExport,
+    serializeClientContacts,
     normalizeImportRecords,
     importClientsDryRun,
     importClientsCommit,
@@ -44,6 +45,9 @@
   // ── Export state ──────────────────────────────────────────────────────────
   type ExportScope = 'filtered' | 'all';
   let exportScope: ExportScope = 'filtered';
+  /** contacts = ref, name, email, phone only; full = the whole record (re-importable). */
+  type ExportFormat = 'contacts' | 'full';
+  let exportFormat: ExportFormat = 'full';
   let exportDone = false;
 
   $: exportList = exportScope === 'all' ? $clients : $filteredClients;
@@ -68,8 +72,8 @@
       return;
     }
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-    const json = serializeClientExport(list);
-    downloadJson(json, `irp-clients-${exportScope}-${stamp}.json`);
+    const json = exportFormat === 'contacts' ? serializeClientContacts(list) : serializeClientExport(list);
+    downloadJson(json, `irp-${exportFormat === 'contacts' ? 'contacts' : 'clients'}-${exportScope}-${stamp}.json`);
     exportDone = true;
     toasts.success(`Exported ${list.length} client${list.length === 1 ? '' : 's'}.`);
   }
@@ -265,6 +269,35 @@
               <span class="iem-scope-title">All clients</span>
               <span class="iem-scope-count">{$clients.length}</span>
               <span class="iem-scope-note">Full CRM snapshot</span>
+            </button>
+          </div>
+
+          <div class="iem-scope iem-scope--format" role="group" aria-label="What to include">
+            <button
+              class="iem-scope-card"
+              class:active={exportFormat === 'full'}
+              aria-pressed={exportFormat === 'full'}
+              on:click={() => (exportFormat = 'full')}
+            >
+              {#if exportFormat === 'full'}
+                <span class="iem-scope-check" in:scale={{ duration: 220, easing: elasticOut }}>✓</span>
+              {/if}
+              <span class="iem-scope-icon">📦</span>
+              <span class="iem-scope-title">Full records</span>
+              <span class="iem-scope-note">Everything on each client. Re-importable backup.</span>
+            </button>
+            <button
+              class="iem-scope-card"
+              class:active={exportFormat === 'contacts'}
+              aria-pressed={exportFormat === 'contacts'}
+              on:click={() => (exportFormat = 'contacts')}
+            >
+              {#if exportFormat === 'contacts'}
+                <span class="iem-scope-check" in:scale={{ duration: 220, easing: elasticOut }}>✓</span>
+              {/if}
+              <span class="iem-scope-icon">📇</span>
+              <span class="iem-scope-title">Contact list</span>
+              <span class="iem-scope-note">Ref., name, email and phone only. For labeling WhatsApp groups.</span>
             </button>
           </div>
         </div>
@@ -824,6 +857,7 @@
      EXPORT SCOPE CARDS
   ══════════════════════════════════════════════════════════════════════ */
   .iem-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .iem-scope--format { margin-top: 1rem; }
   .iem-scope-card {
     position: relative;
     display: flex;

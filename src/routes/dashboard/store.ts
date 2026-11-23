@@ -4389,6 +4389,37 @@ export function serializeClientExport(list: Client[]): string {
 }
 
 /**
+ * One row of the contact list export: what staff need to match a client to a
+ * WhatsApp group or an inbox — the 8-character reference, name, email, phone.
+ * Nothing else from the record (no notes, transcripts or quotes) leaves the CRM.
+ */
+export interface ClientContactRecord {
+  /** The client's 8-character reference ('' if the client has none yet). */
+  ref: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+/** Contact rows for the given clients, sorted by name (unnamed last). */
+export function buildClientContactRecords(list: Client[]): ClientContactRecord[] {
+  return (list || [])
+    .map((c) => ({
+      ref: typeof (c as any).shortId === 'string' ? (c as any).shortId : '',
+      name: [c.name, c.surname].map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean).join(' '),
+      email: typeof c.email === 'string' ? c.email.trim() : '',
+      phone: typeof c.phone === 'string' ? c.phone.trim() : '',
+    }))
+    .sort((a, b) => (!a.name ? 1 : !b.name ? -1 : a.name.localeCompare(b.name, 'es')));
+}
+
+/** Serialize the contact list export: `{ exportedAt, count, contacts: [...] }`. */
+export function serializeClientContacts(list: Client[]): string {
+  const contacts = buildClientContactRecords(list);
+  return JSON.stringify({ exportedAt: new Date().toISOString(), count: contacts.length, contacts }, null, 2);
+}
+
+/**
  * Normalize parsed JSON into a flat records array. Accepts either a bare array
  * of records or the `{ clients: [...] }` export envelope — so an exported file
  * re-imports without any hand-editing.
