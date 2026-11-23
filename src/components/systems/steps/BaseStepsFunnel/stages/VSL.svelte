@@ -142,7 +142,7 @@
 			/>
 			<div class="gap">
 				<MarkdownText {canReveal}>
-					You can **only** schedule your **consultation** call from **three** to **five** days in advance.
+					You can schedule your **consultation** call for as soon as **three hours** from now.
 				</MarkdownText>
 				<br><br>
 			</div>

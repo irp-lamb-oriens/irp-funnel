@@ -3,7 +3,7 @@
   import store, { saveToStore } from "../../../store.ts";
   import StepsTowardsPublish from "./StepsTowardsPublish.svelte";
   import VSL from "./stages/VSL.svelte";
-  import ZohoScheduling from "./stages/ZohoScheduling.svelte";
+  import BookCallStage from "./stages/BookCallStage.svelte";
   import EmailInputStage from "./stages/EmailInputStage.svelte";
   import AgeInputStage from "./stages/AgeInputStage.svelte";
   // import SexInputStage from "./stages/SexInputStage.svelte"; // Already commented out or removed
@@ -44,7 +44,7 @@
     [isBudgetValid, AgeInputStage],
     [isBirthdayValid, VehiclesInputStage],
     [isVehiclesValid, ReasonInputStage],
-    [isReasonsValid, ZohoScheduling], // ZohoScheduling follows VSL
+    [isReasonsValid, BookCallStage],
   ];
 </script>
 

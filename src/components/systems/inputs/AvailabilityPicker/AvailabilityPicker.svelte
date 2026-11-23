@@ -31,7 +31,7 @@
   import { onMount } from 'svelte';
   import { writable, get } from 'svelte/store';
   import TagNode from '../Calendar/TagNode.svelte';
-  import { parseBusyEvents, slotConflictsWithBusy } from '../slotConflict.ts';
+  import { isBeforeMinimumNotice, parseBusyEvents, slotConflictsWithBusy } from '../slotConflict.ts';
   import {
     getClientTimezone,
     getTimezoneLabel,
@@ -60,7 +60,7 @@
   /**
    * When true (staff/dashboard context), reveals a "⚡ Pick a custom time"
    * toggle that lets staff book same-day or off-hours appointments bypassing
-   * the 2-day grace and working-hours filter. NEVER set this on the public form.
+   * the minimum notice and working-hours filter. NEVER set this on the public form.
    */
   export let staffMode: boolean = false;
 
@@ -76,7 +76,7 @@
   let useCustomTime = false;
   let customTimeValue = '';
 
-  /** Minimum datetime-local value = right now (no grace restriction for staff). */
+  /** Minimum datetime-local value = right now (no minimum notice for staff). */
   $: todayMin = (() => {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -188,22 +188,6 @@
     return new Date(date.getTime() + offset * 60 * 1000);
   }
 
-  function getStartDate(): Date {
-    let date = convertToCST(new Date());
-    // CRM staff bypass the 2-working-day grace period entirely: the calendar
-    // grid starts from TODAY so operators can book same-day / next-day calls.
-    // The public hero form leaves staffMode=false, so the grace period below
-    // still applies to self-scheduling clients — behaviour is unchanged there.
-    if (staffMode) return date;
-    let workingDaysToAdd = 2;
-    while (workingDaysToAdd > 0) {
-      date.setUTCDate(date.getUTCDate() + 1);
-      const dow = date.getUTCDay();
-      if (dow !== 0 && dow !== 5 && dow !== 6) workingDaysToAdd--;
-    }
-    return date;
-  }
-
 
   async function loadAvailableDates() {
     try {
@@ -215,7 +199,7 @@
 
 
       const datesWithHours: Record<string, Segment[]> = {};
-      const startOfDay = getStartDate();
+      const startOfDay = convertToCST(new Date());
       const maxDate = convertToCST(new Date());
       maxDate.setUTCDate(maxDate.getUTCDate() + 14);
 
@@ -231,6 +215,7 @@
           const t = new Date(d);
           t.setUTCHours(hour + 6, 0, 0, 0);
           const slotMs = t.getTime();
+          if (!staffMode && isBeforeMinimumNotice(slotMs)) continue;
           // Unavailable if it overlaps an event OR sits within the 30-min
           // inter-call buffer of one — same rule as the backend (slotConflict.ts).
           const isBusy = slotConflictsWithBusy(slotMs, busyEvents);
@@ -243,10 +228,12 @@
         }
       }
 
-      const formattedDates: AvailableDate[] = Object.entries(datesWithHours).map(([date, segs]) => ({
-        date,
-        availableHours: segs.filter(s => s.children.length > 0),
-      }));
+      const formattedDates: AvailableDate[] = Object.entries(datesWithHours)
+        .map(([date, segs]) => ({
+          date,
+          availableHours: segs.filter(s => s.children.length > 0),
+        }))
+        .filter(day => day.availableHours.length > 0);
       availableDatesStore.set(formattedDates);
 
       // If a preselected slot was provided, activate its date and segment

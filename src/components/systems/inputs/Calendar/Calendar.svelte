@@ -4,7 +4,7 @@
   import { formState, updateField } from "./formStore.js";
   import store from "../../../store.ts";
   import TagNode from "./TagNode.svelte";
-  import { parseBusyEvents, slotConflictsWithBusy } from "../slotConflict.ts";
+  import { isBeforeMinimumNotice, parseBusyEvents, slotConflictsWithBusy } from "../slotConflict.ts";
   import {
     getClientTimezone,
     getTimezoneNotice,
@@ -104,7 +104,7 @@
 
 
       const datesWithHours: { [key: string]: { name: string; children: { name: string; value: string; disabled: boolean }[] }[] } = {};
-      const startOfDay = getStartDate();
+      const startOfDay = convertToCST(new Date());
       const maxDate = convertToCST(new Date());
       maxDate.setUTCDate(maxDate.getUTCDate() + 14);
 
@@ -136,6 +136,7 @@
 
 
           const slotTime = availableTime.getTime();
+          if (isBeforeMinimumNotice(slotTime)) continue;
           // A slot is unavailable if it overlaps an event OR sits within the
           // 30-min inter-call buffer of one (no back-to-back calls). Shared with
           // the backend rule via slotConflict.ts → mirrors scheduling-policy.ts.
@@ -156,10 +157,12 @@
         }
       }
 
-      const formattedDates = Object.entries(datesWithHours).map(([date, availableHours]) => ({
-        date,
-        availableHours: availableHours.filter(segment => segment.children.length > 0),
-      }));
+      const formattedDates = Object.entries(datesWithHours)
+        .map(([date, availableHours]) => ({
+          date,
+          availableHours: availableHours.filter(segment => segment.children.length > 0),
+        }))
+        .filter(day => day.availableHours.length > 0);
       availableDatesStore.set(formattedDates);
       console.log("Formatted and stored available dates.");
     } catch (err: any) {
@@ -174,22 +177,6 @@
     const offset = -6 * 60;
     const localDate = new Date(date.getTime() + offset * 60 * 1000);
     return localDate;
-  }
-
-  function getStartDate(): Date {
-    let date = convertToCST(new Date());
-    let workingDaysToAdd = 2;
-
-    while (workingDaysToAdd > 0) {
-      date.setUTCDate(date.getUTCDate() + 1);
-      const dayOfWeek = date.getUTCDay();
-      // Fri (5) is NOT a working day — mirrors backend getEarliestBookableTime().
-      if (dayOfWeek !== 0 && dayOfWeek !== 5 && dayOfWeek !== 6) {
-        workingDaysToAdd--;
-      }
-    }
-
-    return date;
   }
 </script>
 

@@ -1,7 +1,7 @@
 /**
  * Client-side mirror of the server scheduling rule in
  * `irp-funnel-server/API/chatbot/agents/scheduling-policy.ts`
- * (`interCallBufferMinutes` + `conflictsWithBusy`).
+ * (`interCallBufferMinutes` + `conflictsWithBusy` + `minimumNoticeHours`).
  *
  * The browser can't import the Deno server module, so this small helper keeps
  * the calendar pickers (Calendar.svelte, AvailabilityPicker.svelte) in lockstep
@@ -9,11 +9,16 @@
  * within the 30-min inter-call buffer of one. Consultation calls are never
  * booked back-to-back — the team needs that gap to enter details before quoting.
  *
- * ⚠️ Keep the two constants below in sync with SCHEDULING_POLICY on the server.
+ * ⚠️ Keep the constants below in sync with SCHEDULING_POLICY on the server.
  */
 
 export const SLOT_DURATION_MS = 30 * 60 * 1000;
 export const INTER_CALL_BUFFER_MS = 30 * 60 * 1000;
+export const MINIMUM_NOTICE_MS = 3 * 60 * 60 * 1000;
+
+export function isBeforeMinimumNotice(slotStartMs: number, nowMs: number = Date.now()): boolean {
+  return slotStartMs < nowMs + MINIMUM_NOTICE_MS;
+}
 
 export interface BusyEvent {
   start: number; // epoch ms

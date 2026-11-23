@@ -1,8 +1,14 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Page from '../../../wrappers/Page/Page.svelte';
 	import MarkdownText from '../../../texts/MarkdownText/MarkdownText.svelte';
+	import SubmitButton from '../../../buttons/SubmitButton/SubmitButton.svelte';
 
 	export let canReveal = false;
+
+	function openBookingForm() {
+		goto(`/${window.location.search}#hero-form`);
+	}
 </script>
 
 <Page>
@@ -10,32 +16,26 @@
 		<MarkdownText {canReveal}>
 			## **Here you** schedule the call with us.
 		</MarkdownText>
-	</div>
-	<div class="spacing">
-		<iframe width='100%' height='750px' src='https://zohodev-internationalrelocationpartner39.zohobookings.com/portal-embed#/internationalrelocationpartner' frameborder={0} allowfullscreen={true} > </iframe>
+		<div class="center">
+			<SubmitButton color="error" label="Book your call" callback={openBookingForm} />
+		</div>
 	</div>
 </Page>
 
-
 <style>
-	.pt	{
-		padding-top: 100px;
-	}
-
-	.spacing {
-		padding: 25px 0;
-		background: #f7f8fc;
-		width: 100vw;
-	}
-
 	.gap {
 		display: grid;
 		grid-gap: 25px;
 		max-width: 1024px;
 		margin: auto;
-		
+
 		@media (max-width: 1024px) {
 			padding: 25px;
 		}
+	}
+
+	.center {
+		display: grid;
+		justify-items: center;
 	}
 </style>
