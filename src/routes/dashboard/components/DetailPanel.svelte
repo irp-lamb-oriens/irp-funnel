@@ -1823,6 +1823,34 @@
         </div>
       {:else if detailTab === 'actions'}
         <div class="actions-tab">
+          <div class="actions-tab__header">
+            <span class="actions-tab__stage-badge" style="background: {STAGE_COLORS[$selectedClient.stage] || '#64748b'}">
+              {STAGE_ICONS[$selectedClient.stage] || '⚡'} {STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}
+            </span>
+            <span class="actions-tab__count">{Object.keys(actionsPayload).length} action{Object.keys(actionsPayload).length !== 1 ? 's' : ''}</span>
+            <!-- ── Cross-stage selector ──────────────────────────────────── -->
+            <div class="actions-tab__stage-selector-wrap" title="Run actions from any pipeline stage">
+              <label class="actions-tab__stage-selector-label" for="actions-stage-select">Stage:</label>
+              <select
+                id="actions-stage-select"
+                class="actions-tab__stage-select"
+                value={selectedActionsStage}
+                on:change={handleActionsStageChange}
+                disabled={actionsLoading}
+              >
+                {#each stageEntries as [stageKey, stageLabel]}
+
+                  <option value={stageKey}>{stageLabel}</option>
+                {/each}
+              </select>
+              {#if selectedActionsStage && selectedActionsStage !== actionsClientStage}
+                <span class="actions-tab__cross-stage-hint" title="Showing actions from a different stage">
+                  ↔ cross-stage
+                </span>
+              {/if}
+            </div>
+          </div>
+
           {#if actionsLoading}
             <div class="actions-tab__loading" role="status">
               <div class="actions-tab__skeleton"></div>
@@ -1832,40 +1860,12 @@
           {:else if Object.keys(actionsPayload).length === 0}
             <div class="actions-tab__empty" role="status">
               <span class="actions-tab__empty-icon">⚡</span>
-              <p class="actions-tab__empty-title">No actions configured</p>
+              <p class="actions-tab__empty-title">No actions for this stage</p>
               <p class="actions-tab__empty-desc">
-                No custom actions available for the <strong>{STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}</strong> stage.
+                Nothing to run in <strong>{STAGE_LABELS[selectedActionsStage || $selectedClient.stage] || selectedActionsStage || $selectedClient.stage}</strong>. Pick another stage above, or move the client from the stage chip.
               </p>
             </div>
           {:else}
-            <div class="actions-tab__header">
-              <span class="actions-tab__stage-badge" style="background: {STAGE_COLORS[$selectedClient.stage] || '#64748b'}">
-                {STAGE_ICONS[$selectedClient.stage] || '⚡'} {STAGE_LABELS[$selectedClient.stage] || $selectedClient.stage}
-              </span>
-              <span class="actions-tab__count">{Object.keys(actionsPayload).length} action{Object.keys(actionsPayload).length !== 1 ? 's' : ''}</span>
-              <!-- ── Cross-stage selector ──────────────────────────────────── -->
-              <div class="actions-tab__stage-selector-wrap" title="Run actions from any pipeline stage">
-                <label class="actions-tab__stage-selector-label" for="actions-stage-select">Stage:</label>
-                <select
-                  id="actions-stage-select"
-                  class="actions-tab__stage-select"
-                  value={selectedActionsStage}
-                  on:change={handleActionsStageChange}
-                  disabled={actionsLoading}
-                >
-                  {#each stageEntries as [stageKey, stageLabel]}
-
-                    <option value={stageKey}>{stageLabel}</option>
-                  {/each}
-                </select>
-                {#if selectedActionsStage && selectedActionsStage !== actionsClientStage}
-                  <span class="actions-tab__cross-stage-hint" title="Showing actions from a different stage">
-                    ↔ cross-stage
-                  </span>
-                {/if}
-              </div>
-            </div>
-
             <div class="actions-tab__list">
               {#each Object.entries(actionsPayload) as [actionKey, schema]}
                 <div class="actions-card" class:actions-card--expanded={expandedAction === actionKey}>

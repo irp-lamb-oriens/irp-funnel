@@ -659,6 +659,8 @@
 
   function isNoShow(client: Client): boolean {
     if (client.callOutcome === 'no_show') return true;
+    // A transcript means the call happened, whatever column the card is in.
+    if (client.transcript || client.meetingNotes?.text) return false;
     if (client.stage === 'sales_preconsultation' && client.scheduling?.length > 0) {
       // If call date is past by more than 1 hour and they are still in preconsultation
       const callTime = new Date(client.scheduling[0]).getTime();
