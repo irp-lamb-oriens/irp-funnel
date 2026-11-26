@@ -14,7 +14,7 @@
 
 import type { LeadFact } from '../../metrics/engine/types.ts';
 import { armsOf, DAY_MS, type JoinedExperiment } from './join.ts';
-import { metricDef, stepKeysIn, type MetricDef } from './metrics.ts';
+import { metricDef, portalKeysIn, stepKeysIn, type MetricDef } from './metrics.ts';
 import { decisionPoint, evaluate, RULES, type RuleResult } from './rules.ts';
 import { forecastDecision, type Forecast } from './forecast.ts';
 import {
@@ -154,8 +154,8 @@ export function analyzeExperiment(j: JoinedExperiment, o: AnalysisOptions): Expe
   const used = new Set<string>([def.primaryMetric, ...def.guardrails]);
   const secondaryKeys: MetricKey[] =
     def.surface === 'email'
-      ? (['dripOpen', 'dripClick', 'wonMature'] as MetricKey[])
-      : ([...stepKeysIn(j.units), 'lead', 'callBooked', 'showRate', 'quoted', 'wonMature', 'paidMature', 'dropped', 'bookedPerVisitor'] as MetricKey[]);
+      ? (['dripOpen', 'dripClick', ...portalKeysIn(j.units), 'wonMature'] as MetricKey[])
+      : ([...stepKeysIn(j.units), 'lead', 'callBooked', 'showRate', 'quoted', ...portalKeysIn(j.units), 'wonMature', 'paidMature', 'dropped', 'bookedPerVisitor'] as MetricKey[]);
   const secondary = secondaryKeys.filter((k) => !used.has(k) && surfaceOk(k)).map((k) => metricResult(j.units, arms, def.control, k, 'secondary', o.now, o));
 
   // SRM on ALL units (before exclusions) vs the declared split.

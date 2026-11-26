@@ -54,6 +54,19 @@ Siempre a mano, en el orden de las columnas, a medida que pasa cada hito (empaqu
 - `❌ Transcript`: ya pasó la llamada y falta la transcripción. Cargala en `Overview` → `Paste Transcript`, o esperá a que llegue sola de Google Meet.
 - Circulito turquesa con número: hay tareas pendientes (correos sugeridos, comentarios del cliente, menciones).
 
+### B.5 Correos que salen solos al mover de etapa
+Algunas etapas mandan un correo al cliente sin que nadie apriete enviar. Es a propósito: reemplazan a las antiguas columnas de opinión (Feedback A, B y C). Las reglas de fábrica son:
+
+| Al entrar a | Correo | Cuándo sale |
+|---|---|---|
+| `Post Transcript` | `Nurture: Feedback` | 24 h después, y solo si la IA detectó que el cliente estuvo en la llamada |
+| `Exporting` | `Mid-Ops Check-in` | En el momento |
+| `Operations Done` | `Nurture: Final Feedback` | En el momento |
+
+Las reglas se ven y se cambian en `Automations` → `🗂️ Stages & rules`, debajo de cada etapa. Si una etapa que no está en la tabla manda correo (por ejemplo `Destination Arrival`), alguien agregó esa regla ahí.
+
+Las demás etapas solo **sugieren** correos: aparecen en `Emails` → `💡 Suggested emails` y no salen hasta que alguien las envía.
+
 ---
 
 ## C. Cotizar y enviar la cotización
@@ -80,7 +93,7 @@ Siempre a mano, en el orden de las columnas, a medida que pasa cada hito (empaqu
 4. **Un aprobador revisa**: abre la cotización (pastilla ámbar `In review`). Ve `You're an approver…` y elige `✅ Approve quote`, `✍️ Approve with edits` o `✏️ Request changes` (escribe qué cambiar → `Submit change request`). Si pide cambios, la pastilla queda roja `Changes requested`; precios corrige y vuelve al paso 3.
 5. **Enviar al cliente**: con la pastilla `Ready to send`, `📤 Send quote to client`. El cliente recibe un correo con el enlace a su portal. La pastilla pasa a azul `Sent to client`, aparece el enlace `…/status/<id>` con `Copy context`, y el cliente pasa solo de `Pricing Quote` a `Quoted`.
 6. **El cliente acepta** en su portal: elige opción, firma. El cliente pasa solo a `Quote Acceptance`, la pastilla se vuelve verde `Accepted ✓`, aparecen `Create invoice`, `Contract PDF` y el bloque `Payments`.
-7. **Cobro**: si paga en línea, se registra solo. Si transfiere, `Confirm money that arrived` con el monto y la fecha que da la persona. El primer pago lo pasa a `Initial Payment`.
+7. **Cobro**: si paga en línea, se registra solo. Si transfiere, `Confirm money that arrived` con el monto y la fecha que da la persona. Ese botón está en `💰 Quotes`, en el bloque `Payments`, que solo aparece cuando hay una cotización aceptada. El primer pago lo pasa a `Initial Payment`.
 
 Para cambiar el precio de una cotización ya aceptada no se edita: se crea otra (`⧉` duplicar sirve de base).
 
@@ -95,10 +108,10 @@ El disparador es que el cliente llegue a `💳 Initial Payment`. A partir de ah�
 3. **Cargar los datos de envío** en `Overview` → tarjeta `📦 Shipping Details` → `Logistics details`.
 4. **En `🏗️ Loading`**:
    - `⚡ Actions` → `Confirm Pickup Details`: método de envío confirmado, volumen en m³, fecha de empaque y fecha de carga. Pisa las estimaciones de ventas y alimenta los correos siguientes.
-   - Para pedirle fechas al proveedor: `Emails` → `Choose email type…` → `📦 Provider Date Request (Ops)` → `👁 Preview & Send`.
+   - Para pedirle fechas al proveedor: `Emails` → `Choose email type…` → `Provider Date Request` → `👁 Preview & Send`.
 5. **`🚛 Container`** cuando está consolidado.
 6. **En `🚢 Exporting`** → `⚡ Actions` → `Start Eta Loop`: correo del agente de origen, fecha estimada de salida (ETD), método y volumen. Desde ahí el sistema le pregunta al proveedor por fechas cada 7 días (marítimo) o cada día (aéreo/terrestre). En `📦 Shipping Details` aparece el estado del seguimiento.
-7. **En `🛬 Destination Arrival`** → `⚡ Actions` → `Confirm Eta`: ETA confirmada, días de tránsito y correo del agente de destino. Detiene las preguntas automáticas y le manda al cliente el correo `✅ ETA Confirmed → Client`.
+7. **En `🛬 Destination Arrival`** → `⚡ Actions` → `Confirm Eta`: ETA confirmada, días de tránsito y correo del agente de destino. Detiene las preguntas automáticas y le manda al cliente el correo `ETA Confirmed to Client`.
 8. **Destino, importación y entrega**: avanzar columna por columna. Costos de destino o extras no cotizados se facturan desde `Finance` → `Invoices` y quedan en la pestaña `🧾 Charges`.
 9. **`📋 Proof of Delivery (POD)`** al recibir la constancia; `🛡️ Insurance Claim` solo si hay reclamo.
 10. **`🎉 Operations Done`** y luego **`🏁 Completed`**. Revisá en `🧾 Charges` que `Balance due` esté en cero.

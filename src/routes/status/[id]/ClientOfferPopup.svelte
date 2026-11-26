@@ -21,7 +21,7 @@
   export let ctaLabel = '';
   export let ctaUrl = '';
 
-  const dispatch = createEventDispatcher<{ close: void }>();
+  const dispatch = createEventDispatcher<{ close: void; cta: void }>();
 
   function close() {
     dispatch('close');
@@ -84,7 +84,7 @@
             href={ctaUrl.trim()}
             target="_blank"
             rel="noopener noreferrer"
-            on:click={close}
+            on:click={() => { dispatch('cta'); close(); }}
           >
             <span class="cop-cta__label">{ctaLabel}</span>
             <svg class="cop-cta__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>

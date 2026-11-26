@@ -6,7 +6,7 @@
   import {
     isAuthenticated, authEmail, authToken,
     clients, selectedClient, metrics, loading, error,
-    clientsLoading, clientsLoadedOnce,
+    clientsLoading, clientsLoadedOnce, clientsStreaming,
     searchQuery, filters, filteredClients, activeView, detailPanelOpen, clientsByStage, pendingRequests,
     searchLookupIds, lookupClients,
     stageOrderStore, stageConfig,
@@ -27,6 +27,11 @@
 
   } from './store.ts';
   import { toasts } from './toastStore.ts';
+  import { fly } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
+  import { cubicOut } from 'svelte/easing';
+  import { cascade, motionMs, reducedMotion } from './utils/motion.ts';
+  import AnimatedNumber from './components/ui/AnimatedNumber.svelte';
 
 
   import {
@@ -917,7 +922,7 @@
           <button class="filter-clear" on:click={() => $filters = {stage: '', originCountry: '', destinationCountry: '', budget: '', size: '', callOutcome: '', serviceCategory: ''}} title="Remove every filter and show all clients">Clear filters</button>
         {/if}
         <span class="filters-bar__count" role="status" aria-live="polite">
-          {#if activeFilterCount > 0}{$filteredClients.length} of {$clients.length} clients · {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} on{:else}{$clients.length} clients{/if}
+          {#if $clientsStreaming}<span class="filters-bar__arriving">Loading</span> <AnimatedNumber value={$clients.length} /> clients{:else if activeFilterCount > 0}{$filteredClients.length} of {$clients.length} clients · {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} on{:else}<AnimatedNumber value={$clients.length} /> clients{/if}
         </span>
       </div>
     {/if}
@@ -970,7 +975,7 @@
                   aria-label={STAGE_DESCRIPTIONS[stageKey]}
                 >ⓘ</span>
               {/if}
-              <span class="board__column-count">{colQuery ? `${filteredCards.length}/${allCards.length}` : allCards.length}</span>
+              <span class="board__column-count">{#if colQuery}{filteredCards.length}/{allCards.length}{:else}<AnimatedNumber value={allCards.length} duration={500} />{/if}</span>
               {#if overdueCount > 0}
                 <span
                   class="board__column-overdue"
@@ -988,26 +993,17 @@
               />
             </div>
             <div class="board__column-cards">
-              {#if boardLoading}
-                <!-- Trello/Jira-style shimmering placeholders while the first
-                     fetch is in flight. Identical set per column so the whole
-                     board animates in sync. aria-hidden — purely decorative. -->
-                {#each SKELETON_CARDS as i (i)}
-                  <div class="card card--skeleton" style="--sk-delay: {i * 0.09}s" aria-hidden="true">
-                    <div class="sk-line sk-line--title"></div>
-                    <div class="sk-line sk-line--route"></div>
-                    <div class="sk-meta">
-                      <span class="sk-pill"></span>
-                      <span class="sk-pill sk-pill--sm"></span>
-                    </div>
-                  </div>
-                {/each}
-              {:else}
-              {#each visibleCards as client (client.id)}
+              <!-- Cards fly in as each page of the list lands, and glide to
+                   their new place when the order changes. The each block
+                   exists from the start, so only cards added later animate:
+                   coming back to the Board never replays it. -->
+              {#each visibleCards as client, i (client.id)}
                 {@const sla = getStageSlaStatus(client, nowMs)}
 
                 <div
                   class="card"
+                  in:fly={{ y: 12, duration: motionMs(420, $reducedMotion), delay: cascade(i, $reducedMotion), easing: cubicOut }}
+                  animate:flip={{ duration: motionMs(360, $reducedMotion), easing: cubicOut }}
                   class:card--missing-name={!client.nameKnown}
                   class:card--no-show={isNoShow(client)}
                   class:card--overdue={sla.overdue}
@@ -1100,14 +1096,28 @@
                   </div>
                 </div>
               {/each}
+              {#if boardLoading || $clientsStreaming}
+                <!-- Shimmering placeholders while the list is still arriving:
+                     a full set before the first page, two under the cards
+                     after it. Decorative, so hidden from screen readers. -->
+                {#each SKELETON_CARDS.slice(0, allCards.length ? 2 : SKELETON_CARDS.length) as i (i)}
+                  <div class="card card--skeleton" style="--sk-delay: {i * 0.09}s" aria-hidden="true">
+                    <div class="sk-line sk-line--title"></div>
+                    <div class="sk-line sk-line--route"></div>
+                    <div class="sk-meta">
+                      <span class="sk-pill"></span>
+                      <span class="sk-pill sk-pill--sm"></span>
+                    </div>
+                  </div>
+                {/each}
+              {/if}
               {#if hasMore}
                 <button class="board__show-more" on:click={() => { columnPages[stageKey] = pageSize + 10; columnPages = columnPages; }}>
                   Show more ({filteredCards.length - pageSize} remaining)
                 </button>
               {/if}
-              {#if filteredCards.length === 0 && $clientsLoadedOnce}
+              {#if filteredCards.length === 0 && $clientsLoadedOnce && !$clientsStreaming}
                 <div class="board__empty" role="status">{colQuery ? 'No matches' : 'No clients'}</div>
-              {/if}
               {/if}
 
             </div>
@@ -1394,6 +1404,14 @@
     cursor: pointer; font-family: inherit;
   }
   .sgblock-modal__ok:hover { filter: brightness(1.07); }
+
+  /* ══ Filters-bar counter while the list streams in ══════════════════════ */
+  .filters-bar__arriving {
+    color: var(--irp-accent-ink);
+    animation: list-arriving-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes list-arriving-pulse { 50% { opacity: 0.45; } }
+  @media (prefers-reduced-motion: reduce) { .filters-bar__arriving { animation: none; } }
 
   /* ══ Board load-error retry button ═════════════════════════════════════ */
   .dashboard__retry {

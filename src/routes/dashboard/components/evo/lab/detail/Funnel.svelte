@@ -1,9 +1,9 @@
 <script lang="ts">
-  /** Funnel per arm, so far (not matured): assigned → steps → lead → call → quote → won → paid. */
+  /** Funnel per arm, so far (not matured): assigned → steps → lead → call → quote → status page steps → won → paid. */
   import type { LeadFact } from '../../../metrics/engine/types.ts';
   import type { ExperimentAnalysis } from '../../engine/experiment.ts';
   import { armLabel, DAY_MS, type JoinedExperiment } from '../../engine/join.ts';
-  import { metricDef } from '../../engine/metrics.ts';
+  import { metricDef, portalKeysIn } from '../../engine/metrics.ts';
   import FunnelChart from '../../../metrics/charts/FunnelChart.svelte';
 
   export let a: ExperimentAnalysis;
@@ -13,15 +13,17 @@
   let table = false;
   $: email = a.def.surface === 'email';
   $: stepKeys = email ? [] : [...new Set(joined.units.flatMap((u) => Object.keys(u.steps)))].sort((x, y) => (`step:${x}` === a.def.primaryMetric ? -1 : `step:${y}` === a.def.primaryMetric ? 1 : x.localeCompare(y)));
+  $: portalSteps = portalKeysIn(joined.units).map((k) => ({ key: k, label: metricDef(k).label }));
   $: steps = email
-    ? [{ key: 'assigned', label: 'Assigned' }, { key: 'reached', label: 'Nurture email scheduled' }, { key: 'opened', label: 'Opened*' }, { key: 'clicked', label: 'Clicked' }, { key: 'won', label: 'Won after email' }]
-    : [{ key: 'assigned', label: 'Assigned' }, ...stepKeys.map((s) => ({ key: `step:${s}`, label: metricDef(`step:${s}`).label })), { key: 'lead', label: 'Lead' }, { key: 'call', label: 'Call booked' }, { key: 'quoted', label: 'Quoted' }, { key: 'won', label: 'Won' }, { key: 'paid', label: 'Paid' }];
+    ? [{ key: 'assigned', label: 'Assigned' }, { key: 'reached', label: 'Nurture email scheduled' }, { key: 'opened', label: 'Opened*' }, { key: 'clicked', label: 'Clicked' }, ...portalSteps, { key: 'won', label: 'Won after email' }]
+    : [{ key: 'assigned', label: 'Assigned' }, ...stepKeys.map((s) => ({ key: `step:${s}`, label: metricDef(`step:${s}`).label })), { key: 'lead', label: 'Lead' }, { key: 'call', label: 'Call booked' }, { key: 'quoted', label: 'Quoted' }, ...portalSteps, { key: 'won', label: 'Won' }, { key: 'paid', label: 'Paid' }];
   $: groups = a.arms.map((k) => {
     const us = joined.units.filter((u) => u.arm === k);
     const L = (u: (typeof us)[number]) => (u.leadId ? leads.get(u.leadId) ?? null : null);
     const count = (key: string) => {
       if (key === 'assigned') return us.length;
       if (key.startsWith('step:')) { const s = key.slice(5); return us.filter((u) => u.steps[s] !== undefined && u.steps[s] >= u.t - 60_000 && u.steps[s] <= u.t + 7 * DAY_MS).length; }
+      if (key.startsWith('portal:')) { const s = key.slice(7); return us.filter((u) => u.portal[s] !== undefined && (!u.drip || u.portal[s] >= u.t)).length; }
       if (key === 'reached') return us.filter((u) => u.drip?.reachedType).length;
       if (key === 'opened') return us.filter((u) => u.drip?.opened).length;
       if (key === 'clicked') return us.filter((u) => u.drip?.clicked).length;

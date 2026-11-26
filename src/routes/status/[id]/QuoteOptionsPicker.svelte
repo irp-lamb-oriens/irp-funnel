@@ -12,6 +12,7 @@
    * quote with options is presented the same way wherever the client sees it.
    */
   import { renderMarkdown } from './renderMarkdown.ts';
+  import { recordPortalStep } from './store.ts';
 
   export let groups: any[] = [];
   export let currency = 'USD';
@@ -92,7 +93,7 @@
             value={g.groupId}
             checked={selectedRequiredGroupId === g.groupId}
             disabled={locked}
-            on:change={() => (selectedRequiredGroupId = g.groupId)}
+            on:change={() => { selectedRequiredGroupId = g.groupId; recordPortalStep('option_select'); }}
           />
           <span class="qv-group__marker qv-group__marker--radio" aria-hidden="true"></span>
           <span class="qv-group__body">
@@ -119,7 +120,7 @@
             class="qv-group__input"
             checked={selectedOptionalGroupIds.has(g.groupId)}
             disabled={locked}
-            on:change={() => toggleOptionalGroup(g.groupId)}
+            on:change={() => { toggleOptionalGroup(g.groupId); recordPortalStep('option_select'); }}
           />
           <span class="qv-group__marker qv-group__marker--check" aria-hidden="true"></span>
           <span class="qv-group__body">

@@ -32,6 +32,7 @@
     type ClientPaymentState,
     type PaymentPlan,
   } from '../../dashboard/store.ts';
+  import { recordPortalStep } from './store.ts';
   import StatusPill from '../../../lib/payments/StatusPill.svelte';
   import { friendlyPaymentError, statusOfPayment } from '../../../lib/payments/paymentStatus.ts';
 
@@ -211,6 +212,7 @@
 
   async function pay() {
     if (!stripe || !elements || paying || isStaff) return;
+    recordPortalStep('payment_start');
     paying = true;
     payError = '';
     say('Processing your payment. Please keep this page open.');
@@ -254,6 +256,7 @@
 
   async function sendWireNotice() {
     if (wireSending || isStaff) return;
+    recordPortalStep('payment_start');
     const amount = Number(String(wireAmount).replace(/[$,\s]/g, ''));
     if (!Number.isFinite(amount) || amount <= 0) {
       wireError = 'Please enter the amount you sent.';

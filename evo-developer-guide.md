@@ -115,25 +115,46 @@ Environment:
 
 Links in emails sent before this change (`e/c/v` URLs) still redirect, but no longer record events.
 
-## 5. Pricing experiments
+## 5. Status page outcomes
+
+What a client does on their status page (`/status/:id`) counts as an outcome of the experiments they saw on the site. The steps are a closed list, kept in two files that a test holds equal: `src/lib/portalSteps.ts` (browser) and `irp-funnel-server/API/evo/portalSteps.ts` (server).
+
+| Step | Recorded when the client |
+|---|---|
+| `portal_open` | is signed in and their project has loaded |
+| `quote_view` | has the Quote tab on screen |
+| `option_select` | picks a package or ticks an add-on in the quote |
+| `lily_message` | gets an answer from Lily on the page |
+| `comment` | posts a comment |
+| `payment_start` | presses Pay, or reports a wire transfer |
+| `offer_click` | clicks the button of the status page offer |
+
+The page calls `recordPortalStep(step)` from `routes/status/[id]/store.ts`. It sends each step once per page load and skips staff (anyone with a dashboard session). The server (`POST /api/client-status/project/:id/portal-step`, client sign-in required) checks the client may see the project and stores `consultations/{id}.portalSteps[step] = { firstAt, lastAt }`. `lastAt` moves at most once an hour, so a busy page does not write on every click.
+
+The Evo cube carries `portal: { [consultationId]: { [step]: firstAt ms } }`. In the Lab, each step becomes a metric `portal:<step>`: did the visitor's credited lead do it within W + 45 days of the assignment. Drip assignees count only steps after their email assignment. The steps appear as secondary rows in every scorecard and between Quoted and Won in the funnel.
+
+To add a step: add it to both lists, give it a label in `PORTAL_STEP_LABELS`, call `recordPortalStep` where it happens, and run `deno task test:evo`.
+
+## 6. Pricing experiments
 
 Not live. A price test would follow the chatbot pattern: the client sends its assigned variant with the booking request, and the server maps it to the price. It must declare a guardrail on won deals, because a cheaper price can raise conversions while lowering revenue.
 
-## 6. Allocation (the "Traffic Cop")
+## 7. Allocation (the "Traffic Cop")
 
 `GET /api/evo/weights` returns each running experiment's **fixed** allocation plus a `_meta` key (`{ computedAt, mode }`) that readers skip. The browser does **not** wait for this endpoint: it draws from the allocation bundled in `config.ts`.
 
 The legacy adaptive bandit (Thompson sampling on paid conversions, auto 90 % takeover) is kept only behind `EVO_BANDIT=on` and must not be re-enabled without the rework in spec §6.9. Re-enabling it while experiments run would also make their results unreadable.
 
-## 7. Dev switcher and test traffic
+## 8. Dev switcher and test traffic
 
 `EvoDevSwitcher` (dev builds only) calls `forceVariant`. Forced components are recorded (`source: 'forced'`, `meta.evo.forced`) and excluded from analysis. Events from dev builds or localhost carry `meta.ctx.env = 'dev'` and are excluded too. Remove `E2E_Test_Comp_*` components with `scripts/cleanup-e2e-components.ts` after e2e runs.
 
-## 8. Checks
+## 9. Checks
 
 ```sh
 cd irp-funnel-server
 deno run -A scripts/test-evo-registry-parity.ts   # registry client/server parity
 deno run -A scripts/test-evo-tracking.ts          # signing, redirects, ingest, allocation
+deno task test:evo                                # cube, portal steps and the other Evo unit tests
 deno run -A scripts/evo-data-probe.ts             # READ-ONLY: is data arriving? (production)
 ```

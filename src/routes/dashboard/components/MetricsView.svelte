@@ -6,7 +6,7 @@
    * collection explorer) still read /api/dashboard/metrics and render in the
    * collapsed Operations panel. Spec: irp-funnel-server/docs/designs/metrics-hub.md
    */
-  import { metrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData, activeView, salesReportPrefill } from '../store.ts';
+  import { metrics, metricsError, fetchMetrics, clients, STAGE_LABELS, STAGE_ICONS, STAGE_COLORS, fetchCollectionData, activeView, salesReportPrefill } from '../store.ts';
   import { onMount } from 'svelte';
   import CallsMetricsModule from './metrics/CallsMetricsModule.svelte';
   import QuotesMetricsModule from './metrics/QuotesMetricsModule.svelte';
@@ -793,8 +793,13 @@
       </div>
     </div>
 
+  {:else if $metricsError}
+    <div class="dashboard__error" role="alert">
+      <span>{$metricsError}</span>
+      <button class="mh-btn mh-btn--sm" on:click={() => fetchMetrics()}>Retry</button>
+    </div>
   {:else}
-    <div class="dashboard__loading">
+    <div class="dashboard__loading" role="status">
       <div class="spinner"></div>
       <p>Loading metrics…</p>
     </div>

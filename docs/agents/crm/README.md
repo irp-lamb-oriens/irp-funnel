@@ -27,11 +27,12 @@ Esta carpeta describe el CRM de IRP (`https://internationalrelocationpartner.com
 ## Reglas para el agente
 
 1. **No envíes nada a un cliente sin permiso explícito de la persona.** Los botones que mandan correos o cotizaciones son: `👁 Preview & Send` → `Send` dentro del panel de vista previa, `📤 Send quote to client`, `🚀 Send Now`, `Preview & Send to Pricing`, el envío de pedidos a proveedores y `⚡ Execute Action` en acciones que disparan correos. Prepará todo, mostrá lo que va a salir y esperá un sí.
-2. **Mover una tarjeta a `Initial Payment` registra un pago.** Si la tarjeta viene de `Quote Acceptance`, el sistema la marca como pagada y suma contadores de ventas. No lo hagas para «ordenar» el tablero.
-3. **Borrar es definitivo** salvo donde se indica `Undo`. Antes de `🗑️` (cotización, nota, proveedor, plantilla, etapa) confirmá con la persona.
-4. **No adivines datos de clientes.** Si un campo está vacío (muestra `—`), dejalo así o preguntá.
-5. **Leé antes de hacer clic.** Casi todos los botones tienen un texto de ayuda (tooltip) que aparece al pasar el mouse; ahí suele estar explicado qué hacen.
-6. **Esperá a que cargue.** Mientras carga, el Board muestra tarjetas grises que brillan (esqueletos) y aparece una línea fina animada debajo de la barra superior. No actúes hasta que desaparezcan.
+2. **Mover a un cliente de etapa puede mandarle un correo real.** `Post Transcript`, `Exporting` y `Operations Done` mandan correos automáticos (archivo 08, §B.5). Para practicar, usá un cliente de prueba, nunca uno real.
+3. **Mover una tarjeta a `Initial Payment` registra un pago.** Si la tarjeta viene de `Quote Acceptance`, el sistema la marca como pagada y suma contadores de ventas. No lo hagas para «ordenar» el tablero.
+4. **Borrar es definitivo** salvo donde se indica `Undo`. Antes de `🗑️` (cotización, nota, proveedor, plantilla, etapa) confirmá con la persona.
+5. **No adivines datos de clientes.** Si un campo está vacío (muestra `—`), dejalo así o preguntá.
+6. **Leé antes de hacer clic.** Casi todos los botones tienen un texto de ayuda (tooltip) que aparece al pasar el mouse; ahí suele estar explicado qué hacen.
+7. **Esperá a que cargue.** Mientras carga, el Board muestra tarjetas grises que brillan (esqueletos) y aparece una línea fina animada debajo de la barra superior. No actúes hasta que desaparezcan.
 
 ## Estado de esta guía
 

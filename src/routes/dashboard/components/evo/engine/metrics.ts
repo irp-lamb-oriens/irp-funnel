@@ -8,6 +8,7 @@
  */
 
 import type { LeadFact } from '../../metrics/engine/types.ts';
+import { isPortalStep, PORTAL_STEP_LABELS, PORTAL_STEPS } from '../../../../../lib/portalSteps.ts';
 import { DAY_MS } from './join.ts';
 import type { MetricKey, Unit } from './types.ts';
 
@@ -55,6 +56,32 @@ export function stepMetric(sub: string): MetricDef {
     lag: () => 7,
     value: (u) => (u.drip ? null : within(u, u.steps[sub], 7) ? 1 : 0),
     surfaces: ['web', 'chat'],
+  };
+}
+
+/** Days after the assignment (plus the window W) for a status page step to count. */
+const PORTAL_DAYS = 45;
+
+/**
+ * Did the credited lead do a status page step? Counted within W + 45 days of
+ * the assignment, like "Quoted", so every arm gets the same time to do it.
+ * Drip units count only steps after the email assignment.
+ */
+export function portalMetric(step: string): MetricDef {
+  const [label, verb] = isPortalStep(step) ? PORTAL_STEP_LABELS[step] : [step.replace(/_/g, ' '), `did "${step.replace(/_/g, ' ')}" on their status page`];
+  return {
+    key: `portal:${step}`,
+    label,
+    verb,
+    kind: 'binomial',
+    lag: (W) => W + PORTAL_DAYS,
+    value: (u, _l, c) => {
+      const at = u.portal[step];
+      const last = u.t + (c.W + PORTAL_DAYS) * DAY_MS;
+      return at !== undefined && at >= (u.drip ? u.t : u.t - 60_000) && at <= last ? 1 : 0;
+    },
+    surfaces: ['web', 'chat', 'email'],
+    note: 'From the status page. Only clients who signed in to their page can count; staff visits are ignored.',
   };
 }
 
@@ -176,6 +203,7 @@ export const METRICS: Record<string, MetricDef> = Object.fromEntries(BASE.map((m
 
 export function metricDef(key: MetricKey | string): MetricDef {
   if (key.startsWith('step:')) return stepMetric(key.slice(5));
+  if (key.startsWith('portal:')) return portalMetric(key.slice(7));
   return METRICS[key] ?? stepMetric(key);
 }
 
@@ -184,4 +212,11 @@ export function stepKeysIn(units: Unit[]): MetricKey[] {
   const s = new Set<string>();
   for (const u of units) for (const k of Object.keys(u.steps)) s.add(k);
   return [...s].sort().map((k) => `step:${k}` as MetricKey);
+}
+
+/** Status page steps present in the units, in the order clients go through them. */
+export function portalKeysIn(units: Unit[]): MetricKey[] {
+  const s = new Set<string>();
+  for (const u of units) for (const k of Object.keys(u.portal)) s.add(k);
+  return PORTAL_STEPS.filter((k) => s.has(k)).map((k) => `portal:${k}` as MetricKey);
 }

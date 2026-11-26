@@ -1,4 +1,5 @@
 import { cachedRequest, invalidateRequests } from './utils/requestCache.ts';
+import { readNdjson, type StreamMessage } from './utils/ndjson.ts';
 import { agreedServices, optionCount, quoteValue } from '../../lib/quoteValue.ts';
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
@@ -747,8 +748,9 @@ export interface EmailTypeDescriptor {
   category?: 'sales' | 'ops' | 'followup';
 }
 
-// Static fallback — kept for backward compat (existing imports keep working).
-// Do NOT add new email types here; add them to renderEmail.ts EMAIL_LABELS instead.
+// Static fallback shown until the server's list loads. Labels match
+// irp-funnel-server/helper/renderEmail.ts EMAIL_LABELS, which is what the
+// dropdown shows once loaded. Do NOT add new email types here; add them there.
 export const EMAIL_TYPES = [
   { value: 'pre_call_confirmation', label: 'Pre-Call Confirmation' },
   { value: 'pre_call_guide', label: 'Pre-Call Guide' },
@@ -760,15 +762,15 @@ export const EMAIL_TYPES = [
   { value: 'quote_checkin', label: 'Quote Check-in' },
   { value: 'quote_proposal_feedback',   label: 'Quote Proposal Feedback' },
   // Ops stage emails (additive — match renderEmail.ts EMAIL_SUBJECTS)
-  { value: 'ops_provider_date_request', label: '📦 Provider Date Request (Ops)' },
-  { value: 'ops_arrival_confirmation',  label: '🚢 Arrival Confirmation (Ops)' },
+  { value: 'ops_provider_date_request', label: 'Provider Date Request' },
+  { value: 'ops_arrival_confirmation',  label: 'Arrival Confirmation' },
   // ETA confirmation loop
-  { value: 'ops_etd_provider_request',  label: '📧 ETD/ETA Request → Provider' },
-  { value: 'ops_etd_ops_escalation',    label: '⚠️ ETA Escalation → Ops' },
-  { value: 'ops_etd_sales_escalation',  label: '🚨 ETA Escalation → Sales' },
-  { value: 'ops_eta_client_update',     label: '✅ ETA Confirmed → Client' },
+  { value: 'ops_etd_provider_request',  label: 'ETD/ETA Request to Provider' },
+  { value: 'ops_etd_ops_escalation',    label: 'ETA Escalation to Ops' },
+  { value: 'ops_etd_sales_escalation',  label: 'ETA Escalation to Sales' },
+  { value: 'ops_eta_client_update',     label: 'ETA Confirmed to Client' },
   // Follow-up
-  { value: 'followup_no_reply',         label: '👋 Follow-up — No Reply' },
+  { value: 'followup_no_reply',         label: 'Follow-up — No Reply' },
 ];
 
 /**
@@ -870,8 +872,11 @@ export const isCheckingAuth = isCheckingIrpStaff;
 export const clients = writable<Client[]>([]);
 export const selectedClient = writable<Client | null>(null);
 export const metrics = writable<Metrics | null>(null);
+/** The client list's own load state: the Board and List read these. */
 export const loading = writable<boolean>(false);
 export const error = writable<string | null>(null);
+/** The pipeline snapshot's load error, kept apart so it never hides the Board. */
+export const metricsError = writable<string | null>(null);
 // Board-specific loading state. The Kanban skeleton must track the CLIENTS
 // fetch specifically — NOT the shared `loading` flag, which fetchMetrics()
 // (running in parallel) also toggles and would otherwise end the skeleton
@@ -881,6 +886,8 @@ export const clientsLoading = writable<boolean>(false);
 // showing skeletons (never a premature empty "No clients" state) until real
 // data has arrived at least once.
 export const clientsLoadedOnce = writable<boolean>(false);
+/** The first load is still arriving: cards are drawn as each page lands. */
+export const clientsStreaming = writable<boolean>(false);
 export const searchQuery = writable<string>('');
 /**
  * Client ids returned by the server lookup for the current search (Enter in
@@ -1288,6 +1295,51 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   }
 }
 
+// ─── Network recovery ────────────────────────────────────────────────────────
+// "Failed to fetch" means no answer reached the browser: the server restarting,
+// a dropped connection, a gateway with no CORS headers. A read (GET) is safe to
+// repeat, so it is retried twice before the error reaches the screen. Writes
+// are never repeated: the first one may have landed. Every request gives up
+// after REQUEST_TIMEOUT_MS so a hung request ends in an error with a Retry,
+// never in a spinner that turns forever.
+const REQUEST_TIMEOUT_MS = 120_000;
+const READ_RETRY_DELAYS_MS = [800, 2500];
+
+export class RequestTimeoutError extends Error {
+  constructor() {
+    super('The server took too long to answer. Try again in a moment.');
+    this.name = 'RequestTimeoutError';
+  }
+}
+
+async function fetchOnce(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const outer = init.signal;
+  outer?.addEventListener('abort', () => controller.abort(), { once: true });
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (controller.signal.aborted && !outer?.aborted) throw new RequestTimeoutError();
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function fetchWithRecovery(url: string, init: RequestInit = {}): Promise<Response> {
+  const isRead = (init.method ?? 'GET').toUpperCase() === 'GET';
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchOnce(url, init);
+    } catch (err) {
+      const networkFailure = err instanceof TypeError;
+      if (!isRead || !networkFailure || attempt >= READ_RETRY_DELAYS_MS.length || init.signal?.aborted) throw err;
+      await new Promise((r) => setTimeout(r, READ_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+}
+
 async function apiFetchInner(path: string, options: RequestInit = {}): Promise<any> {
   const token = get(authToken);
   const url = `${getApiUrl()}${path}`;
@@ -1297,7 +1349,7 @@ async function apiFetchInner(path: string, options: RequestInit = {}): Promise<a
   };
   if (token) headers['x-dashboard-token'] = token;
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetchWithRecovery(url, { ...options, headers });
 
   // Parse the body defensively. A cold/slow server — or a proxy/gateway in
   // front of it (e.g. Render waking up) — can return a NON-JSON payload such
@@ -1342,6 +1394,33 @@ async function apiFetchInner(path: string, options: RequestInit = {}): Promise<a
 }
 
 
+
+/**
+ * A streamed GET (utils/ndjson.ts): `onMessage` receives each object as it
+ * arrives; resolves with the final `done` line. Errors carry `status` like
+ * apiFetch's.
+ */
+export async function apiStream(path: string, onMessage: (m: StreamMessage) => void): Promise<StreamMessage> {
+  pendingRequests.update((n) => n + 1);
+  try {
+    const token = get(authToken);
+    const res = await fetchWithRecovery(`${getApiUrl()}${path}`, {
+      headers: token ? { 'x-dashboard-token': token } : {},
+    });
+    if (!res.ok || !res.body) {
+      if (res.status === 401) {
+        authToken.set(null);
+        authEmail.set(null);
+        isAuthenticated.set(false);
+      }
+      const body = await res.json().catch(() => null);
+      throw Object.assign(new Error(body?.error || `Request failed: ${res.status}`), { status: res.status });
+    }
+    return await readNdjson(res.body, onMessage);
+  } finally {
+    pendingRequests.update((n) => Math.max(0, n - 1));
+  }
+}
 
 // ─── Centralized stage configuration (DB-backed) API ─────────────────────────
 
@@ -1662,18 +1741,25 @@ export function disconnectDashboardSocket() {
 }
 
 // ─── Data actions ───────────────────────────────────────────────────────────
+
+/** Newest activity first: the board's natural order (ranked cards float above it). */
+function byRecency(a: Client, b: Client): number {
+  const ta = a.lastUpdated ? Date.parse(a.lastUpdated) : 0;
+  const tb = b.lastUpdated ? Date.parse(b.lastUpdated) : 0;
+  return tb - ta;
+}
+
 /**
- * Load all clients for the Kanban/list views.
+ * Load all clients for the Board and List.
  *
- * Robustness contract (fixes the "skeleton ends → empty board, stuck" bug):
- *  • Drives the dedicated `clientsLoading` flag (NOT the shared `loading`,
- *    which fetchMetrics() also toggles) so the board skeleton ends exactly
- *    when the cards are ready — never when a parallel fetch happens to finish.
- *  • Retries transient failures (cold-start 502s, dropped sockets, malformed
- *    gateway bodies) with backoff, keeping the skeleton up across attempts so
- *    a first-load hiccup self-heals instead of landing in a dead empty state.
- *  • `clientsLoadedOnce` flips true only after a SUCCESSFUL load, letting the
- *    UI distinguish "genuinely zero clients" from "failed to load".
+ *  • The list streams in one page at a time. On the first load each page is
+ *    drawn as it lands; on a refresh the board keeps the current list and
+ *    swaps in the new one only when it is complete, so it never shrinks.
+ *  • `clientsLoading` is true until the first page is on screen;
+ *    `clientsStreaming` until the last one is; `clientsLoadedOnce` after a
+ *    complete load, so "zero clients" is never shown for a failed one.
+ *  • A failed attempt is retried with backoff before the error is shown.
+ *  • A server without the stream route gets the one-piece request.
  */
 export async function fetchClients(): Promise<void> {
   loading.set(true);
@@ -1685,16 +1771,20 @@ export async function fetchClients(): Promise<void> {
   // load (falls back to the hardcoded stage maps on error).
   loadStageConfig().catch(() => {/* non-fatal */});
 
-  // attempt 0 is immediate; subsequent attempts wait these many ms.
+  const progressive = !get(clientsLoadedOnce);
   const RETRY_DELAYS = [600, 1200, 2400];
   let lastErr: any = null;
 
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
-      const data = await apiFetch('/api/dashboard/clients');
-      clients.set(Array.isArray(data?.clients) ? data.clients : []);
+      const all = await readClientList((page) => {
+        if (!progressive) return;
+        clients.set([...page].sort(byRecency));
+        clientsLoading.set(false);
+        clientsStreaming.set(true);
+      });
+      clients.set(all.sort(byRecency));
       clientsLoadedOnce.set(true);
-      error.set(null);
       lastErr = null;
       break;
     } catch (err: any) {
@@ -1710,10 +1800,27 @@ export async function fetchClients(): Promise<void> {
 
   if (lastErr) error.set(lastErr.message ?? 'Failed to load clients.');
 
+  clientsStreaming.set(false);
   clientsLoading.set(false);
   loading.set(false);
 }
 
+/** Every client, streamed; `onProgress` gets everything received so far. */
+async function readClientList(onProgress: (soFar: Client[]) => void): Promise<Client[]> {
+  const all: Client[] = [];
+  try {
+    await apiStream('/api/dashboard/client-list/stream', (m) => {
+      if (m.type !== 'clients' || !Array.isArray(m.clients)) return;
+      all.push(...(m.clients as Client[]));
+      onProgress(all);
+    });
+    return all;
+  } catch (err: any) {
+    if (err?.status !== 404) throw err;
+    const data = await apiFetch('/api/dashboard/clients');
+    return Array.isArray(data?.clients) ? data.clients : [];
+  }
+}
 
 export async function fetchClientDetail(id: string): Promise<Client> {
   const data = await apiFetch(`/api/dashboard/clients/${id}`);
@@ -1870,14 +1977,11 @@ export async function triggerEmail(id: string, emailType: string): Promise<void>
 }
 
 export async function fetchMetrics(): Promise<void> {
-  loading.set(true);
+  metricsError.set(null);
   try {
-    const data = await apiFetch('/api/dashboard/metrics');
-    metrics.set(data);
+    metrics.set(await apiFetch('/api/dashboard/metrics'));
   } catch (err: any) {
-    error.set(err.message);
-  } finally {
-    loading.set(false);
+    metricsError.set(err?.message ?? 'Could not load the pipeline snapshot.');
   }
 }
 
@@ -5809,6 +5913,32 @@ export const evoRefresh = writable(0);
 
 export async function fetchEvoCube(opts: { fresh?: boolean } = {}): Promise<unknown> {
   return cachedRequest('evo:cube', () => apiFetch(`/api/evo/cube${opts.fresh ? '?fresh=1' : ''}`), { fresh: opts.fresh });
+}
+
+export interface EvoBuildProgress {
+  step: 'events' | 'leads' | 'identities' | 'drip' | 'build';
+  state: 'active' | 'done' | 'failed';
+  count?: number;
+}
+
+/**
+ * The Evo cube with the server's build progress as it happens. Shares the
+ * `evo:cube` cache with fetchEvoCube; a cached cube arrives with no progress.
+ */
+export async function streamEvoCube(opts: { fresh?: boolean; onProgress?: (p: EvoBuildProgress) => void } = {}): Promise<unknown> {
+  return cachedRequest('evo:cube', async () => {
+    let cube: unknown = null;
+    try {
+      await apiStream(`/api/evo/cube/stream${opts.fresh ? '?fresh=1' : ''}`, (m) => {
+        if (m.type === 'progress') opts.onProgress?.(m as unknown as EvoBuildProgress);
+        else if (m.type === 'cube') cube = m.cube;
+      });
+    } catch (err: any) {
+      if (err?.status !== 404) throw err;
+      return apiFetch(`/api/evo/cube${opts.fresh ? '?fresh=1' : ''}`);
+    }
+    return cube;
+  }, { fresh: opts.fresh });
 }
 
 /** Ask Evo: the server turns a question into a validated query spec. */

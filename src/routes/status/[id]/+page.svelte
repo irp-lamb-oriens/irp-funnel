@@ -6,6 +6,8 @@
   import {
     isAuthenticated,
     isCheckingAuth,
+    startPortalSteps,
+    recordPortalStep,
     authEmail,
     reconstructEmailFromProjectId,
     project,
@@ -138,6 +140,7 @@
     // what make a quote or contract link work.
     if (shown !== $page.params.id) await goto(portalAddress(shown, $page.url), { replaceState: true });
     projectId = pid;
+    startPortalSteps(pid);
 
     // ─── 1. IRP organization-agent bypass ────────────────────────────────
     // If a /dashboard session is present, every /api/client-status request
@@ -748,6 +751,10 @@
   $: isOverviewTab =
     !isCommentsTab && (activePortalTab === "__overview" || !showQuoteSection);
   $: isQuoteTab = showQuoteSection && activePortalTab === "__quotes";
+
+  // Evo outcomes: the client reached their page, and had their quote on screen.
+  $: if ($isAuthenticated && $project) recordPortalStep("portal_open");
+  $: if ($isAuthenticated && $project && isQuoteTab) recordPortalStep("quote_view");
   $: isAcceptTab = showAcceptSection && activePortalTab === "__accept";
   $: isDestinationServiceTab = !!activeDestinationService;
 
@@ -2135,6 +2142,7 @@
     ctaLabel={$clientOffer.ctaLabel}
     ctaUrl={$clientOffer.ctaUrl}
     on:close={dismissOffer}
+    on:cta={() => recordPortalStep("offer_click")}
   />
 {/if}
 

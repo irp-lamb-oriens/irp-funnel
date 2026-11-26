@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { irpStaffToken } from '../../../lib/auth/irpStaff.ts';
+import type { PortalStep } from '../../../lib/portalSteps.ts';
 
 function getApiUrl(): string {
   if (typeof window !== 'undefined') {
@@ -402,6 +403,7 @@ export async function sendLilyMessage(projectId: string, message: string): Promi
       method: 'POST',
       body: JSON.stringify({ message }),
     });
+    recordPortalStep('lily_message');
     const rawTail: any[] = data.rawTail ?? [];
     // Re-apply the HeroForm prefix if it exists and isn't already seeded in rawTail
     if (_heroPrefix.length > 0) {
@@ -424,6 +426,30 @@ export async function sendLilyMessage(projectId: string, message: string): Promi
   }
 }
 
+// ─── Portal steps (Evo outcomes) ────────────────────────────────────────────
+// What the client does here is an outcome of the experiments they saw on the
+// site (src/lib/portalSteps.ts). Each step is sent once per page load, never
+// for staff, and never blocks or breaks the page.
+
+let portalProjectId = '';
+const portalStepsSent = new Set<PortalStep>();
+
+/** The project the steps below belong to; call once the page has its real id. */
+export function startPortalSteps(projectId: string): void {
+  if (projectId === portalProjectId) return;
+  portalProjectId = projectId;
+  portalStepsSent.clear();
+}
+
+export function recordPortalStep(step: PortalStep): void {
+  if (!portalProjectId || get(irpStaffToken) || portalStepsSent.has(step)) return;
+  portalStepsSent.add(step);
+  apiFetch(`/api/client-status/project/${portalProjectId}/portal-step`, {
+    method: 'POST',
+    body: JSON.stringify({ step }),
+  }).catch(() => portalStepsSent.delete(step));
+}
+
 // ─── Comments ────────────────────────────────────────────────────────────────
 
 export async function addComment(projectId: string, body: string): Promise<void> {
@@ -431,6 +457,7 @@ export async function addComment(projectId: string, body: string): Promise<void>
     method: 'POST',
     body: JSON.stringify({ body }),
   });
+  recordPortalStep('comment');
   if (data.comment) {
     project.update((p) =>
       p ? { ...p, statusComments: [...(p.statusComments ?? []), data.comment] } : p,

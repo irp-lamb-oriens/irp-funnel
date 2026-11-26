@@ -91,8 +91,14 @@ async function loadFunnelsFromAPI() {
   }
 }
 
-// Load funnels when the store is initialized
-loadFunnelsFromAPI();
+// Only the funnel pages need these. Loading them when the store module is
+// imported made every page (the CRM included, through the header) call the
+// CMS on start.
+let funnelsRequest: Promise<void> | null = null;
+export function ensureFunnelsLoaded(): Promise<void> {
+  funnelsRequest ??= loadFunnelsFromAPI();
+  return funnelsRequest;
+}
 
 import { browser } from '$app/environment';
 

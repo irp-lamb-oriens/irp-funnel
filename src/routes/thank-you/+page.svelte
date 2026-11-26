@@ -2,7 +2,8 @@
     import SocketClient from "../../components/SocketClient.svelte";
     import { onMount, onDestroy } from "svelte";
     import { browser } from "$app/environment";
-    import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels } from "../../components/store.ts"; // Import the store variable
+    import store, { isScrollingDown, saveToStore, currentFunnelId, currentFunnelVersion, funnels, ensureFunnelsLoaded } from "../../components/store.ts"; // Import the store variable
+    ensureFunnelsLoaded();
     import ThemeChanger from "../../components/ThemeChanger/ThemeChanger.svelte";
     // import MainSteps from "../../components/systems/steps/StepsTowardsSubscribe/MainSteps.svelte";
     import GlobalData from "../../components/GlobalData/GlobalData.svelte";

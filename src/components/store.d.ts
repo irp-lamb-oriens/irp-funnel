@@ -17,6 +17,7 @@ export interface Funnel {
 }
 export declare const funnels: import("svelte/store").Writable<Record<string, Record<string, Funnel>>>;
 export declare const funnelsLoaded: import("svelte/store").Writable<boolean>;
+export declare function ensureFunnelsLoaded(): Promise<void>;
 export declare const currentFunnelId: import("svelte/store").Writable<string | null>;
 export declare const currentFunnelVersion: import("svelte/store").Writable<string | null>;
 export declare const currentFunnel: import("svelte/store").Writable<Funnel | null>;

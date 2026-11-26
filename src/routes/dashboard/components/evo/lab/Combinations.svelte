@@ -29,7 +29,7 @@
   let metric: MetricKey = 'lead';
   $: if (!picked.length && web.length >= 2) picked = web.slice(0, 2).map((d) => d.componentKey);
   $: table = picked.length >= 2 ? configurations(lab.joinedAll, picked, metric, { now: lab.options.now, windowDays, currency, leads: lab.leads }) : null;
-  $: metricChoices = ['lead', 'callBooked', 'step:cta_click', 'step:first_user_message'] as MetricKey[];
+  $: metricChoices = ['lead', 'callBooked', 'step:cta_click', 'step:first_user_message', 'portal:quote_view'] as MetricKey[];
 
   function toggle(k: string) {
     picked = picked.includes(k) ? picked.filter((x) => x !== k) : picked.length < 4 ? [...picked, k] : picked;

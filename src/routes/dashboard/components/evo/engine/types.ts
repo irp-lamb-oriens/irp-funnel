@@ -5,10 +5,11 @@
  * cube carries `schemaVersion` and the Lab refuses a version it doesn't know.
  */
 
-export const EVO_CUBE_SCHEMA_VERSION = 1;
+export const EVO_CUBE_SCHEMA_VERSION = 2;
 
 export type MetricKey =
   | `step:${string}`
+  | `portal:${string}`
   | 'lead'
   | 'callBooked'
   | 'callAttended'
@@ -141,6 +142,8 @@ export interface EvoCube {
   visitors: EvoVisitor[];
   persons: EvoPerson[];
   drip: DripRow[];
+  /** Consultation id (= LeadFact.id) → status page step → epoch ms of its first occurrence. */
+  portal: Record<string, Record<string, number>>;
   commits: Array<{ hash: string; message: string; firstSeenAt: string }>;
   health: HealthReport;
   legacy: { rows: LegacyRow[] };
@@ -167,6 +170,8 @@ export interface Unit {
   /** Credited LeadFact id (see join.ts). */
   leadId: string | null;
   leadAt: number | null;
+  /** Status page steps of the credited lead: step → epoch ms of its first occurrence. */
+  portal: Record<string, number>;
   /** Drip-only facts. */
   drip: { reachedType: boolean; opened: boolean; clicked: boolean; firstClickDays: number | null } | null;
 }

@@ -116,7 +116,7 @@ Tres bloques, de arriba abajo:
 1. **`💡 Suggested emails (N)`** (solo si hay): correos que el sistema propuso al mover de etapa. Cada uno dice `Suggested when moving to <etapa> · hace X · by <persona>` y tiene `👁 Preview & Send` y un botón para descartarlo (`Dismiss this suggestion without sending`).
 2. **`📨 Sent emails (N)`**: los correos ya enviados. Clic en uno abre su vista previa. Algunos dicen `inferred` (`backfilled from stage history`): se sabe que salieron pero no hay copia. Vacío: `No emails sent yet.`
 3. **`⏰ Scheduled drip emails (N)`** (solo si hay): correos automáticos programados, con el texto `These emails will send automatically unless you cancel or force-send them.` Cada uno tiene su hora (en rojo `overdue` si ya pasó) y dos botones: enviar ahora (`Send this email right now`) y cancelar (`Cancel — this email will not be sent`).
-4. Al final, `Send a new email from a template:` con un desplegable `Choose email type…` (por ejemplo `Pre-Call Confirmation`, `No Show Follow-up`, `Quote Recap`, `Quote Check-in`, `📦 Provider Date Request (Ops)`, `🚢 Arrival Confirmation (Ops)`, `✅ ETA Confirmed → Client`, `👋 Follow-up — No Reply`) y el botón `👁 Preview & Send`.
+4. Al final, `Send a new email from a template:` con un desplegable `Choose email type…` (por ejemplo `Pre-Call Confirmation`, `No Show Follow-up`, `Quote Recap`, `Quote Check-in`, `Provider Date Request`, `Arrival Confirmation`, `ETA Confirmed to Client`, `Follow-up — No Reply`) y el botón `👁 Preview & Send`.
 
 ## 4. Vista previa de un correo antes de enviarlo
 

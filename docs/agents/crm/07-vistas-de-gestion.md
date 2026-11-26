@@ -56,6 +56,7 @@ Las pestañas de la barra superior aparte de `Board` y `List`. La mayoría solo 
 - Título `Evo Lab`, controles de período, una ventana en días (`A lead counts for a visitor's variant if it arrives within this many days of their first visit`) y filtros.
 - Una franja de salud, un resumen (`LabPulse`), `Decisions waiting` (experimentos listos para decidir), `Experiments` (portafolio; clic abre el detalle con pestañas), combinaciones, audiencias, un buscador de preguntas (`AskEvo`) y el registro de decisiones.
 - Registrar una decisión abre una ventana aparte. Solo administradores.
+- Los resultados incluyen lo que hace el cliente en su página de estado: abrirla, ver la cotización, elegir una opción, escribirle a Lily, comentar, empezar un pago y hacer clic en la oferta. Aparecen como filas extra en cada experimento (por ejemplo `Viewed quote`, `Picked option`) y como pasos del embudo entre `Quoted` y `Won`.
 
 ## `Providers`
 

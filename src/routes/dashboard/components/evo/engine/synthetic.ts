@@ -7,7 +7,7 @@
 import type { LeadFact } from '../../metrics/engine/types.ts';
 import { rng } from './stats.ts';
 import { crDay } from './join.ts';
-import type { EvoCube, EvoExperimentDef, EvoVisitor, MetricKey } from './types.ts';
+import { EVO_CUBE_SCHEMA_VERSION, type EvoCube, type EvoExperimentDef, type EvoVisitor, type MetricKey } from './types.ts';
 
 export interface SynthExperiment {
   key: string;
@@ -143,8 +143,8 @@ export function syntheticEvo(opts: SynthOptions = {}): { cube: EvoCube; leads: L
     health.experiments[k].eventsByDay[day] = (health.experiments[k].eventsByDay[day] ?? 0) + 1;
   }
   const cube: EvoCube = {
-    schemaVersion: 1, generatedAt: new Date(now).toISOString(), nowDay: crDay(now), tz: 'America/Costa_Rica',
-    experiments: defs, visitors, persons, drip: [], commits: [{ hash: 'c1', message: 'Synthetic', firstSeenAt: new Date(start).toISOString() }],
+    schemaVersion: EVO_CUBE_SCHEMA_VERSION, generatedAt: new Date(now).toISOString(), nowDay: crDay(now), tz: 'America/Costa_Rica',
+    experiments: defs, visitors, persons, drip: [], portal: {}, commits: [{ hash: 'c1', message: 'Synthetic', firstSeenAt: new Date(start).toISOString() }],
     health, legacy: { rows: [] }, warnings: [],
   };
   return { cube, leads };

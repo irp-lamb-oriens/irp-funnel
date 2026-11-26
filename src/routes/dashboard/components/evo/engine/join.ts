@@ -66,6 +66,7 @@ export function joinExperiment(cube: EvoCube, def: EvoExperimentDef, opts: JoinO
         steps: {},
         leadId: d.leadId,
         leadAt: null,
+        portal: cube.portal[d.leadId] ?? {},
         drip: { reachedType: d.reachedType, opened: d.opened, clicked: d.clicked, firstClickDays: d.firstClickDays },
       });
     }
@@ -92,7 +93,8 @@ export function joinExperiment(cube: EvoCube, def: EvoExperimentDef, opts: JoinO
           leadAt = hit.at;
         }
       }
-      all.push({ vid: v.vid, arm: a.v, t: a.t, day: a.day, crossover: a.crossover, x: a.x, ctx: v.ctx, steps: v.steps, leadId, leadAt, drip: null });
+      const portal = leadId ? cube.portal[leadId] ?? {} : {};
+      all.push({ vid: v.vid, arm: a.v, t: a.t, day: a.day, crossover: a.crossover, x: a.x, ctx: v.ctx, steps: v.steps, leadId, leadAt, portal, drip: null });
     }
   }
   const units = all.filter((u) => !u.x.some((r) => exclude.has(r)));

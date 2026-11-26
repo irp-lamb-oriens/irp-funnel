@@ -12,7 +12,8 @@
 <script lang="ts">
   import { tabs } from '../../utils/a11yTabs.ts';
   import { onDestroy, onMount, tick } from 'svelte';
-  import { activeView, authEmail, evoRefresh, fetchClientDetail, fetchEvoCube, fetchEvoDecisions, fetchMetricsCube } from '../../store.ts';
+  import { activeView, authEmail, evoRefresh, fetchClientDetail, fetchEvoDecisions, fetchMetricsCube, streamEvoCube, type EvoBuildProgress } from '../../store.ts';
+  import StreamAssembly, { type AssemblyStep } from '../ui/StreamAssembly.svelte';
   import { ADMIN_EMAILS } from '../../access.ts';
   import { onViewShown, REVALIDATE_AFTER_MS } from '../../utils/viewLifecycle.ts';
   import { requestAge } from '../../utils/requestCache.ts';
@@ -78,6 +79,26 @@
 
   let evo: EvoCube | null = null;
   let leadRows: LeadFact[] = [];
+
+  // ── First-load assembly screen (server build steps + the lead data) ───────
+  const BUILD_STEPS: AssemblyStep[] = [
+    { key: 'events', label: 'Reading visitor activity', unit: 'events', state: 'waiting' },
+    { key: 'identities', label: 'Linking visitors to people', unit: 'visitors', state: 'waiting' },
+    { key: 'leads', label: 'Joining leads and deals', unit: 'clients', state: 'waiting' },
+    { key: 'drip', label: 'Reading email experiments', unit: 'emails', state: 'waiting' },
+    { key: 'money', label: 'Loading money from the Sales Report', unit: 'leads', state: 'waiting' },
+    { key: 'build', label: 'Putting the experiments together', unit: 'visitors', state: 'waiting' },
+  ];
+  let buildSteps: AssemblyStep[] = BUILD_STEPS;
+  function markStep(p: { step: string; state: AssemblyStep['state']; count?: number }) {
+    buildSteps = buildSteps.map((s) => (s.key === p.step ? { ...s, state: p.state, count: p.count ?? s.count } : s));
+  }
+  /** True for a moment after the data lands, so the sections cascade in once. */
+  let assembling = false;
+  function playAssembly() {
+    assembling = true;
+    setTimeout(() => (assembling = false), 1600);
+  }
   let metricsError = '';
   let loading = false;
   let error = '';
@@ -135,13 +156,21 @@
     error = '';
     metricsError = '';
     try {
+      const firstLoad = !evo;
+      if (firstLoad) buildSteps = BUILD_STEPS;
+      const onProgress = (p: EvoBuildProgress) => { if (t === ticket) markStep(p); };
+      const leadsWork = $hubCube && !fresh ? Promise.resolve($hubCube) : (markStep({ step: 'money', state: 'active' }), fetchMetricsCube({ fresh }) as Promise<MetricsCube>);
       const [e, m] = await Promise.all([
-        fetchEvoCube({ fresh }) as Promise<EvoCube>,
-        $hubCube && !fresh ? Promise.resolve($hubCube) : (fetchMetricsCube({ fresh }) as Promise<MetricsCube>).catch((err) => { metricsError = err?.message ?? 'unavailable'; return null; }),
+        streamEvoCube({ fresh, onProgress }) as Promise<EvoCube>,
+        leadsWork.then(
+          (cube) => { markStep({ step: 'money', state: 'done', count: (cube as MetricsCube)?.rows?.length }); return cube; },
+          (err) => { markStep({ step: 'money', state: 'failed' }); metricsError = err?.message ?? 'unavailable'; return null; },
+        ),
       ]);
       if (t !== ticket) return;
       if (!e || e.schemaVersion !== EVO_CUBE_SCHEMA_VERSION || !Array.isArray(e.visitors)) { error = 'The Evo data format changed. Reload the page.'; return; }
       evo = e;
+      if (firstLoad) playAssembly();
       if (m && (m as MetricsCube).schemaVersion === METRICS_CUBE_SCHEMA_VERSION) {
         leadRows = (m as MetricsCube).rows;
         if (!$hubCube) hubCube.set(m as MetricsCube);
@@ -312,10 +341,9 @@
   </nav>
 
   {#if !evo && loading}
-    <div class="mh-sk" style="height: 46px; margin-bottom: 1rem"></div>
-    <div class="mh-sk" style="height: 120px; margin-bottom: 1rem"></div>
-    <div class="mh-sk" style="height: 320px"></div>
+    <StreamAssembly title="Assembling Evo Lab" steps={buildSteps} />
   {:else if evo && full && shown}
+    <div class="evo-assemble" class:is-assembling={assembling}>
     <HealthStrip line={full.health} onOpen={openOps} />
     <LabPulse {view} lab={shown} fullLab={full} cube={evo} {currency} {decisions} onOpen={selectExperiment} />
     <DecisionsWaiting waiting={full.waiting} {isAdmin} onOpen={selectExperiment} onRecord={(a) => (recordFor = a)} />
@@ -336,6 +364,7 @@
     <AskEvo cube={evo} onOpen={selectExperiment} onFilter={(dim, value) => addFilter(dim, value)} onPeriod={(p) => (period = p)} onWindow={(w) => (windowDays = w)} onOps={openOps} />
     <DecisionsLog {decisions} cube={evo} onOpen={selectExperiment} />
     <Operations cube={evo} lab={full} bind:open={opsOpen} />
+    </div>
   {:else if !error}
     <p class="mh-empty" role="status">Loading Evo…</p>
   {/if}
@@ -351,6 +380,29 @@
   .evo-excl > summary { list-style: none; }
   .evo-excl > summary::-webkit-details-marker { display: none; }
   .evo-excl__pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 8; background: var(--irp-surface); border: 1px solid var(--irp-line); border-radius: var(--irp-r-md); padding: 0.7rem 0.8rem; display: grid; gap: 0.4rem; min-width: 240px; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12); }
+  /* The sections cascade in once, when the data first lands. */
+  .evo-assemble.is-assembling > :global(*) {
+    animation: evo-assemble-in 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 800ms;
+  }
+  .evo-assemble.is-assembling > :global(:nth-child(1)) { animation-delay: 0ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(2)) { animation-delay: 80ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(3)) { animation-delay: 160ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(4)) { animation-delay: 240ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(5)) { animation-delay: 320ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(6)) { animation-delay: 400ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(7)) { animation-delay: 480ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(8)) { animation-delay: 560ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(9)) { animation-delay: 640ms; }
+  .evo-assemble.is-assembling > :global(:nth-child(10)) { animation-delay: 720ms; }
+  @keyframes evo-assemble-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(4px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .evo-assemble.is-assembling > :global(*) { animation: none; }
+  }
+
   @media (max-width: 640px) {
     .evo-bar { gap: 0.5rem; }
     .evo-bar__filters { flex-basis: 100%; }
